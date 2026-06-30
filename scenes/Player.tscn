@@ -1,19 +1,25 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://b1wj8f3aim6fb"]
 
-[ext_resource type="Script" path="res://scripts/Player.gd" id="1"]
+[ext_resource type="Script" uid="uid://dsekm5u8bjmd2" path="res://scripts/Player.gd" id="1"]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
-size = Vector2(32, 48)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_p0vlq"]
+size = Vector2(28, 12)
 
-[node name="Player" type="CharacterBody2D"]
+[node name="Player" type="CharacterBody2D" unique_id=147596159]
+position = Vector2(1, 2)
 script = ExtResource("1")
 
-[node name="ColorRect" type="ColorRect" parent="."]
+[node name="ColorRect" type="ColorRect" parent="." unique_id=119610974]
 offset_left = -16.0
 offset_top = -24.0
 offset_right = 16.0
 offset_bottom = 24.0
 color = Color(0.259, 0.576, 1, 1)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-shape = SubResource("RectangleShape2D_1")
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1558566238]
+position = Vector2(0, 20)
+shape = SubResource("RectangleShape2D_p0vlq")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1554819470]
+zoom = Vector2(1.5, 1.5)
+position_smoothing_enabled = true
