@@ -253,21 +253,55 @@ crossroad_market/
 
 ---
 
-## Roadmap Produksi (8 Minggu)
+## Rencana Aktivitas Pengembangan
 
-| Minggu | Target |
-|---|---|
-| 1 | Setup project, movement, collision, camera, interaction |
-| 2 | Shelf 6 slot, item display, restock, inventory dasar |
-| 3 | NPC purchase flow, checkout, revenue |
-| 4 | Ordering, daily report, store fee, DayManager |
-| 5 | Irene dan Gooby schedule, trust, request, dialogue |
-| 6 | Advanced event, ending branch, gudang tua |
-| 7 | Bug fixing, balancing harga, fee, trust, dan pacing |
-| 8 | Playtest 3–5 orang, polish UI, finalisasi |
+### Fondasi & Setup
+- Setup project Godot 4 (resolusi, stretch mode, pixel perfect)
+- Player movement 4 arah, collision, dan camera follow
+- Sistem interaksi dasar (tombol interact untuk shelf, NPC, item)
 
----
+### Sistem Toko
+- Shelf 6 slot dengan item display dan quantity
+- Inventory sederhana untuk menyimpan stok
+- Restock dari inventory ke shelf
+- Replace item antar slot
+- Ordering barang malam hari
+- Incoming delivery pagi hari
+- Checkout satu tombol
+- Store fee harian
 
-## Status Prototype
+### Sistem Ekonomi
+- Pencatatan daily revenue
+- Pencatatan product cost dari ordering
+- Kalkulasi net profit harian
+- Daily report akhir hari
+- Kalkulasi starting capital toko baru berdasarkan profit akhir
 
-> Fase aktif: **Setup & Fondasi** — Minggu 1
+### NPC & AI
+- NPC purchase flow (spawn, cari item, ambil dari shelf, checkout, keluar)
+- State machine NPC: enter → walk → search → take → checkout → pay → talk → exit
+- Flow item tidak tersedia (NPC komentar dan keluar)
+- Jadwal NPC normal (siang), Irene (sore), Gooby (saat toko sepi)
+
+### Sistem Relationship
+- Trust 0–100 untuk Irene dan Gooby
+- Trust naik saat item favorit tersedia atau request selesai
+- Dialogue branch berdasarkan trust, item, dan story flag
+- Request item: NPC minta → player order → pajang → selesai
+
+### Advanced Event
+- Greenhouse event untuk Irene (dibuka dengan trust tinggi)
+- Search object event untuk Gooby (dibuka dengan trust tinggi)
+
+### Ending Branch
+- Closure Day 6 (surat penutupan toko lama)
+- Evaluasi snapshot: profit, trust, support flag, request completion
+- Seleksi varian ending berdasarkan support Irene dan Gooby
+- Scene gudang tua sebagai transisi toko baru
+- Ending summary dengan modal awal toko baru
+
+### Balancing & QA
+- Balancing harga item, store fee, trust gain, dan pacing 6 hari
+- Bug fixing
+- Playtest internal
+- Polish UI dan feedback visual
