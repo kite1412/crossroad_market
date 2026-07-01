@@ -6,6 +6,7 @@
 size = Vector2(28, 12)
 
 [node name="World" type="Node2D" unique_id=915059892]
+y_sort_enabled = true
 
 [node name="Player" parent="." unique_id=1580443777 instance=ExtResource("1")]
 position = Vector2(240, 135)
@@ -32,6 +33,7 @@ offset_bottom = 252.0
 color = Color(0.8, 0.8, 0.2, 1)
 
 [node name="Tree" type="StaticBody2D" parent="." unique_id=1278236251]
+position = Vector2(0, 24)
 
 [node name="ColorRect" type="ColorRect" parent="Tree" unique_id=1593775402]
 offset_left = -16.0
@@ -40,4 +42,5 @@ offset_right = 16.0
 color = Color(0, 0.62352943, 0, 1)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Tree" unique_id=1116715886]
+position = Vector2(0, -8)
 shape = SubResource("RectangleShape2D_kqs1s")
