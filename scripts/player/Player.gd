@@ -1,5 +1,9 @@
 extends CharacterBody2D
 
+const PlayerInteraction = preload("res://scripts/player/PlayerInteraction.gd")
+const PlayerNotificationBridge = preload("res://scripts/player/PlayerNotificationBridge.gd")
+const PlayerShelfInteraction = preload("res://scripts/player/PlayerShelfInteraction.gd")
+
 @export var speed: float = 150.0
 @export var interaction_distance: float = 20.0
 
@@ -142,35 +146,11 @@ func _try_storage_door_interaction(area: Area2D) -> bool:
 
 
 func _get_storage_door_type(area: Area2D) -> String:
-	if area == null:
-		return ""
-
-	if area.has_meta("door_type"):
-		return str(area.get_meta("door_type"))
-
-	match String(area.name):
-		"StorageDoor", "StorageDoor_Normal":
-			return "normal"
-		"StorageDoor2", "StorageDoor_Mystery":
-			return "mistery"
-		_:
-			return ""
+	return PlayerInteraction.get_storage_door_type(area)
 
 
 func _get_interaction_priority(target: Node) -> int:
-	if target is Cashier:
-		return 0
-
-	if target is NPC:
-		return 1
-
-	if target is SupplyBox:
-		return 2
-
-	if target is Shelf:
-		return 3
-
-	return 999
+	return PlayerInteraction.get_interaction_priority(target)
 
 
 func _interact_with_npc(npc: NPC) -> void:
@@ -293,17 +273,11 @@ func _handle_wrong_shelf_attempt(
 
 
 func _get_wrong_shelf_key(item_id: String, shelf: Shelf) -> String:
-	return "%s_%s" % [item_id, str(shelf.get_instance_id())]
+	return PlayerShelfInteraction.get_wrong_shelf_key(item_id, shelf)
 
 
 func _is_shelf_installed_in_store(shelf: Shelf) -> bool:
-	if shelf == null:
-		return false
-
-	if not shelf.has_meta("is_installed_in_store"):
-		return true
-
-	return bool(shelf.get_meta("is_installed_in_store"))
+	return PlayerShelfInteraction.is_shelf_installed_in_store(shelf)
 
 
 func _interact_with_supply_box(box: SupplyBox) -> void:
@@ -341,46 +315,11 @@ func _interact_with_supply_box(box: SupplyBox) -> void:
 
 
 func _is_supply_box_shelf_ready(available_items: Array) -> bool:
-	var required_shelf_types: Dictionary = {}
-
-	for item_id_variant in available_items:
-		var item := ItemDatabase.get_item(str(item_id_variant))
-
-		if item == null:
-			continue
-
-		required_shelf_types[item.shelf_type] = true
-
-	if required_shelf_types.is_empty():
-		return true
-
-	var world: Node = get_tree().get_first_node_in_group("store")
-
-	if world != null and world.has_method("is_shelf_type_installed"):
-		for shelf_type in required_shelf_types.keys():
-			if not bool(world.call("is_shelf_type_installed", shelf_type)):
-				return false
-
-		return true
-
-	for shelf_type in required_shelf_types.keys():
-		if not _has_installed_shelf_type(shelf_type):
-			return false
-
-	return true
+	return PlayerShelfInteraction.is_supply_box_shelf_ready(get_tree(), available_items)
 
 
 func _has_installed_shelf_type(shelf_type: int) -> bool:
-	for node in get_tree().get_nodes_in_group("shelves"):
-		if not node is Shelf:
-			continue
-
-		var shelf := node as Shelf
-
-		if shelf.shelf_type == shelf_type and _is_shelf_installed_in_store(shelf):
-			return true
-
-	return false
+	return PlayerShelfInteraction.has_installed_shelf_type(get_tree(), shelf_type)
 
 
 func _notify_mystery_taken() -> void:
@@ -398,31 +337,11 @@ func _show_pickup_notification(item_name: String) -> void:
 
 
 func _show_notification(text: String, duration: float = 2.0) -> void:
-	var hud: Node = get_tree().get_first_node_in_group("hud")
-
-	if hud == null:
-		return
-
-	if hud.has_method("show_notification"):
-		hud.call("show_notification", text, duration)
+	PlayerNotificationBridge.show(get_tree(), text, duration)
 
 
 func _show_notification_sequence(messages: Array[String]) -> void:
-	var hud: Node = get_tree().get_first_node_in_group("hud")
-
-	if hud != null and hud.has_method("begin_action_lock"):
-		hud.call("begin_action_lock")
-
-	for message in messages:
-		_show_notification(message, 2.5)
-
-		if hud != null and hud.has_method("wait_for_notification_finished"):
-			await hud.call("wait_for_notification_finished")
-		else:
-			await get_tree().create_timer(2.65).timeout
-
-	if hud != null and hud.has_method("end_action_lock"):
-		hud.call("end_action_lock")
+	await PlayerNotificationBridge.show_sequence(self, messages)
 
 
 func _interact_with_cashier(cashier: Cashier) -> void:
@@ -430,9 +349,4 @@ func _interact_with_cashier(cashier: Cashier) -> void:
 
 
 func _is_action_locked() -> bool:
-	var hud: Node = get_tree().get_first_node_in_group("hud")
-
-	if hud == null or not hud.has_method("is_action_locked"):
-		return false
-
-	return bool(hud.call("is_action_locked"))
+	return PlayerNotificationBridge.is_action_locked(get_tree())
