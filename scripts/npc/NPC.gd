@@ -1,6 +1,13 @@
 class_name NPC
 extends CharacterBody2D
 
+const NPCMovement = preload("res://scripts/npc/NPCMovement.gd")
+const NPCCheckoutBehavior = preload("res://scripts/npc/behavior/NPCCheckoutBehavior.gd")
+const NPCQueueSystem = preload("res://scripts/npc/behavior/NPCQueueSystem.gd")
+const NPCShoppingBehavior = preload("res://scripts/npc/behavior/NPCShoppingBehavior.gd")
+const NPCDialogController = preload("res://scripts/npc/presentation/NPCDialogController.gd")
+const NPCVisualController = preload("res://scripts/npc/presentation/NPCVisualController.gd")
+
 enum State {
 	ENTER,
 	WALK_TO_SHELF,
@@ -108,43 +115,15 @@ func complete_checkout() -> void:
 
 
 func get_checkout_total() -> int:
-	if checkout_total_override >= 0:
-		return checkout_total_override
-
-	var total := 0
-
-	for cart_item_id in _cart_items:
-		var item: ItemData = ItemDatabase.get_item(cart_item_id)
-
-		if item != null:
-			total += item.sell_price
-
-	if total > 0:
-		return total
-
-	var fallback_item: ItemData = ItemDatabase.get_item(item_to_buy)
-	return fallback_item.sell_price if fallback_item != null else 0
+	return NPCCheckoutBehavior.get_checkout_total(_cart_items, item_to_buy, checkout_total_override)
 
 
 func get_checkout_item_label() -> String:
-	if _cart_items.is_empty():
-		var item: ItemData = ItemDatabase.get_item(item_to_buy)
-		return item.display_name if item != null else item_to_buy
-
-	var names: Array[String] = []
-
-	for cart_item_id in _cart_items:
-		var item: ItemData = ItemDatabase.get_item(cart_item_id)
-		names.append(item.display_name if item != null else cart_item_id)
-
-	return ", ".join(names)
+	return NPCCheckoutBehavior.get_checkout_item_label(_cart_items, item_to_buy)
 
 
 func get_cart_item_ids() -> Array[String]:
-	if not _cart_items.is_empty():
-		return _cart_items.duplicate()
-
-	return [item_to_buy] if item_to_buy != "" else []
+	return NPCCheckoutBehavior.get_cart_item_ids(_cart_items, item_to_buy)
 
 
 func repeat_checkout_request() -> void:
@@ -174,41 +153,11 @@ func queue_done() -> void:
 
 
 func _apply_name_label() -> void:
-	var label := get_node_or_null("NameLabel") as Label
-
-	if label == null:
-		return
-
-	if npc_data != null:
-		label.text = npc_data.display_name
+	NPCVisualController.apply_name_label(self, npc_data)
 
 
 func _apply_visual() -> void:
-	var color_rect := get_node_or_null("ColorRect") as ColorRect
-	var name_label := get_node_or_null("NameLabel") as Label
-
-	if color_rect == null or npc_data == null:
-		return
-
-	if npc_data.npc_category == NPCData.NPCCategory.STORY:
-		if npc_data.npc_id == "irene":
-			color_rect.color = Color(0.2, 0.7, 0.3, 1.0)
-			if name_label != null:
-				name_label.add_theme_color_override("font_color", Color(0.2, 0.9, 0.4, 1.0))
-		elif npc_data.npc_id == "gooby":
-			color_rect.color = Color(0.4, 0.2, 0.8, 1.0)
-			if name_label != null:
-				name_label.add_theme_color_override("font_color", Color(0.7, 0.5, 1.0, 1.0))
-		return
-
-	if npc_data.visit_phase == NPCData.VisitPhase.DAY:
-		color_rect.color = Color(1.0, 0.5, 0.0, 0.75)
-		if name_label != null:
-			name_label.add_theme_color_override("font_color", Color(1.0, 0.7, 0.4, 1.0))
-	else:
-		color_rect.color = Color(0.3, 0.5, 0.9, 0.75)
-		if name_label != null:
-			name_label.add_theme_color_override("font_color", Color(0.5, 0.7, 1.0, 1.0))
+	NPCVisualController.apply_visual(self, npc_data)
 
 
 func _process_enter() -> void:
@@ -373,17 +322,7 @@ func _process_exit() -> void:
 
 
 func _move_to(target: Vector2) -> bool:
-	var distance := global_position.distance_to(target)
-
-	if distance <= ARRIVAL_THRESHOLD:
-		velocity = Vector2.ZERO
-		move_and_slide()
-		return true
-
-	velocity = global_position.direction_to(target) * SPEED
-	move_and_slide()
-
-	return false
+	return NPCMovement.move_to(self, target, SPEED, ARRIVAL_THRESHOLD)
 
 
 func _choose_item_to_buy() -> void:
@@ -421,44 +360,19 @@ func _choose_available_item_to_buy() -> void:
 
 
 func _find_alternative_item() -> String:
-	var target_type := ItemData.ShelfType.HUMAN
-	var wanted_item: ItemData = ItemDatabase.get_item(item_to_buy)
-
-	if wanted_item != null:
-		target_type = wanted_item.shelf_type
-
-	for shelf in get_tree().get_nodes_in_group("shelves"):
-		if not shelf is Shelf:
-			continue
-
-		if shelf.shelf_type != target_type:
-			continue
-
-		for i in shelf.max_slots:
-			var shelf_item_id: String = shelf.get_slot_content(i)
-
-			if shelf_item_id != "" and shelf_item_id != item_to_buy_original:
-				return shelf_item_id
-
-	return ""
+	return NPCShoppingBehavior.find_alternative_item(get_tree(), item_to_buy, item_to_buy_original)
 
 
 func _join_queue() -> void:
-	if self not in current_queue:
-		current_queue.append(self)
+	NPCQueueSystem.join_queue(current_queue, self)
 
 
 func _leave_queue() -> void:
-	current_queue.erase(self)
+	NPCQueueSystem.leave_queue(current_queue, self)
 
 
 func _get_queue_target() -> Vector2:
-	var position_in_queue := current_queue.find(self)
-
-	if position_in_queue < 0:
-		return counter_position
-
-	return counter_position + Vector2(0, position_in_queue * 20.0)
+	return NPCQueueSystem.get_queue_target(current_queue, self, counter_position)
 
 
 func _return_item_to_shelf() -> void:
@@ -479,44 +393,15 @@ func _return_item_to_shelf() -> void:
 
 
 func _find_matching_shelf() -> Shelf:
-	var item: ItemData = ItemDatabase.get_item(item_to_buy)
-
-	if item == null:
-		return null
-
-	var stocked_shelf := _find_shelf_with_item(item_to_buy)
-
-	if stocked_shelf != null:
-		return stocked_shelf
-
-	var fallback_shelf: Shelf = null
-
-	for shelf in get_tree().get_nodes_in_group("shelves"):
-		if not shelf is Shelf:
-			continue
-
-		if shelf.shelf_type != item.shelf_type:
-			continue
-
-		if shelf.has_item(item_to_buy):
-			return shelf
-
-		if fallback_shelf == null:
-			fallback_shelf = shelf
-
-	return fallback_shelf
+	return NPCShoppingBehavior.find_matching_shelf(get_tree(), item_to_buy)
 
 
 func _find_shelf_with_item(item_id: String) -> Shelf:
-	for shelf in get_tree().get_nodes_in_group("shelves"):
-		if shelf is Shelf and shelf.has_item(item_id):
-			return shelf
-
-	return null
+	return NPCShoppingBehavior.find_shelf_with_item(get_tree(), item_id)
 
 
 func _get_shelf_visit_position(shelf: Shelf) -> Vector2:
-	return shelf.global_position + SHELF_VISIT_OFFSET
+	return NPCShoppingBehavior.get_shelf_visit_position(shelf, SHELF_VISIT_OFFSET)
 
 
 func _apply_scripted_metadata() -> void:
@@ -564,10 +449,7 @@ func _take_requested_items_from_shelves() -> bool:
 
 
 func _get_requested_items() -> Array[String]:
-	if not shopping_list.is_empty():
-		return shopping_list
-
-	return [item_to_buy]
+	return NPCShoppingBehavior.get_requested_items(shopping_list, item_to_buy)
 
 
 func _return_cart_items_to_shelf() -> void:
@@ -600,19 +482,7 @@ func _set_state(new_state: State) -> void:
 
 
 func _show_dialog(text: String) -> void:
-	var bubble := get_node_or_null("DialogBubble") as ColorRect
-	var label := get_node_or_null("DialogBubble/DialogLabel") as Label
-
-	if label == null:
-		label = get_node_or_null("DialogLabel") as Label
-
-	if bubble == null or label == null:
-		print("[%s]: %s" % [npc_data.display_name if npc_data else "NPC", text])
-		return
-
-	_set_dialog_mouse_filter()
-	label.text = text
-	bubble.visible = true
+	NPCDialogController.show_dialog(self, npc_data, text)
 	_dialog_timer = DIALOG_DURATION
 
 
@@ -629,18 +499,8 @@ func _update_dialog(delta: float) -> void:
 
 
 func _hide_dialog() -> void:
-	var bubble := get_node_or_null("DialogBubble") as ColorRect
-
-	if bubble != null:
-		bubble.visible = false
+	NPCDialogController.hide_dialog(self)
 
 
 func _set_dialog_mouse_filter() -> void:
-	var bubble := get_node_or_null("DialogBubble") as Control
-	var label := get_node_or_null("DialogBubble/DialogLabel") as Control
-
-	if bubble != null:
-		bubble.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-	if label != null:
-		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	NPCDialogController.set_mouse_filter(self)
