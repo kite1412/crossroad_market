@@ -22,6 +22,15 @@ var _item_list: VBoxContainer = null
 var _action_row: HBoxContainer = null
 var _cashier_lock_active: bool = false
 
+
+func _exit_tree() -> void:
+	_unlock_player_actions()
+
+
+func reset_runtime_ui() -> void:
+	_hide_cashier_panel()
+
+
 func try_checkout() -> void:
 	if not _is_player_nearby():
 		return

@@ -8,6 +8,9 @@ size = Vector2(40, 20)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_area"]
 size = Vector2(96, 96)
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_back_counter"]
+size = Vector2(152, 84)
+
 [node name="Cashier" type="StaticBody2D"]
 y_sort_enabled = true
 script = ExtResource("1")
@@ -21,6 +24,11 @@ color = Color(0.6, 0.4, 0.2, 1)
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -10)
 shape = SubResource("RectangleShape2D_body")
+
+[node name="BackCounterCollision" type="CollisionShape2D" parent="."]
+position = Vector2(0, -32)
+shape = SubResource("RectangleShape2D_back_counter")
+disabled = true
 
 [node name="InteractionArea" type="Area2D" parent="."]
 
