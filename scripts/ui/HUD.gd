@@ -61,7 +61,15 @@ func _process(delta: float) -> void:
 		_finish_notification()
 
 
+func _input(event: InputEvent) -> void:
+	_handle_dialog_skip_input(event)
+
+
 func _unhandled_input(event: InputEvent) -> void:
+	_handle_dialog_skip_input(event)
+
+
+func _handle_dialog_skip_input(event: InputEvent) -> void:
 	if not _is_dialog_skip_event(event):
 		return
 
