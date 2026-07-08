@@ -9,8 +9,8 @@ const CASHIER_DEPTH_FRONT_OFFSET: float = 8.0
 const SHELF_DEPTH_HALF_WIDTH: float = 48.0
 const SHELF_DEPTH_BACK_OFFSET: float = 56.0
 const SHELF_DEPTH_FRONT_OFFSET: float = 8.0
-const CARRY_SHELF_CASHIER_BLOCKER_SIZE := Vector2(184, 144)
-const CARRY_SHELF_CASHIER_BLOCKER_OFFSET := Vector2(0, -18)
+const CARRY_SHELF_CASHIER_BLOCKER_SIZE := Vector2(112, 80)
+const CARRY_SHELF_CASHIER_BLOCKER_OFFSET := Vector2(0, -10)
 const SHELF_DROP_FALLBACKS: Array[Vector2] = [
 	Vector2(0, 56),
 	Vector2(56, 0),
@@ -455,9 +455,13 @@ func _drop_carried_shelf_in_store(object: Node2D) -> void:
 	if player == null:
 		return
 
-	var drop_position := player.global_position + STORE_DROP_OFFSET
+	var primary_drop_position := _get_primary_shelf_drop_position()
 
-	drop_position = _find_safe_drop_position(object)
+	if _is_shelf_drop_blocked(primary_drop_position):
+		_show_notification("I can't drop the shelf here.", 0.9)
+		return
+
+	var drop_position := _find_safe_drop_position(object)
 
 	if drop_position == Vector2.INF:
 		_show_notification("No room to put the shelf here.", 0.5)
@@ -493,20 +497,17 @@ func _create_carry_shelf_blocker() -> void:
 
 
 func _update_carry_shelf_blocker() -> void:
-	var carried_object := _get_carried_object_from_player()
-	var should_enable := carried_object != null and carried_object is Shelf
-
 	if _carry_shelf_blocker != null:
 		_carry_shelf_blocker.global_position = _get_carry_shelf_blocker_position()
 
-	_set_carry_shelf_blocker_enabled(should_enable)
+	_set_carry_shelf_blocker_enabled(false)
 
 
-func _set_carry_shelf_blocker_enabled(enabled: bool) -> void:
+func _set_carry_shelf_blocker_enabled(_enabled: bool) -> void:
 	if _carry_shelf_blocker_shape == null:
 		return
 
-	_carry_shelf_blocker_shape.disabled = not enabled
+	_carry_shelf_blocker_shape.disabled = true
 
 
 func _is_shelf_drop_blocked(drop_position: Vector2) -> bool:
@@ -532,9 +533,8 @@ func _find_safe_drop_position(object: Node2D) -> Vector2:
 func _get_drop_candidates() -> Array[Vector2]:
 	var candidates: Array[Vector2] = []
 	var base_position := player.global_position
-	var facing := _get_player_facing_direction()
 
-	candidates.append(base_position + facing * 56.0)
+	candidates.append(_get_primary_shelf_drop_position())
 
 	for offset in SHELF_DROP_FALLBACKS:
 		var candidate := base_position + offset
@@ -548,6 +548,10 @@ func _get_drop_candidates() -> Array[Vector2]:
 		candidates.append(legacy_candidate)
 
 	return candidates
+
+
+func _get_primary_shelf_drop_position() -> Vector2:
+	return player.global_position + _get_player_facing_direction() * 56.0
 
 
 func _get_player_facing_direction() -> Vector2:

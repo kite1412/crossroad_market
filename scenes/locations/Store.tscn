@@ -92,10 +92,7 @@ position = Vector2(239, 259)
 [node name="Cashier" parent="." unique_id=1316385707 instance=ExtResource("3_cashier")]
 position = Vector2(95, 122)
 
-[node name="BackCounterCollision" parent="Cashier" index="2"]
-position = Vector2(-19, -16)
-
-[node name="InteractionArea" parent="Cashier" index="3"]
+[node name="InteractionArea" parent="Cashier" index="2"]
 position = Vector2(0, -2)
 
 [node name="CollisionShape2D" parent="Cashier/InteractionArea" index="0"]
