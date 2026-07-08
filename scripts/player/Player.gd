@@ -189,9 +189,6 @@ func _interact_with_shelf(shelf: Shelf) -> void:
 		_show_notification("Put the shelf down first.", 0.5)
 		return
 
-	if not _is_shelf_installed_in_store(shelf):
-		return
-
 	var inventory_items: Dictionary = Inventory.get_all()
 
 	if inventory_items.is_empty():
@@ -207,10 +204,7 @@ func _interact_with_shelf(shelf: Shelf) -> void:
 
 	if result >= 0:
 		_wrong_shelf_attempts.erase(_get_wrong_shelf_key(item_id, shelf))
-
-		if item.shelf_type != ItemData.ShelfType.GHOST:
-			_show_notification("Placed %s" % item.display_name, 0.5)
-
+		_show_notification("Placed %s" % item.display_name, 0.5)
 		return
 
 	if item.shelf_type != shelf.shelf_type:
@@ -294,16 +288,6 @@ func _handle_wrong_shelf_attempt(
 
 func _get_wrong_shelf_key(item_id: String, shelf: Shelf) -> String:
 	return "%s_%s" % [item_id, str(shelf.get_instance_id())]
-
-
-func _is_shelf_installed_in_store(shelf: Shelf) -> bool:
-	if shelf == null:
-		return false
-
-	if not shelf.has_meta("is_installed_in_store"):
-		return true
-
-	return bool(shelf.get_meta("is_installed_in_store"))
 
 
 func _interact_with_supply_box(box: SupplyBox) -> void:

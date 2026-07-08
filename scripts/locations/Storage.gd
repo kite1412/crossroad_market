@@ -7,6 +7,7 @@ extends Node2D
 signal return_to_store(door_type: String)
 signal mystery_discovered()
 signal mystery_item_taken()
+signal human_shelf_stock_changed(stock_count: int)
 signal ghost_shelf_item_placed(slot_index: int, item_id: String)
 
 const SUPPLY_BOX_DEPTH_HALF_WIDTH: float = 34.0
@@ -15,6 +16,16 @@ const SUPPLY_BOX_DEPTH_FRONT_OFFSET: float = 8.0
 const SHELF_DEPTH_HALF_WIDTH: float = 48.0
 const SHELF_DEPTH_BACK_OFFSET: float = 56.0
 const SHELF_DEPTH_FRONT_OFFSET: float = 8.0
+const SHELF_DROP_FALLBACKS: Array[Vector2] = [
+	Vector2(0, 56),
+	Vector2(56, 0),
+	Vector2(-56, 0),
+	Vector2(0, -36),
+	Vector2(56, 36),
+	Vector2(-56, 36),
+	Vector2(56, -36),
+	Vector2(-56, -36)
+]
 
 @export var pickup_distance: float = 70.0
 @export var carry_offset: Vector2 = Vector2(0, -34)
@@ -96,6 +107,43 @@ func set_mystery_supply_depleted(is_depleted: bool) -> void:
 	_apply_mystery_box_item_state()
 
 
+func set_stored_shelf_items(human_items: Array[String], ghost_items: Array[String]) -> void:
+	if shelf_human != null and shelf_human.has_method("restore_slot_contents"):
+		shelf_human.restore_slot_contents(human_items)
+		human_shelf_stock_changed.emit(_get_shelf_stock_count(shelf_human))
+
+	if shelf_ghost != null and shelf_ghost.has_method("restore_slot_contents"):
+		shelf_ghost.restore_slot_contents(ghost_items)
+
+
+func get_human_shelf_items() -> Array[String]:
+	if _is_shelf_being_carried(shelf_human):
+		return []
+
+	if shelf_human == null or not shelf_human.has_method("get_slot_contents"):
+		return []
+
+	return shelf_human.get_slot_contents()
+
+
+func get_ghost_shelf_items() -> Array[String]:
+	if _is_shelf_being_carried(shelf_ghost):
+		return []
+
+	if shelf_ghost == null or not shelf_ghost.has_method("get_slot_contents"):
+		return []
+
+	return shelf_ghost.get_slot_contents()
+
+
+func _is_shelf_being_carried(shelf: Shelf) -> bool:
+	return (
+		shelf != null
+		and shelf.has_meta("is_carried_storage_object")
+		and bool(shelf.get_meta("is_carried_storage_object"))
+	)
+
+
 func unlock_locked_half() -> void:
 	set_mystery_phase_unlocked(true)
 
@@ -124,6 +172,13 @@ func _connect_signals() -> void:
 
 	if mystery_box != null and not mystery_box.item_taken.is_connected(_on_mystery_box_item_taken):
 		mystery_box.item_taken.connect(_on_mystery_box_item_taken)
+
+	if shelf_human != null:
+		if not shelf_human.item_placed.is_connected(_on_human_shelf_item_changed):
+			shelf_human.item_placed.connect(_on_human_shelf_item_changed)
+
+		if not shelf_human.item_removed.is_connected(_on_human_shelf_item_changed):
+			shelf_human.item_removed.connect(_on_human_shelf_item_changed)
 
 	if shelf_ghost != null and not shelf_ghost.item_placed.is_connected(_on_ghost_shelf_item_placed):
 		shelf_ghost.item_placed.connect(_on_ghost_shelf_item_placed)
@@ -338,9 +393,15 @@ func _drop_carried_object() -> void:
 	if _player == null or _carried_object == null:
 		return
 
+	var drop_position := _find_safe_drop_position(_carried_object)
+
+	if drop_position == Vector2.INF:
+		_show_notification("No room to put the shelf here.", 0.5)
+		return
+
 	var object := _carried_object
 	object.reparent(self, true)
-	object.global_position = _player.global_position + drop_offset
+	object.global_position = drop_position
 	object.z_index = 0
 	object.set_meta("is_carried_storage_object", false)
 	object.set_meta("is_installed_in_store", false)
@@ -370,6 +431,91 @@ func _get_carried_object_from_player() -> Node2D:
 				return child as Node2D
 
 	return null
+
+
+func _find_safe_drop_position(object: Node2D) -> Vector2:
+	for candidate in _get_drop_candidates():
+		if _is_drop_position_clear(object, candidate):
+			return candidate
+
+	return Vector2.INF
+
+
+func _get_drop_candidates() -> Array[Vector2]:
+	var candidates: Array[Vector2] = []
+	var base_position := _player.global_position
+	var facing := _get_player_facing_direction()
+
+	candidates.append(base_position + facing * 56.0)
+
+	for offset in SHELF_DROP_FALLBACKS:
+		var candidate := base_position + offset
+
+		if candidate not in candidates:
+			candidates.append(candidate)
+
+	var legacy_candidate := base_position + drop_offset
+
+	if legacy_candidate not in candidates:
+		candidates.append(legacy_candidate)
+
+	return candidates
+
+
+func _get_player_facing_direction() -> Vector2:
+	var facing: Variant = _player.get("facing_direction") if _player != null else Vector2.DOWN
+
+	if facing is Vector2 and not facing.is_zero_approx():
+		return (facing as Vector2).normalized()
+
+	return Vector2.DOWN
+
+
+func _is_drop_position_clear(object: Node2D, candidate: Vector2) -> bool:
+	var collision_shape := _get_object_collision_shape(object)
+
+	if collision_shape == null or collision_shape.shape == null:
+		return true
+
+	var query := PhysicsShapeQueryParameters2D.new()
+	query.shape = collision_shape.shape
+	query.transform = Transform2D(0.0, candidate + collision_shape.position)
+	query.collide_with_bodies = true
+	query.collide_with_areas = false
+
+	var hits := get_world_2d().direct_space_state.intersect_shape(query, 16)
+
+	for hit in hits:
+		var collider: Node = hit.get("collider", null)
+
+		if collider == null:
+			continue
+
+		if collider == object or _is_descendant_of(collider, object):
+			continue
+
+		return false
+
+	return true
+
+
+func _get_object_collision_shape(object: Node2D) -> CollisionShape2D:
+	if object == null:
+		return null
+
+	return object.get_node_or_null("PhysicsBody/CollisionShape2D") as CollisionShape2D
+
+
+func _is_descendant_of(node: Node, ancestor: Node) -> bool:
+	var current := node
+
+	while current != null:
+		if current == ancestor:
+			return true
+
+		current = current.get_parent()
+
+	return false
 
 
 func _set_node_enabled_recursive(node: Node, enabled: bool) -> void:
@@ -414,8 +560,29 @@ func _on_mystery_box_item_taken(_item_id: String) -> void:
 	mystery_item_taken.emit()
 
 
+func _on_human_shelf_item_changed(_slot_index: int, _item_id: String) -> void:
+	human_shelf_stock_changed.emit(_get_shelf_stock_count(shelf_human))
+
+
 func _on_ghost_shelf_item_placed(slot_index: int, item_id: String) -> void:
 	ghost_shelf_item_placed.emit(slot_index, item_id)
+
+
+func get_human_shelf_stock_count() -> int:
+	return _get_shelf_stock_count(shelf_human)
+
+
+func _get_shelf_stock_count(shelf: Shelf) -> int:
+	if shelf == null:
+		return 0
+
+	var stock_count := 0
+
+	for slot_index in shelf.max_slots:
+		if shelf.get_slot_content(slot_index) != "":
+			stock_count += 1
+
+	return stock_count
 
 
 func _apply_mystery_box_item_state() -> void:
@@ -436,3 +603,10 @@ func _is_action_locked() -> bool:
 		return false
 
 	return bool(hud.call("is_action_locked"))
+
+
+func _show_notification(text: String, duration: float = 2.0) -> void:
+	var hud: Node = get_tree().get_first_node_in_group("hud")
+
+	if hud != null and hud.has_method("show_notification"):
+		hud.call("show_notification", text, duration)

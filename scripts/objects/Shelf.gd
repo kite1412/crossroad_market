@@ -111,6 +111,34 @@ func has_stock() -> bool:
 func get_slot_content(slot_index: int) -> String:
 	return _slots[slot_index] if _slots[slot_index] != null else ""
 
+
+func get_slot_contents() -> Array[String]:
+	var contents: Array[String] = []
+
+	for slot_index in max_slots:
+		contents.append(get_slot_content(slot_index))
+
+	return contents
+
+
+func restore_slot_contents(contents: Array[String]) -> void:
+	_slots.resize(max_slots)
+	_slots.fill(null)
+
+	var limit: int = mini(contents.size(), max_slots)
+
+	for slot_index in limit:
+		var item_id := str(contents[slot_index])
+
+		if item_id == "":
+			continue
+
+		var item: ItemData = ItemDatabase.get_item(item_id)
+
+		if item != null and item.shelf_type == shelf_type:
+			_slots[slot_index] = item_id
+
+
 func _get_empty_slot() -> int:
 	for i in max_slots:
 		if _slots[i] == null:

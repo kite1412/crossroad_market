@@ -9,8 +9,18 @@ const CASHIER_DEPTH_FRONT_OFFSET: float = 8.0
 const SHELF_DEPTH_HALF_WIDTH: float = 48.0
 const SHELF_DEPTH_BACK_OFFSET: float = 56.0
 const SHELF_DEPTH_FRONT_OFFSET: float = 8.0
-const CARRY_SHELF_CASHIER_BLOCKER_SIZE := Vector2(128, 120)
+const CARRY_SHELF_CASHIER_BLOCKER_SIZE := Vector2(184, 144)
 const CARRY_SHELF_CASHIER_BLOCKER_OFFSET := Vector2(0, -18)
+const SHELF_DROP_FALLBACKS: Array[Vector2] = [
+	Vector2(0, 56),
+	Vector2(56, 0),
+	Vector2(-56, 0),
+	Vector2(0, -36),
+	Vector2(56, 36),
+	Vector2(-56, 36),
+	Vector2(56, -36),
+	Vector2(-56, -36)
+]
 
 var npc_scene: PackedScene = preload("res://scenes/npc/NPC.tscn")
 var storage_scene: PackedScene = preload("res://scenes/locations/Storage.tscn")
@@ -46,6 +56,8 @@ var _customer_open_notification_shown: bool = false
 var _suppress_next_day_open_notification: bool = false
 var _intro_shown: bool = false
 var _ghost_shelf_lesson_shown: bool = false
+var _storage_human_shelf_items: Array[String] = []
+var _storage_ghost_shelf_items: Array[String] = []
 
 var human_shelf: Shelf = null
 var ghost_shelf: Shelf = null
@@ -198,7 +210,16 @@ func _enter_storage() -> void:
 		_current_storage.set_entry_door("storage")
 
 	if _current_storage.has_method("set_shelf_install_state"):
-		_current_storage.set_shelf_install_state(_human_shelf_installed, _ghost_shelf_installed)
+		_current_storage.set_shelf_install_state(
+			_human_shelf_installed or _is_player_carrying_shelf_named("ShelfHuman"),
+			_ghost_shelf_installed or _is_player_carrying_shelf_named("ShelfGhost")
+		)
+
+	if _current_storage.has_method("set_stored_shelf_items"):
+		_current_storage.set_stored_shelf_items(
+			_storage_human_shelf_items,
+			_storage_ghost_shelf_items
+		)
 
 	if _current_storage.has_method("set_normal_supply_depleted"):
 		_current_storage.set_normal_supply_depleted(_normal_supply_depleted)
@@ -232,6 +253,12 @@ func _enter_storage() -> void:
 		if not _current_storage.is_connected("mystery_item_taken", mystery_item_callable):
 			_current_storage.connect("mystery_item_taken", mystery_item_callable)
 
+	if _current_storage.has_signal("human_shelf_stock_changed"):
+		var human_stock_callable := Callable(self, "_on_storage_human_shelf_stock_changed")
+
+		if not _current_storage.is_connected("human_shelf_stock_changed", human_stock_callable):
+			_current_storage.connect("human_shelf_stock_changed", human_stock_callable)
+
 	if _current_storage.has_signal("ghost_shelf_item_placed"):
 		var ghost_shelf_callable := Callable(self, "_on_ghost_shelf_item_placed")
 
@@ -259,7 +286,9 @@ func _on_storage_return(_door_type: String) -> void:
 		return
 
 	_is_transitioning = true
+	_close_cashier_runtime_ui()
 	await _fade_to_black()
+	_capture_storage_shelf_items()
 
 	if player == null and _current_storage != null:
 		player = _current_storage.get_node_or_null("Player") as Node2D
@@ -302,6 +331,7 @@ func _enter_yard() -> void:
 		return
 
 	_is_transitioning = true
+	_close_cashier_runtime_ui()
 	await _fade_to_black()
 
 	_current_yard = yard_scene.instantiate() as Node2D
@@ -376,6 +406,10 @@ func _on_storage_mystery_item_taken() -> void:
 	_mystery_supply_depleted = true
 
 
+func _on_storage_human_shelf_stock_changed(stock_count: int) -> void:
+	_set_human_stock_count(stock_count)
+
+
 func _get_storage_return_position() -> Vector2:
 	if storage_return_pos != null:
 		return storage_return_pos.global_position
@@ -421,13 +455,21 @@ func _get_carried_object_from_player() -> Node2D:
 	return null
 
 
+func _is_player_carrying_shelf_named(shelf_name: String) -> bool:
+	var carried_object := _get_carried_object_from_player()
+	return carried_object != null and carried_object.name == shelf_name
+
+
 func _drop_carried_shelf_in_store(object: Node2D) -> void:
 	if player == null:
 		return
 
 	var drop_position := player.global_position + STORE_DROP_OFFSET
 
-	if _is_shelf_drop_blocked(drop_position):
+	drop_position = _find_safe_drop_position(object)
+
+	if drop_position == Vector2.INF:
+		_show_notification("No room to put the shelf here.", 0.5)
 		return
 
 	object.reparent(self, true)
@@ -483,6 +525,82 @@ func _is_shelf_drop_blocked(drop_position: Vector2) -> bool:
 	)
 
 	return blocker_rect.has_point(drop_position)
+
+
+func _find_safe_drop_position(object: Node2D) -> Vector2:
+	for candidate in _get_drop_candidates():
+		if _is_shelf_drop_blocked(candidate):
+			continue
+
+		if _is_drop_position_clear(object, candidate):
+			return candidate
+
+	return Vector2.INF
+
+
+func _get_drop_candidates() -> Array[Vector2]:
+	var candidates: Array[Vector2] = []
+	var base_position := player.global_position
+	var facing := _get_player_facing_direction()
+
+	candidates.append(base_position + facing * 56.0)
+
+	for offset in SHELF_DROP_FALLBACKS:
+		var candidate := base_position + offset
+
+		if candidate not in candidates:
+			candidates.append(candidate)
+
+	var legacy_candidate := base_position + STORE_DROP_OFFSET
+
+	if legacy_candidate not in candidates:
+		candidates.append(legacy_candidate)
+
+	return candidates
+
+
+func _get_player_facing_direction() -> Vector2:
+	var facing: Variant = player.get("facing_direction") if player != null else Vector2.DOWN
+
+	if facing is Vector2 and not facing.is_zero_approx():
+		return (facing as Vector2).normalized()
+
+	return Vector2.DOWN
+
+
+func _is_drop_position_clear(object: Node2D, candidate: Vector2) -> bool:
+	var collision_shape := _get_object_collision_shape(object)
+
+	if collision_shape == null or collision_shape.shape == null:
+		return true
+
+	var query := PhysicsShapeQueryParameters2D.new()
+	query.shape = collision_shape.shape
+	query.transform = Transform2D(0.0, candidate + collision_shape.position)
+	query.collide_with_bodies = true
+	query.collide_with_areas = false
+
+	var hits := get_world_2d().direct_space_state.intersect_shape(query, 16)
+
+	for hit in hits:
+		var collider: Node = hit.get("collider", null)
+
+		if collider == null:
+			continue
+
+		if collider == object or _is_descendant_of(collider, object):
+			continue
+
+		return false
+
+	return true
+
+
+func _get_object_collision_shape(object: Node2D) -> CollisionShape2D:
+	if object == null:
+		return null
+
+	return object.get_node_or_null("PhysicsBody/CollisionShape2D") as CollisionShape2D
 
 
 func _get_carry_shelf_blocker_position() -> Vector2:
@@ -563,15 +681,18 @@ func _register_installed_shelf(object: Node2D) -> void:
 
 	if object.name == "ShelfHuman" and object is Shelf:
 		_human_shelf_installed = true
+		_storage_human_shelf_items.clear()
 		human_shelf = object as Shelf
 
-		if not human_shelf.item_placed.is_connected(_on_human_shelf_item_placed):
-			human_shelf.item_placed.connect(_on_human_shelf_item_placed)
+		_connect_human_shelf_signals(human_shelf)
+		_set_human_stock_count(_get_shelf_stock_count(human_shelf))
 
-		_show_notification("Now stock the human shelf with normal items.", 3.0)
+		if _human_items_placed < NORMAL_STOCK_REQUIRED:
+			_show_notification("Now stock the human shelf with normal items.", 3.0)
 
 	if object.name == "ShelfGhost" and object is Shelf:
 		_ghost_shelf_installed = true
+		_storage_ghost_shelf_items.clear()
 		ghost_shelf = object as Shelf
 
 		if not ghost_shelf.item_placed.is_connected(_on_ghost_shelf_item_placed):
@@ -584,9 +705,27 @@ func _register_installed_shelf(object: Node2D) -> void:
 
 
 func _register_human_stock_progress() -> void:
-	_human_items_placed = min(_human_items_placed + 1, NORMAL_STOCK_REQUIRED)
+	_set_human_stock_count(_human_items_placed + 1)
+
+
+func _connect_human_shelf_signals(shelf: Shelf) -> void:
+	if shelf == null:
+		return
+
+	if not shelf.item_placed.is_connected(_on_human_shelf_item_placed):
+		shelf.item_placed.connect(_on_human_shelf_item_placed)
+
+	if not shelf.item_removed.is_connected(_on_human_shelf_item_removed):
+		shelf.item_removed.connect(_on_human_shelf_item_removed)
+
+
+func _set_human_stock_count(stock_count: int) -> void:
+	_human_items_placed = clampi(stock_count, 0, NORMAL_STOCK_REQUIRED)
 
 	if _human_items_placed < NORMAL_STOCK_REQUIRED:
+		return
+
+	if not _human_shelf_installed:
 		return
 
 	if _mystery_phase_unlocked:
@@ -600,6 +739,9 @@ func _register_human_stock_progress() -> void:
 
 
 func _set_store_world_active(is_active: bool) -> void:
+	if not is_active:
+		_close_cashier_runtime_ui()
+
 	for child in get_children():
 		if child == _current_storage or child == _current_yard or child == _fade_layer or child == _carry_shelf_blocker or child == player:
 			continue
@@ -615,7 +757,17 @@ func _set_node_active_recursive(node: Node, is_active: bool) -> void:
 		return
 
 	if node is CanvasItem:
-		(node as CanvasItem).visible = is_active
+		var canvas_item := node as CanvasItem
+
+		if is_active:
+			if canvas_item.has_meta("_world_active_was_visible"):
+				canvas_item.visible = bool(canvas_item.get_meta("_world_active_was_visible"))
+				canvas_item.remove_meta("_world_active_was_visible")
+			else:
+				canvas_item.visible = true
+		else:
+			canvas_item.set_meta("_world_active_was_visible", canvas_item.visible)
+			canvas_item.visible = false
 
 	if node is Area2D:
 		var area := node as Area2D
@@ -623,10 +775,30 @@ func _set_node_active_recursive(node: Node, is_active: bool) -> void:
 		area.monitorable = is_active
 
 	if node is CollisionShape2D:
-		(node as CollisionShape2D).disabled = not is_active
+		var collision_shape := node as CollisionShape2D
+
+		if is_active:
+			if collision_shape.has_meta("_world_active_was_disabled"):
+				collision_shape.disabled = bool(collision_shape.get_meta("_world_active_was_disabled"))
+				collision_shape.remove_meta("_world_active_was_disabled")
+			else:
+				collision_shape.disabled = false
+		else:
+			collision_shape.set_meta("_world_active_was_disabled", collision_shape.disabled)
+			collision_shape.disabled = true
 
 	if node is CollisionPolygon2D:
-		(node as CollisionPolygon2D).disabled = not is_active
+		var collision_polygon := node as CollisionPolygon2D
+
+		if is_active:
+			if collision_polygon.has_meta("_world_active_was_disabled"):
+				collision_polygon.disabled = bool(collision_polygon.get_meta("_world_active_was_disabled"))
+				collision_polygon.remove_meta("_world_active_was_disabled")
+			else:
+				collision_polygon.disabled = false
+		else:
+			collision_polygon.set_meta("_world_active_was_disabled", collision_polygon.disabled)
+			collision_polygon.disabled = true
 
 	node.set_process(is_active)
 	node.set_physics_process(is_active)
@@ -709,6 +881,25 @@ func _is_descendant_of(node: Node, ancestor: Node) -> bool:
 	return false
 
 
+func _close_cashier_runtime_ui() -> void:
+	if cashier == null:
+		cashier = get_node_or_null("Cashier") as Node2D
+
+	if cashier != null and cashier.has_method("reset_runtime_ui"):
+		cashier.call("reset_runtime_ui")
+
+
+func _capture_storage_shelf_items() -> void:
+	if _current_storage == null:
+		return
+
+	if _current_storage.has_method("get_human_shelf_items"):
+		_storage_human_shelf_items = _current_storage.get_human_shelf_items()
+
+	if _current_storage.has_method("get_ghost_shelf_items"):
+		_storage_ghost_shelf_items = _current_storage.get_ghost_shelf_items()
+
+
 func _on_npc_spawn_requested(npc_data: NPCData) -> void:
 	if npc_scene == null:
 		push_error("Store: NPC scene is missing.")
@@ -753,7 +944,10 @@ func _on_phase_changed(phase) -> void:
 			else:
 				_show_notification("Finish setting up before customers arrive.", 3.0)
 		TimeManager.Phase.NIGHT:
-			_show_notification("Night falls. Strange customers may arrive.", 3.0)
+			if _customer_spawning_unlocked:
+				_show_notification("Night falls. Strange customers may arrive.", 3.0)
+			else:
+				_show_notification("Night falls, but the ghost shelf is not ready.", 3.0)
 
 
 func _on_target_reached() -> void:
@@ -780,7 +974,14 @@ func _on_human_shelf_item_placed(_slot_index: int, item_id: String) -> void:
 	var item := ItemDatabase.get_item(item_id)
 
 	if item != null and item.shelf_type == ItemData.ShelfType.HUMAN:
-		_register_human_stock_progress()
+		_set_human_stock_count(_get_shelf_stock_count(human_shelf))
+
+
+func _on_human_shelf_item_removed(_slot_index: int, item_id: String) -> void:
+	var item := ItemDatabase.get_item(item_id)
+
+	if item != null and item.shelf_type == ItemData.ShelfType.HUMAN:
+		_set_human_stock_count(_get_shelf_stock_count(human_shelf))
 
 
 func _on_ghost_shelf_item_placed(_slot_index: int, item_id: String) -> void:
@@ -789,33 +990,36 @@ func _on_ghost_shelf_item_placed(_slot_index: int, item_id: String) -> void:
 	if item == null or item.shelf_type != ItemData.ShelfType.GHOST:
 		return
 
+	var became_ready := _check_customer_spawning_ready(false)
+
 	if _ghost_shelf_lesson_shown:
-		_check_customer_spawning_ready()
+		if became_ready:
+			_show_customer_open_notification()
 		return
 
 	_ghost_shelf_lesson_shown = true
-	_check_customer_spawning_ready(false)
 	await _show_notification_sequence([
 		"Huh... so it only stays on this shelf?",
 		"This shelf looks different too...",
-		"What was Grandma keeping here?",
-		"Everything is ready. Customers can come in now."
+		"What was Grandma keeping here?"
 	])
-	_show_customer_open_notification()
+
+	if became_ready:
+		_show_customer_open_notification()
 
 
-func _check_customer_spawning_ready(show_notice: bool = true) -> void:
+func _check_customer_spawning_ready(show_notice: bool = true) -> bool:
 	if _customer_spawning_unlocked:
-		return
+		return true
 
 	if not _ghost_shelf_installed:
-		return
+		return false
 
 	if ghost_shelf == null or not is_instance_valid(ghost_shelf):
-		return
+		return false
 
 	if not ghost_shelf.has_stock():
-		return
+		return false
 
 	_customer_spawning_unlocked = true
 
@@ -830,6 +1034,7 @@ func _check_customer_spawning_ready(show_notice: bool = true) -> void:
 		_suppress_next_day_open_notification = should_start_day_one_customers_now
 
 	NPCScheduler.unlock_spawning_now(should_start_day_one_customers_now)
+	return true
 
 
 func _show_customer_open_notification() -> void:
@@ -837,7 +1042,7 @@ func _show_customer_open_notification() -> void:
 		return
 
 	_customer_open_notification_shown = true
-	_show_notification("Store is ready. Customers are coming.", 2.0)
+	_show_notification("Store is ready. Human customers can come in. Ghost customers wait for night.", 2.5)
 
 
 func _show_notification(text: String, duration: float = 2.0) -> void:
@@ -863,3 +1068,16 @@ func _show_notification_sequence(messages: Array[String]) -> void:
 
 	if hud != null and hud.has_method("end_action_lock"):
 		hud.call("end_action_lock")
+
+
+func _get_shelf_stock_count(shelf: Shelf) -> int:
+	if shelf == null:
+		return 0
+
+	var stock_count := 0
+
+	for slot_index in shelf.max_slots:
+		if shelf.get_slot_content(slot_index) != "":
+			stock_count += 1
+
+	return stock_count
