@@ -12,5 +12,5 @@ patience_type = 1
 favorite_items = PackedStringArray("bandage", "painkiller", "energy_drink", "work_gloves")
 visit_days = PackedInt32Array(1, 2, 3, 4, 5, 6)
 spawn_order = 1
-dialogue_set_id = "irene"
-event_set_id = "irene_events"
+dialogue_set_id = "irene_main"
+event_set_id = "irene_greenhouse"

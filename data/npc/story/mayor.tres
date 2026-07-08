@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="NPCData" format=3]
+
+[ext_resource type="Script" path="res://data/npc/NPCData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+npc_id = "mayor"
+display_name = "Mayor"
+npc_category = 0
+visit_phase = 1
+patience_type = 1
+favorite_items = PackedStringArray("bread", "water", "bandage")
+visit_days = PackedInt32Array(3, 4, 5, 6)
+spawn_order = 4
+dialogue_set_id = "mayor_main"
+event_set_id = "mayor_town"
