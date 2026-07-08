@@ -43,6 +43,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _is_action_locked():
 		return
 
+	if event.is_action_pressed("take_shelf_item"):
+		_try_take_from_shelf()
+		return
+
 	if event.is_action_pressed("interact"):
 		_try_interact()
 
@@ -185,18 +189,12 @@ func _interact_with_shelf(shelf: Shelf) -> void:
 		_show_notification("Put the shelf down first.", 0.5)
 		return
 
-	if (
-		shelf.has_meta("is_installed_in_store")
-		and not bool(shelf.get_meta("is_installed_in_store"))
-		and not _is_inside_group(shelf, "storage")
-	):
-		_show_notification("I should bring this shelf into the store first.")
+	if not _is_shelf_installed_in_store(shelf):
 		return
 
 	var inventory_items: Dictionary = Inventory.get_all()
 
 	if inventory_items.is_empty():
-		_take_item_from_shelf(shelf)
 		return
 
 	var item_id: String = str(inventory_items.keys()[0])
@@ -219,6 +217,38 @@ func _interact_with_shelf(shelf: Shelf) -> void:
 		_handle_wrong_shelf_attempt(item_id, item, shelf)
 	else:
 		_show_notification("Could not place %s." % item.display_name, 0.5)
+
+
+func _try_take_from_shelf() -> void:
+	if _is_action_locked():
+		return
+
+	var shelf := _get_best_shelf_target()
+
+	if shelf == null:
+		return
+
+	_take_item_from_shelf(shelf)
+
+
+func _get_best_shelf_target() -> Shelf:
+	var areas: Array[Area2D] = interaction_area.get_overlapping_areas()
+	var best_shelf: Shelf = null
+	var best_distance: float = INF
+
+	for area in areas:
+		var parent := area.get_parent()
+
+		if not parent is Shelf:
+			continue
+
+		var distance: float = global_position.distance_squared_to(area.global_position)
+
+		if distance < best_distance:
+			best_shelf = parent as Shelf
+			best_distance = distance
+
+	return best_shelf
 
 
 func _take_item_from_shelf(shelf: Shelf) -> void:
@@ -264,6 +294,16 @@ func _handle_wrong_shelf_attempt(
 
 func _get_wrong_shelf_key(item_id: String, shelf: Shelf) -> String:
 	return "%s_%s" % [item_id, str(shelf.get_instance_id())]
+
+
+func _is_shelf_installed_in_store(shelf: Shelf) -> bool:
+	if shelf == null:
+		return false
+
+	if not shelf.has_meta("is_installed_in_store"):
+		return true
+
+	return bool(shelf.get_meta("is_installed_in_store"))
 
 
 func _interact_with_supply_box(box: SupplyBox) -> void:
@@ -340,18 +380,6 @@ func _show_notification_sequence(messages: Array[String]) -> void:
 
 func _interact_with_cashier(cashier: Cashier) -> void:
 	cashier.try_checkout()
-
-
-func _is_inside_group(node: Node, group_name: String) -> bool:
-	var current := node
-
-	while current != null:
-		if current.is_in_group(group_name):
-			return true
-
-		current = current.get_parent()
-
-	return false
 
 
 func _is_action_locked() -> bool:
