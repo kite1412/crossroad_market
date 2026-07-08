@@ -7,7 +7,7 @@
 [ext_resource type="Script" uid="uid://cftax4a7xovpj" path="res://scripts/locations/WorldLighting.gd" id="6_lighting"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_horizontal"]
-size = Vector2(480, 16)
+size = Vector2(480, 63.5)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_vertical"]
 size = Vector2(16, 270)
@@ -35,7 +35,7 @@ color = Color(0.31, 0.25, 0.18, 1)
 [node name="WorldBounds" type="StaticBody2D" parent="." unique_id=2078606323]
 
 [node name="Top" type="CollisionShape2D" parent="WorldBounds" unique_id=216272337]
-position = Vector2(239, 8)
+position = Vector2(239, 33)
 shape = SubResource("RectangleShape2D_wall_horizontal")
 
 [node name="Bottom" type="CollisionShape2D" parent="WorldBounds" unique_id=1216563998]
@@ -67,20 +67,20 @@ shape = SubResource("RectangleShape2D_storage_door")
 [node name="StorageReturnPos" type="Marker2D" parent="." unique_id=979609029]
 position = Vector2(288, 92)
 
-[node name="YardDoor" type="Area2D" parent="."]
+[node name="YardDoor" type="Area2D" parent="." unique_id=985532799]
 position = Vector2(432, 242)
 
-[node name="DoorVisual" type="ColorRect" parent="YardDoor"]
+[node name="DoorVisual" type="ColorRect" parent="YardDoor" unique_id=1382336787]
 offset_left = -20.0
 offset_top = -20.0
 offset_right = 20.0
 offset_bottom = 20.0
 color = Color(0.18, 0.36, 0.28, 1)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="YardDoor"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="YardDoor" unique_id=1576413889]
 shape = SubResource("RectangleShape2D_storage_door")
 
-[node name="YardReturnPos" type="Marker2D" parent="."]
+[node name="YardReturnPos" type="Marker2D" parent="." unique_id=585886703]
 position = Vector2(420, 210)
 
 [node name="CounterPos" type="Marker2D" parent="." unique_id=1063289569]
@@ -91,6 +91,9 @@ position = Vector2(239, 259)
 
 [node name="Cashier" parent="." unique_id=1316385707 instance=ExtResource("3_cashier")]
 position = Vector2(95, 122)
+
+[node name="CollisionShape2D" parent="Cashier/InteractionArea" index="0"]
+position = Vector2(-22.5, -8)
 
 [node name="Player" parent="." unique_id=1580443777 instance=ExtResource("1_player")]
 position = Vector2(239, 242)
