@@ -6,7 +6,7 @@ const CashierPanel = preload("res://scripts/ui/cashier/CashierPanel.gd")
 const NPCQueueSystem = preload("res://scripts/npc/behavior/NPCQueueSystem.gd")
 
 const GOOBY_ID: String = "gooby"
-const GOOBY_GIFT_TRUST_GAIN: int = 10
+const STORY_INTERACTION_TRUST_GAIN: int = 20
 
 @onready var interaction_area: Area2D = $InteractionArea
 
@@ -117,10 +117,18 @@ func _is_player_nearby() -> bool:
 func _get_first_checkout_npc() -> NPC:
 	NPCQueueSystem.prune_invalid(NPC.current_queue)
 
-	for npc in NPC.current_queue:
-		if npc.current_state == NPC.State.CHECKOUT:
-			return npc
-	return null
+	if NPC.current_queue.is_empty():
+		return null
+
+	var front_npc := NPC.current_queue[0]
+
+	if not is_instance_valid(front_npc):
+		return null
+
+	if front_npc.current_state != NPC.State.CHECKOUT:
+		return null
+
+	return front_npc
 
 func _has_customer_approaching_counter() -> bool:
 	for npc in NPC.current_queue:
@@ -181,9 +189,16 @@ func _process_paid() -> void:
 
 	if npc.checkout_outcome == "reject_return":
 		if _is_gooby_npc(npc):
+			var gooby_refuse_trust := _apply_story_interaction_trust(npc)
 			_request_gooby_refusal_consequence()
-			_show_notification("Refused Gooby. The item returns to the shelf... something else is coming.", 3.0)
+			_notify_store_gooby_refused()
+			_show_notification(
+				"Refused Gooby. Trust +%d. The item returns to the shelf... something else is coming." %
+				gooby_refuse_trust,
+				3.0
+			)
 		else:
+			_apply_story_interaction_trust(npc)
 			_show_notification("Checkout rejected. The item returns to the shelf.", 2.0)
 		_add_history(npc, item_label, 0, "REJECTED")
 		_clear_scan()
@@ -192,7 +207,11 @@ func _process_paid() -> void:
 	checkout_done.emit(npc, item_id, price)
 	_add_history(npc, item_label, price, "PAID")
 	print("PAID: %s for %dG" % [item_label, price])
-	_show_notification("PAID | %s | +%dG" % [item_label, price], 1.4)
+	var story_trust_gain := _apply_story_interaction_trust(npc)
+	if story_trust_gain > 0:
+		_show_notification("PAID | %s | +%dG | Trust +%d" % [item_label, price, story_trust_gain], 1.8)
+	else:
+		_show_notification("PAID | %s | +%dG" % [item_label, price], 1.4)
 	_clear_scan()
 
 
@@ -209,9 +228,9 @@ func _process_gooby_gift() -> void:
 	else:
 		npc.complete_checkout()
 
-	RelationshipManager.add_trust(GOOBY_ID, GOOBY_GIFT_TRUST_GAIN)
+	var trust_gain := _apply_story_interaction_trust(npc)
 	_add_history(npc, item_label, 0, "GIFT")
-	_show_notification("Gooby Trust +%d | No revenue gained." % GOOBY_GIFT_TRUST_GAIN, 2.0)
+	_show_notification("Gooby Trust +%d | No revenue gained." % trust_gain, 2.0)
 	_clear_scan()
 
 
@@ -228,10 +247,16 @@ func _process_gooby_refuse() -> void:
 	else:
 		npc.complete_checkout()
 
+	var trust_gain := _apply_story_interaction_trust(npc)
 	_request_gooby_refusal_consequence()
+	_notify_store_gooby_refused()
 
 	_add_history(npc, item_label, 0, "REFUSED")
-	_show_notification("Refused Gooby. The item returns to the shelf... something else is coming.", 3.0)
+	_show_notification(
+		"Refused Gooby. Trust +%d. The item returns to the shelf... something else is coming." %
+		trust_gain,
+		3.0
+	)
 	_clear_scan()
 
 
@@ -425,6 +450,17 @@ func _is_story_gift_checkout() -> bool:
 	return _is_gooby_npc(_scanned_npc)
 
 
+func _apply_story_interaction_trust(npc: NPC) -> int:
+	if npc == null or npc.npc_data == null:
+		return 0
+
+	if npc.npc_data.npc_category != NPCData.NPCCategory.STORY:
+		return 0
+
+	RelationshipManager.add_trust(npc.npc_data.npc_id, STORY_INTERACTION_TRUST_GAIN)
+	return STORY_INTERACTION_TRUST_GAIN
+
+
 func _is_gooby_npc(npc: NPC) -> bool:
 	return npc != null and npc.npc_data != null and npc.npc_data.npc_id == GOOBY_ID
 
@@ -432,6 +468,13 @@ func _is_gooby_npc(npc: NPC) -> bool:
 func _request_gooby_refusal_consequence() -> void:
 	if NPCScheduler.has_method("spawn_day_one_night_monster_customer"):
 		NPCScheduler.spawn_day_one_night_monster_customer()
+
+
+func _notify_store_gooby_refused() -> void:
+	var store := get_tree().get_first_node_in_group("store")
+
+	if store != null and store.has_method("on_gooby_refused"):
+		store.call("on_gooby_refused")
 
 
 func _ensure_cashier_panel() -> void:

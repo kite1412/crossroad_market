@@ -25,6 +25,7 @@ const ENTER_PAUSE: float = 1.5
 const DIALOG_DURATION: float = 2.5
 const CHECKOUT_PATIENCE: float = 20.0
 const SEARCH_PATIENCE: float = 15.0
+const SHELF_SEARCH_MIN_TIME: float = 0.7
 const SHELF_VISIT_OFFSET: Vector2 = Vector2(0, 34)
 const SHELF_ACTION_DISTANCE: float = 28.0
 const QUEUE_ACTION_DISTANCE: float = 14.0
@@ -58,6 +59,10 @@ var _search_announced: bool = false
 func _ready() -> void:
 	add_to_group("dialog_skip_target")
 	_set_dialog_mouse_filter()
+
+
+func _exit_tree() -> void:
+	_leave_queue()
 
 
 func setup(data: NPCData) -> void:
@@ -201,6 +206,9 @@ func _process_search_item(delta: float) -> void:
 			_show_dialog(BlueprintManager.get_item_found_dialog(self))
 			_search_announced = true
 
+		if _search_timer < SHELF_SEARCH_MIN_TIME:
+			return
+
 		_set_state(State.TAKE_ITEM)
 		return
 
@@ -279,6 +287,7 @@ func _process_take_item() -> void:
 		_set_state(State.WAIT_IN_QUEUE)
 		return
 
+	_show_dialog("Someone must have taken it already.")
 	target_position = entrance_position
 	_set_state(State.EXIT)
 
@@ -485,6 +494,9 @@ func _set_state(new_state: State) -> void:
 
 	if new_state == State.CHECKOUT:
 		_checkout_timer = 0.0
+
+	if new_state == State.EXIT:
+		_leave_queue()
 
 	current_state = new_state
 
