@@ -5,6 +5,9 @@ const CashierCheckoutService = preload("res://scripts/ui/cashier/CashierCheckout
 const CashierPanel = preload("res://scripts/ui/cashier/CashierPanel.gd")
 const NPCQueueSystem = preload("res://scripts/npc/behavior/NPCQueueSystem.gd")
 
+const GOOBY_ID: String = "gooby"
+const GOOBY_GIFT_TRUST_GAIN: int = 10
+
 @onready var interaction_area: Area2D = $InteractionArea
 
 signal checkout_done(npc: NPC, item_id: String, price: int)
@@ -83,7 +86,10 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	if event.is_action_pressed("interact") or event.is_action_pressed("ui_accept") or event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER:
 		if _scanned_total > 0:
-			_process_paid()
+			if _is_story_gift_checkout():
+				_show_notification("Choose whether to give the item or refuse Gooby.", 1.0)
+			else:
+				_process_paid()
 		else:
 			_on_confirm_scan_pressed()
 		get_viewport().set_input_as_handled()
@@ -144,7 +150,6 @@ func _process_scan(npc: NPC) -> void:
 	if price <= 0:
 		push_error("Cashier: item '%s' not found" % item_id)
 		return
-
 	_scanned_npc = npc
 	_scanned_item_id = item_id
 	_scanned_item_label = item_label
@@ -186,6 +191,46 @@ func _process_paid() -> void:
 	_add_history(npc, item_label, price, "PAID")
 	print("PAID: %s for %dG" % [item_label, price])
 	_show_notification("PAID | %s | +%dG" % [item_label, price], 1.4)
+	_clear_scan()
+
+
+func _process_gooby_gift() -> void:
+	if not _has_scanned_customer():
+		_clear_scan()
+		return
+
+	var npc := _scanned_npc
+	var item_label := _scanned_item_label
+
+	if npc.has_method("complete_story_gift"):
+		npc.complete_story_gift("You'd really give this to me...? Thank you.")
+	else:
+		npc.complete_checkout()
+
+	RelationshipManager.add_trust(GOOBY_ID, GOOBY_GIFT_TRUST_GAIN)
+	_add_history(npc, item_label, 0, "GIFT")
+	_show_notification("Gooby Trust +%d | No revenue gained." % GOOBY_GIFT_TRUST_GAIN, 2.0)
+	_clear_scan()
+
+
+func _process_gooby_refuse() -> void:
+	if not _has_scanned_customer():
+		_clear_scan()
+		return
+
+	var npc := _scanned_npc
+	var item_label := _scanned_item_label
+
+	if npc.has_method("reject_checkout_and_return_items"):
+		npc.reject_checkout_and_return_items("Boo... I understand.")
+	else:
+		npc.complete_checkout()
+
+	if NPCScheduler.has_method("spawn_day_one_night_monster_customer"):
+		NPCScheduler.spawn_day_one_night_monster_customer()
+
+	_add_history(npc, item_label, 0, "REFUSED")
+	_show_notification("Refused Gooby. The item returns to the shelf... something else is coming.", 3.0)
 	_clear_scan()
 
 
@@ -257,6 +302,10 @@ func _show_scan_panel() -> void:
 
 
 func _show_paid_panel() -> void:
+	if _is_story_gift_checkout():
+		_show_gooby_choice_panel()
+		return
+
 	_ensure_cashier_panel()
 	_clear_container(_item_list)
 	_clear_container(_action_row)
@@ -272,6 +321,36 @@ func _show_paid_panel() -> void:
 	paid_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	paid_button.pressed.connect(_process_paid)
 	_action_row.add_child(paid_button)
+
+	var back_button := Button.new()
+	back_button.text = "Back to Scan"
+	back_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	back_button.pressed.connect(_show_scan_panel)
+	_action_row.add_child(back_button)
+
+
+func _show_gooby_choice_panel() -> void:
+	_ensure_cashier_panel()
+	_clear_container(_item_list)
+	_clear_container(_action_row)
+	_lock_player_actions()
+
+	_cashier_panel.visible = true
+	_panel_title.text = "GOOBY REQUEST"
+	_customer_label.text = "Gooby cannot pay with human money."
+	_selected_label.text = "Item: %s | Revenue: 0G" % _scanned_item_label
+
+	var gift_button := Button.new()
+	gift_button.text = "Give Item (+Trust, +0G)"
+	gift_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	gift_button.pressed.connect(_process_gooby_gift)
+	_action_row.add_child(gift_button)
+
+	var refuse_button := Button.new()
+	refuse_button.text = "Refuse Sale (Return Item)"
+	refuse_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	refuse_button.pressed.connect(_process_gooby_refuse)
+	_action_row.add_child(refuse_button)
 
 	var back_button := Button.new()
 	back_button.text = "Back to Scan"
@@ -333,6 +412,19 @@ func _update_selected_label() -> void:
 	var total := _calculate_selected_total()
 	var label := _get_selected_item_label()
 	_selected_label.text = "Selected: %s | Total %dG" % [label if label != "" else "-", total]
+
+
+func _is_story_gift_checkout() -> bool:
+	if not _has_scanned_customer():
+		return false
+
+	if _scanned_npc.checkout_outcome != "reject_return":
+		return false
+
+	if _scanned_npc.npc_data == null:
+		return false
+
+	return _scanned_npc.npc_data.npc_id == GOOBY_ID
 
 
 func _ensure_cashier_panel() -> void:
