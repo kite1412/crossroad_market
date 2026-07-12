@@ -10,6 +10,7 @@ signal notification_finished()
 @onready var notification_label: Label = $NotificationLabel
 
 const NOTIFY_DURATION: float = 2.0
+const GOOBY_ID: String = "gooby"
 
 var _notify_timer: float = 0.0
 var _notify_duration: float = NOTIFY_DURATION
@@ -17,17 +18,20 @@ var _notify_full_chars: int = 0
 var _action_lock_timer: float = 0.0
 var _action_lock_sessions: int = 0
 var _notification_finished_emitted: bool = true
+var _trust_label: Label = null
 
 
 func _ready() -> void:
 	add_to_group("hud")
 	notification_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_create_trust_label()
 
 	EconomyManager.gold_changed.connect(_on_gold_changed)
 	EconomyManager.daily_target_reached.connect(_on_target_reached)
 	TimeManager.time_updated.connect(_on_time_updated)
 	TimeManager.phase_changed.connect(_on_phase_changed)
 	TimeManager.day_started.connect(_on_day_started)
+	RelationshipManager.trust_changed.connect(_on_trust_changed)
 
 	_update_all()
 
@@ -161,6 +165,7 @@ func _update_all() -> void:
 	_on_day_started(TimeManager.current_day)
 	_on_phase_changed(TimeManager.current_phase)
 	_on_time_updated(TimeManager.time_remaining)
+	_on_trust_changed(GOOBY_ID, RelationshipManager.get_trust(GOOBY_ID), 0)
 
 	target_label.text = "Target: %dG" % EconomyManager.daily_target
 
@@ -190,3 +195,23 @@ func _on_phase_changed(_phase) -> void:
 
 func _on_day_started(day: int) -> void:
 	day_label.text = "Day %d" % day
+
+
+func _on_trust_changed(npc_id: String, new_trust: int, _delta: int) -> void:
+	if npc_id != GOOBY_ID:
+		return
+
+	if _trust_label != null:
+		_trust_label.text = "Gooby Trust: %d/100" % new_trust
+
+
+func _create_trust_label() -> void:
+	if _trust_label != null:
+		return
+
+	_trust_label = Label.new()
+	_trust_label.name = "TrustLabel"
+	_trust_label.position = Vector2(328, 4)
+	_trust_label.text = "Gooby Trust: 0/100"
+	_trust_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	add_child(_trust_label)
