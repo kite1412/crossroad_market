@@ -17,6 +17,12 @@ const SHELF_DEPTH_BACK_OFFSET: float = 56.0
 const SHELF_DEPTH_FRONT_OFFSET: float = 8.0
 const CARRY_SHELF_CASHIER_BLOCKER_SIZE := Vector2(112, 80)
 const CARRY_SHELF_CASHIER_BLOCKER_OFFSET := Vector2(0, -10)
+const STORE_SHELF_PICKUP_DISTANCE: float = 76.0
+const DOOR_NO_DROP_MARGIN: float = 34.0
+const CASHIER_NO_DROP_MARGIN: float = 10.0
+const SHELF_INTERACTION_STAND_DISTANCE: float = 54.0
+const RESTRICTED_DROP_MESSAGE_COUNT: int = 3
+const RESTRICTED_DROP_MESSAGE_DURATION: float = 0.55
 const SHELF_DROP_FALLBACKS: Array[Vector2] = [
 	Vector2(0, 56),
 	Vector2(56, 0),
@@ -62,6 +68,9 @@ var _customer_open_notification_shown: bool = false
 var _suppress_next_day_open_notification: bool = false
 var _intro_shown: bool = false
 var _ghost_shelf_lesson_shown: bool = false
+var _gooby_refused: bool = false
+var _last_objective_text: String = ""
+var _restricted_drop_feedback_running: bool = false
 
 var human_shelf: Shelf = null
 var ghost_shelf: Shelf = null
@@ -79,6 +88,7 @@ func _ready() -> void:
 	NPCScheduler.lock_spawning_until_ready()
 
 	TimeManager.start_game()
+	_update_objective()
 	call_deferred("_show_morning_intro")
 
 
@@ -98,6 +108,12 @@ func _process(_delta: float) -> void:
 
 		if carried_object != null:
 			_drop_carried_shelf_in_store(carried_object)
+			return
+
+		var installed_shelf := _get_nearest_installed_shelf()
+
+		if installed_shelf != null:
+			_pickup_installed_shelf(installed_shelf)
 
 
 func request_enter_storage(_door_type: String = "storage") -> void:
@@ -116,15 +132,18 @@ func request_enter_yard(_door_type: String = "yard") -> void:
 
 func on_normal_item_taken() -> void:
 	_normal_items_taken = min(_normal_items_taken + 1, NORMAL_STOCK_REQUIRED)
+	_update_objective()
 
 	if _normal_items_taken >= NORMAL_STOCK_REQUIRED:
 		_normal_supply_depleted = true
 		_show_notification("Bring the human shelf to the store and stock it.", 3.0)
+		_update_objective()
 		return
 
 
 func on_human_item_placed() -> void:
 	_register_human_stock_progress()
+	_update_objective()
 
 
 func is_shelf_type_installed(shelf_type: ItemData.ShelfType) -> bool:
@@ -135,6 +154,83 @@ func is_shelf_type_installed(shelf_type: ItemData.ShelfType) -> bool:
 			return _ghost_shelf_installed
 
 	return false
+
+
+func get_activity_board_guidance() -> Dictionary:
+	if TimeManager.current_phase == TimeManager.Phase.NIGHT and _customer_spawning_unlocked:
+		return {
+			"title": "Night Choice",
+			"lines": [
+				"Watch the store at night.",
+				"Gooby may ask for Phantom Ice Cream.",
+				"Give item: Trust +, Revenue 0G.",
+				"Refuse sale: item returns, another customer may come."
+			]
+		}
+
+	if not _human_shelf_installed:
+		return {
+			"title": "Today's Work",
+			"lines": [
+				"Go to storage.",
+				"Carry the human shelf with F.",
+				"Return and place it in the store."
+			]
+		}
+
+	if _human_items_placed < NORMAL_STOCK_REQUIRED:
+		return {
+			"title": "Today's Work",
+			"lines": [
+				"Take stock from the normal box.",
+				"Place human items on the human shelf.",
+				"%d/%d human stock ready." % [_human_items_placed, NORMAL_STOCK_REQUIRED]
+			]
+		}
+
+	if not _mystery_phase_unlocked or not _mystery_discovered:
+		return {
+			"title": "Strange Notes",
+			"lines": [
+				"Check the dark storage corner.",
+				"Look for the glowing box.",
+				"Bring anything strange back to the store."
+			]
+		}
+
+	if not _ghost_shelf_installed:
+		return {
+			"title": "Strange Notes",
+			"lines": [
+				"Carry the ghost shelf to the store.",
+				"Place it on the shop floor.",
+				"Keep normal and ghost items separate."
+			]
+		}
+
+	if ghost_shelf == null or not ghost_shelf.has_stock():
+		return {
+			"title": "Strange Notes",
+			"lines": [
+				"Take Phantom Ice Cream from storage.",
+				"Stock it on the ghost shelf.",
+				"Watch the store at night."
+			]
+		}
+
+	return {
+		"title": "Today's Work",
+		"lines": [
+			"Serve customers at the cashier.",
+			"Scan the item they are buying.",
+			"Reach the daily revenue target."
+		]
+	}
+
+
+func on_gooby_refused() -> void:
+	_gooby_refused = true
+	_update_objective()
 
 
 func _connect_manager_signals() -> void:
@@ -301,6 +397,7 @@ func _on_storage_return(_door_type: String) -> void:
 	_set_store_world_active(true)
 	_current_storage = null
 	_setup_npc_static_data()
+	_update_objective()
 
 	await _fade_from_black()
 	_is_transitioning = false
@@ -368,6 +465,7 @@ func _on_yard_return(_door_type: String) -> void:
 	_set_store_world_active(true)
 	_current_yard = null
 	_setup_npc_static_data()
+	_update_objective()
 
 	await _fade_from_black()
 	_is_transitioning = false
@@ -375,10 +473,12 @@ func _on_yard_return(_door_type: String) -> void:
 
 func _on_storage_mystery_discovered() -> void:
 	_mystery_discovered = true
+	_update_objective()
 
 
 func _on_storage_mystery_item_taken() -> void:
 	_mystery_supply_depleted = true
+	_update_objective()
 
 
 func _get_storage_return_position() -> Vector2:
@@ -427,15 +527,16 @@ func _drop_carried_shelf_in_store(object: Node2D) -> void:
 		return
 
 	var primary_drop_position := _get_primary_shelf_drop_position()
+	var primary_rejection := _get_drop_rejection_reason(object, primary_drop_position)
 
-	if _is_shelf_drop_blocked(primary_drop_position):
-		_show_notification("I can't drop the shelf here.", 0.9)
-		return
+	if primary_rejection != "":
+		_show_drop_rejection_feedback(primary_rejection)
 
 	var drop_position := _find_safe_drop_position(object)
 
 	if drop_position == Vector2.INF:
-		_show_notification("No room to put the shelf here.", 0.5)
+		if primary_rejection == "":
+			_show_notification("I can't place the shelf here.", 0.9)
 		return
 
 	object.reparent(self, true)
@@ -481,21 +582,9 @@ func _set_carry_shelf_blocker_enabled(_enabled: bool) -> void:
 	_carry_shelf_blocker_shape.disabled = true
 
 
-func _is_shelf_drop_blocked(drop_position: Vector2) -> bool:
-	var blocker_rect := Rect2(
-		_get_carry_shelf_blocker_position() - CARRY_SHELF_CASHIER_BLOCKER_SIZE * 0.5,
-		CARRY_SHELF_CASHIER_BLOCKER_SIZE
-	)
-
-	return blocker_rect.has_point(drop_position)
-
-
 func _find_safe_drop_position(object: Node2D) -> Vector2:
 	for candidate in _get_drop_candidates():
-		if _is_shelf_drop_blocked(candidate):
-			continue
-
-		if _is_drop_position_clear(object, candidate):
+		if _get_drop_rejection_reason(object, candidate) == "":
 			return candidate
 
 	return Vector2.INF
@@ -562,11 +651,214 @@ func _is_drop_position_clear(object: Node2D, candidate: Vector2) -> bool:
 	return true
 
 
+func _get_drop_rejection_reason(object: Node2D, candidate: Vector2) -> String:
+	var object_rect := _get_object_body_rect_at(object, candidate)
+
+	if _intersects_area_no_drop_zone(object_rect, storage_door, DOOR_NO_DROP_MARGIN):
+		return "This blocks the storage door."
+
+	if _intersects_area_no_drop_zone(object_rect, yard_door, DOOR_NO_DROP_MARGIN):
+		return "This blocks the yard door."
+
+	if object_rect.intersects(_get_cashier_no_drop_rect()):
+		return "This area is reserved for the cashier."
+
+	if not _is_drop_position_clear(object, candidate):
+		return "I can't place the shelf here."
+
+	if not _has_clear_standing_spot_near_shelf(object, candidate):
+		return "I can't reach the shelf there."
+
+	return ""
+
+
+func _get_object_body_rect_at(object: Node2D, candidate: Vector2) -> Rect2:
+	var collision_shape := _get_object_collision_shape(object)
+
+	if collision_shape == null:
+		return Rect2(candidate - Vector2(32, 24), Vector2(64, 48))
+
+	var rectangle := collision_shape.shape as RectangleShape2D
+
+	if rectangle == null:
+		return Rect2(candidate - Vector2(32, 24), Vector2(64, 48))
+
+	var center := candidate + collision_shape.position
+	return Rect2(center - rectangle.size * 0.5, rectangle.size)
+
+
+func _intersects_area_no_drop_zone(object_rect: Rect2, area: Area2D, margin: float) -> bool:
+	if area == null:
+		return false
+
+	var area_rect := _get_area_rect(area)
+
+	if area_rect.size == Vector2.ZERO:
+		return false
+
+	return object_rect.intersects(area_rect.grow(margin))
+
+
+func _get_area_rect(area: Area2D) -> Rect2:
+	if area == null:
+		return Rect2()
+
+	var collision_shape := area.get_node_or_null("CollisionShape2D") as CollisionShape2D
+
+	if collision_shape == null:
+		return Rect2(area.global_position - Vector2(20, 20), Vector2(40, 40))
+
+	var rectangle := collision_shape.shape as RectangleShape2D
+
+	if rectangle == null:
+		return Rect2(area.global_position - Vector2(20, 20), Vector2(40, 40))
+
+	var center := area.global_position + collision_shape.position
+	return Rect2(center - rectangle.size * 0.5, rectangle.size)
+
+
+func _get_cashier_no_drop_rect() -> Rect2:
+	var rect := Rect2(
+		_get_carry_shelf_blocker_position() - CARRY_SHELF_CASHIER_BLOCKER_SIZE * 0.5,
+		CARRY_SHELF_CASHIER_BLOCKER_SIZE
+	)
+
+	return rect.grow(CASHIER_NO_DROP_MARGIN)
+
+
+func _has_clear_standing_spot_near_shelf(object: Node2D, candidate: Vector2) -> bool:
+	var interaction_center := _get_shelf_interaction_center_at(object, candidate)
+	var standing_offsets: Array[Vector2] = [
+		Vector2(0, SHELF_INTERACTION_STAND_DISTANCE),
+		Vector2(-SHELF_INTERACTION_STAND_DISTANCE, 0),
+		Vector2(SHELF_INTERACTION_STAND_DISTANCE, 0),
+		Vector2(0, -SHELF_INTERACTION_STAND_DISTANCE)
+	]
+
+	for offset in standing_offsets:
+		if _is_player_standing_position_clear(interaction_center + offset, object):
+			return true
+
+	return false
+
+
+func _get_shelf_interaction_center_at(object: Node2D, candidate: Vector2) -> Vector2:
+	var interaction_area := object.get_node_or_null("InteractionArea") as Area2D
+
+	if interaction_area == null:
+		return candidate
+
+	return candidate + interaction_area.position
+
+
+func _is_player_standing_position_clear(position: Vector2, shelf_object: Node2D) -> bool:
+	if player == null:
+		return true
+
+	var player_shape := player.get_node_or_null("CollisionShape2D") as CollisionShape2D
+
+	if player_shape == null or player_shape.shape == null:
+		return true
+
+	var query := PhysicsShapeQueryParameters2D.new()
+	query.shape = player_shape.shape
+	query.transform = Transform2D(0.0, position + player_shape.position)
+	query.collide_with_bodies = true
+	query.collide_with_areas = false
+
+	var hits := get_world_2d().direct_space_state.intersect_shape(query, 16)
+
+	for hit in hits:
+		var collider: Node = hit.get("collider", null)
+
+		if collider == null:
+			continue
+
+		if collider == player or _is_descendant_of(collider, player):
+			continue
+
+		if collider == shelf_object or _is_descendant_of(collider, shelf_object):
+			continue
+
+		return false
+
+	return true
+
+
 func _get_object_collision_shape(object: Node2D) -> CollisionShape2D:
 	if object == null:
 		return null
 
 	return object.get_node_or_null("PhysicsBody/CollisionShape2D") as CollisionShape2D
+
+
+func _get_nearest_installed_shelf() -> Node2D:
+	if player == null:
+		return null
+
+	var nearest_shelf: Node2D = null
+	var nearest_distance := STORE_SHELF_PICKUP_DISTANCE
+
+	for node in get_tree().get_nodes_in_group("shelves"):
+		if not node is Shelf:
+			continue
+
+		var shelf := node as Shelf
+
+		if not _is_descendant_of(shelf, self):
+			continue
+
+		if shelf.has_meta("is_carried_storage_object") and bool(shelf.get_meta("is_carried_storage_object")):
+			continue
+
+		var distance := player.global_position.distance_to(shelf.global_position)
+
+		if distance <= nearest_distance:
+			nearest_distance = distance
+			nearest_shelf = shelf
+
+	return nearest_shelf
+
+
+func _pickup_installed_shelf(object: Node2D) -> void:
+	if player == null:
+		return
+
+	if object == human_shelf:
+		_human_shelf_installed = false
+	elif object == ghost_shelf:
+		_ghost_shelf_installed = false
+
+	object.remove_from_group("shelves")
+	object.reparent(player, true)
+	object.position = Vector2(0, -34)
+	object.z_index = 80
+	object.set_meta("is_carried_storage_object", true)
+	object.set_meta("is_installed_in_store", false)
+	_set_node_enabled_recursive(object, false)
+	_update_objective()
+	_show_notification("Shelf picked up. Press F to place it.")
+
+
+func _show_drop_rejection_feedback(message: String) -> void:
+	if message == "This area is reserved for the cashier.":
+		_show_restricted_drop_feedback(message)
+		return
+
+	_show_notification(message, 0.9)
+
+
+func _show_restricted_drop_feedback(message: String) -> void:
+	if _restricted_drop_feedback_running:
+		return
+
+	_restricted_drop_feedback_running = true
+
+	for i in RESTRICTED_DROP_MESSAGE_COUNT:
+		_show_notification(message, RESTRICTED_DROP_MESSAGE_DURATION)
+		await get_tree().create_timer(2.0 / float(RESTRICTED_DROP_MESSAGE_COUNT)).timeout
+
+	_restricted_drop_feedback_running = false
 
 
 func _get_carry_shelf_blocker_position() -> Vector2:
@@ -640,6 +932,7 @@ func _register_installed_shelf(object: Node2D) -> void:
 
 		_connect_human_shelf_signals(human_shelf)
 		_set_human_stock_count(_get_shelf_stock_count(human_shelf))
+		_update_objective()
 
 		if _human_items_placed < NORMAL_STOCK_REQUIRED:
 			_show_notification("Now stock the human shelf with normal items.", 3.0)
@@ -653,6 +946,7 @@ func _register_installed_shelf(object: Node2D) -> void:
 
 		ghost_shelf.apply_ghost_glow(true)
 		_check_customer_spawning_ready()
+		_update_objective()
 
 	_setup_npc_static_data()
 
@@ -685,6 +979,7 @@ func _set_human_stock_count(stock_count: int) -> void:
 
 	_mystery_phase_unlocked = true
 	_show_notification("The dark corner in storage just opened.", 3.0)
+	_update_objective()
 
 	if _current_storage != null and _current_storage.has_method("set_mystery_phase_unlocked"):
 		_current_storage.set_mystery_phase_unlocked(true)
@@ -780,6 +1075,7 @@ func _on_phase_changed(phase) -> void:
 				_show_notification("Night falls. Strange customers may arrive.", 3.0)
 			else:
 				_show_notification("Night falls, but the ghost shelf is not ready.", 3.0)
+	_update_objective()
 
 
 func _on_target_reached() -> void:
@@ -807,6 +1103,7 @@ func _on_human_shelf_item_placed(_slot_index: int, item_id: String) -> void:
 
 	if item != null and item.shelf_type == ItemData.ShelfType.HUMAN:
 		_set_human_stock_count(_get_shelf_stock_count(human_shelf))
+		_update_objective()
 
 
 func _on_human_shelf_item_removed(_slot_index: int, item_id: String) -> void:
@@ -814,6 +1111,7 @@ func _on_human_shelf_item_removed(_slot_index: int, item_id: String) -> void:
 
 	if item != null and item.shelf_type == ItemData.ShelfType.HUMAN:
 		_set_human_stock_count(_get_shelf_stock_count(human_shelf))
+		_update_objective()
 
 
 func _on_ghost_shelf_item_placed(_slot_index: int, item_id: String) -> void:
@@ -823,10 +1121,12 @@ func _on_ghost_shelf_item_placed(_slot_index: int, item_id: String) -> void:
 		return
 
 	var became_ready := _check_customer_spawning_ready(false)
+	_update_objective()
 
 	if _ghost_shelf_lesson_shown:
 		if became_ready:
 			_show_customer_open_notification()
+			_update_objective()
 		return
 
 	_ghost_shelf_lesson_shown = true
@@ -852,6 +1152,7 @@ func _check_customer_spawning_ready(show_notice: bool = true) -> bool:
 		return true
 
 	_customer_spawning_unlocked = true
+	_gooby_refused = false
 
 	var should_start_day_one_customers_now := StoreProgressionController.should_start_day_one_customers_now()
 
@@ -861,6 +1162,7 @@ func _check_customer_spawning_ready(show_notice: bool = true) -> bool:
 		_suppress_next_day_open_notification = should_start_day_one_customers_now
 
 	NPCScheduler.unlock_spawning_now(should_start_day_one_customers_now)
+	_update_objective()
 	return true
 
 
@@ -870,6 +1172,49 @@ func _show_customer_open_notification() -> void:
 
 	_customer_open_notification_shown = true
 	_show_notification("Store is ready. Human customers can come in. Ghost customers wait for night.", 2.5)
+	_update_objective()
+
+
+func _update_objective() -> void:
+	var objective_text := _get_current_objective_text()
+
+	if objective_text == _last_objective_text:
+		return
+
+	_last_objective_text = objective_text
+
+	var hud := get_tree().get_first_node_in_group("hud")
+
+	if hud != null and hud.has_method("set_objective"):
+		hud.call("set_objective", objective_text)
+
+
+func _get_current_objective_text() -> String:
+	if _gooby_refused:
+		return "Wait for the next strange customer."
+
+	if TimeManager.current_phase == TimeManager.Phase.NIGHT and _customer_spawning_unlocked:
+		return "Serve Gooby at the cashier."
+
+	if not _human_shelf_installed:
+		return "Bring the human shelf from storage."
+
+	if _human_items_placed < NORMAL_STOCK_REQUIRED:
+		return "Stock the human shelf with normal items."
+
+	if not _mystery_phase_unlocked or not _mystery_discovered:
+		return "Check the dark storage corner."
+
+	if not _ghost_shelf_installed:
+		return "Place the ghost shelf in the store."
+
+	if ghost_shelf == null or not ghost_shelf.has_stock():
+		return "Stock Phantom Ice Cream on ghost shelf."
+
+	if not _customer_spawning_unlocked:
+		return "Prepare the store for customers."
+
+	return "Serve customers at the cashier."
 
 
 func _show_notification(text: String, duration: float = 2.0) -> void:

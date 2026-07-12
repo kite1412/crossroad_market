@@ -1,6 +1,8 @@
 class_name PlayerInteraction
 extends RefCounted
 
+const ActivityBoard = preload("res://scripts/objects/ActivityBoard.gd")
+
 
 static func get_storage_door_type(area: Area2D) -> String:
 	if area == null:
@@ -30,5 +32,8 @@ static func get_interaction_priority(target: Node) -> int:
 
 	if target is Shelf:
 		return 3
+
+	if target is ActivityBoard:
+		return 4
 
 	return 999

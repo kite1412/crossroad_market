@@ -1,5 +1,6 @@
 extends CharacterBody2D
 
+const ActivityBoard = preload("res://scripts/objects/ActivityBoard.gd")
 const PlayerInteraction = preload("res://scripts/player/PlayerInteraction.gd")
 const PlayerNotificationBridge = preload("res://scripts/player/PlayerNotificationBridge.gd")
 const PlayerShelfInteraction = preload("res://scripts/player/PlayerShelfInteraction.gd")
@@ -12,8 +13,10 @@ const PlayerShelfInteraction = preload("res://scripts/player/PlayerShelfInteract
 var facing_direction: Vector2 = Vector2.DOWN
 var _supply_box_cursor: int = 0
 var _wrong_shelf_attempts: Dictionary = {}
+var _seen_item_ids: Dictionary = {}
 
 const MAX_WRONG_ATTEMPTS: int = 1
+const STORY_INTERACTION_TRUST_GAIN: int = 20
 
 
 func _ready() -> void:
@@ -123,6 +126,10 @@ func _try_interact() -> void:
 		_interact_with_shelf(best_target as Shelf)
 		return
 
+	if best_target is ActivityBoard:
+		_interact_with_activity_board(best_target as ActivityBoard)
+		return
+
 
 func _try_storage_door_interaction(area: Area2D) -> bool:
 	var door_type: String = _get_storage_door_type(area)
@@ -156,15 +163,34 @@ func _get_interaction_priority(target: Node) -> int:
 
 
 func _interact_with_npc(npc: NPC) -> void:
+	var trust_text := _apply_story_npc_interaction_trust(npc)
+
 	if npc.current_state != NPC.State.CHECKOUT:
-		_show_notification("They are busy right now.", 0.7)
+		if trust_text != "":
+			_show_notification("%s They are busy right now." % trust_text, 1.2)
+		else:
+			_show_notification("They are busy right now.", 0.7)
 		return
 
 	var item_id: String = npc.item_to_buy
 	var item: ItemData = ItemDatabase.get_item(item_id)
 
 	if item != null:
-		_show_notification("Use the cashier to scan %s." % item.display_name)
+		if trust_text != "":
+			_show_notification("%s Use the cashier to scan %s." % [trust_text, item.display_name], 1.6)
+		else:
+			_show_notification("Use the cashier to scan %s." % item.display_name)
+
+
+func _apply_story_npc_interaction_trust(npc: NPC) -> String:
+	if npc == null or npc.npc_data == null:
+		return ""
+
+	if npc.npc_data.npc_category != NPCData.NPCCategory.STORY:
+		return ""
+
+	RelationshipManager.add_trust(npc.npc_data.npc_id, STORY_INTERACTION_TRUST_GAIN)
+	return "%s Trust +%d." % [npc.npc_data.display_name, STORY_INTERACTION_TRUST_GAIN]
 
 
 func _interact_with_shelf(shelf: Shelf) -> void:
@@ -326,10 +352,7 @@ func _interact_with_supply_box(box: SupplyBox) -> void:
 	if box.collect_one(item_id):
 		var item: ItemData = ItemDatabase.get_item(item_id)
 
-		if item != null:
-			_show_pickup_notification(item.display_name)
-		else:
-			_show_pickup_notification(item_id)
+		_show_pickup_notification(item_id, item)
 
 		if not (box is MysterySupplyBox):
 			_notify_mystery_taken()
@@ -360,8 +383,24 @@ func _notify_mystery_taken() -> void:
 		world.on_normal_item_taken()
 
 
-func _show_pickup_notification(item_name: String) -> void:
-	_show_notification("Took %s" % item_name, 0.5)
+func _show_pickup_notification(item_id: String, item: ItemData) -> void:
+	var item_name := item.display_name if item != null else item_id
+
+	if _seen_item_ids.has(item_id):
+		_show_notification("Took %s" % item_name, 0.5)
+		return
+
+	_seen_item_ids[item_id] = true
+
+	if item == null:
+		_show_notification("Took %s. Press E near a shelf to try stocking it." % item_name, 2.2)
+		return
+
+	_show_notification(
+		"Took %s. Press E near the %s shelf to stock it. Press Q near a shelf to take stock." %
+		[item.display_name, _get_shelf_type_label(item.shelf_type)],
+		3.0
+	)
 
 
 func _show_notification(text: String, duration: float = 2.0) -> void:
@@ -374,6 +413,10 @@ func _show_notification_sequence(messages: Array[String]) -> void:
 
 func _interact_with_cashier(cashier: Cashier) -> void:
 	cashier.try_checkout()
+
+
+func _interact_with_activity_board(activity_board: ActivityBoard) -> void:
+	activity_board.open_board()
 
 
 func _is_action_locked() -> bool:

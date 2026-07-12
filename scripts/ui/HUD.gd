@@ -2,14 +2,18 @@ extends CanvasLayer
 
 signal notification_finished()
 
-@onready var gold_label: Label = $GoldLabel
-@onready var target_label: Label = $TargetLabel
-@onready var time_label: Label = $TimeLabel
-@onready var phase_label: Label = $PhaseLabel
-@onready var day_label: Label = $DayLabel
+@onready var gold_label: Label = $TopLeftHUD/GoldLabel
+@onready var target_label: Label = $TopLeftHUD/TargetLabel
+@onready var day_label: Label = $TopCenterHUD/DayLabel
+@onready var phase_label: Label = $TopCenterHUD/PhaseLabel
+@onready var time_label: Label = $TopCenterHUD/TimeLabel
 @onready var notification_label: Label = $NotificationLabel
+@onready var objective_label: Label = $ObjectiveLabel
+@onready var _trust_label: Label = get_node_or_null("TopRightHUD/TrustLabel") as Label
 
 const NOTIFY_DURATION: float = 2.0
+const MIN_NOTIFY_DURATION: float = 0.9
+const NOTIFY_CHARS_PER_SECOND: float = 34.0
 const GOOBY_ID: String = "gooby"
 
 var _notify_timer: float = 0.0
@@ -18,13 +22,11 @@ var _notify_full_chars: int = 0
 var _action_lock_timer: float = 0.0
 var _action_lock_sessions: int = 0
 var _notification_finished_emitted: bool = true
-var _trust_label: Label = null
-
 
 func _ready() -> void:
 	add_to_group("hud")
 	notification_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_create_trust_label()
+	_setup_trust_label()
 
 	EconomyManager.gold_changed.connect(_on_gold_changed)
 	EconomyManager.daily_target_reached.connect(_on_target_reached)
@@ -79,7 +81,7 @@ func _handle_dialog_skip_input(event: InputEvent) -> void:
 
 	var skipped := false
 
-	if notification_label.visible:
+	if notification_label.visible and not _has_interactive_overlay_open():
 		_finish_notification()
 		skipped = true
 
@@ -115,11 +117,35 @@ func _skip_world_dialogs() -> bool:
 	return skipped
 
 
+func _has_interactive_overlay_open() -> bool:
+	return _has_visible_overlay_named("CashierUILayer") or _has_visible_overlay_named("ActivityBoardLayer")
+
+
+func _has_visible_overlay_named(node_name: String) -> bool:
+	var root := get_tree().root
+
+	if root == null:
+		return false
+
+	return _find_visible_overlay_named(root, node_name)
+
+
+func _find_visible_overlay_named(node: Node, node_name: String) -> bool:
+	if node.name == node_name and node is CanvasItem and (node as CanvasItem).visible:
+		return true
+
+	for child in node.get_children():
+		if _find_visible_overlay_named(child, node_name):
+			return true
+
+	return false
+
+
 func show_notification(text: String, duration: float = NOTIFY_DURATION, blocks_actions: bool = true) -> void:
 	notification_label.visible = true
 	notification_label.text = text
 	_notify_full_chars = text.length()
-	_notify_duration = max(duration, 0.1)
+	_notify_duration = _get_readable_notification_duration(text, duration)
 	_notify_timer = _notify_duration
 	notification_label.visible_characters = 0
 	notification_label.modulate.a = 1.0
@@ -127,6 +153,23 @@ func show_notification(text: String, duration: float = NOTIFY_DURATION, blocks_a
 
 	if blocks_actions:
 		_action_lock_timer = _notify_duration
+
+
+func set_objective(text: String) -> void:
+	if objective_label == null:
+		return
+
+	if text == "":
+		objective_label.visible = false
+		return
+
+	objective_label.visible = true
+	objective_label.text = "Objective: %s" % text
+
+
+func _get_readable_notification_duration(text: String, requested_duration: float) -> float:
+	var readable_duration := float(text.length()) / NOTIFY_CHARS_PER_SECOND
+	return max(requested_duration, MIN_NOTIFY_DURATION, readable_duration)
 
 
 func wait_for_notification_finished() -> void:
@@ -195,19 +238,28 @@ func _on_trust_changed(npc_id: String, new_trust: int, _delta: int) -> void:
 		return
 
 	if _trust_label != null:
-		_trust_label.text = "Gooby Trust: %d/100" % new_trust
+		_trust_label.text = "Trust: %d/100" % new_trust
 
 
-func _create_trust_label() -> void:
+func _setup_trust_label() -> void:
 	if _trust_label != null:
+		_trust_label.text = "Trust: 0/100"
+		_trust_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		return
 
 	_trust_label = Label.new()
 	_trust_label.name = "TrustLabel"
-	_trust_label.position = Vector2(328, 4)
-	_trust_label.text = "Gooby Trust: 0/100"
+	_trust_label.position = Vector2(0, 0)
+	_trust_label.size = Vector2(120, 15)
+	_trust_label.text = "Trust: 0/100"
 	_trust_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	add_child(_trust_label)
+
+	var fallback_parent: Node = get_node_or_null("TopRightHUD")
+	if fallback_parent != null:
+		fallback_parent.add_child(_trust_label)
+	else:
+		_trust_label.position = Vector2(350, 5)
+		add_child(_trust_label)
 
 
 func _update_target_label() -> void:
@@ -217,6 +269,6 @@ func _update_target_label() -> void:
 	]
 
 	if EconomyManager.daily_revenue >= EconomyManager.daily_target:
-		target_text += "  TARGET ACHIEVED"
+		target_text += " TARGET"
 
 	target_label.text = target_text

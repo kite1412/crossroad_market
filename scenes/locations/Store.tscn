@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://c3jpds51r7i41" path="res://scenes/ui/Cashier.tscn" id="3_cashier"]
 [ext_resource type="PackedScene" uid="uid://dauvgwqeqn80k" path="res://scenes/ui/HUD.tscn" id="5_hud"]
 [ext_resource type="Script" uid="uid://cftax4a7xovpj" path="res://scripts/locations/WorldLighting.gd" id="6_lighting"]
+[ext_resource type="Script" uid="uid://cv1loh5wawax2" path="res://scripts/objects/ActivityBoard.gd" id="7_activity_board"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_horizontal"]
 size = Vector2(480, 49)
@@ -14,6 +15,12 @@ size = Vector2(16, 270)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_storage_door"]
 size = Vector2(40, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_activity_board_body"]
+size = Vector2(72, 12)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_activity_board_area"]
+size = Vector2(96, 72)
 
 [node name="Store" type="Node2D" unique_id=915059892]
 y_sort_enabled = true
@@ -92,11 +99,43 @@ position = Vector2(239, 259)
 [node name="Cashier" parent="." unique_id=1316385707 instance=ExtResource("3_cashier")]
 position = Vector2(95, 122)
 
-[node name="InteractionArea" parent="Cashier" index="2"]
+[node name="InteractionArea" parent="Cashier" index="3"]
 position = Vector2(0, -2)
 
 [node name="CollisionShape2D" parent="Cashier/InteractionArea" index="0"]
 position = Vector2(-1, -8)
+
+[node name="ActivityBoard" type="StaticBody2D" parent="." unique_id=1462224847]
+position = Vector2(382, 104)
+script = ExtResource("7_activity_board")
+
+[node name="VisualRoot" type="Node2D" parent="ActivityBoard" unique_id=2077022974]
+
+[node name="AssetSprite" type="Sprite2D" parent="ActivityBoard/VisualRoot" unique_id=1432047480]
+
+[node name="PlaceholderRect" type="ColorRect" parent="ActivityBoard/VisualRoot" unique_id=508922469]
+offset_left = -36.0
+offset_top = -36.0
+offset_right = 36.0
+offset_bottom = -4.0
+color = Color(0.24, 0.15, 0.08, 1)
+
+[node name="HeaderLine" type="ColorRect" parent="ActivityBoard/VisualRoot" unique_id=25987367]
+offset_left = -30.0
+offset_top = -30.0
+offset_right = 30.0
+offset_bottom = -26.0
+color = Color(0.8, 0.63, 0.32, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ActivityBoard" unique_id=1198582917]
+position = Vector2(0, -20)
+shape = SubResource("RectangleShape2D_activity_board_body")
+
+[node name="InteractionArea" type="Area2D" parent="ActivityBoard" unique_id=1132306788]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ActivityBoard/InteractionArea" unique_id=1012384419]
+position = Vector2(0, -20)
+shape = SubResource("RectangleShape2D_activity_board_area")
 
 [node name="Player" parent="." unique_id=1580443777 instance=ExtResource("1_player")]
 position = Vector2(239, 242)
