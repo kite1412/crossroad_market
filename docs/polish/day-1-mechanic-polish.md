@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-Day 1 focuses on **mechanic polish without final art assets**. The project may still use placeholder visuals such as `ColorRect`, simple shapes, or temporary sprites. The goal is not to add new mechanics, but to make the existing mechanics more stable, readable, and ready for future Aseprite asset integration.
+Day 1 focuses on **mechanic polish without final art assets**. The project may still use placeholder visuals such as `ColorRect`, simple shapes, or temporary sprites. The goal is not to add new mechanics, but to make the existing mechanics more stable, readable, testable, and ready for future Aseprite asset integration.
 
 Main rule:
 
@@ -12,7 +12,7 @@ Polish the mechanics that already exist.
 Prepare the project so final assets can be swapped in safely later.
 ```
 
-This document is intended to guide AI Agent work. Every change should improve clarity, stability, feedback, or asset-readiness without expanding the gameplay scope.
+This document is intended to guide AI Agent / Codex work. Every change should improve clarity, stability, feedback, onboarding, UI readability, or asset-readiness without expanding the gameplay scope.
 
 ---
 
@@ -36,6 +36,14 @@ Player collects stock
 
 Day 1 polish should make this loop easier to understand and less fragile.
 
+Important current issue discovered during playtest:
+
+```text
+Gooby Trust HUD overlaps other HUD elements.
+Player guidance for new items / activities is still unclear.
+There is not yet a dedicated task for navigation guidance, activity board, or objective hints.
+```
+
 ---
 
 ## 3. Scope
@@ -51,7 +59,9 @@ The following work is allowed:
 - Improve notification and dialogue feedback.
 - Improve Gooby night choice logic.
 - Improve trust/revenue feedback for Gooby.
-- Improve temporary UI readability.
+- Fix temporary HUD layout issues, including overlapping labels.
+- Add or improve lightweight objective guidance using existing mechanics.
+- Add a simple activity / task board if it only explains existing actions.
 - Prepare placeholder node structure for later sprite replacement.
 - Add small helper methods only if they make existing logic clearer.
 - Document mechanic behavior and expected outcomes.
@@ -67,158 +77,47 @@ The following work is not allowed for Day 1:
 - Replacing all final assets before the asset pack is ready.
 - Doing final animation polish that depends on final sprites.
 - Reworking the whole project architecture at once.
+- Adding a complex quest system.
+- Adding a full minimap system.
+- Adding a complex tutorial system with cutscenes.
+
+If a proposed change creates a new way to play, it is likely a new mechanic. If it only explains, stabilizes, or clarifies an existing action, it can be treated as polish.
 
 ---
 
-## 4. Existing Core Mechanics to Polish
+## 4. Recommended Execution Order
 
-## 4.1 Player Interaction Polish
-
-Goal:
-
-Make player actions readable, consistent, and safe.
-
-Checklist:
-
-- [ ] Player movement feels responsive.
-- [ ] `interact` input works consistently.
-- [ ] `take_shelf_item` input is clear and does not conflict with other actions.
-- [ ] Player can identify when shelf, cashier, NPC, or supply box can be interacted with.
-- [ ] Failed interaction gives feedback instead of silently doing nothing.
-- [ ] Interaction priority is predictable.
-- [ ] Player does not get stuck due to collision.
-- [ ] Action locks from UI or notifications do not permanently block player control.
-
-AI Agent rule:
+Use this document as a task spec. Do not ask Codex / AI Agent to execute everything at once.
 
 ```text
-Do not add a new interaction system.
-Improve only the clarity and reliability of existing interactions.
+1 prompt = 1 task or 1 small subtask
 ```
 
----
-
-## 4.2 Shelf Mechanic Polish
-
-Goal:
-
-Make shelf logic stable for both player and NPC.
-
-Checklist:
-
-- [ ] Player can place valid item on matching shelf type.
-- [ ] Wrong shelf placement gives clear feedback.
-- [ ] Shelf slot limit is respected.
-- [ ] Item leaves inventory when placed on shelf.
-- [ ] Item leaves shelf when taken by NPC.
-- [ ] Item can return to shelf when a checkout is rejected.
-- [ ] Shelf visual placeholder is separated from collision and interaction shape.
-- [ ] Shelf node structure is ready for Aseprite sprite replacement.
-
-AI Agent rule:
+Recommended order:
 
 ```text
-Do not add new shelf types for Day 1.
-Focus on existing human shelf and ghost shelf behavior.
+Task 1  — Validate Gooby Night Choice
+Task 2  — Polish HUD Layout and Trust Display
+Task 3  — Polish Player Navigation and Objective Guidance
+Task 4  — Polish Activity Board / Action Guidance
+Task 5  — Polish NPC Flow
+Task 6  — Polish Cashier Flow
+Task 7  — Polish Shelf and Item Flow
+Task 8  — Polish Feedback and Notifications
+Task 9  — Review Core Loop
+Task 10 — Prepare Asset-Ready Node Structure
+Task 11 — Documentation Update
 ```
 
 ---
 
-## 4.3 NPC Behavior Polish
+## 5. Task 1 — Validate Gooby Night Choice
 
-Goal:
+### Goal
 
-Make NPC flow understandable from entrance to exit.
+Validate the existing Gooby night branch. This task should be validation-first because the core logic is already implemented.
 
-Expected NPC state flow:
-
-```text
-ENTER
-→ WALK_TO_SHELF
-→ SEARCH_ITEM
-→ TAKE_ITEM
-→ WAIT_IN_QUEUE
-→ CHECKOUT
-→ EXIT
-```
-
-Checklist:
-
-- [ ] NPC spawns at entrance.
-- [ ] NPC walks to the correct shelf type.
-- [ ] NPC does not exit without clear reason.
-- [ ] NPC pauses/searches briefly at shelf.
-- [ ] NPC takes item if available.
-- [ ] NPC gives dialogue if item is missing.
-- [ ] NPC joins queue after taking item.
-- [ ] NPC only enters checkout when first in queue.
-- [ ] NPC exits after checkout outcome is resolved.
-- [ ] NPC does not remain in queue after leaving.
-- [ ] Story NPC outcome can differ from normal purchase outcome.
-
-AI Agent rule:
-
-```text
-Avoid adding new states unless required to fix a bug.
-Prefer clearer helper methods over large state rewrites.
-```
-
----
-
-## 4.4 Cashier / Checkout Polish
-
-Goal:
-
-Make checkout behavior clear for normal NPCs and story NPCs.
-
-Normal customer flow:
-
-```text
-NPC waits at cashier
-→ Player scans requested item
-→ Player confirms scan
-→ Player receives payment
-→ Revenue increases
-→ NPC exits
-```
-
-Checklist:
-
-- [ ] Cashier only processes a valid checkout NPC.
-- [ ] Cashier tells player if no customer is waiting.
-- [ ] Cashier tells player if customer is still walking.
-- [ ] Scan mismatch gives clear feedback.
-- [ ] Correct scan leads to checkout resolution.
-- [ ] Normal paid checkout increases daily revenue.
-- [ ] Checkout UI does not leave player action locked.
-- [ ] Checkout state resets after payment, gift, refusal, or cancel.
-
-AI Agent rule:
-
-```text
-Do not turn cashier into a new minigame.
-Polish only the current scan-confirm-outcome flow.
-```
-
----
-
-## 5. Gooby Night Logic Polish
-
-## 5.1 Design Purpose
-
-Gooby is a story NPC, not a normal paying customer. The night Gooby event creates a trade-off:
-
-```text
-Choose trust with Gooby
-OR
-Choose daily revenue target through Slime consequence
-```
-
-This is a polish target because the logic already exists as a story checkout outcome. The goal is to make the consequence explicit and readable to the player.
-
----
-
-## 5.2 Expected Gooby Flow
+### Expected Flow
 
 ```text
 Night phase starts
@@ -237,9 +136,7 @@ Option A: Give Item
 Option B: Refuse Sale
 ```
 
----
-
-## 5.3 Option A — Give Item
+### Option A — Give Item
 
 Expected behavior:
 
@@ -270,12 +167,10 @@ Checklist:
 - [ ] Gift option consumes the item.
 - [ ] Gooby exits after receiving gift.
 - [ ] Slime does not spawn after gift.
-- [ ] HUD trust label updates.
+- [ ] HUD trust label updates without overlapping other HUD text.
 - [ ] Notification explains `+Trust` and `+0G` clearly.
 
----
-
-## 5.4 Option B — Refuse Sale
+### Option B — Refuse Sale
 
 Expected behavior:
 
@@ -311,107 +206,538 @@ Checklist:
 - [ ] Target can become `50G / 50G TARGET ACHIEVED`.
 - [ ] Notification explains that another customer is coming.
 
----
-
-## 5.5 Gooby Logic Test Cases
-
-### Test Case GOO-01 — Give Gooby Item
-
-Precondition:
+### AI Agent Prompt
 
 ```text
-Current revenue: 40/50
-Current phase: Night
-Ghost shelf has Phantom Ice Cream
-Gooby is at cashier
-```
+Validate Task 1 — Gooby Night Choice from docs/polish/day-1-mechanic-polish.md.
 
-Steps:
+Batasan:
+- Jangan tambah mechanic baru.
+- Jangan edit file kecuali bug ditemukan.
+- Fokus existing Gooby gift/refuse flow.
+- Pastikan revenue dan trust tetap reward path terpisah.
+- Pastikan HUD trust tidak menimpa HUD lain.
 
-```text
-1. Interact with cashier.
-2. Scan Phantom Ice Cream.
-3. Confirm scan.
-4. Choose Give Item (+Trust, +0G).
-```
-
-Expected result:
-
-```text
-Gooby exits.
-Gooby Trust increases by +10.
-Revenue remains 40/50.
-Slime does not spawn.
-Item is not returned to shelf.
+Expected output:
+- File yang dicek.
+- Status Give Item.
+- Status Refuse Sale.
+- Status Slime path.
+- Bug yang ditemukan.
+- Apakah Task 1 bisa ditandai done.
 ```
 
 ---
 
-### Test Case GOO-02 — Refuse Gooby
+## 6. Task 2 — Polish HUD Layout and Trust Display
 
-Precondition:
+### Goal
+
+Fix HUD readability problems. The current trust display can overlap existing HUD elements, so HUD polish is now a required Day 1 task.
+
+This is not a new mechanic. It is UI polish for already existing game state:
 
 ```text
-Current revenue: 40/50
-Current phase: Night
-Ghost shelf has Phantom Ice Cream
-Gooby is at cashier
+Wallet
+Daily revenue target
+Time / phase / day
+Gooby Trust
+Notifications
 ```
 
-Steps:
+### Design Requirements
+
+HUD must be readable at the project viewport size:
 
 ```text
-1. Interact with cashier.
-2. Scan Phantom Ice Cream.
-3. Confirm scan.
-4. Choose Refuse Sale (Return Item).
+480x270
 ```
 
-Expected result:
+Recommended temporary layout:
 
 ```text
-Gooby exits.
-Gooby Trust does not increase.
-Phantom Ice Cream returns to ghost shelf.
-Slime spawns.
-Slime can buy Phantom Ice Cream.
-Revenue becomes 50/50 after Slime checkout.
-Daily target is achieved.
+Top-left:
+- Wallet
+- Daily target
+
+Top-center:
+- Day
+- Phase
+- Time
+
+Top-right:
+- Gooby Trust
+
+Bottom / lower center:
+- Notification text
+```
+
+If the top-right area is too cramped, use a compact label:
+
+```text
+Trust: 10/100
+```
+
+instead of:
+
+```text
+Gooby Trust: 10/100
+```
+
+### Checklist
+
+- [ ] Gooby Trust label does not overlap Wallet.
+- [ ] Gooby Trust label does not overlap target display.
+- [ ] Gooby Trust label does not overlap Day / Phase / Time.
+- [ ] Trust label is readable at 480x270 viewport.
+- [ ] Trust label updates after Give Item.
+- [ ] Trust label remains visible but not distracting.
+- [ ] Target display still updates correctly.
+- [ ] Notification text still appears clearly.
+- [ ] HUD uses stable positioning that can later be replaced with designed UI assets.
+- [ ] No gameplay logic is moved into HUD.
+
+### Suggested Implementation Direction
+
+Preferred temporary solution:
+
+```text
+Create a dedicated HUD container for trust display.
+Use alignment/anchors instead of raw overlapping positions where possible.
+Keep trust update logic connected to RelationshipManager.
+```
+
+Do not overbuild a full HUD framework yet. This task is only to make the current HUD readable.
+
+### Test Cases
+
+#### HUD-01 — Default HUD
+
+```text
+Start game.
+Expected:
+Wallet, target, day, phase, time, and trust are all readable.
+No label overlaps another label.
+```
+
+#### HUD-02 — Gooby Trust Update
+
+```text
+Give item to Gooby.
+Expected:
+Gooby Trust changes from 0/100 to 10/100.
+HUD does not overlap after update.
+```
+
+#### HUD-03 — Target Achieved
+
+```text
+Reach 50/50 revenue.
+Expected:
+Target achieved text is readable and does not collide with trust label.
+```
+
+### AI Agent Prompt
+
+```text
+Analisa dan implementasikan Task 2 — Polish HUD Layout and Trust Display dari docs/polish/day-1-mechanic-polish.md.
+
+Batasan:
+- Jangan tambah mechanic baru.
+- Fokus memperbaiki layout HUD yang sudah ada.
+- Gooby Trust tidak boleh menimpa Wallet, Target, Day, Phase, atau Time.
+- Jangan pindahkan gameplay logic ke HUD.
+- Cek file HUD terkait dulu sebelum edit.
+
+Expected output:
+- File yang dicek.
+- Penyebab overlap.
+- Perubahan layout yang dibuat.
+- Test HUD default.
+- Test Gooby Trust update.
+- Test target achieved.
 ```
 
 ---
 
-### Test Case GOO-03 — Slime Spawn Safety
+## 7. Task 3 — Polish Player Navigation and Objective Guidance
 
-Precondition:
+### Goal
+
+Make the player understand where to go and what to do next, especially when a new item, shelf, or activity becomes relevant.
+
+This is polish because it explains existing actions. It should not create a new progression system.
+
+### Current Problem
+
+A new player may not know:
 
 ```text
-Gooby has already been refused once in the same night.
+- Where to take stock from.
+- Which shelf should receive which item.
+- When customers can come.
+- What to do when ghost shelf / Phantom Ice Cream appears.
+- What board or instruction source should be checked.
+- What activity is currently expected.
 ```
 
-Steps:
+### Allowed Guidance Types
+
+Allowed:
 
 ```text
-1. Try to trigger Gooby refusal again through repeated interaction or UI edge case.
+- Short objective text in HUD.
+- Notification when a new activity becomes available.
+- A simple board / sign that lists current available actions.
+- Object interaction hint.
+- One-line instruction after important discovery.
 ```
 
-Expected result:
+Not allowed:
 
 ```text
-Only one Slime is spawned.
-No duplicate Slime spawn occurs.
-No duplicate revenue exploit occurs.
+- Full quest system.
+- Complex quest tracking with multiple quest states.
+- New reward mechanics.
+- New map navigation system.
+- Large tutorial cutscene.
+```
+
+### Recommended Temporary Objective Flow
+
+```text
+Morning:
+Objective: Bring the human shelf from storage.
+
+After human shelf placed:
+Objective: Stock the human shelf with normal items.
+
+After enough human stock:
+Objective: Check the storage corner.
+
+After ghost shelf discovered:
+Objective: Place the ghost shelf and stock Phantom Ice Cream.
+
+After ghost shelf stocked:
+Objective: Open the store and wait for night customers.
+
+At night:
+Objective: Serve Gooby at the cashier.
+
+After refusing Gooby:
+Objective: Wait for the next strange customer.
+```
+
+### Checklist
+
+- [ ] Player gets a clear initial objective.
+- [ ] Objective changes after shelf placement.
+- [ ] Objective changes after stock placement.
+- [ ] Objective changes after mystery / ghost shelf discovery.
+- [ ] Objective tells player what to do with Phantom Ice Cream.
+- [ ] Objective tells player to serve Gooby at night.
+- [ ] Objective or notification explains what happens after refusing Gooby.
+- [ ] Objective text is short enough for 480x270 viewport.
+- [ ] Objective UI does not overlap existing HUD.
+- [ ] Objective guidance does not add new mechanics.
+
+### Test Cases
+
+#### NAV-01 — First Objective
+
+```text
+Start Day 1.
+Expected:
+Player receives clear direction to bring human shelf from storage.
+```
+
+#### NAV-02 — Stocking Objective
+
+```text
+Place human shelf in store.
+Expected:
+Objective changes to stock the human shelf.
+```
+
+#### NAV-03 — Ghost Item Objective
+
+```text
+Unlock / discover ghost shelf flow.
+Expected:
+Objective explains what to do with the ghost shelf or Phantom Ice Cream.
+```
+
+#### NAV-04 — Night Objective
+
+```text
+Night starts with ghost shelf ready.
+Expected:
+Objective explains that strange customers may arrive and player should use cashier.
+```
+
+### AI Agent Prompt
+
+```text
+Analisa dan implementasikan Task 3 — Polish Player Navigation and Objective Guidance dari docs/polish/day-1-mechanic-polish.md.
+
+Batasan:
+- Jangan tambah mechanic baru.
+- Jangan buat quest system kompleks.
+- Fokus objective/hint untuk existing core loop.
+- Pastikan text tidak menimpa HUD lain.
+- Cek Store, HUD, dan notification flow sebelum edit.
+
+Expected output:
+- File yang dicek.
+- Titik gameplay yang belum punya arahan.
+- Objective/hint yang ditambahkan.
+- Test tiap perubahan objective.
+- Risiko overlap UI.
 ```
 
 ---
 
-## 6. Feedback & Notification Polish
+## 8. Task 4 — Polish Activity Board / Action Guidance
 
-Goal:
+### Goal
+
+Add or polish a simple **activity board** / **shop board** / **instruction board** that helps the player know available actions.
+
+This is optional if objective HUD is already enough, but it is useful if the player needs a stable place to check what to do.
+
+### Design Purpose
+
+The board should answer:
+
+```text
+What can I do right now?
+Where should I go next?
+What item or shelf is relevant now?
+```
+
+### Recommended Board Content
+
+The board should show short, current-action text such as:
+
+```text
+Today's Work
+- Bring shelf from storage
+- Stock human shelf
+- Serve customers at cashier
+```
+
+After ghost flow begins:
+
+```text
+Strange Notes
+- Check the dark storage corner
+- Place the ghost shelf
+- Stock Phantom Ice Cream
+- Watch the store at night
+```
+
+During Gooby branch:
+
+```text
+Night Choice
+- Give item: Trust +, Revenue 0G
+- Refuse sale: Item returns, another customer may come
+```
+
+### Implementation Boundary
+
+Allowed:
+
+```text
+- A simple interactable board.
+- A simple panel with static or state-based text.
+- Reuse existing notification/objective state.
+```
+
+Not allowed:
+
+```text
+- New quest reward system.
+- New task completion economy.
+- New unlock system.
+- Complex journal UI.
+```
+
+### Checklist
+
+- [ ] Board exists or current guidance alternative is documented.
+- [ ] Board explains current activity clearly.
+- [ ] Board text updates at major existing milestones if implemented.
+- [ ] Board does not introduce new gameplay requirements.
+- [ ] Board UI can be closed safely.
+- [ ] Board does not permanently lock input.
+- [ ] Board does not conflict with cashier UI.
+- [ ] Board can be replaced with final board sprite later.
+
+### Test Cases
+
+#### BOARD-01 — Open Board
+
+```text
+Interact with board.
+Expected:
+Board panel opens and shows current guidance.
+```
+
+#### BOARD-02 — Close Board
+
+```text
+Close board panel.
+Expected:
+Player control returns normally.
+```
+
+#### BOARD-03 — Updated Guidance
+
+```text
+Reach ghost shelf / Gooby flow.
+Expected:
+Board text reflects the current existing activity.
+```
+
+### AI Agent Prompt
+
+```text
+Analisa Task 4 — Polish Activity Board / Action Guidance dari docs/polish/day-1-mechanic-polish.md.
+
+Batasan:
+- Jangan edit file dulu.
+- Jangan tambah mechanic baru.
+- Tentukan apakah objective HUD sudah cukup atau perlu simple board.
+- Jika board perlu dibuat, rancang implementasi kecil yang tidak menjadi quest system kompleks.
+
+Expected output:
+- Apakah board diperlukan sekarang.
+- File/scene yang akan terdampak.
+- Rencana UI board sederhana.
+- Risiko scope creep.
+- Test case yang perlu dijalankan.
+```
+
+---
+
+## 9. Task 5 — Polish NPC Flow
+
+### Goal
+
+Make NPC flow understandable from entrance to exit.
+
+Expected NPC state flow:
+
+```text
+ENTER
+→ WALK_TO_SHELF
+→ SEARCH_ITEM
+→ TAKE_ITEM
+→ WAIT_IN_QUEUE
+→ CHECKOUT
+→ EXIT
+```
+
+### Checklist
+
+- [ ] NPC spawns at entrance.
+- [ ] NPC walks to the correct shelf type.
+- [ ] NPC does not exit without clear reason.
+- [ ] NPC pauses/searches briefly at shelf.
+- [ ] NPC takes item if available.
+- [ ] NPC gives dialogue if item is missing.
+- [ ] NPC joins queue after taking item.
+- [ ] NPC only enters checkout when first in queue.
+- [ ] NPC exits after checkout outcome is resolved.
+- [ ] NPC does not remain in queue after leaving.
+- [ ] Story NPC outcome can differ from normal purchase outcome.
+- [ ] Gooby and Slime still follow readable NPC movement flow.
+
+### AI Agent Rule
+
+```text
+Avoid adding new states unless required to fix a bug.
+Prefer clearer helper methods over large state rewrites.
+```
+
+---
+
+## 10. Task 6 — Polish Cashier / Checkout Flow
+
+### Goal
+
+Make checkout behavior clear for normal NPCs and story NPCs.
+
+Normal customer flow:
+
+```text
+NPC waits at cashier
+→ Player scans requested item
+→ Player confirms scan
+→ Player receives payment
+→ Revenue increases
+→ NPC exits
+```
+
+### Checklist
+
+- [ ] Cashier only processes a valid checkout NPC.
+- [ ] Cashier tells player if no customer is waiting.
+- [ ] Cashier tells player if customer is still walking.
+- [ ] Scan mismatch gives clear feedback.
+- [ ] Correct scan leads to checkout resolution.
+- [ ] Normal paid checkout increases daily revenue.
+- [ ] Gooby checkout uses Gooby choice panel instead of normal payment.
+- [ ] Checkout UI does not leave player action locked.
+- [ ] Checkout state resets after payment, gift, refusal, or cancel.
+- [ ] Repeated Enter/interact input does not accidentally choose a Gooby branch.
+
+### AI Agent Rule
+
+```text
+Do not turn cashier into a new minigame.
+Polish only the current scan-confirm-outcome flow.
+```
+
+---
+
+## 11. Task 7 — Polish Shelf and Item Flow
+
+### Goal
+
+Make shelf logic stable for both player and NPC.
+
+### Checklist
+
+- [ ] Player can place valid item on matching shelf type.
+- [ ] Wrong shelf placement gives clear feedback.
+- [ ] Shelf slot limit is respected.
+- [ ] Item leaves inventory when placed on shelf.
+- [ ] Item leaves shelf when taken by NPC.
+- [ ] Item can return to shelf when a checkout is rejected.
+- [ ] Returned Phantom Ice Cream can be found by Slime.
+- [ ] No item duplication happens after Gooby refusal.
+- [ ] No item loss happens after Gooby gift.
+- [ ] Shelf visual placeholder is separated from collision and interaction shape.
+- [ ] Shelf node structure is ready for Aseprite sprite replacement.
+
+### AI Agent Rule
+
+```text
+Do not add new shelf types for Day 1.
+Focus on existing human shelf and ghost shelf behavior.
+```
+
+---
+
+## 12. Task 8 — Polish Feedback and Notifications
+
+### Goal
 
 Player should always understand what changed and why.
 
-Checklist:
+### Checklist
 
 - [ ] Notification appears when item is picked up.
 - [ ] Notification appears when item is placed on shelf.
@@ -423,6 +749,8 @@ Checklist:
 - [ ] Notification appears when refusing Gooby triggers the next consequence.
 - [ ] Notification duration is readable.
 - [ ] Notification does not permanently block input.
+- [ ] Notification does not cover critical cashier choices.
+- [ ] Notification does not overlap objective text or trust label.
 
 Suggested text examples:
 
@@ -434,48 +762,64 @@ Daily target achieved.
 
 ---
 
-## 7. HUD Polish
+## 13. Task 9 — Review Core Loop
 
-Goal:
+### Goal
 
-HUD should show key state changes clearly during polish.
+Review the full playable loop after the focused polish tasks are done.
 
-Checklist:
+### Checklist
 
-- [ ] Gold display updates when revenue changes.
-- [ ] Daily target display updates from `40G / 50G` to `50G / 50G`.
-- [ ] Target achieved text appears when target is reached.
-- [ ] Gooby trust display exists.
-- [ ] Gooby trust display updates after gift.
-- [ ] HUD layout remains readable with placeholder UI.
+- [ ] Player can start Day 1 and understand first action.
+- [ ] Player can bring shelf from storage.
+- [ ] Player can stock human shelf.
+- [ ] Human customers can buy items.
+- [ ] Ghost shelf / mystery flow can be reached.
+- [ ] Gooby arrives at night.
+- [ ] Gooby gift path works.
+- [ ] Gooby refuse → Slime path works.
+- [ ] Daily target can be missed or achieved depending on branch.
+- [ ] HUD remains readable throughout the flow.
+- [ ] Player never loses control due to stuck UI state.
 
-Temporary HUD target:
+### AI Agent Prompt
 
 ```text
-Wallet: 40G
-40G / 50G
-Gooby Trust: 10/100
+Review Task 9 — Review Core Loop dari docs/polish/day-1-mechanic-polish.md.
+
+Batasan:
+- Jangan edit file dulu.
+- Jangan tambah mechanic baru.
+- Jalankan review berdasarkan mechanic yang sudah ada.
+- Fokus menemukan friction point, UI overlap, atau bug.
+
+Expected output:
+- Status core loop dari awal sampai transaksi malam.
+- Bagian yang sudah stabil.
+- Bagian yang masih rawan.
+- Rekomendasi task kecil berikutnya.
 ```
 
 ---
 
-## 8. Asset-Ready Structure Polish
+## 14. Task 10 — Prepare Asset-Ready Node Structure
 
-Goal:
+### Goal
 
 Prepare scenes so placeholder visuals can be swapped with Aseprite assets later without breaking mechanics.
 
-Checklist:
+### Checklist
 
 - [ ] Visual nodes are separated from logic nodes.
 - [ ] Placeholder visuals are grouped under a stable visual root where possible.
-- [ ] Collision shapes do not depend directly on `ColorRect` size.
-- [ ] Interaction areas remain stable even when visuals change.
-- [ ] NPC node structure can accept `AnimatedSprite2D` later.
-- [ ] Shelf node structure can accept item sprites later.
-- [ ] Cashier and HUD UI can be visually replaced without changing checkout logic.
+- [ ] Collision shapes do not depend directly on placeholder size.
+- [ ] Interaction areas remain stable when sprite changes.
+- [ ] Scene node names are stable.
+- [ ] Script does not depend directly on `ColorRect` for gameplay logic.
+- [ ] `Sprite2D` or `AnimatedSprite2D` replacement path is clear.
+- [ ] Temporary UI / board / HUD layout can later be replaced by final UI assets.
 
-Recommended structure for NPC:
+Recommended pattern:
 
 ```text
 NPC
@@ -488,179 +832,90 @@ NPC
 └── InteractionArea
 ```
 
-Recommended rule:
+### AI Agent Rule
 
 ```text
-Scripts should target stable gameplay nodes, not temporary ColorRect visuals.
+Do not replace final assets yet.
+Prepare the structure so replacement is easy later.
 ```
 
 ---
 
-## 9. Day 1 Task List
+## 15. Task 11 — Documentation Update
 
-## Task 1 — Freeze Mechanic Scope
+### Goal
 
-- [ ] Confirm the mechanic scope for Day 1.
-- [ ] Mark new mechanics as out of scope.
-- [ ] Focus only on polish and stability.
+Keep this file useful as an AI Agent task spec.
 
-Output:
+### Checklist
+
+- [ ] Mark tasks as done / partially done / pending when appropriate.
+- [ ] Add discovered bugs to the relevant task section.
+- [ ] Add new test cases if playtest reveals missing cases.
+- [ ] Remove or rewrite tasks that are already fully completed.
+- [ ] Keep Day 1 scope focused on polish, not feature expansion.
+
+### AI Agent Prompt
 
 ```text
-Mechanic scope is locked.
+Update Task 11 — Documentation Update dari docs/polish/day-1-mechanic-polish.md.
+
+Batasan:
+- Jangan ubah mechanic.
+- Update dokumentasi berdasarkan hasil validasi terakhir.
+- Tandai task yang sudah done, partially done, dan pending.
+- Tambahkan catatan bug/follow-up jika ada.
 ```
 
 ---
 
-## Task 2 — Review Core Loop
+## 16. Definition of Done — Day 1
 
-- [ ] Test item pickup.
-- [ ] Test shelf placement.
-- [ ] Test NPC entering store.
-- [ ] Test NPC finding item.
-- [ ] Test NPC queue.
-- [ ] Test cashier scan.
-- [ ] Test normal checkout.
-- [ ] Test Gooby checkout.
-- [ ] Test Slime consequence.
+Day 1 can be considered done when:
 
-Output:
-
-```text
-Core loop bugs and friction points are documented.
-```
-
----
-
-## Task 3 — Polish Gooby Night Choice
-
-- [ ] Confirm Gooby appears at night.
-- [ ] Confirm Gooby takes Phantom Ice Cream.
-- [ ] Confirm cashier shows Gooby choice panel.
-- [ ] Confirm Give Item increases trust and gives no revenue.
-- [ ] Confirm Refuse Sale returns item and spawns Slime.
-- [ ] Confirm Slime can buy the returned item.
-- [ ] Confirm target can reach 50/50 through Slime.
-
-Output:
-
-```text
-Gooby story checkout choice is clear, stable, and testable.
-```
+- [ ] No new major mechanic was added.
+- [ ] Core shop loop can be played from setup to checkout.
+- [ ] Gooby gift path works and gives trust without revenue.
+- [ ] Gooby refuse path works and enables Slime revenue path.
+- [ ] Trust label does not overlap HUD.
+- [ ] Player has clear objective guidance for current activity.
+- [ ] New item / ghost item activity is explained through objective, notification, or board.
+- [ ] NPC flow is stable enough for playtest.
+- [ ] Cashier UI cleans up after each checkout outcome.
+- [ ] Shelf/item flow does not duplicate or lose items incorrectly.
+- [ ] Temporary UI is readable at 480x270.
+- [ ] Project remains ready for Aseprite asset integration.
 
 ---
 
-## Task 4 — Polish Player Feedback
+## 17. Suggested Trello / Branch Naming
 
-- [ ] Add or improve feedback for failed interaction.
-- [ ] Add or improve feedback for wrong shelf.
-- [ ] Add or improve feedback for Gooby choice.
-- [ ] Add or improve feedback for target reached.
-
-Output:
+Trello activities:
 
 ```text
-Player understands the result of each major action.
+validate_gooby_night_choice_day_1
+polish_hud_trust_layout_day_1
+polish_player_navigation_objective_day_1
+polish_activity_board_guidance_day_1
+polish_npc_flow_day_1
+polish_cashier_flow_day_1
+polish_shelf_item_flow_day_1
+review_core_loop_day_1
+prepare_asset_ready_node_structure_day_1
 ```
 
----
-
-## Task 5 — Polish Asset-Ready Nodes
-
-- [ ] Identify placeholder visuals that will be replaced.
-- [ ] Ensure visuals are separated from collision and interaction area.
-- [ ] Add stable visual root nodes if needed.
-- [ ] Avoid direct logic dependency on temporary visuals.
-
-Output:
+Branch:
 
 ```text
-Project is safer for future Aseprite asset integration.
+polish/day-1-mechanic-polish
 ```
 
----
-
-## Task 6 — Documentation Update
-
-- [ ] Document files changed.
-- [ ] Document mechanic polished.
-- [ ] Document Gooby expected behavior.
-- [ ] Document known bugs.
-- [ ] Document next steps for Day 2.
-
-Output:
+Suggested commit messages:
 
 ```text
-AI Agent work is traceable and reproducible.
-```
-
----
-
-## 10. Definition of Done
-
-Day 1 is considered done when:
-
-- [ ] No new major mechanic is added.
-- [ ] Existing core loop can be completed.
-- [ ] Normal customer checkout works.
-- [ ] Gooby gift path works.
-- [ ] Gooby refuse path works.
-- [ ] Slime consequence works.
-- [ ] Daily target can be missed or achieved based on player choice.
-- [ ] Gooby trust can increase through gift path.
-- [ ] HUD communicates revenue and trust.
-- [ ] Placeholder structure is safer for future asset replacement.
-- [ ] Bugs and next tasks are documented.
-
----
-
-## 11. Notes for AI Agent
-
-Rules for future AI Agent changes:
-
-```text
-1. Do not add new mechanics unless explicitly requested.
-2. Treat Gooby night choice as existing story mechanic polish.
-3. Keep revenue and trust as separate reward paths.
-4. Gift path should improve trust but not revenue.
-5. Refuse path should enable Slime revenue but not trust.
-6. Avoid duplicate Slime spawn.
-7. Avoid hardcoding UI behavior in too many places.
-8. Keep placeholder visuals replaceable.
-9. Document all behavior changes.
-```
-
-If unsure whether a change is allowed:
-
-```text
-If the change makes an existing mechanic clearer, safer, or easier to test, it is polish.
-If the change adds a new gameplay loop, system, or feature branch, it is out of scope.
-```
-
----
-
-## 12. Suggested Commit Messages
-
-Documentation only:
-
-```text
-docs: update day 1 mechanic polish with Gooby night logic
-```
-
-Logic polish:
-
-```text
-refactor: clarify Gooby gift and refusal checkout outcomes
-```
-
-Bug fix:
-
-```text
-fix: prevent duplicate slime spawn after Gooby refusal
-```
-
-HUD polish:
-
-```text
-feat: show Gooby trust during night story checkout
+docs: expand day 1 mechanic polish tasks
+fix: prevent trust hud overlap
+feat: add lightweight objective guidance for existing loop
+chore: document Gooby night choice validation
+refactor: prepare placeholder visuals for asset integration
 ```
