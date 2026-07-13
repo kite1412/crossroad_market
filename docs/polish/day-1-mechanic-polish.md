@@ -160,15 +160,22 @@ Activity Board:
 
 ### Checklist
 
-- [ ] Input action names are consistent.
-- [ ] Prompt text follows the same E/Q rule.
-- [ ] SupplyBox uses E for get/take stock.
-- [ ] Shelf pickup uses E.
-- [ ] Shelf placement / drop uses Q.
-- [ ] Shelf stocking uses Q.
-- [ ] Cashier interaction uses E.
-- [ ] Board interaction uses E.
-- [ ] No prompt contradicts the mapping.
+- [x] Input action names are consistent.
+- [x] Prompt text follows the same E/Q rule.
+- [x] SupplyBox uses E for get/take stock.
+- [x] Shelf pickup uses E.
+- [x] Shelf placement / drop uses Q.
+- [x] Shelf stocking uses Q.
+- [x] Cashier interaction uses E.
+- [x] Board interaction uses E.
+- [x] No prompt contradicts the mapping.
+
+### Implementation Notes
+
+- `project.godot` now uses `interact` on E and `put` on Q; the old `carry` / `take_shelf_item` input actions are no longer used.
+- Player E handles get/take/pickup/interact/read/serve: supply box stock pickup, shelf item pickup, shelf object pickup, cashier service, NPC interaction, and activity board reading.
+- Player Q handles put/place/drop/stock: shelf stocking and carried shelf placement.
+- Store and Storage expose shelf pickup/drop request methods so the player interaction layer can keep E/Q behavior consistent across locations.
 
 ### Codex Prompt
 
@@ -210,13 +217,21 @@ Player enters object InteractionArea / CollisionShape2D
 
 ### Checklist
 
-- [ ] Prompt appears on area enter / hover / proximity.
-- [ ] Prompt appears before pressing E/Q.
-- [ ] Prompt disappears on area exit.
-- [ ] Prompt identifies object/item name.
-- [ ] Prompt explains the correct input.
-- [ ] Prompt does not block player movement.
-- [ ] Prompt does not overlap cashier modal / board modal.
+- [x] Prompt appears on area enter / hover / proximity.
+- [x] Prompt appears before pressing E/Q.
+- [x] Prompt disappears on area exit.
+- [x] Prompt identifies object/item name.
+- [x] Prompt explains the correct input.
+- [x] Prompt does not block player movement.
+- [x] Prompt does not overlap cashier modal / board modal.
+
+### Implementation Notes
+
+- Added a non-blocking HUD `InteractionHintLabel` for compact proximity prompts.
+- Player updates the hint every frame from existing interaction-area overlap detection before E/Q is pressed.
+- Prompt text follows Task 1 mapping: E for get/take/pickup/interact/read/serve and Q for put/place/drop/stock.
+- Prompt text identifies current target names such as Supply Box, Human Shelf, Ghost Shelf, Cashier, Activity Board, NPC display name, and door names.
+- HUD hides the interaction hint while cashier or activity board overlays are open.
 
 ### Codex Prompt
 
@@ -284,12 +299,19 @@ Receive Payment — finish normal paid checkout.
 
 ### Checklist
 
-- [ ] First-time button guidance exists for core input mapping.
-- [ ] Cashier panel has clear button labels or one-time guidance.
-- [ ] Guidance runs once per input/object/panel category.
-- [ ] Guidance does not loop every time.
-- [ ] Guidance does not block cashier decision flow.
-- [ ] Compact prompts still appear after first-time guidance.
+- [x] First-time button guidance exists for core input mapping.
+- [x] Cashier panel has clear button labels or one-time guidance.
+- [x] Guidance runs once per input/object/panel category.
+- [x] Guidance does not loop every time.
+- [x] Guidance does not block cashier decision flow.
+- [x] Compact prompts still appear after first-time guidance.
+
+### Implementation Notes
+
+- Player proximity hints now use one-time guidance keys per category, then fall back to compact prompts.
+- One-time guidance covers supply box take, shelf pickup, carried shelf placement, shelf stocking, shelf item pickup, cashier interaction, NPC interaction, and activity board reading.
+- Cashier panel now has a non-blocking guide label that explains Scan, Paid, and Gooby choice buttons once per panel type.
+- Cashier guide text does not use blocking notifications, so scan/payment/Gooby decisions remain clickable immediately.
 
 ### Codex Prompt
 
@@ -334,12 +356,19 @@ Activity Board
 
 ### Checklist
 
-- [ ] Hover/proximity label shows object name.
-- [ ] Label appears before input.
-- [ ] Label disappears on exit.
-- [ ] Label works for items, shelves, cashier, board, and supply boxes.
-- [ ] Hover name is separate from one-time tutorial explanation.
-- [ ] Label does not overlap major HUD or modal panels.
+- [x] Hover/proximity label shows object name.
+- [x] Label appears before input.
+- [x] Label disappears on exit.
+- [x] Label works for items, shelves, cashier, board, and supply boxes.
+- [x] Hover name is separate from one-time tutorial explanation.
+- [x] Label does not overlap major HUD or modal panels.
+
+### Implementation Notes
+
+- Added a separate HUD `ObjectNameLabel` above the compact interaction prompt.
+- Player hover/proximity feedback now sends object name and action prompt separately.
+- Object names are resolved from existing data: NPC display name, stocked shelf item display name, shelf type, supply box type, cashier, activity board, and door labels.
+- The object name label hides when no target is in range, when actions are locked, or when cashier/activity board overlays are open.
 
 ### Codex Prompt
 
@@ -379,12 +408,18 @@ Expand the shelf interaction area, not the physics collision.
 
 ### Checklist
 
-- [ ] Shelf pickup detection uses a larger reachable InteractionArea.
-- [ ] Physical collision remains normal size.
-- [ ] Prompt appears before pressing E.
-- [ ] Player can pick shelf up again after placing it.
-- [ ] Ghost shelf retrieval flow is reliable.
-- [ ] Enlarged interaction area does not conflict with door, cashier, board, or other interactions.
+- [x] Shelf pickup detection uses a larger reachable InteractionArea.
+- [x] Physical collision remains normal size.
+- [x] Prompt appears before pressing E.
+- [x] Player can pick shelf up again after placing it.
+- [x] Ghost shelf retrieval flow is reliable.
+- [x] Enlarged interaction area does not conflict with door, cashier, board, or other interactions.
+
+### Implementation Notes
+
+- Shelf `InteractionArea` is expanded from `64x48` to `92x68` so the player can get pickup prompts from a practical standing distance.
+- Shelf `PhysicsBody/CollisionShape2D` stays at `64x32`, so this does not enlarge physical blocking or shelf placement collision.
+- Existing interaction priority remains unchanged: doors are checked first, cashier/NPC/supply targets still outrank shelves, and shelf pickup continues through existing Store/Storage request methods.
 
 ### Codex Prompt
 
@@ -416,13 +451,20 @@ Prevent shelf placement in positions that break navigation, block doors, block c
 
 ### Checklist
 
-- [ ] Shelf cannot be dropped on StorageDoor transition area.
-- [ ] Shelf cannot be dropped on YardDoor transition area.
-- [ ] Shelf cannot be dropped in cashier restricted area.
-- [ ] Shelf cannot block main path or queue path.
-- [ ] If first drop position is unsafe, fallback positions are tested.
-- [ ] If all drop positions are unsafe, player keeps carrying shelf.
-- [ ] Player receives clear feedback when drop is rejected.
+- [x] Shelf cannot be dropped on StorageDoor transition area.
+- [x] Shelf cannot be dropped on YardDoor transition area.
+- [x] Shelf cannot be dropped in cashier restricted area.
+- [x] Shelf cannot block main path or queue path.
+- [x] If first drop position is unsafe, fallback positions are tested.
+- [x] If all drop positions are unsafe, player keeps carrying shelf.
+- [x] Player receives clear feedback when drop is rejected.
+
+### Implementation Notes
+
+- Store shelf placement already rejects StorageDoor, YardDoor, cashier restricted area, body collision overlap, and unreachable shelf interaction positions.
+- Added customer path no-drop validation using existing `EntrancePos` and `CounterPos` markers.
+- Added checkout queue no-drop validation below `CounterPos`, matching the existing NPC queue target flow.
+- Existing fallback candidates remain active; if no candidate is valid, the shelf stays carried and the player receives rejection feedback.
 
 ### Codex Prompt
 
@@ -465,16 +507,23 @@ When invalid shelf drop happens near cashier:
 
 ### Checklist
 
-- [ ] Cashier restricted area exists or is clearly defined.
-- [ ] Shelf drop in cashier restricted area is rejected.
-- [ ] Player keeps carrying shelf after invalid drop.
-- [ ] Danger line surrounds the cashier restricted area.
-- [ ] Danger line is hidden by default.
-- [ ] Danger line fades in/out over 2 seconds.
-- [ ] Fade animation repeats 3 times.
-- [ ] Danger line hides after animation.
-- [ ] Animation does not block player input.
-- [ ] Animation does not interfere with cashier UI or NPC queue.
+- [x] Cashier restricted area exists or is clearly defined.
+- [x] Shelf drop in cashier restricted area is rejected.
+- [x] Player keeps carrying shelf after invalid drop.
+- [x] Danger line surrounds the cashier restricted area.
+- [x] Danger line is hidden by default.
+- [x] Danger line fades in/out over 2 seconds.
+- [x] Fade animation repeats 3 times.
+- [x] Danger line hides after animation.
+- [x] Animation does not block player input.
+- [x] Animation does not interfere with cashier UI or NPC queue.
+
+### Implementation Notes
+
+- Cashier restricted area uses the same `CounterPos`-based no-drop rect as shelf placement validation.
+- Added runtime `CashierRestrictedDangerLine` as a hidden `Line2D` around the cashier restricted rect.
+- Invalid cashier-area shelf drop starts a non-blocking danger-line tween: fade in 1 second, fade out 1 second, repeated 3 cycles.
+- The line is hidden again after the final fade and does not change cashier UI, NPC queue, or shelf carry state.
 
 ### Codex Prompt
 
@@ -511,12 +560,18 @@ Player entry/return position should match the actual door position.
 
 ### Checklist
 
-- [ ] Returning from storage spawns player near StorageDoor.
-- [ ] Returning from yard/outside spawns player near the correct door.
-- [ ] Player does not spawn inside door trigger.
-- [ ] Player does not instantly re-trigger transition.
-- [ ] Player does not spawn inside wall/shelf/cashier restricted area.
-- [ ] Door markers are visually aligned with door assets/placeholders.
+- [x] Returning from storage spawns player near StorageDoor.
+- [x] Returning from yard/outside spawns player near the correct door.
+- [x] Player does not spawn inside door trigger.
+- [x] Player does not instantly re-trigger transition.
+- [x] Player does not spawn inside wall/shelf/cashier restricted area.
+- [x] Door markers are visually aligned with door assets/placeholders.
+
+### Implementation Notes
+
+- `StorageReturnPos` already sits below `StorageDoor`, outside the door trigger.
+- `YardReturnPos` is aligned to `YardDoor` x-position and remains above the trigger so the player does not instantly re-enter the yard.
+- Yard return fallback position now matches the marker alignment when the marker is missing.
 
 ### Codex Prompt
 
@@ -547,12 +602,19 @@ Trust is not permanent player HUD state. Trust belongs to the relevant NPC and s
 
 ### Checklist
 
-- [ ] Remove/hide permanent Gooby Trust HUD label.
-- [ ] Add trust label/bar above Gooby/story NPC.
-- [ ] Trust display follows NPC movement.
-- [ ] Trust updates after Gooby interaction.
-- [ ] Generic NPCs do not show unnecessary trust bars.
-- [ ] RelationshipManager remains source of truth.
+- [x] Remove/hide permanent Gooby Trust HUD label.
+- [x] Add trust label/bar above Gooby/story NPC.
+- [x] Trust display follows NPC movement.
+- [x] Trust updates after Gooby interaction.
+- [x] Generic NPCs do not show unnecessary trust bars.
+- [x] RelationshipManager remains source of truth.
+
+### Implementation Notes
+
+- Removed the permanent `TrustLabel` from HUD and stopped HUD from subscribing to `RelationshipManager.trust_changed`.
+- Added an NPC world-space `TrustLabel` above `NameLabel`, hidden by default.
+- Story NPCs connect to `RelationshipManager.trust_changed` and show their own trust value; generic NPCs keep the trust label hidden.
+- RelationshipManager remains the source of truth for all trust values.
 
 ### Codex Prompt
 
@@ -608,13 +670,20 @@ Total: 0G
 
 ### Checklist
 
-- [ ] Ask Again request appears inside cashier panel.
-- [ ] NPC dialogue bubble can still exist, but it is not required to read request.
-- [ ] Cashier panel does not cover its own important text.
-- [ ] Buttons are spaced/readable at 480x270.
-- [ ] Ask Again count, if used, is visible.
-- [ ] Gooby choice panel remains clear.
-- [ ] Panel closes/unlocks input correctly.
+- [x] Ask Again request appears inside cashier panel.
+- [x] NPC dialogue bubble can still exist, but it is not required to read request.
+- [x] Cashier panel does not cover its own important text.
+- [x] Buttons are spaced/readable at 480x270.
+- [x] Ask Again count, if used, is visible.
+- [x] Gooby choice panel remains clear.
+- [x] Panel closes/unlocks input correctly.
+
+### Implementation Notes
+
+- Added a cashier panel `request_label` so customer request text appears inside the panel.
+- Scan panel now separates customer name, request text, selected item, total, and Ask Again count.
+- `Ask Again` still triggers the NPC bubble, but the player can read the repeated request from the panel.
+- Paid and Gooby choice panels keep request/customer context without changing checkout flow.
 
 ### Codex Prompt
 
@@ -674,13 +743,20 @@ Refuse Sale returns the item and continues the night event.
 
 ### Checklist
 
-- [ ] Cashier panel explains core button functions at least once.
-- [ ] Normal checkout button labels are clear.
-- [ ] Gooby choice button labels are clear.
-- [ ] Ask Again button has clear meaning.
-- [ ] Guidance does not clutter panel permanently.
-- [ ] Guidance does not block player control.
-- [ ] Guidance follows E/Q mapping where keyboard prompts are shown.
+- [x] Cashier panel explains core button functions at least once.
+- [x] Normal checkout button labels are clear.
+- [x] Gooby choice button labels are clear.
+- [x] Ask Again button has clear meaning.
+- [x] Guidance does not clutter panel permanently.
+- [x] Guidance does not block player control.
+- [x] Guidance follows E/Q mapping where keyboard prompts are shown.
+
+### Implementation Notes
+
+- Cashier panel keeps one-time helper text for scan, paid, and Gooby decision states.
+- Button labels were clarified for closing checkout and returning to scan item selection.
+- Cashier buttons now have tooltip guidance for selection, confirm scan, ask again, close, receive payment, Gooby gift, Gooby refusal, and back-to-scan actions.
+- Guidance stays in the panel/button UI and does not add blocking notifications or new mechanics.
 
 ### Codex Prompt
 
@@ -786,11 +862,18 @@ Night Choice
 
 ### Checklist
 
-- [ ] Board explains current activity clearly.
-- [ ] Board does not create rewards or quest completion mechanics.
-- [ ] Board UI can be closed safely.
-- [ ] Board does not conflict with cashier UI.
-- [ ] Board can later be replaced by final board sprite.
+- [x] Board explains current activity clearly.
+- [x] Board does not create rewards or quest completion mechanics.
+- [x] Board UI can be closed safely.
+- [x] Board does not conflict with cashier UI.
+- [x] Board can later be replaced by final board sprite.
+
+### Implementation Notes
+
+- Activity Board content remains sourced from existing Store state and only describes current actions.
+- Board panel no longer adds a HUD action lock; it can be closed with the Close button, Escape, or right click.
+- Board refuses to open while `CashierUILayer` is visible, preventing overlap with cashier checkout.
+- Board scene structure stays placeholder/asset-ready for a future final board sprite.
 
 ### Codex Prompt
 
@@ -844,11 +927,18 @@ Preferred for Day 1:
 
 ### Checklist
 
-- [ ] Time display matches phase.
-- [ ] Night starts at 18:00.
-- [ ] Gooby/Slime night logic triggers only during Night.
-- [ ] Day NPC revenue pacing stops before 18:00.
-- [ ] End/report timing remains clear.
+- [x] Time display matches phase.
+- [x] Night starts at 18:00.
+- [x] Gooby/Slime night logic triggers only during Night.
+- [x] Day NPC revenue pacing stops before 18:00.
+- [x] End/report timing remains clear.
+
+### Implementation Notes
+
+- Phase clock split is now Morning `08:00-10:00`, Day `10:00-18:00`, Night `18:00-22:00`.
+- Time display uses per-phase world-minute durations, so Day starts at `10:00` and Night starts at `18:00`.
+- NPCScheduler now only spawns NPCs whose `VisitPhase` matches the current TimeManager phase.
+- Day 1 customer spawning no longer starts during Morning setup; if unlocked early, it waits for Day phase.
 
 ### Codex Prompt
 
@@ -917,13 +1007,21 @@ Then Gooby/Slime branch decides whether final target reaches 50G.
 
 ### Checklist
 
-- [ ] Normal Day NPC revenue target is 40G.
-- [ ] Normal Day NPC count or purchase value reliably reaches 40G.
-- [ ] Spawn schedule considers remaining Day time until 18:00.
-- [ ] Day NPCs do not continue generating revenue after Night begins.
-- [ ] Slime remains the final 10G opportunity.
-- [ ] Gift Gooby path can leave revenue at 40/50.
-- [ ] Refuse Gooby path can allow Slime to reach 50/50.
+- [x] Normal Day NPC revenue target is 40G.
+- [x] Normal Day NPC count or purchase value reliably reaches 40G.
+- [x] Spawn schedule considers remaining Day time until 18:00.
+- [x] Day NPCs do not continue generating revenue after Night begins.
+- [x] Slime remains the final 10G opportunity.
+- [x] Gift Gooby path can leave revenue at 40/50.
+- [x] Refuse Gooby path can allow Slime to reach 50/50.
+
+### Implementation Notes
+
+- Day 1 normal customers remain four scripted Day customers with checkout totals `10G + 5G + 15G + 10G = 40G`.
+- Day 1 Day spawn interval is now calculated from the remaining Day phase duration when spawning starts.
+- Scheduler keeps a small guard before Night so Day NPCs are not intentionally queued at the exact 18:00 phase transition.
+- If setup completes very late, Day 1 customer pacing can rush within the remaining Day window instead of continuing into Night.
+- Phantom Ice Cream remains `10G`, so Slime stays the final 10G opportunity after the Gooby branch.
 
 ### Codex Prompt
 
@@ -1037,16 +1135,25 @@ Reason:
 
 ### Checklist
 
-- [ ] Slime is scheduled as a night follow-up after Gooby outcome.
-- [ ] Slime can come after both Gooby gift and Gooby refusal.
-- [ ] If Gooby received the item, Slime finds item unavailable.
-- [ ] If Gooby was refused, item remains available / returns to shelf for Slime sale.
-- [ ] Slime does not duplicate spawn.
-- [ ] Slime does not buy unavailable item.
-- [ ] Slime sale is the final 10G opportunity.
-- [ ] Gift path ends at 40/50 revenue.
-- [ ] Refuse path can reach 50/50 revenue.
-- [ ] Notifications/panel text explain why Slime can or cannot buy.
+- [x] Slime is scheduled as a night follow-up after Gooby outcome.
+- [x] Slime can come after both Gooby gift and Gooby refusal.
+- [x] If Gooby received the item, Slime finds item unavailable.
+- [x] If Gooby was refused, item remains available / returns to shelf for Slime sale.
+- [x] Slime does not duplicate spawn.
+- [x] Slime does not buy unavailable item.
+- [x] Slime sale is the final 10G opportunity.
+- [x] Gift path ends at 40/50 revenue.
+- [x] Refuse path can reach 50/50 revenue.
+- [x] Notifications/panel text explain why Slime can or cannot buy.
+
+### Implementation Notes
+
+- Gooby gift now schedules the Slime follow-up, consumes Phantom Ice Cream through the existing NPC cart flow, grants Trust +20, and adds 0G.
+- Gooby refusal now schedules the same Slime follow-up, returns Phantom Ice Cream to the ghost shelf, grants Trust +0, and adds 0G.
+- NPCScheduler delays the Slime follow-up by a short timer and blocks duplicate Slime spawns.
+- Slime uses the existing Night NPC checkout flow for Phantom Ice Cream at 10G.
+- If Phantom Ice Cream is gone, Slime uses the existing no-item leave behavior and cannot generate revenue.
+- Store objective changes to "Wait for the next strange customer." after either Gooby outcome.
 
 ### Codex Prompt
 
