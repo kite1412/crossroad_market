@@ -35,5 +35,5 @@ static func can_unlock_customer_spawning(
 static func should_start_day_one_customers_now() -> bool:
 	return (
 		TimeManager.current_day == 1
-		and TimeManager.current_phase == TimeManager.Phase.DAY
+		and TimeManager.current_phase != TimeManager.Phase.NIGHT
 	)

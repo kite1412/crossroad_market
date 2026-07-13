@@ -70,7 +70,9 @@ func _on_phase_changed(phase) -> void:
 		return
 
 	if phase == TimeManager.Phase.MORNING:
-		if TimeManager.current_day > 1:
+		if TimeManager.current_day == 1:
+			_start_day_one_spawning(NPCData.VisitPhase.DAY)
+		elif TimeManager.current_day > 1:
 			_start_spawning(NPCData.VisitPhase.MORNING)
 		else:
 			_stop_spawning()
@@ -126,16 +128,15 @@ func _start_spawning(phase) -> void:
 	_spawn_timer = 5.0
 
 func _start_day_one_spawning(phase) -> void:
-	if not _can_spawn_phase_now(phase):
-		_stop_spawning()
-		return
-
-	_spawn_queue.clear()
-
 	if phase == NPCData.VisitPhase.DAY:
 		if _day_one_day_spawning_started:
 			return
 
+		if not _can_spawn_day_one_day_customers_now():
+			_stop_spawning()
+			return
+
+		_spawn_queue.clear()
 		_day_one_day_spawning_started = true
 		_spawn_queue.append(_make_day_one_customer("day1_bread_customer", "Customer", ["bread"], 10, phase))
 		_spawn_queue.append(_make_day_one_customer("day1_water_customer", "Customer", ["water"], 5, phase))
@@ -143,6 +144,11 @@ func _start_day_one_spawning(phase) -> void:
 		_spawn_queue.append(_make_day_one_customer("irene", "Irene", ["painkiller"], 10, phase, NPCData.NPCCategory.STORY))
 		_configure_day_one_day_pacing()
 	elif phase == NPCData.VisitPhase.NIGHT:
+		if not _can_spawn_phase_now(phase):
+			_stop_spawning()
+			return
+
+		_spawn_queue.clear()
 		_spawn_interval = DAY_ONE_NIGHT_SPAWN_INTERVAL
 		_spawn_queue.append(_make_day_one_customer("gooby", "Gooby The Phantom", ["phantom_ice_cream"], 10, phase, NPCData.NPCCategory.STORY, "reject_return"))
 
@@ -196,7 +202,7 @@ func _spawn_next_npc() -> void:
 		return
 	var npc_data = _spawn_queue.pop_front()
 
-	if not _can_spawn_phase_now(npc_data.visit_phase):
+	if not _can_spawn_npc_now(npc_data.visit_phase):
 		_is_spawning = false
 		_spawn_queue.clear()
 		return
@@ -215,13 +221,29 @@ func _can_spawn_phase_now(visit_phase: NPCData.VisitPhase) -> bool:
 
 	return false
 
+func _can_spawn_npc_now(visit_phase: NPCData.VisitPhase) -> bool:
+	if (
+		TimeManager.current_day == 1
+		and visit_phase == NPCData.VisitPhase.DAY
+		and _day_one_day_spawning_started
+	):
+		return _can_spawn_day_one_day_customers_now()
+
+	return _can_spawn_phase_now(visit_phase)
+
+func _can_spawn_day_one_day_customers_now() -> bool:
+	return (
+		TimeManager.current_day == 1
+		and TimeManager.current_phase != TimeManager.Phase.NIGHT
+	)
+
 func _configure_day_one_day_pacing() -> void:
 	var customer_count := _spawn_queue.size()
 	if customer_count <= 0:
 		_spawn_interval = SPAWN_INTERVAL
 		return
 
-	var remaining_day_seconds := TimeManager.time_remaining
+	var remaining_day_seconds := _get_real_seconds_until_night()
 	var pacing_window_seconds: float = maxf(
 		remaining_day_seconds - DAY_ONE_DAY_SPAWN_END_BUFFER,
 		0.0
@@ -232,6 +254,17 @@ func _configure_day_one_day_pacing() -> void:
 		_spawn_interval = raw_interval
 	else:
 		_spawn_interval = maxf(DAY_ONE_RUSH_SPAWN_INTERVAL, raw_interval)
+
+func _get_real_seconds_until_night() -> float:
+	match TimeManager.current_phase:
+		TimeManager.Phase.MORNING:
+			return TimeManager.time_remaining + TimeManager.PHASE_DURATION
+		TimeManager.Phase.DAY:
+			return TimeManager.time_remaining
+		TimeManager.Phase.NIGHT:
+			return 0.0
+
+	return 0.0
 
 func _make_day_one_customer(
 	npc_id: String,

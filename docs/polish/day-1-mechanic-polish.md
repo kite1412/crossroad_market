@@ -938,7 +938,7 @@ Preferred for Day 1:
 - Phase clock split is now Morning `08:00-10:00`, Day `10:00-18:00`, Night `18:00-22:00`.
 - Time display uses per-phase world-minute durations, so Day starts at `10:00` and Night starts at `18:00`.
 - NPCScheduler now only spawns NPCs whose `VisitPhase` matches the current TimeManager phase.
-- Day 1 customer spawning no longer starts during Morning setup; if unlocked early, it waits for Day phase.
+- Day 1 Night spawning still waits for Night; normal Day 1 customer pacing is handled by Task 15.
 
 ### Codex Prompt
 
@@ -1018,7 +1018,7 @@ Then Gooby/Slime branch decides whether final target reaches 50G.
 ### Implementation Notes
 
 - Day 1 normal customers remain four scripted Day customers with checkout totals `10G + 5G + 15G + 10G = 40G`.
-- Day 1 Day spawn interval is now calculated from the remaining Day phase duration when spawning starts.
+- Day 1 Day spawn interval is now calculated from the remaining time between shelf setup completion and the 18:00 Night phase.
 - Scheduler keeps a small guard before Night so Day NPCs are not intentionally queued at the exact 18:00 phase transition.
 - If setup completes very late, Day 1 customer pacing can rush within the remaining Day window instead of continuing into Night.
 - Phantom Ice Cream remains `10G`, so Slime stays the final 10G opportunity after the Gooby branch.
