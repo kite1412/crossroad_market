@@ -2,12 +2,12 @@
 
 ## 1. Purpose
 
-Day 1 focuses on **mechanic polish without final art assets**. The project may still use placeholder visuals such as `ColorRect`, simple shapes, or temporary sprites. The goal is not to add new mechanics, but to make the existing mechanics more stable, readable, testable, and ready for future Aseprite asset integration.
+Day 1 focuses on **mechanic polish without final art assets**. The project may still use placeholder visuals such as `ColorRect`, simple shapes, or temporary sprites. The goal is not to add new major mechanics, but to make the existing mechanics more stable, readable, testable, and ready for future Aseprite asset integration.
 
 Main rule:
 
 ```text
-Do not add new mechanics.
+Do not add major new mechanics.
 Polish the mechanics that already exist.
 Prepare the project so final assets can be swapped in safely later.
 ```
@@ -36,13 +36,14 @@ Player collects stock
 
 Day 1 polish should make this loop easier to understand and less fragile.
 
-Current polish status after the Day 1 task pass:
+Recent playtest notes show several implementation mismatches that must be treated as **revision tasks**, not as completed polish:
 
 ```text
-Gooby Trust HUD has a dedicated top-right layout.
-Objective guidance and activity board guidance exist for the current Day 1 loop.
-NPC, cashier, shelf, notification, and asset-ready structure polish have been applied.
-Remaining risk is manual full-loop playtest coverage, especially the night Gooby → Slime branch timing.
+- Interaction hint appears after pressing the button, but it should appear before the button is pressed.
+- Objective text exists, but its purpose and source must be clarified because it behaves like HUD guidance.
+- Item/object hover should show the item/object name.
+- Shelf pickup after placement is still awkward, especially for ghost shelf / storage flow.
+- Trust should not live as player HUD state; trust should be shown above each relevant NPC.
 ```
 
 ---
@@ -55,14 +56,17 @@ The following work is allowed:
 
 - Stabilize existing player interaction.
 - Stabilize existing NPC state flow.
-- Improve shelf placement and shelf item feedback.
+- Improve shelf placement, pickup, and shelf item feedback.
 - Improve cashier scan and checkout clarity.
 - Improve notification and dialogue feedback.
 - Improve Gooby night choice logic.
 - Improve trust/revenue feedback for Gooby.
 - Fix temporary HUD layout issues, including overlapping labels.
+- Add or improve lightweight interaction hints using existing mechanics.
 - Add or improve lightweight objective guidance using existing mechanics.
-- Add a simple activity / task board if it only explains existing actions.
+- Add or improve a simple activity / task board if it only explains existing actions.
+- Add hover/name labels for existing objects and items.
+- Move NPC trust display to NPC world-space UI.
 - Prepare placeholder node structure for later sprite replacement.
 - Add small helper methods only if they make existing logic clearer.
 - Document mechanic behavior and expected outcomes.
@@ -94,36 +98,42 @@ Use this document as a task spec. Do not ask Codex / AI Agent to execute everyth
 1 prompt = 1 task or 1 small subtask
 ```
 
-Recommended order:
+Recommended revised order:
 
 ```text
 Task 1  — Validate Gooby Night Choice
-Task 2  — Polish HUD Layout and Trust Display
-Task 3  — Polish Player Navigation and Objective Guidance
-Task 4  — Polish Activity Board / Action Guidance
-Task 5  — Polish NPC Flow
-Task 6  — Polish Cashier Flow
-Task 7  — Polish Shelf and Item Flow
-Task 8  — Polish Feedback and Notifications
-Task 9  — Review Core Loop
-Task 10 — Prepare Asset-Ready Node Structure
-Task 11 — Documentation Update
+Task 2  — Revise Interaction Prompt Timing
+Task 3  — Audit Objective HUD Guidance
+Task 4  — Add Hover / Object Name Feedback
+Task 5  — Polish Shelf Pickup Reachability
+Task 6  — Move Trust Display to NPC World UI
+Task 7  — Polish Activity Board / Action Guidance
+Task 8  — Polish NPC Flow
+Task 9  — Polish Cashier Flow
+Task 10 — Polish Shelf and Item Flow
+Task 11 — Polish Feedback and Notifications
+Task 12 — Review Core Loop
+Task 13 — Prepare Asset-Ready Node Structure
+Task 14 — Documentation Update
 ```
 
 Current task status:
 
 ```text
-Task 1  — Done
-Task 2  — Done
-Task 3  — Done
-Task 4  — Done
-Task 5  — Done
-Task 6  — Done
-Task 7  — Done
-Task 8  — Done
-Task 9  — Done, with manual playtest risk noted
-Task 10 — Done
-Task 11 — Done
+Task 1  — Implemented, needs validation
+Task 2  — Pending revision
+Task 3  — Pending audit / possible revision
+Task 4  — Pending
+Task 5  — Pending revision
+Task 6  — Pending revision
+Task 7  — Implemented, needs validation
+Task 8  — Implemented, needs validation
+Task 9  — Implemented, needs validation
+Task 10 — Implemented, needs validation
+Task 11 — Implemented, needs validation
+Task 12 — Pending manual full-loop playtest
+Task 13 — Implemented, needs validation
+Task 14 — Ongoing
 ```
 
 ---
@@ -170,22 +180,22 @@ Expected result:
 
 ```text
 Revenue remains 40/50
-Gooby Trust increases by +20
+Gooby Trust increases
 Story relationship path improves
 Daily target remains missed unless another revenue source exists
 ```
 
 Checklist:
 
-- [x] Gooby gift option is visible in cashier UI.
-- [x] Gift option does not add gold.
-- [x] Gift option does not add daily revenue.
-- [x] Gift option increases Gooby trust.
-- [x] Gift option consumes the item.
-- [x] Gooby exits after receiving gift.
-- [x] Slime does not spawn after gift.
-- [x] HUD trust label updates without overlapping other HUD text.
-- [x] Notification explains `+Trust` and `+0G` clearly.
+- [ ] Gooby gift option is visible in cashier UI.
+- [ ] Gift option does not add gold.
+- [ ] Gift option does not add daily revenue.
+- [ ] Gift option increases Gooby trust.
+- [ ] Gift option consumes the item.
+- [ ] Gooby exits after receiving gift.
+- [ ] Slime does not spawn after gift.
+- [ ] Notification explains `+Trust` and `+0G` clearly.
+- [ ] Trust display appears above Gooby or relevant NPC, not as permanent player HUD.
 
 ### Option B — Refuse Sale
 
@@ -207,29 +217,20 @@ Expected result:
 ```text
 Revenue changes from 40/50 to 50/50 after Slime purchase
 Daily target is achieved
-Gooby Trust increases by +20 from the story interaction
-Story relationship path improves without direct Gooby revenue
+Gooby trust behavior follows the agreed story rule
 ```
 
 Checklist:
 
-- [x] Refuse option is visible in cashier UI.
-- [x] Refuse option does not add gold directly from Gooby.
-- [x] Refuse option returns item to ghost shelf.
-- [x] Gooby exits after refusal.
-- [x] Slime spawns only once.
-- [x] Slime can find Phantom Ice Cream after it returns to shelf.
-- [x] Slime purchase adds revenue normally.
-- [x] Target can become `50G / 50G TARGET ACHIEVED`.
-- [x] Notification explains that another customer is coming.
-
-Validation notes:
-
-- Gooby is scheduled only during Day 1 night and requests Phantom Ice Cream.
-- Gift path completes checkout as a story gift, adds Gooby Trust +20, records 0G, and does not request Slime.
-- Refuse path returns Phantom Ice Cream to the ghost shelf, adds story interaction trust, records 0G from Gooby, and requests the guarded Slime consequence.
-- Slime uses the returned Phantom Ice Cream and pays 10G through the normal checkout path.
-- Gooby trust HUD text now uses compact right-aligned `Trust: X/100` text on its own row to avoid Wallet/Target overlap.
+- [ ] Refuse option is visible in cashier UI.
+- [ ] Refuse option does not add gold directly from Gooby.
+- [ ] Refuse option returns item to ghost shelf.
+- [ ] Gooby exits after refusal.
+- [ ] Slime spawns only once.
+- [ ] Slime can find Phantom Ice Cream after it returns to shelf.
+- [ ] Slime purchase adds revenue normally.
+- [ ] Target can become `50G / 50G TARGET ACHIEVED`.
+- [ ] Notification explains that another customer is coming.
 
 ### AI Agent Prompt
 
@@ -241,308 +242,577 @@ Batasan:
 - Jangan edit file kecuali bug ditemukan.
 - Fokus existing Gooby gift/refuse flow.
 - Pastikan revenue dan trust tetap reward path terpisah.
-- Pastikan HUD trust tidak menimpa HUD lain.
+- Pastikan trust display tidak menjadi permanent player HUD state.
 
 Expected output:
 - File yang dicek.
 - Status Give Item.
 - Status Refuse Sale.
 - Status Slime path.
+- Status trust display.
 - Bug yang ditemukan.
-- Apakah Task 1 bisa ditandai done.
 ```
 
 ---
 
-## 6. Task 2 — Polish HUD Layout and Trust Display
+## 6. Task 2 — Revise Interaction Prompt Timing
 
 ### Goal
 
-Fix HUD readability problems. The current trust display can overlap existing HUD elements, so HUD polish is now a required Day 1 task.
+Fix player interaction guidance so prompts appear **before** the player presses the action key, not after.
 
-This is not a new mechanic. It is UI polish for already existing game state:
+The intended behavior is:
 
 ```text
-Wallet
-Daily revenue target
-Time / phase / day
-Gooby Trust
-Notifications
+Player enters object InteractionArea / CollisionShape2D
+→ Prompt appears immediately
+→ Prompt says object name and available action
+→ Player presses the required button
+→ Action happens
 ```
+
+This task fixes the current mismatch where some hints are shown only after the player presses `F` or another input.
 
 ### Design Requirements
 
-HUD must be readable at the project viewport size:
+Interaction prompts must explain:
 
 ```text
-480x270
+- What object this is.
+- What button to press.
+- What the button will do.
 ```
 
-Recommended temporary layout:
+Examples:
 
 ```text
-Top-left:
-- Wallet
-- Daily target
+Human Shelf
+Press F to pick up shelf.
 
-Top-center:
-- Day
-- Phase
-- Time
+Ghost Shelf
+Press F to pick up shelf.
 
-Top-right:
-- Gooby Trust
+Supply Box
+Press E to take stock.
 
-Bottom / lower center:
-- Notification text
+Human Shelf Slot
+Press E to place item.
+Press Q to take item from shelf.
+
+Cashier
+Press E to serve customer.
+
+Activity Board
+Press E to read board.
 ```
 
-If the top-right area is too cramped, use a compact label:
+### One-Time Rule for New Items
+
+For every new item/object/activity, the tutorial-style prompt should run only once per object type or item type.
+
+Expected behavior:
 
 ```text
-Trust: 10/100
+First time player enters bread interaction context:
+Show explanation for bread.
+
+Second time player enters bread interaction context:
+Show only compact action prompt, or no tutorial explanation.
 ```
 
-instead of:
-
-```text
-Gooby Trust: 10/100
-```
+This avoids looping tutorial text.
 
 ### Checklist
 
-- [x] Gooby Trust label does not overlap Wallet.
-- [x] Gooby Trust label does not overlap target display.
-- [x] Gooby Trust label does not overlap Day / Phase / Time.
-- [x] Trust label is readable at 480x270 viewport.
-- [x] Trust label updates after Give Item.
-- [x] Trust label remains visible but not distracting.
-- [x] Target display still updates correctly.
-- [x] Notification text still appears clearly.
-- [x] HUD uses stable positioning that can later be replaced with designed UI assets.
-- [x] No gameplay logic is moved into HUD.
-
-### Implementation notes
-
-- HUD now uses dedicated top containers: `TopLeftHUD` for wallet/target, `TopCenterHUD` for day/phase/time, and `TopRightHUD` for Gooby trust.
-- Gooby trust is a scene-owned `TrustLabel`, still updated through `RelationshipManager.trust_changed`.
-- Target achieved text is compacted to `TARGET` so it remains readable in the top-left HUD area at 480x270.
-- Notification text stays in a stable centered HUD region below the top status labels.
+- [ ] Prompt appears when player enters interaction area.
+- [ ] Prompt appears before button press.
+- [ ] Prompt identifies the object or item name.
+- [ ] Prompt explains the correct input.
+- [ ] Prompt disappears when player leaves the interaction area.
+- [ ] Prompt does not permanently block player input.
+- [ ] Tutorial explanation runs once per item/object type.
+- [ ] Compact action prompt can repeat if needed.
+- [ ] Prompt works for shelf, supply box, cashier, activity board, ghost shelf, and items.
+- [ ] Prompt does not overlap cashier modal / board modal.
 
 ### Suggested Implementation Direction
 
-Preferred temporary solution:
+Prefer a lightweight interaction hint system:
 
 ```text
-Create a dedicated HUD container for trust display.
-Use alignment/anchors instead of raw overlapping positions where possible.
-Keep trust update logic connected to RelationshipManager.
+InteractionHintController / HUD hint label
 ```
 
-Do not overbuild a full HUD framework yet. This task is only to make the current HUD readable.
+or an existing HUD method such as:
+
+```text
+show_interaction_hint(text)
+hide_interaction_hint()
+show_once_tutorial_hint(key, text)
+```
+
+Do not use normal notification for all interaction prompts if notification blocks action or has long timing. Interaction hints should be lighter than story notifications.
 
 ### Test Cases
 
-#### HUD-01 — Default HUD
+#### HINT-01 — Shelf Pickup Prompt
 
 ```text
-Start game.
+Move player into shelf interaction area.
 Expected:
-Wallet, target, day, phase, time, and trust are all readable.
-No label overlaps another label.
+Prompt appears before pressing F.
+Text explains shelf name and pickup input.
 ```
 
-#### HUD-02 — Gooby Trust Update
+#### HINT-02 — One-Time Item Tutorial
 
 ```text
-Give item to Gooby.
+Encounter Phantom Ice Cream for the first time.
 Expected:
-Gooby Trust changes from 0/100 to 20/100.
-HUD does not overlap after update.
+Tutorial explanation appears once.
+Leave and re-enter area.
+Expected:
+Tutorial explanation does not loop.
 ```
 
-#### HUD-03 — Target Achieved
+#### HINT-03 — Cashier Prompt
 
 ```text
-Reach 50/50 revenue.
+Move player near cashier while customer is waiting.
 Expected:
-Target achieved text is readable and does not collide with trust label.
+Prompt says Press E to serve customer.
 ```
 
 ### AI Agent Prompt
 
 ```text
-Analisa dan implementasikan Task 2 — Polish HUD Layout and Trust Display dari docs/polish/day-1-mechanic-polish.md.
+Analisa dan implementasikan Task 2 — Revise Interaction Prompt Timing dari docs/polish/day-1-mechanic-polish.md.
 
 Batasan:
 - Jangan tambah mechanic baru.
-- Fokus memperbaiki layout HUD yang sudah ada.
-- Gooby Trust tidak boleh menimpa Wallet, Target, Day, Phase, atau Time.
-- Jangan pindahkan gameplay logic ke HUD.
-- Cek file HUD terkait dulu sebelum edit.
+- Fokus existing interaction flow.
+- Prompt harus muncul saat player memasuki area interaksi, sebelum tombol ditekan.
+- Tutorial explanation hanya muncul 1 kali per item/object/activity baru.
+- Jangan gunakan notification blocking untuk prompt kecil jika itu membuat input terasa telat.
+- Cek Player, HUD, Shelf, SupplyBox, Cashier, ActivityBoard, dan object interaction areas sebelum edit.
 
 Expected output:
+- Penyebab timing hint salah.
 - File yang dicek.
-- Penyebab overlap.
-- Perubahan layout yang dibuat.
-- Test HUD default.
-- Test Gooby Trust update.
-- Test target achieved.
+- Perubahan yang dibuat.
+- Test HINT-01, HINT-02, HINT-03.
 ```
 
 ---
 
-## 7. Task 3 — Polish Player Navigation and Objective Guidance
+## 7. Task 3 — Audit Objective HUD Guidance
 
 ### Goal
 
-Make the player understand where to go and what to do next, especially when a new item, shelf, or activity becomes relevant.
+Clarify whether objective text should exist as part of HUD, activity board, or interaction hint.
 
-This is polish because it explains existing actions. It should not create a new progression system.
-
-### Current Problem
-
-A new player may not know:
+The current question:
 
 ```text
-- Where to take stock from.
-- Which shelf should receive which item.
-- When customers can come.
-- What to do when ghost shelf / Phantom Ice Cream appears.
-- What board or instruction source should be checked.
-- What activity is currently expected.
+Teks objective itu bagian dari HUD-nya datang dari mana?
 ```
 
-### Allowed Guidance Types
+This must be audited because objective guidance can be useful, but it must not become a confusing extra system.
+
+### Expected Decision
+
+Objective text is allowed only if it acts as lightweight guidance for the existing loop.
 
 Allowed:
 
 ```text
-- Short objective text in HUD.
-- Notification when a new activity becomes available.
-- A simple board / sign that lists current available actions.
-- Object interaction hint.
-- One-line instruction after important discovery.
+Objective: Bring the human shelf from storage.
+Objective: Stock the ghost shelf with Phantom Ice Cream.
+Objective: Serve Gooby at the cashier.
 ```
 
 Not allowed:
 
 ```text
-- Full quest system.
-- Complex quest tracking with multiple quest states.
-- New reward mechanics.
-- New map navigation system.
-- Large tutorial cutscene.
+Complex quest list
+Quest rewards
+Quest completion system
+Quest journal progression
 ```
 
-### Recommended Temporary Objective Flow
+### Design Options
+
+Option A — Keep objective in HUD:
 
 ```text
-Morning:
-Objective: Bring the human shelf from storage.
+Use small bottom-center objective text.
+Only show the next immediate action.
+```
 
-After human shelf placed:
-Objective: Stock the human shelf with normal items.
+Option B — Move objective into Activity Board:
 
-After enough human stock:
-Objective: Check the storage corner.
+```text
+HUD stays clean.
+Player checks board for guidance.
+```
 
-After ghost shelf discovered:
-Objective: Place the ghost shelf and stock Phantom Ice Cream.
+Option C — Use contextual hints only:
 
-After ghost shelf stocked:
-Objective: Open the store and wait for night customers.
+```text
+No persistent objective.
+Prompt appears near relevant object.
+```
 
-At night:
-Objective: Serve Gooby at the cashier.
+Recommended direction for Day 1:
 
-After refusing Gooby:
-Objective: Wait for the next strange customer.
+```text
+Use contextual interaction hints as primary guidance.
+Keep HUD objective only if it is short, non-overlapping, and clearly useful.
+Activity Board can serve as optional backup guidance.
 ```
 
 ### Checklist
 
-- [x] Player gets a clear initial objective.
-- [x] Objective changes after shelf placement.
-- [x] Objective changes after stock placement.
-- [x] Objective changes after mystery / ghost shelf discovery.
-- [x] Objective tells player what to do with Phantom Ice Cream.
-- [x] Objective tells player to serve Gooby at night.
-- [x] Objective or notification explains what happens after refusing Gooby.
-- [x] Objective text is short enough for 480x270 viewport.
-- [x] Objective UI does not overlap existing HUD.
-- [x] Objective guidance does not add new mechanics.
+- [ ] Identify where objective text is created.
+- [ ] Identify which file updates the objective text.
+- [ ] Confirm whether objective belongs in HUD or board.
+- [ ] Ensure objective does not overlap HUD labels.
+- [ ] Ensure objective does not duplicate interaction hints too much.
+- [ ] If retained, objective should be one-line only.
+- [ ] If removed, board/hints must still guide the player.
 
-### Implementation notes
+### AI Agent Prompt
 
-- Added a compact HUD `ObjectiveLabel` for current Day 1 guidance.
-- Store updates the objective from existing state only: human shelf setup, human stock, mystery corner, ghost shelf, Phantom Ice Cream, night cashier service, and Gooby refusal consequence.
-- Cashier notifies Store after Gooby refusal only to update guidance text; Slime spawning and item return logic remain unchanged.
-- Objective text is clipped/ellipsized in a bottom-center HUD region away from wallet, target, time, trust, and notification text.
+```text
+Analisa Task 3 — Audit Objective HUD Guidance dari docs/polish/day-1-mechanic-polish.md.
+
+Batasan:
+- Jangan edit file dulu.
+- Jangan tambah mechanic baru.
+- Jelaskan dari mana ObjectiveLabel dibuat dan siapa yang mengubahnya.
+- Rekomendasikan apakah objective tetap di HUD, dipindah ke board, atau diganti contextual hints.
+
+Expected output:
+- File yang dicek.
+- Sumber objective text.
+- Kapan objective berubah.
+- Apakah objective perlu dipertahankan.
+- Rekomendasi perubahan.
+```
+
+---
+
+## 8. Task 4 — Add Hover / Object Name Feedback
+
+### Goal
+
+When player hovers or enters interaction range of an item/object, the game should show the name of that item/object.
+
+This is polish because it helps player understand what they are looking at without adding a new mechanic.
+
+### Expected Behavior
+
+```text
+Player enters item/object hover area
+→ Name label appears
+→ Optional action prompt appears
+→ Player leaves area
+→ Name label disappears
+```
+
+Examples:
+
+```text
+Bread
+Water
+Bandage
+Human Shelf
+Ghost Shelf
+Phantom Ice Cream
+Cashier
+Supply Box
+Activity Board
+```
+
+### Important Distinction
+
+Hover/name feedback is not the same as tutorial prompt.
+
+```text
+Hover name: can appear repeatedly.
+Tutorial explanation: should appear once per item/object type.
+```
+
+### Checklist
+
+- [ ] Hover or proximity label shows object name.
+- [ ] Label appears before interaction button is pressed.
+- [ ] Label disappears when player leaves range.
+- [ ] Label does not block player action.
+- [ ] Label works for items, shelves, cashier, board, and supply boxes.
+- [ ] Label does not overlap major HUD elements.
+- [ ] Label can later be restyled with final UI assets.
 
 ### Test Cases
 
-#### NAV-01 — First Objective
+#### HOVER-01 — Item Name
 
 ```text
-Start Day 1.
+Move near item/stock.
 Expected:
-Player receives clear direction to bring human shelf from storage.
+Item name appears before pressing any button.
 ```
 
-#### NAV-02 — Stocking Objective
+#### HOVER-02 — Shelf Name
 
 ```text
-Place human shelf in store.
+Move near human shelf or ghost shelf.
 Expected:
-Objective changes to stock the human shelf.
+Shelf name appears.
 ```
 
-#### NAV-03 — Ghost Item Objective
+#### HOVER-03 — Cashier Name
 
 ```text
-Unlock / discover ghost shelf flow.
+Move near cashier.
 Expected:
-Objective explains what to do with the ghost shelf or Phantom Ice Cream.
-```
-
-#### NAV-04 — Night Objective
-
-```text
-Night starts with ghost shelf ready.
-Expected:
-Objective explains that strange customers may arrive and player should use cashier.
+Cashier label or prompt appears.
 ```
 
 ### AI Agent Prompt
 
 ```text
-Analisa dan implementasikan Task 3 — Polish Player Navigation and Objective Guidance dari docs/polish/day-1-mechanic-polish.md.
+Analisa dan implementasikan Task 4 — Add Hover / Object Name Feedback dari docs/polish/day-1-mechanic-polish.md.
 
 Batasan:
 - Jangan tambah mechanic baru.
-- Jangan buat quest system kompleks.
-- Fokus objective/hint untuk existing core loop.
-- Pastikan text tidak menimpa HUD lain.
-- Cek Store, HUD, dan notification flow sebelum edit.
+- Fokus existing items/objects.
+- Hover/proximity label harus muncul sebelum input.
+- Tutorial explanation dan hover name harus dipisah.
+- Cek Player interaction detection dan HUD/Label display sebelum edit.
 
 Expected output:
 - File yang dicek.
-- Titik gameplay yang belum punya arahan.
-- Objective/hint yang ditambahkan.
-- Test tiap perubahan objective.
-- Risiko overlap UI.
+- Cara object name ditentukan.
+- Perubahan yang dibuat.
+- Test HOVER-01, HOVER-02, HOVER-03.
 ```
 
 ---
 
-## 8. Task 4 — Polish Activity Board / Action Guidance
+## 9. Task 5 — Polish Shelf Pickup Reachability
+
+### Goal
+
+Fix shelf pickup and shelf placement usability, especially after player places shelf in the store and needs to go back to retrieve the ghost shelf.
+
+Current playtest issue:
+
+```text
+After putting a shelf in the store, player must touch a very specific CollisionShape2D area to pick up / interact again.
+This feels too strict and can make shelf pickup confusing.
+```
+
+### Design Requirement
+
+Shelf pickup should be easier than exact collision contact.
+
+Allowed polish:
+
+```text
+- Increase shelf pickup / interaction area.
+- Use a larger shadow-like interaction area.
+- Keep actual physical collision smaller.
+- Use a separate InteractionArea from CollisionShape2D.
+```
+
+Recommended temporary size:
+
+```text
+Use a larger interaction area, approximately the previous shadow / half-room guidance area, but do not make it so large that it triggers from across unrelated spaces.
+```
+
+### Important Distinction
+
+```text
+CollisionShape2D = physical blocking / body collision.
+InteractionArea = detection for prompt and pickup.
+```
+
+Do not make the physical collision huge just to make pickup easier. Expand the interaction area, not necessarily the physics collision.
+
+### Checklist
+
+- [ ] Shelf can still be physically blocked by its normal collision.
+- [ ] Shelf pickup detection uses larger reachable interaction area.
+- [ ] Prompt appears before pickup input.
+- [ ] Player can pick shelf up again after placing it in the store.
+- [ ] Player can continue ghost shelf flow without touching a tiny exact collision shape.
+- [ ] Enlarged area does not conflict with cashier, door, or activity board interaction.
+- [ ] Shelf still cannot be placed in invalid no-drop zones.
+- [ ] Shelf interaction remains asset-ready for Aseprite sprite replacement.
+
+### Test Cases
+
+#### SHELF-PICKUP-01 — Human Shelf After Placement
+
+```text
+Place human shelf in store.
+Move near shelf but not directly touching physical body.
+Expected:
+Pickup prompt appears and shelf can be picked up with F.
+```
+
+#### SHELF-PICKUP-02 — Ghost Shelf Retrieval
+
+```text
+After human shelf setup, return to get ghost shelf.
+Move near ghost shelf interaction range.
+Expected:
+Prompt appears before pressing F and pickup works reliably.
+```
+
+#### SHELF-PICKUP-03 — Door Conflict
+
+```text
+Move near shelf and storage door at the same time.
+Expected:
+Interaction priority remains predictable.
+Player does not accidentally trigger the wrong action without clear prompt.
+```
+
+### AI Agent Prompt
+
+```text
+Analisa dan implementasikan Task 5 — Polish Shelf Pickup Reachability dari docs/polish/day-1-mechanic-polish.md.
+
+Batasan:
+- Jangan tambah mechanic baru.
+- Jangan memperbesar physics collision secara asal.
+- Fokus pisahkan CollisionShape2D fisik dan InteractionArea untuk pickup.
+- InteractionArea shelf boleh diperbesar agar pickup lebih mudah.
+- Pastikan prompt muncul sebelum menekan F.
+- Pastikan tidak konflik dengan StorageDoor, Cashier, atau ActivityBoard.
+
+Expected output:
+- File/scene yang dicek.
+- Penyebab shelf sulit diambil.
+- Perubahan InteractionArea yang dibuat.
+- Test SHELF-PICKUP-01, 02, 03.
+```
+
+---
+
+## 10. Task 6 — Move Trust Display to NPC World UI
+
+### Goal
+
+Fix the trust display concept. Trust is not a permanent player HUD score. Trust belongs to the relevant NPC and should be displayed near / above the NPC when relevant.
+
+Current mismatch:
+
+```text
+Trust was shown in HUD as if it were player status.
+Expected: trust bar / trust label appears above each NPC or story NPC.
+```
+
+### Expected Behavior
+
+For story NPCs such as Gooby:
+
+```text
+Gooby appears
+→ Gooby has name label and/or trust bar above NPC
+→ After Give Item / relevant story interaction, Gooby trust value updates
+→ Trust feedback appears near Gooby or as short notification
+```
+
+Temporary display is allowed:
+
+```text
+Gooby
+Trust: 20/100
+```
+
+Later final art can replace it with a proper bar.
+
+### Design Requirements
+
+- Trust display should be world-space UI attached to NPC scene.
+- Trust display should follow the NPC as it moves.
+- Trust display should not overlap the player HUD.
+- Trust display should be visible only for relevant story NPCs or when trust is relevant.
+- Trust value should still be stored in `RelationshipManager` or equivalent manager.
+- HUD should not own trust as a permanent player stat.
+
+### Checklist
+
+- [ ] Remove permanent Gooby Trust label from player HUD, or hide it if replaced by NPC trust bar.
+- [ ] Add trust label/bar above Gooby or story NPC visual root.
+- [ ] Trust label follows NPC movement.
+- [ ] Trust updates after Gooby interaction.
+- [ ] Trust display does not overlap cashier UI or notification UI.
+- [ ] RelationshipManager remains the source of truth.
+- [ ] Normal generic NPCs do not show unnecessary trust bars.
+- [ ] Design remains asset-ready for future final UI sprite/bar.
+
+### Test Cases
+
+#### TRUST-01 — Gooby Trust Display
+
+```text
+Gooby enters store.
+Expected:
+Gooby has visible trust label/bar above NPC.
+HUD does not show permanent Gooby Trust as player stat.
+```
+
+#### TRUST-02 — Trust Update
+
+```text
+Give item to Gooby.
+Expected:
+Trust value above Gooby updates.
+Revenue remains 0G from Gooby.
+```
+
+#### TRUST-03 — Generic NPC
+
+```text
+Generic customer enters store.
+Expected:
+No unnecessary trust bar unless explicitly configured.
+```
+
+### AI Agent Prompt
+
+```text
+Analisa dan implementasikan Task 6 — Move Trust Display to NPC World UI dari docs/polish/day-1-mechanic-polish.md.
+
+Batasan:
+- Jangan tambah relationship system kompleks.
+- RelationshipManager tetap boleh menjadi source of truth.
+- Trust bukan permanent player HUD status.
+- Trust harus tampil di atas NPC/story NPC yang relevan.
+- Jangan merusak NameLabel/DialogBubble NPC.
+- Pastikan Gooby trust update tetap jalan setelah gift/refuse flow.
+
+Expected output:
+- File yang dicek.
+- Cara trust saat ini tampil di HUD.
+- Perubahan untuk memindahkan trust ke NPC world UI.
+- Test TRUST-01, TRUST-02, TRUST-03.
+```
+
+---
+
+## 11. Task 7 — Polish Activity Board / Action Guidance
 
 ### Goal
 
 Add or polish a simple **activity board** / **shop board** / **instruction board** that helps the player know available actions.
 
-This is optional if objective HUD is already enough, but it is useful if the player needs a stable place to check what to do.
+This is optional if contextual hints are already enough, but it is useful if the player needs a stable place to check what to do.
 
 ### Design Purpose
 
@@ -555,8 +825,6 @@ What item or shelf is relevant now?
 ```
 
 ### Recommended Board Content
-
-The board should show short, current-action text such as:
 
 ```text
 Today's Work
@@ -583,92 +851,20 @@ Night Choice
 - Refuse sale: Item returns, another customer may come
 ```
 
-### Implementation Boundary
-
-Allowed:
-
-```text
-- A simple interactable board.
-- A simple panel with static or state-based text.
-- Reuse existing notification/objective state.
-```
-
-Not allowed:
-
-```text
-- New quest reward system.
-- New task completion economy.
-- New unlock system.
-- Complex journal UI.
-```
-
 ### Checklist
 
-- [x] Board exists or current guidance alternative is documented.
-- [x] Board explains current activity clearly.
-- [x] Board text updates at major existing milestones if implemented.
-- [x] Board does not introduce new gameplay requirements.
-- [x] Board UI can be closed safely.
-- [x] Board does not permanently lock input.
-- [x] Board does not conflict with cashier UI.
-- [x] Board can be replaced with final board sprite later.
-
-Implementation notes:
-
-- Added a simple interactable `ActivityBoard` in the store.
-- Board guidance reads existing store state only; it does not create rewards, unlocks, or task completion logic.
-- Board text covers current existing milestones: human shelf setup, human shelf stock, dark storage corner, ghost shelf setup, Phantom Ice Cream stocking, cashier service, and night Gooby choice.
-- Board panel uses a temporary UI layer and releases player action lock when closed.
-- Board scene structure uses `VisualRoot/PlaceholderRect` so the visual can later be replaced by a final board sprite.
-
-### Test Cases
-
-#### BOARD-01 — Open Board
-
-```text
-Interact with board.
-Expected:
-Board panel opens and shows current guidance.
-```
-
-#### BOARD-02 — Close Board
-
-```text
-Close board panel.
-Expected:
-Player control returns normally.
-```
-
-#### BOARD-03 — Updated Guidance
-
-```text
-Reach ghost shelf / Gooby flow.
-Expected:
-Board text reflects the current existing activity.
-```
-
-### AI Agent Prompt
-
-```text
-Analisa Task 4 — Polish Activity Board / Action Guidance dari docs/polish/day-1-mechanic-polish.md.
-
-Batasan:
-- Jangan edit file dulu.
-- Jangan tambah mechanic baru.
-- Tentukan apakah objective HUD sudah cukup atau perlu simple board.
-- Jika board perlu dibuat, rancang implementasi kecil yang tidak menjadi quest system kompleks.
-
-Expected output:
-- Apakah board diperlukan sekarang.
-- File/scene yang akan terdampak.
-- Rencana UI board sederhana.
-- Risiko scope creep.
-- Test case yang perlu dijalankan.
-```
+- [ ] Board exists or current guidance alternative is documented.
+- [ ] Board explains current activity clearly.
+- [ ] Board text updates at major existing milestones if implemented.
+- [ ] Board does not introduce new gameplay requirements.
+- [ ] Board UI can be closed safely.
+- [ ] Board does not permanently lock input.
+- [ ] Board does not conflict with cashier UI.
+- [ ] Board can be replaced with final board sprite later.
 
 ---
 
-## 9. Task 5 — Polish NPC Flow
+## 12. Task 8 — Polish NPC Flow
 
 ### Goal
 
@@ -688,27 +884,20 @@ ENTER
 
 ### Checklist
 
-- [x] NPC spawns at entrance.
-- [x] NPC walks to the correct shelf type.
-- [x] NPC does not exit without clear reason.
-- [x] NPC pauses/searches briefly at shelf.
-- [x] NPC takes item if available.
-- [x] NPC gives dialogue if item is missing.
-- [x] NPC joins queue after taking item.
-- [x] NPC only enters checkout when first in queue.
-- [x] NPC exits after checkout outcome is resolved.
-- [x] NPC does not remain in queue after leaving.
-- [x] Story NPC outcome can differ from normal purchase outcome.
-- [x] Gooby and Slime still follow readable NPC movement flow.
+- [ ] NPC spawns at entrance.
+- [ ] NPC walks to the correct shelf type.
+- [ ] NPC does not exit without clear reason.
+- [ ] NPC pauses/searches briefly at shelf.
+- [ ] NPC takes item if available.
+- [ ] NPC gives dialogue if item is missing.
+- [ ] NPC joins queue after taking item.
+- [ ] NPC only enters checkout when first in queue.
+- [ ] NPC exits after checkout outcome is resolved.
+- [ ] NPC does not remain in queue after leaving.
+- [ ] Story NPC outcome can differ from normal purchase outcome.
+- [ ] Gooby and Slime still follow readable NPC movement flow.
 
-### Implementation notes
-
-- NPCs now pause briefly at the shelf before switching from search to item pickup, so the shelf interaction reads clearly.
-- If a requested item disappears before pickup, the NPC shows a short reason before exiting.
-- NPC queue cleanup now runs when an NPC enters `EXIT` and when it leaves the tree, preventing stale queue entries.
-- Existing state flow is preserved; no new NPC states or purchase mechanics were added.
-
-### AI Agent Rule
+AI Agent rule:
 
 ```text
 Avoid adding new states unless required to fix a bug.
@@ -717,7 +906,7 @@ Prefer clearer helper methods over large state rewrites.
 
 ---
 
-## 10. Task 6 — Polish Cashier / Checkout Flow
+## 13. Task 9 — Polish Cashier / Checkout Flow
 
 ### Goal
 
@@ -736,25 +925,18 @@ NPC waits at cashier
 
 ### Checklist
 
-- [x] Cashier only processes a valid checkout NPC.
-- [x] Cashier tells player if no customer is waiting.
-- [x] Cashier tells player if customer is still walking.
-- [x] Scan mismatch gives clear feedback.
-- [x] Correct scan leads to checkout resolution.
-- [x] Normal paid checkout increases daily revenue.
-- [x] Gooby checkout uses Gooby choice panel instead of normal payment.
-- [x] Checkout UI does not leave player action locked.
-- [x] Checkout state resets after payment, gift, refusal, or cancel.
-- [x] Repeated Enter/interact input does not accidentally choose a Gooby branch.
+- [ ] Cashier only processes a valid checkout NPC.
+- [ ] Cashier tells player if no customer is waiting.
+- [ ] Cashier tells player if customer is still walking.
+- [ ] Scan mismatch gives clear feedback.
+- [ ] Correct scan leads to checkout resolution.
+- [ ] Normal paid checkout increases daily revenue.
+- [ ] Gooby checkout uses Gooby choice panel instead of normal payment.
+- [ ] Checkout UI does not leave player action locked.
+- [ ] Checkout state resets after payment, gift, refusal, or cancel.
+- [ ] Repeated Enter/interact input does not accidentally choose a Gooby branch.
 
-### Implementation notes
-
-- Cashier now only scans the front NPC in the queue when that NPC is already in `CHECKOUT`.
-- If the front queued NPC is still walking, cashier keeps the existing “Customer is still walking to the counter.” feedback.
-- Normal paid checkout, Gooby gift, Gooby refusal, cancel, and customer-left outcomes clear scan state and release the HUD action lock.
-- Enter/interact on the Gooby choice panel only repeats instruction text; the branch still requires pressing a visible choice button.
-
-### AI Agent Rule
+AI Agent rule:
 
 ```text
 Do not turn cashier into a new minigame.
@@ -763,7 +945,7 @@ Polish only the current scan-confirm-outcome flow.
 
 ---
 
-## 11. Task 7 — Polish Shelf and Item Flow
+## 14. Task 10 — Polish Shelf and Item Flow
 
 ### Goal
 
@@ -771,30 +953,22 @@ Make shelf logic stable for both player and NPC.
 
 ### Checklist
 
-- [x] Player can place valid item on matching shelf type.
-- [x] Wrong shelf placement gives clear feedback.
-- [x] Shelf slot limit is respected.
-- [x] Item leaves inventory when placed on shelf.
-- [x] Item leaves shelf when taken by NPC.
-- [x] Item can return to shelf when a checkout is rejected.
-- [x] Returned Phantom Ice Cream can be found by Slime.
-- [x] No item duplication happens after Gooby refusal.
-- [x] No item loss happens after Gooby gift.
-- [x] Shelf visual placeholder is separated from collision and interaction shape.
-- [x] Shelf node structure is ready for Aseprite sprite replacement.
+- [ ] Player can place valid item on matching shelf type.
+- [ ] Wrong shelf placement gives clear feedback.
+- [ ] Shelf slot limit is respected.
+- [ ] Item leaves inventory when placed on shelf.
+- [ ] Item leaves shelf when taken by NPC.
+- [ ] Item can return to shelf when a checkout is rejected.
+- [ ] Returned Phantom Ice Cream can be found by Slime.
+- [ ] No item duplication happens after Gooby refusal.
+- [ ] No item loss happens after Gooby gift.
+- [ ] Shelf visual placeholder is separated from collision and interaction shape.
+- [ ] Shelf node structure is ready for Aseprite sprite replacement.
+- [ ] Shelf placement rejects no-drop zones around doors, cashier, and blocked navigation paths.
+- [ ] If the first drop position is unsafe, fallback positions are tested.
+- [ ] If all positions are unsafe, player keeps carrying the shelf and gets feedback.
 
-### Implementation Notes
-
-- `Shelf.place_item()` validates item type and free slot before removing the item from inventory.
-- `Shelf.take_item_for_npc()` removes item stock from the shelf without returning it to player inventory.
-- Checkout refusal returns NPC cart items through `Shelf.stock_item_direct()`, while Gooby gift clears the cart after the item is accepted.
-- Shelf slot reads now guard invalid slot indexes so player, NPC, and shelf controller checks do not crash if slot counts or asset nodes change during polish.
-- Store shelf drop now rejects no-drop zones around storage door, yard door, cashier/counter, blocked collision, and unreachable shelf interaction positions.
-- If the first drop position is unsafe, the store tries existing fallback positions; if no safe position exists, the player keeps carrying the shelf and receives feedback.
-- Installed shelves can be picked up again with `F`; carried shelves are removed from the active shelf group until placed back down so NPCs do not path to a shelf being carried.
-- Shelf visuals remain under `VisualRoot`, separate from interaction area, collision body, and slot nodes for later Aseprite sprite replacement.
-
-### AI Agent Rule
+AI Agent rule:
 
 ```text
 Do not add new shelf types for Day 1.
@@ -803,7 +977,7 @@ Focus on existing human shelf and ghost shelf behavior.
 
 ---
 
-## 12. Task 8 — Polish Feedback and Notifications
+## 15. Task 11 — Polish Feedback and Notifications
 
 ### Goal
 
@@ -811,38 +985,31 @@ Player should always understand what changed and why.
 
 ### Checklist
 
-- [x] Notification appears when item is picked up.
-- [x] Notification appears when item is placed on shelf.
-- [x] Notification appears when item is incompatible with shelf.
-- [x] Notification appears when cashier has no valid customer.
-- [x] Notification appears when scan mismatch happens.
-- [x] Notification appears when Gooby cannot pay.
-- [x] Notification appears when Gooby trust increases.
-- [x] Notification appears when refusing Gooby triggers the next consequence.
-- [x] Notification duration is readable.
-- [x] Notification does not permanently block input.
-- [x] Notification does not cover critical cashier choices.
-- [x] Notification does not overlap objective text or trust label.
+- [ ] Notification appears when item is picked up.
+- [ ] Notification appears when item is placed on shelf.
+- [ ] Notification appears when item is incompatible with shelf.
+- [ ] Notification appears when cashier has no valid customer.
+- [ ] Notification appears when scan mismatch happens.
+- [ ] Notification appears when Gooby cannot pay.
+- [ ] Notification appears when Gooby trust increases.
+- [ ] Notification appears when refusing Gooby triggers the next consequence.
+- [ ] Notification duration is readable.
+- [ ] Notification does not permanently block input.
+- [ ] Notification does not cover critical cashier choices.
+- [ ] Notification does not overlap objective text or trust label.
+- [ ] Small interaction prompts are not implemented as blocking long notifications.
 
 Suggested text examples:
 
 ```text
 Gooby Trust +20 | No revenue gained.
-Refused Gooby. Trust +20. The item returns to the shelf... something else is coming.
+Refused Gooby. The item returns to the shelf... something else is coming.
 Daily target achieved.
 ```
 
-### Implementation notes
-
-- Existing pickup, shelf placement, incompatible shelf, cashier, scan mismatch, Gooby gift, and Gooby refusal notifications were validated in code.
-- First pickup of each item now explains what the item is for and which input to use for shelf stocking or shelf item pickup.
-- Notification placement now uses a fixed centered HUD region below the top status labels so it avoids trust/objective text and critical cashier choices.
-- Notification duration now has a readable minimum and scales up for longer text.
-- Notification skip input no longer consumes clicks while cashier or activity board overlays are open.
-
 ---
 
-## 13. Task 9 — Review Core Loop
+## 16. Task 12 — Review Core Loop
 
 ### Goal
 
@@ -850,53 +1017,30 @@ Review the full playable loop after the focused polish tasks are done.
 
 ### Checklist
 
-- [x] Player can start Day 1 and understand first action.
-- [x] Player can bring shelf from storage.
-- [x] Player can stock human shelf.
-- [x] Human customers can buy items.
-- [x] Ghost shelf / mystery flow can be reached.
-- [x] Gooby arrives at night.
-- [x] Gooby gift path works.
-- [x] Gooby refuse → Slime path works.
-- [x] Daily target can be missed or achieved depending on branch.
-- [x] HUD remains readable throughout the flow.
-- [x] Player never loses control due to stuck UI state.
-
-### Review Notes
-
-- Day 1 starts with intro/objective guidance pointing the player to storage and the human shelf.
-- Storage shelf carry, store shelf placement, human stock placement, and mystery unlock use existing shelf, inventory, and storage state only.
-- Customer spawning remains locked until the ghost shelf has stock; Day 1 night spawns Gooby through `NPCScheduler`.
-- Gooby gift adds trust and 0G revenue; Gooby refusal returns Phantom Ice Cream, requests the guarded Slime customer, and keeps the revenue branch available.
-- Daily target outcome remains branch-dependent: gift path can miss target, while refusal plus Slime can still add normal checkout revenue.
-- HUD lock, notification skip handling, cashier cancel/reset, and activity board close paths were reviewed for stuck input risk.
+- [ ] Player can start Day 1 and understand first action.
+- [ ] Player can bring shelf from storage.
+- [ ] Player can stock human shelf.
+- [ ] Human customers can buy items.
+- [ ] Ghost shelf / mystery flow can be reached.
+- [ ] Gooby arrives at night.
+- [ ] Gooby gift path works.
+- [ ] Gooby refuse → Slime path works.
+- [ ] Daily target can be missed or achieved depending on branch.
+- [ ] HUD remains readable throughout the flow.
+- [ ] NPC trust bar does not overlap HUD.
+- [ ] Player never loses control due to stuck UI state.
+- [ ] Interaction prompts appear before input.
+- [ ] Hover/object name feedback is readable.
+- [ ] Shelf pickup remains reliable after placement.
 
 ### Remaining Risk
 
 - Full branch timing still needs manual playtest because NPC spawning depends on the current phase when the ghost shelf becomes ready.
 - Godot smoke validation confirms startup, but it does not simulate player carry, scan selection, or the full night transaction.
 
-### AI Agent Prompt
-
-```text
-Review Task 9 — Review Core Loop dari docs/polish/day-1-mechanic-polish.md.
-
-Batasan:
-- Jangan edit file dulu.
-- Jangan tambah mechanic baru.
-- Jalankan review berdasarkan mechanic yang sudah ada.
-- Fokus menemukan friction point, UI overlap, atau bug.
-
-Expected output:
-- Status core loop dari awal sampai transaksi malam.
-- Bagian yang sudah stabil.
-- Bagian yang masih rawan.
-- Rekomendasi task kecil berikutnya.
-```
-
 ---
 
-## 14. Task 10 — Prepare Asset-Ready Node Structure
+## 17. Task 13 — Prepare Asset-Ready Node Structure
 
 ### Goal
 
@@ -904,22 +1048,16 @@ Prepare scenes so placeholder visuals can be swapped with Aseprite assets later 
 
 ### Checklist
 
-- [x] Visual nodes are separated from logic nodes.
-- [x] Placeholder visuals are grouped under a stable visual root where possible.
-- [x] Collision shapes do not depend directly on placeholder size.
-- [x] Interaction areas remain stable when sprite changes.
-- [x] Scene node names are stable.
-- [x] Script does not depend directly on `ColorRect` for gameplay logic.
-- [x] `Sprite2D` or `AnimatedSprite2D` replacement path is clear.
-- [x] Temporary UI / board / HUD layout can later be replaced by final UI assets.
-
-### Implementation notes
-
-- Added stable `AssetSprite` nodes under `VisualRoot` for player, shelf, supply box, NPC, cashier, and activity board visuals.
-- Existing `PlaceholderRect` nodes remain active as temporary visuals, so the current playable loop still renders the same placeholders.
-- Shelf, mystery box, and NPC visual tint code now falls back to `VisualRoot/AssetSprite` when placeholder rectangles are replaced.
-- Collision and interaction nodes remain outside `VisualRoot`, so future sprite size changes do not move gameplay shapes.
-- Storage inherited scene overrides were updated to keep `PlaceholderRect` targeting stable after adding `AssetSprite`.
+- [ ] Visual nodes are separated from logic nodes.
+- [ ] Placeholder visuals are grouped under a stable visual root where possible.
+- [ ] Collision shapes do not depend directly on placeholder size.
+- [ ] Interaction areas remain stable when sprite changes.
+- [ ] Scene node names are stable.
+- [ ] Script does not depend directly on `ColorRect` for gameplay logic.
+- [ ] `Sprite2D` or `AnimatedSprite2D` replacement path is clear.
+- [ ] Temporary UI / board / HUD layout can later be replaced by final UI assets.
+- [ ] NPC trust world UI can later be replaced with final trust bar art.
+- [ ] Interaction hint UI can later be replaced with final prompt art.
 
 Recommended pattern:
 
@@ -929,12 +1067,13 @@ NPC
 │   ├── PlaceholderRect
 │   └── AnimatedSprite2D
 ├── NameLabel
+├── TrustBar / TrustLabel
 ├── DialogBubble
 ├── CollisionShape2D
 └── InteractionArea
 ```
 
-### AI Agent Rule
+AI Agent rule:
 
 ```text
 Do not replace final assets yet.
@@ -943,7 +1082,7 @@ Prepare the structure so replacement is easy later.
 
 ---
 
-## 15. Task 11 — Documentation Update
+## 18. Task 14 — Documentation Update
 
 ### Goal
 
@@ -951,24 +1090,17 @@ Keep this file useful as an AI Agent task spec.
 
 ### Checklist
 
-- [x] Mark tasks as done / partially done / pending when appropriate.
-- [x] Add discovered bugs to the relevant task section.
-- [x] Add new test cases if playtest reveals missing cases.
-- [x] Remove or rewrite tasks that are already fully completed.
-- [x] Keep Day 1 scope focused on polish, not feature expansion.
+- [ ] Mark tasks as done / partially done / pending when appropriate.
+- [ ] Add discovered bugs to the relevant task section.
+- [ ] Add new test cases if playtest reveals missing cases.
+- [ ] Remove or rewrite tasks that are already fully completed.
+- [ ] Keep Day 1 scope focused on polish, not feature expansion.
+- [ ] Keep implementation notes aligned with actual behavior.
 
-### Documentation Notes
-
-- Top-level polish status was updated so it no longer describes already-fixed HUD overlap and missing guidance as current issues.
-- Task status is now summarized near the recommended execution order.
-- No new bugs were found during the latest code-level review; the remaining risk is documented under Task 9 as manual full-loop playtest coverage.
-- No new test cases were added because no new playtest-only missing case was discovered in this documentation pass.
-- Completed task sections are retained as an audit trail, with their checklists and implementation/review notes updated instead of deleting historical context.
-
-### AI Agent Prompt
+AI Agent prompt:
 
 ```text
-Update Task 11 — Documentation Update dari docs/polish/day-1-mechanic-polish.md.
+Update Task 14 — Documentation Update dari docs/polish/day-1-mechanic-polish.md.
 
 Batasan:
 - Jangan ubah mechanic.
@@ -979,43 +1111,41 @@ Batasan:
 
 ---
 
-## 16. Definition of Done — Day 1
+## 19. Definition of Done — Day 1
 
 Day 1 can be considered done when:
 
-- [x] No new major mechanic was added.
-- [x] Core shop loop can be played from setup to checkout.
-- [x] Gooby gift path works and gives trust without revenue.
-- [x] Gooby refuse path works and enables Slime revenue path.
-- [x] Trust label does not overlap HUD.
-- [x] Player has clear objective guidance for current activity.
-- [x] New item / ghost item activity is explained through objective, notification, or board.
-- [x] NPC flow is stable enough for playtest.
-- [x] Cashier UI cleans up after each checkout outcome.
-- [x] Shelf/item flow does not duplicate or lose items incorrectly.
-- [x] Temporary UI is readable at 480x270.
-- [x] Project remains ready for Aseprite asset integration.
-
-### Validation notes
-
-- Day 1 polish stayed within existing mechanics: setup, shelf stocking, NPC shopping, cashier checkout, Gooby gift/refuse, Slime consequence, HUD, notifications, activity guidance, and asset-ready node structure.
-- Gooby gift uses the story gift path, adds trust, records 0G, clears cashier state, and does not request Slime.
-- Gooby refusal returns Phantom Ice Cream to the ghost shelf, clears cashier state, and requests the guarded one-time Slime consequence.
-- Cashier outcomes call `_clear_scan()` / `_hide_cashier_panel()` and unlock player actions through the existing HUD action lock.
-- Shelf item movement uses `place_item`, `take_item_for_npc`, `stock_item_direct`, and cart clearing to avoid duplicate/lost item state in the Gooby branch.
-- HUD and temporary UI use stable containers and asset-ready visual roots; final Aseprite sprites can replace `AssetSprite` / placeholder visuals later.
-- Code-level validation and Godot smoke loading passed; a manual full playthrough is still recommended before treating this as release-ready QA.
+- [ ] No new major mechanic was added.
+- [ ] Core shop loop can be played from setup to checkout.
+- [ ] Gooby gift path works and gives trust without revenue.
+- [ ] Gooby refuse path works and enables Slime revenue path.
+- [ ] Trust display appears on relevant NPC, not as permanent player HUD stat.
+- [ ] Player has clear contextual interaction prompts before pressing input.
+- [ ] New item / object tutorial prompt runs once per item/object type.
+- [ ] Item/object hover name feedback works.
+- [ ] Player can reliably pick up shelves after placement.
+- [ ] Ghost shelf retrieval flow is clear and not dependent on tiny collision contact.
+- [ ] Objective guidance source is understood and does not confuse HUD purpose.
+- [ ] Activity board or contextual hints explain current activity.
+- [ ] NPC flow is stable enough for playtest.
+- [ ] Cashier UI cleans up after each checkout outcome.
+- [ ] Shelf/item flow does not duplicate or lose items incorrectly.
+- [ ] Temporary UI is readable at 480x270.
+- [ ] Project remains ready for Aseprite asset integration.
 
 ---
 
-## 17. Suggested Trello / Branch Naming
+## 20. Suggested Trello / Branch Naming
 
 Trello activities:
 
 ```text
 validate_gooby_night_choice_day_1
-polish_hud_trust_layout_day_1
-polish_player_navigation_objective_day_1
+revise_interaction_prompt_timing_day_1
+audit_objective_hud_guidance_day_1
+add_hover_object_name_feedback_day_1
+polish_shelf_pickup_reachability_day_1
+move_trust_display_to_npc_world_ui_day_1
 polish_activity_board_guidance_day_1
 polish_npc_flow_day_1
 polish_cashier_flow_day_1
@@ -1033,9 +1163,10 @@ polish/day-1-mechanic-polish
 Suggested commit messages:
 
 ```text
-docs: expand day 1 mechanic polish tasks
-fix: prevent trust hud overlap
-feat: add lightweight objective guidance for existing loop
-chore: document Gooby night choice validation
-refactor: prepare placeholder visuals for asset integration
+docs: revise day 1 polish task scope
+fix: show interaction hints before input
+feat: add object hover name feedback
+fix: improve shelf pickup interaction range
+refactor: move trust display to npc world ui
+chore: audit objective guidance source
 ```
