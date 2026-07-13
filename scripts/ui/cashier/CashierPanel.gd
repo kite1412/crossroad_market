@@ -35,8 +35,18 @@ static func ensure(owner: Node) -> Dictionary:
 	var customer_label := Label.new()
 	root.add_child(customer_label)
 
+	var request_label := Label.new()
+	request_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	request_label.theme_type_variation = "SmallLabel"
+	root.add_child(request_label)
+
 	var selected_label := Label.new()
 	root.add_child(selected_label)
+
+	var guide_label := Label.new()
+	guide_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	guide_label.theme_type_variation = "SmallLabel"
+	root.add_child(guide_label)
 
 	var action_row := HBoxContainer.new()
 	action_row.add_theme_constant_override("separation", 4)
@@ -55,7 +65,9 @@ static func ensure(owner: Node) -> Dictionary:
 		"panel": cashier_panel,
 		"title": panel_title,
 		"customer_label": customer_label,
+		"request_label": request_label,
 		"selected_label": selected_label,
+		"guide_label": guide_label,
 		"action_row": action_row,
 		"item_list": item_list
 	}

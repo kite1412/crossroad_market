@@ -24,10 +24,13 @@ var _cashier_layer: CanvasLayer = null
 var _cashier_panel: ColorRect = null
 var _panel_title: Label = null
 var _customer_label: Label = null
+var _request_label: Label = null
 var _selected_label: Label = null
+var _guide_label: Label = null
 var _item_list: VBoxContainer = null
 var _action_row: HBoxContainer = null
 var _cashier_lock_active: bool = false
+var _seen_panel_guidance: Dictionary = {}
 
 
 func _exit_tree() -> void:
@@ -189,12 +192,10 @@ func _process_paid() -> void:
 
 	if npc.checkout_outcome == "reject_return":
 		if _is_gooby_npc(npc):
-			var gooby_refuse_trust := _apply_story_interaction_trust(npc)
-			_request_gooby_refusal_consequence()
-			_notify_store_gooby_refused()
+			_request_gooby_slime_follow_up()
+			_notify_store_gooby_resolved()
 			_show_notification(
-				"Refused Gooby. Trust +%d. The item returns to the shelf... something else is coming." %
-				gooby_refuse_trust,
+				"Refused Gooby. Trust +0. The item returns to the shelf... something else is coming.",
 				3.0
 			)
 		else:
@@ -229,8 +230,13 @@ func _process_gooby_gift() -> void:
 		npc.complete_checkout()
 
 	var trust_gain := _apply_story_interaction_trust(npc)
+	_request_gooby_slime_follow_up()
+	_notify_store_gooby_resolved()
 	_add_history(npc, item_label, 0, "GIFT")
-	_show_notification("Gooby Trust +%d | No revenue gained." % trust_gain, 2.0)
+	_show_notification(
+		"Gooby Trust +%d | No revenue gained. Phantom Ice Cream is gone." % trust_gain,
+		2.4
+	)
 	_clear_scan()
 
 
@@ -247,14 +253,12 @@ func _process_gooby_refuse() -> void:
 	else:
 		npc.complete_checkout()
 
-	var trust_gain := _apply_story_interaction_trust(npc)
-	_request_gooby_refusal_consequence()
-	_notify_store_gooby_refused()
+	_request_gooby_slime_follow_up()
+	_notify_store_gooby_resolved()
 
 	_add_history(npc, item_label, 0, "REFUSED")
 	_show_notification(
-		"Refused Gooby. Trust +%d. The item returns to the shelf... something else is coming." %
-		trust_gain,
+		"Refused Gooby. Trust +0. The item returns to the shelf... something else is coming.",
 		3.0
 	)
 	_clear_scan()
@@ -290,8 +294,13 @@ func _show_scan_panel() -> void:
 	_lock_player_actions()
 
 	_cashier_panel.visible = true
-	_panel_title.text = "SCAN"
-	_customer_label.text = "Customer: %s" % _scanned_npc.get_checkout_item_label()
+	_panel_title.text = "CHECKOUT"
+	_customer_label.text = "Customer: %s" % _get_scanned_customer_name()
+	_request_label.text = _get_request_panel_text()
+	_set_panel_guidance_once(
+		"scan",
+		"Choose the item the customer asked for. Confirm Scan checks it. Ask Again repeats the request. Close cancels."
+	)
 
 	var store_items: Array[ItemData] = ItemDatabase.get_all_items()
 
@@ -301,6 +310,7 @@ func _show_scan_panel() -> void:
 
 		var button := Button.new()
 		button.text = "%s  %dG" % [item.display_name, item.sell_price]
+		_configure_button_guidance(button, "Select or unselect this scanned item.")
 		button.toggle_mode = true
 		button.button_pressed = item.item_id in _selected_item_ids
 		button.pressed.connect(Callable(self, "_on_scan_item_pressed").bind(item.item_id))
@@ -309,18 +319,21 @@ func _show_scan_panel() -> void:
 	var confirm_button := Button.new()
 	confirm_button.text = "Confirm Scan"
 	confirm_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_configure_button_guidance(confirm_button, "Check the selected item against the customer's request.")
 	confirm_button.pressed.connect(_on_confirm_scan_pressed)
 	_action_row.add_child(confirm_button)
 
 	var ask_button := Button.new()
 	ask_button.text = "Ask Again %d/3" % _ask_again_count
 	ask_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_configure_button_guidance(ask_button, "Repeat the customer's request. After 3 asks, they leave.")
 	ask_button.pressed.connect(_on_ask_again_pressed)
 	_action_row.add_child(ask_button)
 
 	var cancel_button := Button.new()
-	cancel_button.text = "Close"
+	cancel_button.text = "Close Checkout"
 	cancel_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_configure_button_guidance(cancel_button, "Close this panel without finishing checkout.")
 	cancel_button.pressed.connect(_hide_cashier_panel)
 	_action_row.add_child(cancel_button)
 
@@ -339,18 +352,25 @@ func _show_paid_panel() -> void:
 
 	_cashier_panel.visible = true
 	_panel_title.text = "PAID"
-	_customer_label.text = "Total due: %dG" % _scanned_total
-	_selected_label.text = "Items: %s" % _scanned_item_label
+	_customer_label.text = "Customer: %s" % _get_scanned_customer_name()
+	_request_label.text = _get_request_panel_text()
+	_selected_label.text = "Selected: %s | Total %dG" % [_scanned_item_label, _scanned_total]
+	_set_panel_guidance_once(
+		"paid",
+		"Receive Payment finishes this paid checkout. Back to Scan lets you correct the selected item."
+	)
 
 	var paid_button := Button.new()
 	paid_button.text = "Receive Payment"
 	paid_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_configure_button_guidance(paid_button, "Finish checkout and add this sale to revenue.")
 	paid_button.pressed.connect(_process_paid)
 	_action_row.add_child(paid_button)
 
 	var back_button := Button.new()
-	back_button.text = "Back to Scan"
+	back_button.text = "Back to Scan Items"
 	back_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_configure_button_guidance(back_button, "Return to item selection and correct the scan.")
 	back_button.pressed.connect(_show_scan_panel)
 	_action_row.add_child(back_button)
 
@@ -363,24 +383,32 @@ func _show_gooby_choice_panel() -> void:
 
 	_cashier_panel.visible = true
 	_panel_title.text = "GOOBY REQUEST"
-	_customer_label.text = "Gooby cannot pay with human money."
+	_customer_label.text = "Customer: %s" % _get_scanned_customer_name()
+	_request_label.text = "Request: \"%s\"" % _get_customer_request_line()
 	_selected_label.text = "Item: %s | Revenue: 0G" % _scanned_item_label
+	_set_panel_guidance_once(
+		"gooby_choice",
+		"Give Item improves trust with no gold. Refuse Sale returns the item and continues the night consequence."
+	)
 
 	var gift_button := Button.new()
 	gift_button.text = "Give Item (+Trust, +0G)"
 	gift_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_configure_button_guidance(gift_button, "Give Gooby the item, gain trust, and earn no revenue.")
 	gift_button.pressed.connect(_process_gooby_gift)
 	_action_row.add_child(gift_button)
 
 	var refuse_button := Button.new()
 	refuse_button.text = "Refuse Sale (Return Item)"
 	refuse_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_configure_button_guidance(refuse_button, "Return the item and continue the night consequence.")
 	refuse_button.pressed.connect(_process_gooby_refuse)
 	_action_row.add_child(refuse_button)
 
 	var back_button := Button.new()
-	back_button.text = "Back to Scan"
+	back_button.text = "Back to Scan Items"
 	back_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_configure_button_guidance(back_button, "Return to item selection before deciding.")
 	back_button.pressed.connect(_show_scan_panel)
 	_action_row.add_child(back_button)
 
@@ -420,6 +448,33 @@ func _on_ask_again_pressed() -> void:
 		_scanned_npc.repeat_checkout_request()
 
 	_show_scan_panel()
+
+
+func _get_scanned_customer_name() -> String:
+	if not _has_scanned_customer() or _scanned_npc.npc_data == null:
+		return "Customer"
+
+	if _scanned_npc.npc_data.display_name == "":
+		return "Customer"
+
+	return _scanned_npc.npc_data.display_name
+
+
+func _get_customer_request_line() -> String:
+	if not _has_scanned_customer():
+		return "I want %s." % _scanned_item_label
+
+	var item_label := _scanned_npc.get_checkout_item_label() if _scanned_npc.has_method("get_checkout_item_label") else _scanned_item_label
+
+	if item_label == "":
+		item_label = _scanned_item_label
+
+	return "I want %s." % item_label
+
+
+func _get_request_panel_text() -> String:
+	var count_text := "Ask Again: %d/3" % _ask_again_count
+	return "Request: \"%s\" | %s" % [_get_customer_request_line(), count_text]
 
 
 func _selection_matches_customer() -> bool:
@@ -465,16 +520,16 @@ func _is_gooby_npc(npc: NPC) -> bool:
 	return npc != null and npc.npc_data != null and npc.npc_data.npc_id == GOOBY_ID
 
 
-func _request_gooby_refusal_consequence() -> void:
+func _request_gooby_slime_follow_up() -> void:
 	if NPCScheduler.has_method("spawn_day_one_night_monster_customer"):
 		NPCScheduler.spawn_day_one_night_monster_customer()
 
 
-func _notify_store_gooby_refused() -> void:
+func _notify_store_gooby_resolved() -> void:
 	var store := get_tree().get_first_node_in_group("store")
 
-	if store != null and store.has_method("on_gooby_refused"):
-		store.call("on_gooby_refused")
+	if store != null and store.has_method("on_gooby_resolved"):
+		store.call("on_gooby_resolved")
 
 
 func _ensure_cashier_panel() -> void:
@@ -486,9 +541,33 @@ func _ensure_cashier_panel() -> void:
 	_cashier_panel = panel_nodes["panel"] as ColorRect
 	_panel_title = panel_nodes["title"] as Label
 	_customer_label = panel_nodes["customer_label"] as Label
+	_request_label = panel_nodes["request_label"] as Label
 	_selected_label = panel_nodes["selected_label"] as Label
+	_guide_label = panel_nodes["guide_label"] as Label
 	_action_row = panel_nodes["action_row"] as HBoxContainer
 	_item_list = panel_nodes["item_list"] as VBoxContainer
+
+
+func _set_panel_guidance_once(key: String, text: String) -> void:
+	if _guide_label == null:
+		return
+
+	if _seen_panel_guidance.has(key):
+		_guide_label.visible = false
+		_guide_label.text = ""
+		return
+
+	_seen_panel_guidance[key] = true
+	_guide_label.visible = true
+	_guide_label.text = text
+
+
+func _configure_button_guidance(button: Button, tooltip: String) -> void:
+	if button == null:
+		return
+
+	button.tooltip_text = tooltip
+	button.focus_mode = Control.FOCUS_ALL
 
 
 func _hide_cashier_panel() -> void:

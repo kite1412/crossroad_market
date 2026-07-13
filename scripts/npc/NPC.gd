@@ -54,14 +54,18 @@ var _dialog_timer: float = 0.0
 var _checkout_timer: float = 0.0
 var _search_timer: float = 0.0
 var _search_announced: bool = false
+var _trust_label: Label = null
 
 
 func _ready() -> void:
 	add_to_group("dialog_skip_target")
+	_trust_label = get_node_or_null("TrustLabel") as Label
+	_update_trust_display()
 	_set_dialog_mouse_filter()
 
 
 func _exit_tree() -> void:
+	_disconnect_trust_signal()
 	_leave_queue()
 
 
@@ -72,6 +76,7 @@ func setup(data: NPCData) -> void:
 	item_to_buy_original = item_to_buy
 	_apply_visual()
 	_apply_name_label()
+	_setup_trust_display()
 	_set_state(State.ENTER)
 
 
@@ -164,6 +169,53 @@ func _apply_name_label() -> void:
 
 func _apply_visual() -> void:
 	NPCVisualController.apply_visual(self, npc_data)
+
+
+func _setup_trust_display() -> void:
+	_update_trust_display()
+
+	var trust_callable := Callable(self, "_on_trust_changed")
+
+	if _should_show_trust_display():
+		if not RelationshipManager.trust_changed.is_connected(trust_callable):
+			RelationshipManager.trust_changed.connect(trust_callable)
+	else:
+		_disconnect_trust_signal()
+
+
+func _disconnect_trust_signal() -> void:
+	var trust_callable := Callable(self, "_on_trust_changed")
+
+	if RelationshipManager.trust_changed.is_connected(trust_callable):
+		RelationshipManager.trust_changed.disconnect(trust_callable)
+
+
+func _should_show_trust_display() -> bool:
+	return (
+		npc_data != null
+		and npc_data.npc_category == NPCData.NPCCategory.STORY
+		and npc_data.npc_id != ""
+	)
+
+
+func _update_trust_display() -> void:
+	if _trust_label == null:
+		return
+
+	if not _should_show_trust_display():
+		_trust_label.visible = false
+		return
+
+	var trust_value := RelationshipManager.get_trust(npc_data.npc_id)
+	_trust_label.visible = true
+	_trust_label.text = "Trust: %d/100" % trust_value
+
+
+func _on_trust_changed(npc_id: String, _new_trust: int, _delta: int) -> void:
+	if npc_data == null or npc_id != npc_data.npc_id:
+		return
+
+	_update_trust_display()
 
 
 func _process_enter() -> void:

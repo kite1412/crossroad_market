@@ -3,8 +3,11 @@ extends Node
 signal npc_spawn_requested(npc_data)
 
 const SPAWN_INTERVAL: float = 60.0
-const DAY_ONE_DAY_SPAWN_INTERVAL: float = 60.0
 const DAY_ONE_NIGHT_SPAWN_INTERVAL: float = 8.0
+const DAY_ONE_DAY_SPAWN_END_BUFFER: float = 8.0
+const DAY_ONE_MIN_SPAWN_INTERVAL: float = 8.0
+const DAY_ONE_RUSH_SPAWN_INTERVAL: float = 0.5
+const DAY_ONE_SLIME_FOLLOW_UP_DELAY: float = 3.0
 
 var _npc_database: Dictionary = {}
 var _day_schedule: Array = []
@@ -13,6 +16,8 @@ var _spawn_timer: float = 0.0
 var _spawn_interval: float = SPAWN_INTERVAL
 var _is_spawning: bool = false
 var _day_one_night_monster_spawned: bool = false
+var _day_one_night_monster_follow_up_requested: bool = false
+var _day_one_night_monster_follow_up_timer: float = 0.0
 var _day_one_day_spawning_started: bool = false
 var _spawning_unlocked: bool = false
 
@@ -22,6 +27,8 @@ func _ready() -> void:
 	TimeManager.phase_changed.connect(_on_phase_changed)
 
 func _process(delta: float) -> void:
+	_process_day_one_night_monster_follow_up(delta)
+
 	if not _is_spawning or _spawn_queue.is_empty():
 		return
 
@@ -52,6 +59,8 @@ func _load_npc_data() -> void:
 
 func _on_day_started(day: int) -> void:
 	_day_one_night_monster_spawned = false
+	_day_one_night_monster_follow_up_requested = false
+	_day_one_night_monster_follow_up_timer = 0.0
 	_day_one_day_spawning_started = false
 	_generate_schedule(day)
 
@@ -128,32 +137,53 @@ func _start_day_one_spawning(phase) -> void:
 			return
 
 		_day_one_day_spawning_started = true
-		_spawn_interval = DAY_ONE_DAY_SPAWN_INTERVAL
 		_spawn_queue.append(_make_day_one_customer("day1_bread_customer", "Customer", ["bread"], 10, phase))
 		_spawn_queue.append(_make_day_one_customer("day1_water_customer", "Customer", ["water"], 5, phase))
 		_spawn_queue.append(_make_day_one_customer("day1_bandage_customer", "Customer", ["bandage"], 15, phase))
 		_spawn_queue.append(_make_day_one_customer("irene", "Irene", ["painkiller"], 10, phase, NPCData.NPCCategory.STORY))
+		_configure_day_one_day_pacing()
 	elif phase == NPCData.VisitPhase.NIGHT:
 		_spawn_interval = DAY_ONE_NIGHT_SPAWN_INTERVAL
 		_spawn_queue.append(_make_day_one_customer("gooby", "Gooby The Phantom", ["phantom_ice_cream"], 10, phase, NPCData.NPCCategory.STORY, "reject_return"))
 
 	_is_spawning = not _spawn_queue.is_empty()
-	_spawn_timer = 2.0
+	_spawn_timer = minf(2.0, _spawn_interval) if phase == NPCData.VisitPhase.NIGHT else _spawn_interval
 
 func spawn_day_one_night_monster_customer() -> void:
-	if _day_one_night_monster_spawned:
+	if _day_one_night_monster_spawned or _day_one_night_monster_follow_up_requested:
 		return
 
 	if TimeManager.current_day != 1 or TimeManager.current_phase != TimeManager.Phase.NIGHT:
 		return
 
+	_day_one_night_monster_follow_up_requested = true
+	_day_one_night_monster_follow_up_timer = DAY_ONE_SLIME_FOLLOW_UP_DELAY
+
+func _process_day_one_night_monster_follow_up(delta: float) -> void:
+	if not _day_one_night_monster_follow_up_requested:
+		return
+
+	if TimeManager.current_day != 1 or TimeManager.current_phase != TimeManager.Phase.NIGHT:
+		_day_one_night_monster_follow_up_requested = false
+		_day_one_night_monster_follow_up_timer = 0.0
+		return
+
+	_day_one_night_monster_follow_up_timer -= delta
+
+	if _day_one_night_monster_follow_up_timer > 0.0:
+		return
+
+	_day_one_night_monster_follow_up_requested = false
 	_day_one_night_monster_spawned = true
 	npc_spawn_requested.emit(_make_day_one_customer(
 		"day1_slime",
 		"Slime Customer",
 		["phantom_ice_cream"],
 		10,
-		NPCData.VisitPhase.NIGHT
+		NPCData.VisitPhase.NIGHT,
+		NPCData.NPCCategory.GENERIC,
+		"paid",
+		NPCData.PatienceType.IMPATIENT
 	))
 
 func _stop_spawning() -> void:
@@ -175,10 +205,33 @@ func _spawn_next_npc() -> void:
 
 
 func _can_spawn_phase_now(visit_phase: NPCData.VisitPhase) -> bool:
-	if visit_phase == NPCData.VisitPhase.NIGHT:
-		return TimeManager.current_phase == TimeManager.Phase.NIGHT
+	match visit_phase:
+		NPCData.VisitPhase.MORNING:
+			return TimeManager.current_phase == TimeManager.Phase.MORNING
+		NPCData.VisitPhase.DAY:
+			return TimeManager.current_phase == TimeManager.Phase.DAY
+		NPCData.VisitPhase.NIGHT:
+			return TimeManager.current_phase == TimeManager.Phase.NIGHT
 
-	return true
+	return false
+
+func _configure_day_one_day_pacing() -> void:
+	var customer_count := _spawn_queue.size()
+	if customer_count <= 0:
+		_spawn_interval = SPAWN_INTERVAL
+		return
+
+	var remaining_day_seconds := TimeManager.time_remaining
+	var pacing_window_seconds: float = maxf(
+		remaining_day_seconds - DAY_ONE_DAY_SPAWN_END_BUFFER,
+		0.0
+	)
+	var raw_interval: float = pacing_window_seconds / float(customer_count)
+
+	if raw_interval >= DAY_ONE_MIN_SPAWN_INTERVAL:
+		_spawn_interval = raw_interval
+	else:
+		_spawn_interval = maxf(DAY_ONE_RUSH_SPAWN_INTERVAL, raw_interval)
 
 func _make_day_one_customer(
 	npc_id: String,
@@ -187,7 +240,8 @@ func _make_day_one_customer(
 	checkout_total: int,
 	visit_phase: NPCData.VisitPhase,
 	category: NPCData.NPCCategory = NPCData.NPCCategory.GENERIC,
-	checkout_outcome: String = "paid"
+	checkout_outcome: String = "paid",
+	patience_type: NPCData.PatienceType = NPCData.PatienceType.PATIENT
 ) -> NPCData:
 	var data := NPCData.new()
 	data.npc_id = npc_id
@@ -195,7 +249,7 @@ func _make_day_one_customer(
 	data.npc_category = category
 	data.visit_days = [1]
 	data.visit_phase = visit_phase
-	data.patience_type = NPCData.PatienceType.PATIENT
+	data.patience_type = patience_type
 	data.favorite_items = shopping_items.duplicate()
 	data.set_meta("shopping_list", shopping_items.duplicate())
 	data.set_meta("checkout_total", checkout_total)

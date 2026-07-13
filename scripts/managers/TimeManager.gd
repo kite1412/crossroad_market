@@ -4,11 +4,11 @@ enum Phase { MORNING, DAY, NIGHT }
 
 const PHASE_DURATION: float = 240.0
 const TOTAL_DAYS: int = 6
-const WORLD_PHASE_MINUTES: int = 360
 const CLOCK_STEP_MINUTES: int = 10
-const MORNING_START_MINUTES: int = 6 * 60
-const DAY_START_MINUTES: int = 12 * 60
+const MORNING_START_MINUTES: int = 8 * 60
+const DAY_START_MINUTES: int = 10 * 60
 const NIGHT_START_MINUTES: int = 18 * 60
+const END_START_MINUTES: int = 22 * 60
 
 signal phase_changed(new_phase: Phase)
 signal day_started(day: int)
@@ -94,11 +94,11 @@ func get_clock_display() -> String:
 func get_phase_time_range() -> String:
 	match current_phase:
 		Phase.MORNING:
-			return "06:00-12:00"
+			return "08:00-10:00"
 		Phase.DAY:
-			return "12:00-18:00"
+			return "10:00-18:00"
 		Phase.NIGHT:
-			return "18:00-00:00"
+			return "18:00-22:00"
 
 	return ""
 
@@ -106,7 +106,7 @@ func get_phase_time_range() -> String:
 func get_world_minutes() -> int:
 	var phase_start: int = _get_phase_start_minutes(current_phase)
 	var elapsed_ratio: float = clamp((PHASE_DURATION - time_remaining) / PHASE_DURATION, 0.0, 0.999)
-	var phase_minutes: int = int(floor(elapsed_ratio * float(WORLD_PHASE_MINUTES)))
+	var phase_minutes: int = int(floor(elapsed_ratio * float(_get_phase_world_duration_minutes(current_phase))))
 	phase_minutes = int(floor(float(phase_minutes) / float(CLOCK_STEP_MINUTES))) * CLOCK_STEP_MINUTES
 
 	return (phase_start + phase_minutes) % (24 * 60)
@@ -140,3 +140,15 @@ func _get_phase_start_minutes(phase: Phase) -> int:
 			return NIGHT_START_MINUTES
 
 	return MORNING_START_MINUTES
+
+
+func _get_phase_world_duration_minutes(phase: Phase) -> int:
+	match phase:
+		Phase.MORNING:
+			return DAY_START_MINUTES - MORNING_START_MINUTES
+		Phase.DAY:
+			return NIGHT_START_MINUTES - DAY_START_MINUTES
+		Phase.NIGHT:
+			return END_START_MINUTES - NIGHT_START_MINUTES
+
+	return DAY_START_MINUTES - MORNING_START_MINUTES
