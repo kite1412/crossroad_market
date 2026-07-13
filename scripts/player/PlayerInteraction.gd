@@ -16,6 +16,8 @@ static func get_storage_door_type(area: Area2D) -> String:
 			return "normal"
 		"StorageDoor2", "StorageDoor_Mystery":
 			return "mistery"
+		"ReturnDoor":
+			return "return"
 		_:
 			return ""
 

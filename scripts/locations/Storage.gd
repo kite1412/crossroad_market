@@ -126,8 +126,7 @@ func _connect_signals() -> void:
 		push_error("Storage: ReturnDoor is missing.")
 		return
 
-	if not return_door.body_entered.is_connected(_on_return_door_entered):
-		return_door.body_entered.connect(_on_return_door_entered)
+	return_door.set_meta("door_type", "storage_return")
 
 	if mystery_box != null and not mystery_box.discovered.is_connected(_on_mystery_box_discovered):
 		mystery_box.discovered.connect(_on_mystery_box_discovered)
@@ -137,6 +136,14 @@ func _connect_signals() -> void:
 
 	if shelf_ghost != null and not shelf_ghost.item_placed.is_connected(_on_ghost_shelf_item_placed):
 		shelf_ghost.item_placed.connect(_on_ghost_shelf_item_placed)
+
+
+func request_return_to_store() -> bool:
+	if _is_action_locked():
+		return false
+
+	return_to_store.emit(_entry_door)
+	return true
 
 
 func _resize_background_to_viewport() -> void:
@@ -525,14 +532,6 @@ func _set_node_enabled_recursive(node: Node, enabled: bool) -> void:
 
 	for child in node.get_children():
 		_set_node_enabled_recursive(child, enabled)
-
-
-func _on_return_door_entered(body: Node) -> void:
-	if _is_action_locked():
-		return
-
-	if body.is_in_group("player"):
-		return_to_store.emit(_entry_door)
 
 
 func _on_mystery_box_discovered() -> void:

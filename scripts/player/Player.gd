@@ -117,6 +117,9 @@ func _try_storage_door_interaction(area: Area2D) -> bool:
 	if door_type == "":
 		return false
 
+	if door_type.ends_with("_return") or door_type == "return":
+		return _try_location_return_to_store()
+
 	var store: Node = get_tree().get_first_node_in_group("store")
 
 	if store == null:
@@ -132,6 +135,16 @@ func _try_storage_door_interaction(area: Area2D) -> bool:
 
 	store.call("request_enter_storage", door_type)
 	return true
+
+
+func _try_location_return_to_store() -> bool:
+	for group_name in ["storage", "yard"]:
+		var location := get_tree().get_first_node_in_group(group_name)
+
+		if location != null and location.has_method("request_return_to_store"):
+			return bool(location.call("request_return_to_store"))
+
+	return false
 
 
 func _get_storage_door_type(area: Area2D) -> String:
@@ -196,19 +209,25 @@ func _set_hud_hover_feedback(hud: Node, object_name: String, hint_text: String) 
 
 
 func _get_hover_object_name(areas: Array[Area2D]) -> String:
-	var carried_object := _get_carried_shelf()
-
-	if carried_object != null:
-		return _get_object_prompt_name(carried_object)
-
 	for area in areas:
 		var door_type := _get_storage_door_type(area)
 
 		if door_type == "yard":
 			return "Yard Door"
 
+		if door_type == "yard_return":
+			return "Store Door"
+
+		if door_type.ends_with("_return") or door_type == "return":
+			return "Store Door"
+
 		if door_type != "":
 			return "Storage Door"
+
+	var carried_object := _get_carried_shelf()
+
+	if carried_object != null:
+		return _get_object_prompt_name(carried_object)
 
 	var best_target := _get_best_interaction_target(areas)
 
@@ -222,6 +241,21 @@ func _get_hover_object_name(areas: Array[Area2D]) -> String:
 
 
 func _get_interaction_hint_text(areas: Array[Area2D]) -> String:
+	for area in areas:
+		var door_type := _get_storage_door_type(area)
+
+		if door_type == "yard":
+			return "Yard Door - Press E to enter"
+
+		if door_type == "yard_return":
+			return "Store Door - Press E to enter"
+
+		if door_type.ends_with("_return") or door_type == "return":
+			return "Store Door - Press E to enter"
+
+		if door_type != "":
+			return "Storage Door - Press E to enter"
+
 	var carried_object := _get_carried_shelf()
 
 	if carried_object != null:
@@ -231,15 +265,6 @@ func _get_interaction_hint_text(areas: Array[Area2D]) -> String:
 			"Carrying %s. Press Q to place it on a clear floor tile." %
 			_get_object_prompt_name(carried_object)
 		)
-
-	for area in areas:
-		var door_type := _get_storage_door_type(area)
-
-		if door_type == "yard":
-			return "Yard Door - Press E to enter"
-
-		if door_type != "":
-			return "Storage Door - Press E to enter"
 
 	var best_target := _get_best_interaction_target(areas)
 
@@ -656,10 +681,18 @@ func _show_notification_sequence(messages: Array[String]) -> void:
 
 
 func _interact_with_cashier(cashier: Cashier) -> void:
+	if _get_carried_shelf() != null:
+		_show_notification("Put down the shelf first.", 0.8)
+		return
+
 	cashier.try_checkout()
 
 
 func _interact_with_activity_board(activity_board: ActivityBoard) -> void:
+	if _get_carried_shelf() != null:
+		_show_notification("Put down the shelf first.", 0.8)
+		return
+
 	activity_board.open_board()
 
 

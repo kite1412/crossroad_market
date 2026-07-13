@@ -13,16 +13,15 @@ func _ready() -> void:
 		push_error("Yard: ReturnDoor is missing.")
 		return
 
-	if not return_door.body_entered.is_connected(_on_return_door_entered):
-		return_door.body_entered.connect(_on_return_door_entered)
+	return_door.set_meta("door_type", "yard_return")
 
 
-func _on_return_door_entered(body: Node) -> void:
+func request_return_to_store() -> bool:
 	if _is_action_locked():
-		return
+		return false
 
-	if body.is_in_group("player"):
-		return_to_store.emit("yard")
+	return_to_store.emit("yard")
+	return true
 
 
 func _is_action_locked() -> bool:

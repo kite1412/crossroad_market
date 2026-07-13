@@ -1,41 +1,41 @@
 [gd_scene format=3 uid="uid://c3jpds51r7i41"]
 
-[ext_resource type="Script" path="res://scripts/ui/Cashier.gd" id="1"]
+[ext_resource type="Script" uid="uid://dibcopjn4fbly" path="res://scripts/ui/Cashier.gd" id="1"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(40, 20)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_area"]
-size = Vector2(96, 96)
-
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_back_counter"]
-size = Vector2(152, 84)
+size = Vector2(160, 84)
 
-[node name="Cashier" type="StaticBody2D"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_area"]
+size = Vector2(132, 128)
+
+[node name="Cashier" type="StaticBody2D" unique_id=386895166]
 y_sort_enabled = true
 script = ExtResource("1")
 
-[node name="VisualRoot" type="Node2D" parent="."]
+[node name="VisualRoot" type="Node2D" parent="." unique_id=899793009]
 
-[node name="AssetSprite" type="Sprite2D" parent="VisualRoot"]
+[node name="AssetSprite" type="Sprite2D" parent="VisualRoot" unique_id=1901160011]
 
-[node name="PlaceholderRect" type="ColorRect" parent="VisualRoot"]
+[node name="PlaceholderRect" type="ColorRect" parent="VisualRoot" unique_id=1830826980]
 offset_left = -20.0
 offset_top = -40.0
 offset_right = 20.0
 color = Color(0.6, 0.4, 0.2, 1)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=332411875]
 position = Vector2(0, -10)
 shape = SubResource("RectangleShape2D_body")
 
-[node name="BackCounterCollision" type="CollisionShape2D" parent="."]
-position = Vector2(0, -32)
+[node name="BackCounterCollision" type="CollisionShape2D" parent="." unique_id=991886323]
+position = Vector2(-14, -40)
 shape = SubResource("RectangleShape2D_back_counter")
 disabled = true
 
-[node name="InteractionArea" type="Area2D" parent="."]
+[node name="InteractionArea" type="Area2D" parent="." unique_id=1288971911]
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="InteractionArea"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="InteractionArea" unique_id=1674095232]
 position = Vector2(0, -8)
 shape = SubResource("RectangleShape2D_area")

@@ -17,7 +17,7 @@ size = Vector2(16, 270)
 size = Vector2(40, 40)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_activity_board_body"]
-size = Vector2(72, 12)
+size = Vector2(96, 72)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_activity_board_area"]
 size = Vector2(96, 72)
@@ -99,10 +99,10 @@ position = Vector2(239, 259)
 [node name="Cashier" parent="." unique_id=1316385707 instance=ExtResource("3_cashier")]
 position = Vector2(95, 122)
 
-[node name="InteractionArea" parent="Cashier" index="3"]
+[node name="InteractionArea" parent="Cashier" index="3" unique_id=1288971911]
 position = Vector2(0, -2)
 
-[node name="CollisionShape2D" parent="Cashier/InteractionArea" index="0"]
+[node name="CollisionShape2D" parent="Cashier/InteractionArea" index="0" unique_id=1674095232]
 position = Vector2(-1, -8)
 
 [node name="ActivityBoard" type="StaticBody2D" parent="." unique_id=1462224847]

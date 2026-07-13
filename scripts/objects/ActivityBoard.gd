@@ -6,6 +6,7 @@ const DEFAULT_LINES: Array[String] = [
 	"Check storage for shelves and stock.",
 	"Stock shelves, then serve customers."
 ]
+const PANEL_SIZE := Vector2(292, 164)
 
 var _board_layer: CanvasLayer = null
 var _board_panel: ColorRect = null
@@ -71,7 +72,20 @@ func _show_board_panel(title: String, lines_variant: Variant) -> void:
 	var title_label := Label.new()
 	title_label.text = title
 	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_label.add_theme_font_size_override("font_size", 12)
 	content.add_child(title_label)
+
+	var scroll := ScrollContainer.new()
+	scroll.name = "LineScroll"
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	content.add_child(scroll)
+
+	var line_container := VBoxContainer.new()
+	line_container.name = "Lines"
+	line_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	line_container.add_theme_constant_override("separation", 4)
+	scroll.add_child(line_container)
 
 	var lines: Array[String] = []
 
@@ -82,7 +96,16 @@ func _show_board_panel(title: String, lines_variant: Variant) -> void:
 		var label := Label.new()
 		label.text = "- %s" % line
 		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		content.add_child(label)
+		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		label.add_theme_font_size_override("font_size", 9)
+		line_container.add_child(label)
+
+	var hint_label := Label.new()
+	hint_label.text = "Esc / Right Click to close"
+	hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hint_label.add_theme_font_size_override("font_size", 8)
+	hint_label.modulate = Color(1.0, 0.92, 0.72, 0.78)
+	content.add_child(hint_label)
 
 	var close_button := Button.new()
 	close_button.text = "Close"
@@ -106,11 +129,11 @@ func _ensure_board_panel() -> void:
 	_board_panel.name = "ActivityBoardPanel"
 	_board_panel.color = Color(0.1, 0.08, 0.05, 0.94)
 	_board_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	_board_panel.custom_minimum_size = Vector2(276, 146)
-	_board_panel.offset_left = -138.0
-	_board_panel.offset_top = -73.0
-	_board_panel.offset_right = 138.0
-	_board_panel.offset_bottom = 73.0
+	_board_panel.custom_minimum_size = PANEL_SIZE
+	_board_panel.offset_left = -PANEL_SIZE.x * 0.5
+	_board_panel.offset_top = -PANEL_SIZE.y * 0.5
+	_board_panel.offset_right = PANEL_SIZE.x * 0.5
+	_board_panel.offset_bottom = PANEL_SIZE.y * 0.5
 	_board_panel.visible = false
 	_board_layer.add_child(_board_panel)
 
@@ -121,7 +144,7 @@ func _ensure_board_panel() -> void:
 	content.offset_top = 8.0
 	content.offset_right = -10.0
 	content.offset_bottom = -8.0
-	content.add_theme_constant_override("separation", 5)
+	content.add_theme_constant_override("separation", 4)
 	_board_panel.add_child(content)
 
 

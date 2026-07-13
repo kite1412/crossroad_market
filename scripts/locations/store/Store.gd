@@ -15,11 +15,11 @@ const CASHIER_DEPTH_FRONT_OFFSET: float = 8.0
 const SHELF_DEPTH_HALF_WIDTH: float = 48.0
 const SHELF_DEPTH_BACK_OFFSET: float = 56.0
 const SHELF_DEPTH_FRONT_OFFSET: float = 8.0
-const CARRY_SHELF_CASHIER_BLOCKER_SIZE := Vector2(112, 80)
-const CARRY_SHELF_CASHIER_BLOCKER_OFFSET := Vector2(0, -10)
+const CARRY_SHELF_CASHIER_BLOCKER_SIZE := Vector2(164, 80)
+const CARRY_SHELF_CASHIER_BLOCKER_OFFSET := Vector2(0, -44)
 const STORE_SHELF_PICKUP_DISTANCE: float = 76.0
 const DOOR_NO_DROP_MARGIN: float = 34.0
-const CASHIER_NO_DROP_MARGIN: float = 10.0
+const CASHIER_NO_DROP_MARGIN: float = 4.0
 const CUSTOMER_MAIN_PATH_CHECKPOINTS: int = 6
 const CUSTOMER_MAIN_PATH_RADIUS: float = 26.0
 const CUSTOMER_QUEUE_PATH_SIZE := Vector2(88, 128)
@@ -31,6 +31,7 @@ const RESTRICTED_DANGER_LINE_CYCLES: int = 3
 const RESTRICTED_DANGER_LINE_CYCLE_DURATION: float = 2.0
 const RESTRICTED_DANGER_LINE_WIDTH: float = 3.0
 const RESTRICTED_DANGER_LINE_COLOR := Color(1.0, 0.16, 0.08, 1.0)
+const LOCATION_TITLE_DURATION: float = 1.25
 const SHELF_DROP_FALLBACKS: Array[Vector2] = [
 	Vector2(0, 56),
 	Vector2(56, 0),
@@ -59,11 +60,15 @@ var _current_storage: Node2D = null
 var _current_yard: Node2D = null
 var _fade_layer: CanvasLayer = null
 var _fade_rect: ColorRect = null
+var _location_title_layer: CanvasLayer = null
+var _location_title_label: Label = null
+var _location_title_tween: Tween = null
 var _carry_shelf_blocker: StaticBody2D = null
 var _carry_shelf_blocker_shape: CollisionShape2D = null
 var _cashier_restricted_danger_line: Line2D = null
 var _cashier_restricted_danger_tween: Tween = null
 var _is_transitioning: bool = false
+var _shown_location_titles: Dictionary = {}
 
 var _normal_items_taken: int = 0
 var _human_items_placed: int = 0
@@ -77,6 +82,7 @@ var _customer_spawning_unlocked: bool = false
 var _customer_open_notification_shown: bool = false
 var _suppress_next_day_open_notification: bool = false
 var _intro_shown: bool = false
+var _first_activity_board_shown: bool = false
 var _ghost_shelf_lesson_shown: bool = false
 var _gooby_resolved: bool = false
 var _last_objective_text: String = ""
@@ -92,6 +98,7 @@ func _ready() -> void:
 	_connect_manager_signals()
 	_connect_scene_signals()
 	_create_fade_layer()
+	_create_location_title_layer()
 	_create_carry_shelf_blocker()
 	_create_cashier_restricted_danger_line()
 	_setup_npc_static_data()
@@ -100,6 +107,7 @@ func _ready() -> void:
 
 	TimeManager.start_game()
 	_update_objective()
+	_show_location_title_once("store", "Store")
 	call_deferred("_show_morning_intro")
 
 
@@ -169,7 +177,9 @@ func get_activity_board_guidance() -> Dictionary:
 				"Watch the store at night.",
 				"Gooby may ask for Phantom Ice Cream.",
 				"Give item: gain trust, Revenue 0G.",
-				"Refuse sale: item returns, another customer may come."
+				"Refuse sale: item returns, another customer may come.",
+				"Press E at the cashier when a customer is waiting.",
+				"Press E at doors to move between rooms."
 			]
 		}
 
@@ -180,7 +190,9 @@ func get_activity_board_guidance() -> Dictionary:
 				"Go to storage.",
 				"Press E to pick up the human shelf.",
 				"Press Q to place carried shelves.",
-				"Return and place it in the store."
+				"Return and place it in the store.",
+				"Keep shelves clear of doors, cashier, and customer path.",
+				"Press E at this board anytime to review actions."
 			]
 		}
 
@@ -190,7 +202,9 @@ func get_activity_board_guidance() -> Dictionary:
 			"lines": [
 				"Take stock from the normal box.",
 				"Press Q at the human shelf to stock items.",
-				"%d/%d human stock ready." % [_human_items_placed, NORMAL_STOCK_REQUIRED]
+				"%d/%d human stock ready." % [_human_items_placed, NORMAL_STOCK_REQUIRED],
+				"Press E at doors to move between store and storage.",
+				"Press E at the cashier once customers arrive."
 			]
 		}
 
@@ -200,7 +214,9 @@ func get_activity_board_guidance() -> Dictionary:
 			"lines": [
 				"Check the dark storage corner.",
 				"Look for the glowing box.",
-				"Bring anything strange back to the store."
+				"Bring anything strange back to the store.",
+				"Press E to inspect or pick up nearby objects.",
+				"Press Q to place carried shelves."
 			]
 		}
 
@@ -210,7 +226,8 @@ func get_activity_board_guidance() -> Dictionary:
 			"lines": [
 				"Press E to pick up the ghost shelf.",
 				"Press Q to place it on clear shop floor.",
-				"Keep normal and ghost items separate."
+				"Keep normal and ghost items separate.",
+				"Do not place shelves in doorways or behind the cashier."
 			]
 		}
 
@@ -220,7 +237,9 @@ func get_activity_board_guidance() -> Dictionary:
 			"lines": [
 				"Take Phantom Ice Cream from storage.",
 				"Press Q at the ghost shelf to stock it.",
-				"Watch the store at night."
+				"Watch the store at night.",
+				"Use E at doors and cashier.",
+				"Use Q only for placing or stocking shelves."
 			]
 		}
 
@@ -229,7 +248,9 @@ func get_activity_board_guidance() -> Dictionary:
 		"lines": [
 			"Press E at the cashier to serve customers.",
 			"Scan the item they are buying.",
-			"Reach the daily revenue target."
+			"Reach the daily revenue target.",
+			"Press E at this board if you need the action list.",
+			"Keep shelf placement clear for customer movement."
 		]
 	}
 
@@ -262,16 +283,10 @@ func _connect_scene_signals() -> void:
 	else:
 		storage_door.set_meta("door_type", "storage")
 
-		if not storage_door.body_entered.is_connected(_on_storage_door_entered):
-			storage_door.body_entered.connect(_on_storage_door_entered)
-
 	if yard_door == null:
 		push_error("Store: YardDoor is missing.")
 	else:
 		yard_door.set_meta("door_type", "yard")
-
-		if not yard_door.body_entered.is_connected(_on_yard_door_entered):
-			yard_door.body_entered.connect(_on_yard_door_entered)
 
 
 func _show_morning_intro() -> void:
@@ -284,22 +299,19 @@ func _show_morning_intro() -> void:
 		"It's dusty, but it still feels like home.",
 		"Go to the backroom and bring out the human shelf."
 	])
+	_show_first_activity_board()
 
 
-func _on_storage_door_entered(body: Node) -> void:
-	if _is_action_locked():
+func _show_first_activity_board() -> void:
+	if _first_activity_board_shown:
 		return
 
-	if body.is_in_group("player"):
-		await request_enter_storage("storage")
+	_first_activity_board_shown = true
 
+	var activity_board := get_node_or_null("ActivityBoard")
 
-func _on_yard_door_entered(body: Node) -> void:
-	if _is_action_locked():
-		return
-
-	if body.is_in_group("player"):
-		await request_enter_yard("yard")
+	if activity_board != null and activity_board.has_method("open_board"):
+		activity_board.call("open_board")
 
 
 func _enter_storage() -> void:
@@ -376,6 +388,7 @@ func _enter_storage() -> void:
 	StoreTransitionController.prepare_player_for_location(player, _current_storage, spawn_position)
 
 	await _fade_from_black()
+	_show_location_title_once("storage", "Storage")
 	_is_transitioning = false
 
 
@@ -445,6 +458,7 @@ func _enter_yard() -> void:
 	StoreTransitionController.prepare_player_for_location(player, _current_yard, spawn_position)
 
 	await _fade_from_black()
+	_show_location_title_once("yard", "Yard")
 	_is_transitioning = false
 
 
@@ -561,15 +575,18 @@ func _drop_carried_shelf_in_store(object: Node2D) -> void:
 
 	var primary_drop_position := _get_primary_shelf_drop_position()
 	var primary_rejection := _get_drop_rejection_reason(object, primary_drop_position)
-
-	if primary_rejection != "":
-		_show_drop_rejection_feedback(primary_rejection)
-
 	var drop_position := _find_safe_drop_position(object)
 
 	if drop_position == Vector2.INF:
+		if _has_cashier_restricted_drop_context(object):
+			primary_rejection = "This area is reserved for the cashier."
+		elif primary_rejection == "":
+			primary_rejection = _get_drop_failure_message(object)
+
 		if primary_rejection == "":
-			_show_notification("I can't place the shelf here.", 0.9)
+			primary_rejection = "I can't place the shelf here."
+
+		_show_drop_rejection_feedback(primary_rejection)
 		return
 
 	object.reparent(self, true)
@@ -636,22 +653,32 @@ func _find_safe_drop_position(object: Node2D) -> Vector2:
 	return Vector2.INF
 
 
+func _get_drop_failure_message(object: Node2D) -> String:
+	for candidate in _get_drop_candidates():
+		var rejection := _get_drop_rejection_reason(object, candidate)
+
+		if rejection != "":
+			return rejection
+
+	return ""
+
+
+func _has_cashier_restricted_drop_context(object: Node2D) -> bool:
+	var cashier_rect := _get_cashier_no_drop_rect()
+
+	for candidate in _get_drop_candidates():
+		var object_rect := _get_object_body_rect_at(object, candidate)
+
+		if object_rect.intersects(cashier_rect):
+			return true
+
+	return false
+
+
 func _get_drop_candidates() -> Array[Vector2]:
 	var candidates: Array[Vector2] = []
-	var base_position := player.global_position
 
 	candidates.append(_get_primary_shelf_drop_position())
-
-	for offset in SHELF_DROP_FALLBACKS:
-		var candidate := base_position + offset
-
-		if candidate not in candidates:
-			candidates.append(candidate)
-
-	var legacy_candidate := base_position + STORE_DROP_OFFSET
-
-	if legacy_candidate not in candidates:
-		candidates.append(legacy_candidate)
 
 	return candidates
 
@@ -1125,7 +1152,14 @@ func _set_store_world_active(is_active: bool) -> void:
 		_close_cashier_runtime_ui()
 
 	for child in get_children():
-		if child == _current_storage or child == _current_yard or child == _fade_layer or child == _carry_shelf_blocker or child == player:
+		if (
+			child == _current_storage
+			or child == _current_yard
+			or child == _fade_layer
+			or child == _location_title_layer
+			or child == _carry_shelf_blocker
+			or child == player
+		):
 			continue
 
 		if child.name == "HUD":
@@ -1146,6 +1180,66 @@ func _create_fade_layer() -> void:
 	var fade_nodes := StoreTransitionController.create_fade_layer(self)
 	_fade_layer = fade_nodes["layer"] as CanvasLayer
 	_fade_rect = fade_nodes["rect"] as ColorRect
+
+
+func _create_location_title_layer() -> void:
+	_location_title_layer = CanvasLayer.new()
+	_location_title_layer.name = "LocationTitleLayer"
+	_location_title_layer.layer = 24
+	add_child(_location_title_layer)
+
+	var panel := ColorRect.new()
+	panel.name = "LocationTitlePanel"
+	panel.color = Color(0.06, 0.05, 0.05, 0.72)
+	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	panel.offset_left = -88.0
+	panel.offset_top = -18.0
+	panel.offset_right = 88.0
+	panel.offset_bottom = 18.0
+	panel.modulate.a = 0.0
+	_location_title_layer.add_child(panel)
+
+	_location_title_label = Label.new()
+	_location_title_label.name = "LocationTitleLabel"
+	_location_title_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_location_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_location_title_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_location_title_label.add_theme_font_size_override("font_size", 14)
+	panel.add_child(_location_title_label)
+
+
+func _show_location_title_once(location_key: String, title: String) -> void:
+	if _shown_location_titles.has(location_key):
+		return
+
+	_shown_location_titles[location_key] = true
+	_show_location_title(title)
+
+
+func _show_location_title(title: String) -> void:
+	if _location_title_layer == null or _location_title_label == null:
+		return
+
+	var panel := _location_title_label.get_parent() as Control
+
+	if panel == null:
+		return
+
+	if _location_title_tween != null and _location_title_tween.is_valid():
+		_location_title_tween.kill()
+
+	_location_title_label.text = title
+	panel.visible = true
+	panel.modulate.a = 0.0
+	panel.position.y = 8.0
+
+	_location_title_tween = create_tween()
+	_location_title_tween.set_parallel(true)
+	_location_title_tween.tween_property(panel, "modulate:a", 1.0, 0.18)
+	_location_title_tween.tween_property(panel, "position:y", 0.0, 0.18)
+	_location_title_tween.set_parallel(false)
+	_location_title_tween.tween_interval(LOCATION_TITLE_DURATION)
+	_location_title_tween.tween_property(panel, "modulate:a", 0.0, 0.28)
 
 
 func _fade_to_black() -> void:

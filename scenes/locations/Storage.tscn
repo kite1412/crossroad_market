@@ -54,7 +54,7 @@ position = Vector2(488, 135)
 shape = SubResource("RectangleShape2D_wall_vertical")
 
 [node name="ReturnDoor" type="Area2D" parent="." unique_id=682790548]
-position = Vector2(28, 136)
+position = Vector2(9, 136)
 
 [node name="ReturnDoorVisual" type="Polygon2D" parent="ReturnDoor" unique_id=552706441]
 color = Color(0.24, 0.16, 0.1, 1)
