@@ -75,7 +75,6 @@ func _try_interact() -> void:
 	var areas: Array[Area2D] = interaction_area.get_overlapping_areas()
 
 	if areas.is_empty():
-		_show_notification("Nothing to interact with.", 0.5)
 		return
 
 	# Fallback untuk door Storage.
@@ -87,7 +86,6 @@ func _try_interact() -> void:
 	var best_target := _get_best_interaction_target(areas)
 
 	if best_target == null:
-		_show_notification("Nothing useful here.", 0.5)
 		return
 
 	if best_target is NPC:
