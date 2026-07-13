@@ -15,15 +15,13 @@ const CASHIER_DEPTH_FRONT_OFFSET: float = 8.0
 const SHELF_DEPTH_HALF_WIDTH: float = 48.0
 const SHELF_DEPTH_BACK_OFFSET: float = 56.0
 const SHELF_DEPTH_FRONT_OFFSET: float = 8.0
-const CARRY_SHELF_CASHIER_BLOCKER_SIZE := Vector2(164, 80)
-const CARRY_SHELF_CASHIER_BLOCKER_OFFSET := Vector2(0, -44)
+const CARRY_SHELF_CASHIER_BLOCKER_SIZE := Vector2(96, 36)
+const CARRY_SHELF_CASHIER_BLOCKER_OFFSET := Vector2(0, -70)
 const STORE_SHELF_PICKUP_DISTANCE: float = 76.0
-const DOOR_NO_DROP_MARGIN: float = 34.0
+const DOOR_NO_DROP_MARGIN: float = 8.0
 const CASHIER_NO_DROP_MARGIN: float = 4.0
-const CUSTOMER_MAIN_PATH_CHECKPOINTS: int = 6
-const CUSTOMER_MAIN_PATH_RADIUS: float = 26.0
-const CUSTOMER_QUEUE_PATH_SIZE := Vector2(88, 128)
-const CUSTOMER_QUEUE_PATH_OFFSET := Vector2(0, 48)
+const CUSTOMER_QUEUE_PATH_SIZE := Vector2(48, 32)
+const CUSTOMER_QUEUE_PATH_OFFSET := Vector2(0, 12)
 const SHELF_INTERACTION_STAND_DISTANCE: float = 54.0
 const RESTRICTED_DROP_MESSAGE_COUNT: int = 3
 const RESTRICTED_DROP_MESSAGE_DURATION: float = 0.55
@@ -191,7 +189,7 @@ func get_activity_board_guidance() -> Dictionary:
 				"Press E to pick up the human shelf.",
 				"Press Q to place carried shelves.",
 				"Return and place it in the store.",
-				"Keep shelves clear of doors, cashier, and customer path.",
+				"Keep shelves clear of doors and the cashier.",
 				"Press E at this board anytime to review actions."
 			]
 		}
@@ -250,7 +248,7 @@ func get_activity_board_guidance() -> Dictionary:
 			"Scan the item they are buying.",
 			"Reach the daily revenue target.",
 			"Press E at this board if you need the action list.",
-			"Keep shelf placement clear for customer movement."
+			"Keep shelf placement clear near checkout."
 		]
 	}
 
@@ -736,9 +734,6 @@ func _get_drop_rejection_reason(object: Node2D, candidate: Vector2) -> String:
 	if object_rect.intersects(_get_cashier_no_drop_rect()):
 		return "This area is reserved for the cashier."
 
-	if _intersects_customer_main_path(object_rect):
-		return "This blocks the customer path."
-
 	if object_rect.intersects(_get_customer_queue_path_rect()):
 		return "This blocks the checkout line."
 
@@ -803,28 +798,6 @@ func _get_cashier_no_drop_rect() -> Rect2:
 	)
 
 	return rect.grow(CASHIER_NO_DROP_MARGIN)
-
-
-func _intersects_customer_main_path(object_rect: Rect2) -> bool:
-	if counter_pos == null or entrance_pos == null:
-		return false
-
-	var start: Vector2 = entrance_pos.global_position
-	var end: Vector2 = counter_pos.global_position
-	var steps: int = maxi(1, CUSTOMER_MAIN_PATH_CHECKPOINTS - 1)
-
-	for index in CUSTOMER_MAIN_PATH_CHECKPOINTS:
-		var t: float = float(index) / float(steps)
-		var center: Vector2 = start.lerp(end, t)
-		var checkpoint_rect: Rect2 = Rect2(
-			center - Vector2.ONE * CUSTOMER_MAIN_PATH_RADIUS,
-			Vector2.ONE * CUSTOMER_MAIN_PATH_RADIUS * 2.0
-		)
-
-		if object_rect.intersects(checkpoint_rect):
-			return true
-
-	return false
 
 
 func _get_customer_queue_path_rect() -> Rect2:
