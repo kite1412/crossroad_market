@@ -243,22 +243,38 @@ func _get_interaction_hint_text(areas: Array[Area2D]) -> String:
 		var door_type := _get_storage_door_type(area)
 
 		if door_type == "yard":
-			return "Yard Door - Press E to enter"
+			return _get_guided_hint(
+				"door_transition",
+				"Yard Door - Press E to enter",
+				"Doors move you between locations. Stand near the door and press E."
+			)
 
 		if door_type == "yard_return":
-			return "Store Door - Press E to enter"
+			return _get_guided_hint(
+				"door_transition",
+				"Store Door - Press E to enter",
+				"Doors move you between locations. Stand near the door and press E."
+			)
 
 		if door_type.ends_with("_return") or door_type == "return":
-			return "Store Door - Press E to enter"
+			return _get_guided_hint(
+				"door_transition",
+				"Store Door - Press E to enter",
+				"Doors move you between locations. Stand near the door and press E."
+			)
 
 		if door_type != "":
-			return "Storage Door - Press E to enter"
+			return _get_guided_hint(
+				"door_transition",
+				"Storage Door - Press E to enter",
+				"Doors move you between locations. Stand near the door and press E."
+			)
 
 	var carried_object := _get_carried_shelf()
 
 	if carried_object != null:
 		return _get_guided_hint(
-			"carried_shelf_put",
+			"shelf_place",
 			"%s - Press Q to place" % _get_object_prompt_name(carried_object),
 			"Carrying %s. Press Q to place it on a clear floor tile." %
 			_get_object_prompt_name(carried_object)
@@ -271,7 +287,7 @@ func _get_interaction_hint_text(areas: Array[Area2D]) -> String:
 
 	if best_target is NPC:
 		return _get_guided_hint(
-			"npc_interact",
+			"npc_interaction",
 			"%s - Press E to interact" % _get_object_prompt_name(best_target),
 			"%s. Press E to talk or check what they need." %
 			_get_object_prompt_name(best_target)
@@ -279,14 +295,14 @@ func _get_interaction_hint_text(areas: Array[Area2D]) -> String:
 
 	if best_target is Cashier:
 		return _get_guided_hint(
-			"cashier_interact",
+			"cashier_interaction",
 			"Cashier - Press E to serve",
 			"Cashier. Press E to scan and serve the front customer."
 		)
 
 	if best_target is SupplyBox:
 		return _get_guided_hint(
-			"supply_box_take",
+			"supply_box_take_stock",
 			"%s - Press E to take stock" % _get_object_prompt_name(best_target),
 			"%s. Press E to take one stock item." %
 			_get_object_prompt_name(best_target)
@@ -297,7 +313,7 @@ func _get_interaction_hint_text(areas: Array[Area2D]) -> String:
 
 	if best_target is ActivityBoard:
 		return _get_guided_hint(
-			"activity_board_read",
+			"activity_board",
 			"Activity Board - Press E to read",
 			"Activity Board. Press E to read current work guidance."
 		)
@@ -310,7 +326,7 @@ func _get_shelf_hint_text(shelf: Shelf) -> String:
 
 	if shelf.has_meta("is_carried_storage_object") and bool(shelf.get_meta("is_carried_storage_object")):
 		return _get_guided_hint(
-			"carried_shelf_put",
+			"shelf_place",
 			"%s - Press Q to place" % shelf_name,
 			"Carrying %s. Press Q to place it on a clear floor tile." % shelf_name
 		)
@@ -371,7 +387,13 @@ func _get_guided_hint(key: String, compact_text: String, first_time_text: String
 		return compact_text
 
 	_seen_guidance_keys[key] = true
-	return first_time_text
+
+	var hud := get_tree().get_first_node_in_group("hud")
+
+	if hud != null and hud.has_method("show_hint_dialog"):
+		hud.call("show_hint_dialog", key, first_time_text)
+
+	return compact_text
 
 
 func _get_object_prompt_name(target: Node) -> String:

@@ -19,6 +19,7 @@ var _player_inside_trigger: bool = false
 
 
 func _ready() -> void:
+	super._ready()
 	add_to_group("mystery_supply_boxes")
 
 	_apply_glow(false)

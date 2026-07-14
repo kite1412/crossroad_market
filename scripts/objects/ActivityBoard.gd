@@ -7,9 +7,18 @@ const DEFAULT_LINES: Array[String] = [
 	"Stock shelves, then serve customers."
 ]
 const PANEL_SIZE := Vector2(292, 164)
+const BOARD_GLOW_CYCLES: int = 3
+const BOARD_GLOW_CYCLE_DURATION: float = 0.45
 
 var _board_layer: CanvasLayer = null
 var _board_panel: ColorRect = null
+var _glow_line: Line2D = null
+var _glow_tween: Tween = null
+
+
+func _ready() -> void:
+	_setup_cursor_hover()
+	_setup_completion_glow()
 
 
 func _exit_tree() -> void:
@@ -27,6 +36,41 @@ func open_board() -> void:
 	_show_board_panel(
 		str(guidance.get("title", DEFAULT_TITLE)),
 		guidance.get("lines", DEFAULT_LINES)
+	)
+
+
+func play_completion_glow() -> void:
+	if _glow_line == null:
+		_setup_completion_glow()
+
+	if _glow_line == null:
+		return
+
+	if _glow_tween != null and _glow_tween.is_valid():
+		_glow_tween.kill()
+
+	_glow_line.visible = true
+	_glow_line.modulate.a = 0.0
+
+	_glow_tween = create_tween()
+
+	for i in BOARD_GLOW_CYCLES:
+		_glow_tween.tween_property(
+			_glow_line,
+			"modulate:a",
+			1.0,
+			BOARD_GLOW_CYCLE_DURATION * 0.5
+		)
+		_glow_tween.tween_property(
+			_glow_line,
+			"modulate:a",
+			0.0,
+			BOARD_GLOW_CYCLE_DURATION * 0.5
+		)
+
+	_glow_tween.tween_callback(func() -> void:
+		if _glow_line != null:
+			_glow_line.visible = false
 	)
 
 
@@ -176,3 +220,59 @@ func _find_visible_overlay_named(node: Node, node_name: String) -> bool:
 			return true
 
 	return false
+
+
+func _setup_cursor_hover() -> void:
+	var hover_area := get_node_or_null("InteractionArea") as Area2D
+
+	if hover_area == null:
+		return
+
+	hover_area.input_pickable = true
+	var entered := Callable(self, "_on_cursor_mouse_entered")
+	var exited := Callable(self, "_on_cursor_mouse_exited")
+
+	if not hover_area.mouse_entered.is_connected(entered):
+		hover_area.mouse_entered.connect(entered)
+
+	if not hover_area.mouse_exited.is_connected(exited):
+		hover_area.mouse_exited.connect(exited)
+
+
+func _on_cursor_mouse_entered() -> void:
+	var hud := get_tree().get_first_node_in_group("hud")
+
+	if hud != null and hud.has_method("show_cursor_tooltip"):
+		hud.call("show_cursor_tooltip", "Activity Board")
+
+
+func _on_cursor_mouse_exited() -> void:
+	var hud := get_tree().get_first_node_in_group("hud")
+
+	if hud != null and hud.has_method("hide_cursor_tooltip"):
+		hud.call("hide_cursor_tooltip")
+
+
+func _setup_completion_glow() -> void:
+	if _glow_line != null:
+		return
+
+	_glow_line = Line2D.new()
+	_glow_line.name = "CompletionGlow"
+	_glow_line.points = _get_board_glow_points()
+	_glow_line.closed = true
+	_glow_line.width = 3.0
+	_glow_line.default_color = Color(1.0, 0.86, 0.32, 1.0)
+	_glow_line.visible = false
+	_glow_line.z_index = 20
+	_glow_line.modulate.a = 0.0
+	add_child(_glow_line)
+
+
+func _get_board_glow_points() -> PackedVector2Array:
+	return PackedVector2Array([
+		Vector2(-40, -40),
+		Vector2(40, -40),
+		Vector2(40, 0),
+		Vector2(-40, 0)
+	])

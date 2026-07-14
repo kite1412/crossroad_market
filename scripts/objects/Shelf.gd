@@ -8,11 +8,13 @@ signal item_placed(slot_index: int, item_id: String)
 signal item_removed(slot_index: int, item_id: String)
 
 var _slots: Array = []
+var _is_shelf_hovered: bool = false
 
 func _ready() -> void:
 	_slots.resize(max_slots)
 	_slots.fill(null)
 	_apply_shelf_color()
+	_setup_cursor_hover()
 
 func _apply_shelf_color() -> void:
 	if shelf_type == ItemData.ShelfType.HUMAN:
@@ -116,6 +118,14 @@ func get_slot_content(slot_index: int) -> String:
 	return _slots[slot_index] if _slots[slot_index] != null else ""
 
 
+func get_hover_display_name() -> String:
+	match shelf_type:
+		ItemData.ShelfType.GHOST:
+			return "Ghost Shelf"
+		_:
+			return "Human Shelf"
+
+
 func _get_empty_slot() -> int:
 	for i in _slots.size():
 		if _slots[i] == null:
@@ -134,3 +144,84 @@ func _apply_visual_tint(color: Color) -> void:
 
 	if visual != null:
 		visual.modulate = color
+
+
+func _setup_cursor_hover() -> void:
+	var interaction_area := get_node_or_null("InteractionArea") as Area2D
+
+	if interaction_area != null:
+		interaction_area.input_pickable = true
+		var shelf_entered := Callable(self, "_on_shelf_mouse_entered")
+		var shelf_exited := Callable(self, "_on_shelf_mouse_exited")
+
+		if not interaction_area.mouse_entered.is_connected(shelf_entered):
+			interaction_area.mouse_entered.connect(shelf_entered)
+
+		if not interaction_area.mouse_exited.is_connected(shelf_exited):
+			interaction_area.mouse_exited.connect(shelf_exited)
+
+	var slots := get_node_or_null("Slots")
+
+	if slots == null:
+		return
+
+	for i in range(max_slots):
+		var slot_area := slots.get_node_or_null("Slot%d" % i) as Area2D
+
+		if slot_area == null:
+			continue
+
+		slot_area.input_pickable = true
+		var slot_entered := Callable(self, "_on_slot_mouse_entered").bind(i)
+		var slot_exited := Callable(self, "_on_slot_mouse_exited")
+
+		if not slot_area.mouse_entered.is_connected(slot_entered):
+			slot_area.mouse_entered.connect(slot_entered)
+
+		if not slot_area.mouse_exited.is_connected(slot_exited):
+			slot_area.mouse_exited.connect(slot_exited)
+
+
+func _on_shelf_mouse_entered() -> void:
+	_is_shelf_hovered = true
+	_show_cursor_tooltip(get_hover_display_name())
+
+
+func _on_shelf_mouse_exited() -> void:
+	_is_shelf_hovered = false
+	_hide_cursor_tooltip()
+
+
+func _on_slot_mouse_entered(slot_index: int) -> void:
+	_show_cursor_tooltip(_get_slot_hover_name(slot_index))
+
+
+func _on_slot_mouse_exited() -> void:
+	if _is_shelf_hovered:
+		_show_cursor_tooltip(get_hover_display_name())
+	else:
+		_hide_cursor_tooltip()
+
+
+func _get_slot_hover_name(slot_index: int) -> String:
+	var item_id := get_slot_content(slot_index)
+
+	if item_id == "":
+		return get_hover_display_name()
+
+	var item := ItemDatabase.get_item(item_id)
+	return item.display_name if item != null and item.display_name != "" else item_id.capitalize()
+
+
+func _show_cursor_tooltip(text: String) -> void:
+	var hud := get_tree().get_first_node_in_group("hud")
+
+	if hud != null and hud.has_method("show_cursor_tooltip"):
+		hud.call("show_cursor_tooltip", text)
+
+
+func _hide_cursor_tooltip() -> void:
+	var hud := get_tree().get_first_node_in_group("hud")
+
+	if hud != null and hud.has_method("hide_cursor_tooltip"):
+		hud.call("hide_cursor_tooltip")

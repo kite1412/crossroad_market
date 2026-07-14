@@ -15,6 +15,11 @@ signal notification_finished()
 const NOTIFY_DURATION: float = 2.0
 const MIN_NOTIFY_DURATION: float = 0.9
 const NOTIFY_CHARS_PER_SECOND: float = 34.0
+const HINT_DIALOG_WIDTH: float = 300.0
+const HINT_DIALOG_HEIGHT: float = 54.0
+const HINT_DIALOG_BOTTOM_MARGIN: float = 74.0
+const CURSOR_TOOLTIP_OFFSET := Vector2(12, 14)
+const CURSOR_TOOLTIP_PADDING := Vector2(12, 8)
 
 var _notify_timer: float = 0.0
 var _notify_duration: float = NOTIFY_DURATION
@@ -22,10 +27,20 @@ var _notify_full_chars: int = 0
 var _action_lock_timer: float = 0.0
 var _action_lock_sessions: int = 0
 var _notification_finished_emitted: bool = true
+var _hint_dialog: ColorRect = null
+var _hint_label: Label = null
+var _hint_tween: Tween = null
+var _hint_dialog_visible: bool = false
+var _cursor_tooltip: ColorRect = null
+var _cursor_tooltip_label: Label = null
+var _cursor_tooltip_tween: Tween = null
+var _cursor_tooltip_visible: bool = false
 
 func _ready() -> void:
 	add_to_group("hud")
 	notification_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_create_hint_dialog()
+	_create_cursor_tooltip()
 
 	EconomyManager.gold_changed.connect(_on_gold_changed)
 	EconomyManager.daily_target_reached.connect(_on_target_reached)
@@ -55,6 +70,12 @@ func _process(delta: float) -> void:
 
 	if object_name_label != null and object_name_label.visible and _has_interactive_overlay_open():
 		object_name_label.visible = false
+
+	if _cursor_tooltip_visible:
+		if _has_interactive_overlay_open():
+			hide_cursor_tooltip()
+		else:
+			_update_cursor_tooltip_position()
 
 	if _notify_timer <= 0.0:
 		return
@@ -90,6 +111,11 @@ func _handle_dialog_skip_input(event: InputEvent) -> void:
 		return
 
 	var skipped := false
+
+	if _hint_dialog_visible:
+		_hide_hint_dialog(true)
+		get_viewport().set_input_as_handled()
+		return
 
 	if notification_label.visible and not _has_interactive_overlay_open():
 		_finish_notification()
@@ -165,6 +191,73 @@ func show_notification(text: String, duration: float = NOTIFY_DURATION, blocks_a
 		_action_lock_timer = _notify_duration
 
 
+func show_hint_dialog(_key: String, text: String) -> void:
+	if text == "" or _has_interactive_overlay_open():
+		return
+
+	if _hint_dialog == null or _hint_label == null:
+		_create_hint_dialog()
+
+	if _hint_tween != null and _hint_tween.is_valid():
+		_hint_tween.kill()
+
+	_hint_label.text = text
+	_hint_dialog.visible = true
+	_hint_dialog_visible = true
+	_hint_dialog.modulate.a = 0.0
+	_hint_dialog.position.y = _get_hint_dialog_base_position().y + 8.0
+	_hint_dialog.scale = Vector2(0.98, 0.98)
+
+	_hint_tween = create_tween()
+	_hint_tween.set_parallel(true)
+	_hint_tween.tween_property(_hint_dialog, "modulate:a", 1.0, 0.18)
+	_hint_tween.tween_property(_hint_dialog, "position:y", _get_hint_dialog_base_position().y, 0.18)
+	_hint_tween.tween_property(_hint_dialog, "scale", Vector2.ONE, 0.18)
+
+
+func show_cursor_tooltip(text: String) -> void:
+	if text == "" or _has_interactive_overlay_open():
+		return
+
+	if _cursor_tooltip == null or _cursor_tooltip_label == null:
+		_create_cursor_tooltip()
+
+	if _cursor_tooltip_tween != null and _cursor_tooltip_tween.is_valid():
+		_cursor_tooltip_tween.kill()
+
+	_cursor_tooltip_label.text = text
+	_cursor_tooltip_label.reset_size()
+	_cursor_tooltip.size = _cursor_tooltip_label.get_minimum_size() + CURSOR_TOOLTIP_PADDING
+	_cursor_tooltip_label.position = CURSOR_TOOLTIP_PADDING * 0.5
+	_update_cursor_tooltip_position()
+
+	_cursor_tooltip.visible = true
+	_cursor_tooltip_visible = true
+	_cursor_tooltip.modulate.a = 0.0
+	_cursor_tooltip.scale = Vector2(0.96, 0.96)
+
+	_cursor_tooltip_tween = create_tween()
+	_cursor_tooltip_tween.set_parallel(true)
+	_cursor_tooltip_tween.tween_property(_cursor_tooltip, "modulate:a", 1.0, 0.12)
+	_cursor_tooltip_tween.tween_property(_cursor_tooltip, "scale", Vector2.ONE, 0.12)
+
+
+func hide_cursor_tooltip() -> void:
+	if _cursor_tooltip == null:
+		return
+
+	if _cursor_tooltip_tween != null and _cursor_tooltip_tween.is_valid():
+		_cursor_tooltip_tween.kill()
+
+	_cursor_tooltip_visible = false
+	_cursor_tooltip_tween = create_tween()
+	_cursor_tooltip_tween.tween_property(_cursor_tooltip, "modulate:a", 0.0, 0.08)
+	_cursor_tooltip_tween.tween_callback(func() -> void:
+		if _cursor_tooltip != null:
+			_cursor_tooltip.visible = false
+	)
+
+
 func set_objective(text: String) -> void:
 	if objective_label == null:
 		return
@@ -235,6 +328,98 @@ func _finish_notification() -> void:
 	if not _notification_finished_emitted:
 		_notification_finished_emitted = true
 		notification_finished.emit()
+
+
+func _create_hint_dialog() -> void:
+	if _hint_dialog != null:
+		return
+
+	_hint_dialog = ColorRect.new()
+	_hint_dialog.name = "OneTimeHintDialog"
+	_hint_dialog.color = Color(0.08, 0.07, 0.05, 0.94)
+	_hint_dialog.size = Vector2(HINT_DIALOG_WIDTH, HINT_DIALOG_HEIGHT)
+	_hint_dialog.position = _get_hint_dialog_base_position()
+	_hint_dialog.pivot_offset = _hint_dialog.size * 0.5
+	_hint_dialog.visible = false
+	_hint_dialog.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_hint_dialog)
+
+	_hint_label = Label.new()
+	_hint_label.name = "HintLabel"
+	_hint_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_hint_label.offset_left = 8.0
+	_hint_label.offset_top = 6.0
+	_hint_label.offset_right = -8.0
+	_hint_label.offset_bottom = -6.0
+	_hint_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_hint_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_hint_label.theme_type_variation = "SmallLabel"
+	_hint_label.add_theme_color_override("font_color", Color(1.0, 0.95, 0.76, 1.0))
+	_hint_label.add_theme_font_size_override("font_size", 9)
+	_hint_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hint_dialog.add_child(_hint_label)
+
+
+func _create_cursor_tooltip() -> void:
+	if _cursor_tooltip != null:
+		return
+
+	_cursor_tooltip = ColorRect.new()
+	_cursor_tooltip.name = "CursorNameTooltip"
+	_cursor_tooltip.color = Color(0.05, 0.045, 0.035, 0.94)
+	_cursor_tooltip.visible = false
+	_cursor_tooltip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_cursor_tooltip)
+
+	_cursor_tooltip_label = Label.new()
+	_cursor_tooltip_label.name = "TooltipLabel"
+	_cursor_tooltip_label.add_theme_color_override("font_color", Color(1.0, 0.97, 0.82, 1.0))
+	_cursor_tooltip_label.add_theme_font_size_override("font_size", 9)
+	_cursor_tooltip_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_cursor_tooltip.add_child(_cursor_tooltip_label)
+
+
+func _update_cursor_tooltip_position() -> void:
+	if _cursor_tooltip == null:
+		return
+
+	var viewport_size := get_viewport().get_visible_rect().size
+	var tooltip_position := get_viewport().get_mouse_position() + CURSOR_TOOLTIP_OFFSET
+	tooltip_position.x = min(tooltip_position.x, viewport_size.x - _cursor_tooltip.size.x - 4.0)
+	tooltip_position.y = min(tooltip_position.y, viewport_size.y - _cursor_tooltip.size.y - 4.0)
+	tooltip_position.x = max(4.0, tooltip_position.x)
+	tooltip_position.y = max(4.0, tooltip_position.y)
+	_cursor_tooltip.position = tooltip_position
+
+
+func _get_hint_dialog_base_position() -> Vector2:
+	var viewport_size := get_viewport().get_visible_rect().size
+	return Vector2(
+		(viewport_size.x - HINT_DIALOG_WIDTH) * 0.5,
+		viewport_size.y - HINT_DIALOG_BOTTOM_MARGIN - HINT_DIALOG_HEIGHT
+	)
+
+
+func _hide_hint_dialog(animated: bool = true) -> void:
+	if _hint_dialog == null:
+		return
+
+	if _hint_tween != null and _hint_tween.is_valid():
+		_hint_tween.kill()
+
+	_hint_dialog_visible = false
+
+	if not animated:
+		_hint_dialog.visible = false
+		_hint_dialog.modulate.a = 0.0
+		return
+
+	_hint_tween = create_tween()
+	_hint_tween.tween_property(_hint_dialog, "modulate:a", 0.0, 0.12)
+	_hint_tween.tween_callback(func() -> void:
+		if _hint_dialog != null:
+			_hint_dialog.visible = false
+	)
 
 
 func _update_all() -> void:
