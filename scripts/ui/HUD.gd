@@ -9,8 +9,6 @@ signal notification_finished()
 @onready var time_label: Label = $TopCenterHUD/TimeLabel
 @onready var notification_label: Label = $NotificationLabel
 @onready var objective_label: Label = $ObjectiveLabel
-@onready var object_name_label: Label = $ObjectNameLabel
-@onready var interaction_hint_label: Label = $InteractionHintLabel
 
 const NOTIFY_DURATION: float = 2.0
 const MIN_NOTIFY_DURATION: float = 0.9
@@ -54,22 +52,10 @@ func _ready() -> void:
 	notification_label.modulate.a = 0.0
 	notification_label.visible_characters = 0
 
-	if object_name_label != null:
-		object_name_label.visible = false
-
-	if interaction_hint_label != null:
-		interaction_hint_label.visible = false
-
 
 func _process(delta: float) -> void:
 	if _action_lock_timer > 0.0:
 		_action_lock_timer = max(0.0, _action_lock_timer - delta)
-
-	if interaction_hint_label != null and interaction_hint_label.visible and _has_interactive_overlay_open():
-		interaction_hint_label.visible = false
-
-	if object_name_label != null and object_name_label.visible and _has_interactive_overlay_open():
-		object_name_label.visible = false
 
 	if _cursor_tooltip_visible:
 		if _has_interactive_overlay_open():
@@ -268,30 +254,6 @@ func set_objective(text: String) -> void:
 
 	objective_label.visible = true
 	objective_label.text = "Objective: %s" % text
-
-
-func set_interaction_hint(text: String) -> void:
-	if interaction_hint_label == null:
-		return
-
-	if text == "" or _has_interactive_overlay_open():
-		interaction_hint_label.visible = false
-		return
-
-	interaction_hint_label.visible = true
-	interaction_hint_label.text = text
-
-
-func set_hover_object_name(text: String) -> void:
-	if object_name_label == null:
-		return
-
-	if text == "" or _has_interactive_overlay_open():
-		object_name_label.visible = false
-		return
-
-	object_name_label.visible = true
-	object_name_label.text = text
 
 
 func _get_readable_notification_duration(text: String, requested_duration: float) -> float:

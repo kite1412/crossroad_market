@@ -183,208 +183,147 @@ func _get_best_interaction_target(areas: Array[Area2D]) -> Node:
 
 
 func _update_interaction_hint() -> void:
-	var hud := get_tree().get_first_node_in_group("hud")
-
-	if hud == null:
-		return
-
 	if _is_action_locked():
-		_set_hud_hover_feedback(hud, "", "")
 		return
 
 	var areas: Array[Area2D] = interaction_area.get_overlapping_areas()
-	var object_name := _get_hover_object_name(areas)
-	var hint_text := _get_interaction_hint_text(areas)
-	_set_hud_hover_feedback(hud, object_name, hint_text)
+	_trigger_interaction_guidance(areas)
 
 
-func _set_hud_hover_feedback(hud: Node, object_name: String, hint_text: String) -> void:
-	if hud.has_method("set_hover_object_name"):
-		hud.call("set_hover_object_name", object_name)
-
-	if hud.has_method("set_interaction_hint"):
-		hud.call("set_interaction_hint", hint_text)
-
-
-func _get_hover_object_name(areas: Array[Area2D]) -> String:
+func _trigger_interaction_guidance(areas: Array[Area2D]) -> void:
 	for area in areas:
 		var door_type := _get_storage_door_type(area)
 
 		if door_type == "yard":
-			return "Yard Door"
+			_show_guided_hint_once(
+				"door_transition",
+				"Doors move you between locations. Stand near the door and press E."
+			)
+			return
 
 		if door_type == "yard_return":
-			return "Store Door"
+			_show_guided_hint_once(
+				"door_transition",
+				"Doors move you between locations. Stand near the door and press E."
+			)
+			return
 
 		if door_type.ends_with("_return") or door_type == "return":
-			return "Store Door"
+			_show_guided_hint_once(
+				"door_transition",
+				"Doors move you between locations. Stand near the door and press E."
+			)
+			return
 
 		if door_type != "":
-			return "Storage Door"
+			_show_guided_hint_once(
+				"door_transition",
+				"Doors move you between locations. Stand near the door and press E."
+			)
+			return
 
 	var carried_object := _get_carried_shelf()
 
 	if carried_object != null:
-		return _get_object_prompt_name(carried_object)
-
-	var best_target := _get_best_interaction_target(areas)
-
-	if best_target == null:
-		return ""
-
-	if best_target is Shelf:
-		return _get_shelf_hover_name(best_target as Shelf)
-
-	return _get_object_prompt_name(best_target)
-
-
-func _get_interaction_hint_text(areas: Array[Area2D]) -> String:
-	for area in areas:
-		var door_type := _get_storage_door_type(area)
-
-		if door_type == "yard":
-			return _get_guided_hint(
-				"door_transition",
-				"Yard Door - Press E to enter",
-				"Doors move you between locations. Stand near the door and press E."
-			)
-
-		if door_type == "yard_return":
-			return _get_guided_hint(
-				"door_transition",
-				"Store Door - Press E to enter",
-				"Doors move you between locations. Stand near the door and press E."
-			)
-
-		if door_type.ends_with("_return") or door_type == "return":
-			return _get_guided_hint(
-				"door_transition",
-				"Store Door - Press E to enter",
-				"Doors move you between locations. Stand near the door and press E."
-			)
-
-		if door_type != "":
-			return _get_guided_hint(
-				"door_transition",
-				"Storage Door - Press E to enter",
-				"Doors move you between locations. Stand near the door and press E."
-			)
-
-	var carried_object := _get_carried_shelf()
-
-	if carried_object != null:
-		return _get_guided_hint(
+		_show_guided_hint_once(
 			"shelf_place",
-			"%s - Press Q to place" % _get_object_prompt_name(carried_object),
 			"Carrying %s. Press Q to place it on a clear floor tile." %
 			_get_object_prompt_name(carried_object)
 		)
+		return
 
 	var best_target := _get_best_interaction_target(areas)
 
 	if best_target == null:
-		return ""
+		return
 
 	if best_target is NPC:
-		return _get_guided_hint(
+		_show_guided_hint_once(
 			"npc_interaction",
-			"%s - Press E to interact" % _get_object_prompt_name(best_target),
 			"%s. Press E to talk or check what they need." %
 			_get_object_prompt_name(best_target)
 		)
+		return
 
 	if best_target is Cashier:
-		return _get_guided_hint(
+		_show_guided_hint_once(
 			"cashier_interaction",
-			"Cashier - Press E to serve",
 			"Cashier. Press E to scan and serve the front customer."
 		)
+		return
 
 	if best_target is SupplyBox:
-		return _get_guided_hint(
+		_show_guided_hint_once(
 			"supply_box_take_stock",
-			"%s - Press E to take stock" % _get_object_prompt_name(best_target),
 			"%s. Press E to take one stock item." %
 			_get_object_prompt_name(best_target)
 		)
+		return
 
 	if best_target is Shelf:
-		return _get_shelf_hint_text(best_target as Shelf)
+		_trigger_shelf_guidance(best_target as Shelf)
+		return
 
 	if best_target is ActivityBoard:
-		return _get_guided_hint(
+		_show_guided_hint_once(
 			"activity_board",
-			"Activity Board - Press E to read",
 			"Activity Board. Press E to read current work guidance."
 		)
 
-	return ""
 
-
-func _get_shelf_hint_text(shelf: Shelf) -> String:
+func _trigger_shelf_guidance(shelf: Shelf) -> void:
 	var shelf_name := _get_object_prompt_name(shelf)
 
 	if shelf.has_meta("is_carried_storage_object") and bool(shelf.get_meta("is_carried_storage_object")):
-		return _get_guided_hint(
+		_show_guided_hint_once(
 			"shelf_place",
-			"%s - Press Q to place" % shelf_name,
 			"Carrying %s. Press Q to place it on a clear floor tile." % shelf_name
 		)
+		return
 
 	if not _is_shelf_installed_in_store(shelf):
-		return _get_guided_hint(
+		_show_guided_hint_once(
 			"shelf_pickup",
-			"%s - Press E to pick up" % shelf_name,
 			"%s. Press E to pick it up, then press Q to place it." % shelf_name
 		)
+		return
 
 	var inventory_items := Inventory.get_all()
 	var has_inventory_item := not inventory_items.is_empty()
 	var has_shelf_stock := shelf.has_stock()
 
 	if has_inventory_item and has_shelf_stock:
-		return _get_guided_hint(
+		_show_guided_hint_once(
 			"shelf_dual",
-			"%s - E pick up / Q stock" % shelf_name,
 			"%s. Press E to move the shelf, or Q to stock your carried item." %
 			shelf_name
 		)
+		return
 
 	if has_inventory_item:
-		return _get_guided_hint(
+		_show_guided_hint_once(
 			"shelf_stock",
-			"%s - Press Q to stock" % shelf_name,
 			"%s. Press Q to put your carried item on this shelf." %
 			shelf_name
 		)
+		return
 
 	if has_shelf_stock:
-		return _get_guided_hint(
+		_show_guided_hint_once(
 			"shelf_reposition_stocked",
-			"%s - Press E to pick up" % shelf_name,
 			"%s. Press E to move the stocked shelf." % shelf_name
 		)
+		return
 
-	return "%s - Press E to pick up" % shelf_name
-
-
-func _get_shelf_hover_name(shelf: Shelf) -> String:
-	if shelf.has_stock() and shelf.has_method("get_first_stocked_item_id"):
-		var item_id := str(shelf.call("get_first_stocked_item_id"))
-		var item: ItemData = ItemDatabase.get_item(item_id)
-
-		if item != null and item.display_name != "":
-			return item.display_name
-
-		if item_id != "":
-			return item_id.capitalize()
-
-	return _get_object_prompt_name(shelf)
+	_show_guided_hint_once(
+		"shelf_pickup",
+		"%s. Press E to pick it up, then press Q to place it." % shelf_name
+	)
 
 
-func _get_guided_hint(key: String, compact_text: String, first_time_text: String) -> String:
+func _show_guided_hint_once(key: String, first_time_text: String) -> void:
 	if _seen_guidance_keys.has(key):
-		return compact_text
+		return
 
 	_seen_guidance_keys[key] = true
 
@@ -392,8 +331,6 @@ func _get_guided_hint(key: String, compact_text: String, first_time_text: String
 
 	if hud != null and hud.has_method("show_hint_dialog"):
 		hud.call("show_hint_dialog", key, first_time_text)
-
-	return compact_text
 
 
 func _get_object_prompt_name(target: Node) -> String:
