@@ -14,7 +14,7 @@ size = Vector2(480, 49)
 size = Vector2(16, 270)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_storage_door_body"]
-size = Vector2(44, 12)
+size = Vector2(44, 11)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_storage_door"]
 size = Vector2(40, 22)
