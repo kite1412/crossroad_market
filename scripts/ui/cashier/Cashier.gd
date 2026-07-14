@@ -9,6 +9,7 @@ const GOOBY_ID: String = "gooby"
 const STORY_INTERACTION_TRUST_GAIN: int = 20
 const CASHIER_BUTTON_FONT_SIZE: int = 8
 const CASHIER_BUTTON_MIN_HEIGHT: float = 20.0
+const STORE_OS_APP_HOME: StringName = &"home"
 const STORE_OS_APP_POS: StringName = &"pos"
 const STORE_OS_APP_RESTOCK: StringName = &"restock"
 
@@ -22,7 +23,7 @@ var _scanned_item_label: String = ""
 var _scanned_total: int = 0
 var _checkout_history: Array[Dictionary] = []
 var _target_item_ids: Array[String] = []
-var _selected_item_ids: Array[String] = []
+var _cart_quantities: Dictionary = {}
 var _pending_item_id: String = ""
 var _ask_again_count: int = 0
 var _cashier_layer: CanvasLayer = null
@@ -32,13 +33,12 @@ var _customer_label: Label = null
 var _request_label: Label = null
 var _selected_label: Label = null
 var _guide_label: Label = null
-var _pos_tab_button: Button = null
-var _restock_tab_button: Button = null
+var _item_title: Label = null
 var _item_list: VBoxContainer = null
 var _action_row: Container = null
 var _cashier_lock_active: bool = false
 var _seen_panel_guidance: Dictionary = {}
-var _active_store_os_app: StringName = STORE_OS_APP_POS
+var _active_store_os_app: StringName = STORE_OS_APP_HOME
 
 
 func _ready() -> void:
@@ -70,9 +70,7 @@ func try_checkout() -> void:
 	if first_npc == null:
 		if _has_customer_approaching_counter():
 			_show_notification("Customer is still walking to the counter.", 1.2)
-		else:
-			print("No customer waiting at counter.")
-			_show_notification("No customer waiting at counter.", 1.2)
+		_render_store_os_home()
 		return
 
 	_process_scan(first_npc)
@@ -100,6 +98,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 
 	if event.is_action_pressed("interact") or event.is_action_pressed("ui_accept") or event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER:
+		if _active_store_os_app != STORE_OS_APP_POS:
+			get_viewport().set_input_as_handled()
+			return
+
 		if _scanned_total > 0:
 			if _is_story_gift_checkout():
 				_show_notification("Choose whether to give the item or refuse Gooby.", 1.0)
@@ -178,7 +180,7 @@ func _process_scan(npc: NPC) -> void:
 	_scanned_item_label = item_label
 	_scanned_total = 0
 	_target_item_ids = npc.get_cart_item_ids() if npc.has_method("get_cart_item_ids") else [item_id]
-	_selected_item_ids.clear()
+	_cart_quantities.clear()
 	_pending_item_id = ""
 	_ask_again_count = 0
 
@@ -288,7 +290,7 @@ func _clear_scan() -> void:
 	_scanned_item_label = ""
 	_scanned_total = 0
 	_target_item_ids.clear()
-	_selected_item_ids.clear()
+	_cart_quantities.clear()
 	_pending_item_id = ""
 	_ask_again_count = 0
 	_hide_cashier_panel()
@@ -302,6 +304,58 @@ func get_checkout_history() -> Array[Dictionary]:
 	return _checkout_history.duplicate(true)
 
 
+func _render_store_os_home() -> void:
+	_ensure_cashier_panel()
+	_set_store_os_app(STORE_OS_APP_HOME)
+	_clear_container(_item_list)
+	_clear_container(_action_row)
+	_lock_player_actions()
+
+	_cashier_panel.visible = true
+	_panel_title.text = "STORE OS HOME"
+	_set_item_title("APPS")
+	_customer_label.text = "Apps"
+	_request_label.text = "Open an app from the launcher."
+	_selected_label.text = "Income %dG | Outcome 0G | Profit %dG" % [
+		EconomyManager.daily_revenue,
+		EconomyManager.daily_revenue
+	]
+	_guide_label.visible = false
+	_guide_label.text = ""
+
+	var pos_button := Button.new()
+	pos_button.text = "POS App"
+	pos_button.custom_minimum_size = Vector2(0, 34)
+	pos_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_configure_button_guidance(pos_button, "Open cashier checkout tools.")
+	pos_button.pressed.connect(_render_pos_app)
+	_item_list.add_child(pos_button)
+
+	var restock_button := Button.new()
+	restock_button.text = "Restock App"
+	restock_button.custom_minimum_size = Vector2(0, 34)
+	restock_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_configure_button_guidance(restock_button, "Open restock draft tools.")
+	restock_button.pressed.connect(_render_restock_app)
+	_item_list.add_child(restock_button)
+
+	var close_button := Button.new()
+	close_button.text = "Close OS"
+	close_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_configure_button_guidance(close_button, "Close Store OS.")
+	close_button.pressed.connect(_close_store_os)
+	_action_row.add_child(close_button)
+
+
+func _render_pos_app() -> void:
+	if not _has_scanned_customer():
+		_render_empty_pos_app()
+	elif _scanned_total > 0:
+		_show_paid_panel()
+	else:
+		_show_scan_panel()
+
+
 func _show_scan_panel() -> void:
 	_ensure_cashier_panel()
 	_set_store_os_app(STORE_OS_APP_POS)
@@ -311,6 +365,7 @@ func _show_scan_panel() -> void:
 
 	_cashier_panel.visible = true
 	_panel_title.text = "CHECKOUT"
+	_set_item_title("ITEM LIST")
 	_customer_label.text = "Customer: %s" % _get_scanned_customer_name()
 	_request_label.text = _get_ask_again_panel_text()
 	_set_panel_guidance_once(
@@ -357,12 +412,7 @@ func _show_scan_panel() -> void:
 	ask_button.pressed.connect(_on_ask_again_pressed)
 	_action_row.add_child(ask_button)
 
-	var cancel_button := Button.new()
-	cancel_button.text = "Close Checkout"
-	cancel_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_configure_button_guidance(cancel_button, "Close this panel without finishing checkout.")
-	cancel_button.pressed.connect(_hide_cashier_panel)
-	_action_row.add_child(cancel_button)
+	_add_app_navigation_buttons()
 
 	_update_selected_label()
 
@@ -381,15 +431,15 @@ func _add_cart_rows_to_panel() -> void:
 	cart_title.add_theme_font_size_override("font_size", CASHIER_BUTTON_FONT_SIZE)
 	_action_row.add_child(cart_title)
 
-	if _selected_item_ids.is_empty():
+	if _cart_quantities.is_empty():
 		var empty_label := Label.new()
 		empty_label.text = "(empty)"
 		empty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		empty_label.add_theme_font_size_override("font_size", CASHIER_BUTTON_FONT_SIZE)
 		_action_row.add_child(empty_label)
 	else:
-		for i in range(_selected_item_ids.size()):
-			_action_row.add_child(_create_cart_row(i, _selected_item_ids[i]))
+		for item_id in _get_cart_item_ids_ordered():
+			_action_row.add_child(_create_cart_row(item_id))
 
 	var total_label := Label.new()
 	total_label.text = "Total: %dG" % _calculate_selected_total()
@@ -398,25 +448,41 @@ func _add_cart_rows_to_panel() -> void:
 	_action_row.add_child(total_label)
 
 
-func _create_cart_row(index: int, item_id: String) -> Control:
+func _create_cart_row(item_id: String) -> Control:
 	var row := HBoxContainer.new()
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_theme_constant_override("separation", 3)
 
 	var item_label := Label.new()
-	item_label.text = _get_item_display_label(item_id)
+	item_label.text = _get_cart_row_label(item_id)
 	item_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	item_label.add_theme_font_size_override("font_size", CASHIER_BUTTON_FONT_SIZE)
 	item_label.clip_text = true
 	item_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	row.add_child(item_label)
 
+	var plus_button := Button.new()
+	plus_button.text = "+"
+	plus_button.custom_minimum_size = Vector2(22, CASHIER_BUTTON_MIN_HEIGHT)
+	plus_button.size_flags_horizontal = Control.SIZE_SHRINK_END
+	_configure_button_guidance(plus_button, "Add one more of this item.")
+	plus_button.pressed.connect(Callable(self, "_on_increment_cart_item_pressed").bind(item_id))
+	row.add_child(plus_button)
+
+	var minus_button := Button.new()
+	minus_button.text = "-"
+	minus_button.custom_minimum_size = Vector2(22, CASHIER_BUTTON_MIN_HEIGHT)
+	minus_button.size_flags_horizontal = Control.SIZE_SHRINK_END
+	_configure_button_guidance(minus_button, "Remove one quantity of this item.")
+	minus_button.pressed.connect(Callable(self, "_on_decrement_cart_item_pressed").bind(item_id))
+	row.add_child(minus_button)
+
 	var delete_button := Button.new()
 	delete_button.text = "Del"
 	delete_button.custom_minimum_size = Vector2(34, CASHIER_BUTTON_MIN_HEIGHT)
 	delete_button.size_flags_horizontal = Control.SIZE_SHRINK_END
-	_configure_button_guidance(delete_button, "Remove this item from the cart.")
-	delete_button.pressed.connect(Callable(self, "_on_delete_cart_item_pressed").bind(index))
+	_configure_button_guidance(delete_button, "Remove this item row from the cart.")
+	delete_button.pressed.connect(Callable(self, "_on_delete_cart_item_pressed").bind(item_id))
 	row.add_child(delete_button)
 
 	return row
@@ -435,6 +501,7 @@ func _show_paid_panel() -> void:
 
 	_cashier_panel.visible = true
 	_panel_title.text = "PAID"
+	_set_item_title("ITEM LIST")
 	_customer_label.text = "Customer: %s" % _get_scanned_customer_name()
 	_request_label.text = _get_ask_again_panel_text()
 	_selected_label.text = "Cart: %s | Total %dG" % [_scanned_item_label, _scanned_total]
@@ -457,6 +524,8 @@ func _show_paid_panel() -> void:
 	back_button.pressed.connect(_show_scan_panel)
 	_action_row.add_child(back_button)
 
+	_add_app_navigation_buttons()
+
 
 func _show_gooby_choice_panel() -> void:
 	_ensure_cashier_panel()
@@ -467,6 +536,7 @@ func _show_gooby_choice_panel() -> void:
 
 	_cashier_panel.visible = true
 	_panel_title.text = "GOOBY REQUEST"
+	_set_item_title("ITEM LIST")
 	_customer_label.text = "Customer: %s" % _get_scanned_customer_name()
 	_request_label.text = _get_ask_again_panel_text()
 	_selected_label.text = "Item: %s | Revenue: 0G" % _scanned_item_label
@@ -496,6 +566,8 @@ func _show_gooby_choice_panel() -> void:
 	back_button.pressed.connect(_show_scan_panel)
 	_action_row.add_child(back_button)
 
+	_add_app_navigation_buttons()
+
 
 func _on_scan_item_pressed(item_id: String) -> void:
 	_pending_item_id = item_id
@@ -508,23 +580,44 @@ func _on_add_item_pressed() -> void:
 		_show_notification("Select an item first.", 0.8)
 		return
 
-	_selected_item_ids.append(_pending_item_id)
+	_increment_cart_item(_pending_item_id)
 	_pending_item_id = ""
 	_update_selected_label()
 	_show_scan_panel()
 
 
-func _on_delete_cart_item_pressed(index: int) -> void:
-	if index < 0 or index >= _selected_item_ids.size():
+func _on_increment_cart_item_pressed(item_id: String) -> void:
+	_increment_cart_item(item_id)
+	_update_selected_label()
+	_show_scan_panel()
+
+
+func _on_decrement_cart_item_pressed(item_id: String) -> void:
+	if not _cart_quantities.has(item_id):
 		return
 
-	_selected_item_ids.remove_at(index)
+	var quantity := int(_cart_quantities[item_id]) - 1
+
+	if quantity <= 0:
+		_cart_quantities.erase(item_id)
+	else:
+		_cart_quantities[item_id] = quantity
+
+	_update_selected_label()
+	_show_scan_panel()
+
+
+func _on_delete_cart_item_pressed(item_id: String) -> void:
+	if not _cart_quantities.has(item_id):
+		return
+
+	_cart_quantities.erase(item_id)
 	_update_selected_label()
 	_show_scan_panel()
 
 
 func _on_confirm_scan_pressed() -> void:
-	if _selected_item_ids.is_empty():
+	if _cart_quantities.is_empty():
 		_show_notification("Add an item first.", 0.9)
 		return
 
@@ -585,46 +678,8 @@ func _show_customer_request_bubble() -> void:
 		_scanned_npc.repeat_checkout_request()
 
 
-func _on_pos_tab_pressed() -> void:
-	_set_store_os_app(STORE_OS_APP_POS)
-
-	if not _has_scanned_customer():
-		_render_empty_pos_app()
-	elif _scanned_total > 0:
-		_show_paid_panel()
-	else:
-		_show_scan_panel()
-
-
-func _on_restock_tab_pressed() -> void:
-	_set_store_os_app(STORE_OS_APP_RESTOCK)
-	_render_restock_app()
-
-
-func _set_store_os_app(app_id: StringName) -> void:
-	_active_store_os_app = app_id
-
-	if _pos_tab_button != null:
-		_pos_tab_button.button_pressed = app_id == STORE_OS_APP_POS
-
-	if _restock_tab_button != null:
-		_restock_tab_button.button_pressed = app_id == STORE_OS_APP_RESTOCK
-
-
-func _render_empty_pos_app() -> void:
-	_ensure_cashier_panel()
-	_clear_container(_item_list)
-	_clear_container(_action_row)
-	_cashier_panel.visible = true
-	_panel_title.text = "POS APP"
-	_customer_label.text = "Customer: -"
-	_request_label.text = "No customer at checkout."
-	_selected_label.text = "Cart: - | Total 0G"
-	_guide_label.visible = true
-	_guide_label.text = "Wait for a customer, then press E at the cashier."
-
-
 func _render_restock_app() -> void:
+	_set_store_os_app(STORE_OS_APP_RESTOCK)
 	_ensure_cashier_panel()
 	_clear_container(_item_list)
 	_clear_container(_action_row)
@@ -632,6 +687,7 @@ func _render_restock_app() -> void:
 
 	_cashier_panel.visible = true
 	_panel_title.text = "RESTOCK APP"
+	_set_item_title("RESTOCK LIST")
 	_customer_label.text = "Restock system draft"
 	_request_label.text = "Default prices remain active for checkout."
 	_selected_label.text = "Income %dG | Outcome 0G | Profit %dG" % [
@@ -656,12 +712,36 @@ func _render_restock_app() -> void:
 	_configure_button_guidance(disabled_button, "Restock economy is not implemented yet.")
 	_action_row.add_child(disabled_button)
 
-	var back_button := Button.new()
-	back_button.text = "Back to POS"
-	back_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_configure_button_guidance(back_button, "Return to the POS app.")
-	back_button.pressed.connect(_on_pos_tab_pressed)
-	_action_row.add_child(back_button)
+	_add_app_navigation_buttons()
+
+
+func _set_store_os_app(app_id: StringName) -> void:
+	_active_store_os_app = app_id
+
+
+func _set_item_title(text: String) -> void:
+	if _item_title == null:
+		return
+
+	_item_title.text = text
+
+
+func _render_empty_pos_app() -> void:
+	_ensure_cashier_panel()
+	_set_store_os_app(STORE_OS_APP_POS)
+	_clear_container(_item_list)
+	_clear_container(_action_row)
+	_lock_player_actions()
+
+	_cashier_panel.visible = true
+	_panel_title.text = "POS APP"
+	_set_item_title("ITEM LIST")
+	_customer_label.text = "Customer: -"
+	_request_label.text = "No customer at checkout."
+	_selected_label.text = "Cart: - | Total 0G"
+	_guide_label.visible = true
+	_guide_label.text = "Wait for a customer, then press E at the cashier."
+	_add_app_navigation_buttons()
 
 
 func _create_restock_item_card(item: ItemData) -> Control:
@@ -685,16 +765,40 @@ func _create_restock_item_card(item: ItemData) -> Control:
 	return card
 
 
+func _add_app_navigation_buttons() -> void:
+	var exit_button := Button.new()
+	exit_button.text = "Exit App"
+	exit_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_configure_button_guidance(exit_button, "Return to Store OS Home.")
+	exit_button.pressed.connect(_exit_current_app_to_home)
+	_action_row.add_child(exit_button)
+
+	var close_button := Button.new()
+	close_button.text = "Close OS"
+	close_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_configure_button_guidance(close_button, "Close Store OS.")
+	close_button.pressed.connect(_close_store_os)
+	_action_row.add_child(close_button)
+
+
+func _exit_current_app_to_home() -> void:
+	_render_store_os_home()
+
+
+func _close_store_os() -> void:
+	_hide_cashier_panel()
+
+
 func _selection_matches_customer() -> bool:
-	return CashierCheckoutService.selection_matches_customer(_selected_item_ids, _target_item_ids)
+	return CashierCheckoutService.selection_matches_customer(_get_cart_item_ids_expanded(), _target_item_ids)
 
 
 func _calculate_selected_total() -> int:
-	return CashierCheckoutService.calculate_total(_selected_item_ids)
+	return CashierCheckoutService.calculate_total(_get_cart_item_ids_expanded())
 
 
 func _get_selected_item_label() -> String:
-	return CashierCheckoutService.get_item_label(_selected_item_ids)
+	return _get_cart_summary_label()
 
 
 func _get_pending_item_label() -> String:
@@ -711,6 +815,89 @@ func _get_item_display_label(item_id: String) -> String:
 		return item_id
 
 	return "%s %dG" % [item.display_name, item.sell_price]
+
+
+func _get_item_name(item_id: String) -> String:
+	var item := ItemDatabase.get_item(item_id)
+
+	if item == null:
+		return item_id
+
+	return item.display_name
+
+
+func _get_item_unit_price(item_id: String) -> int:
+	var item := ItemDatabase.get_item(item_id)
+
+	if item == null:
+		return 0
+
+	return item.sell_price
+
+
+func _get_cart_item_ids_ordered() -> Array[String]:
+	var ordered: Array[String] = []
+
+	for item in ItemDatabase.get_all_items():
+		if item == null:
+			continue
+
+		if _cart_quantities.has(item.item_id):
+			ordered.append(item.item_id)
+
+	for key in _cart_quantities.keys():
+		var item_id := str(key)
+
+		if item_id not in ordered:
+			ordered.append(item_id)
+
+	return ordered
+
+
+func _get_cart_item_ids_expanded() -> Array[String]:
+	var item_ids: Array[String] = []
+
+	for item_id in _get_cart_item_ids_ordered():
+		var quantity := int(_cart_quantities.get(item_id, 0))
+
+		for i in range(quantity):
+			item_ids.append(item_id)
+
+	return item_ids
+
+
+func _get_cart_row_label(item_id: String) -> String:
+	var unit_price := _get_item_unit_price(item_id)
+	var quantity := int(_cart_quantities.get(item_id, 0))
+	var line_total := unit_price * quantity
+	return "%s  %dG x%d = %dG" % [
+		_get_item_name(item_id),
+		unit_price,
+		quantity,
+		line_total
+	]
+
+
+func _get_cart_summary_label() -> String:
+	var labels: Array[String] = []
+
+	for item_id in _get_cart_item_ids_ordered():
+		var quantity := int(_cart_quantities.get(item_id, 0))
+		var item_name := _get_item_name(item_id)
+
+		if quantity > 1:
+			labels.append("%s x%d" % [item_name, quantity])
+		else:
+			labels.append(item_name)
+
+	return ", ".join(labels)
+
+
+func _increment_cart_item(item_id: String) -> void:
+	if item_id == "":
+		return
+
+	_cart_quantities[item_id] = int(_cart_quantities.get(item_id, 0)) + 1
 
 
 func _update_selected_label() -> void:
@@ -764,20 +951,13 @@ func _ensure_cashier_panel() -> void:
 	_cashier_layer = panel_nodes["layer"] as CanvasLayer
 	_cashier_panel = panel_nodes["panel"] as ColorRect
 	_panel_title = panel_nodes["title"] as Label
-	_pos_tab_button = panel_nodes["pos_tab_button"] as Button
-	_restock_tab_button = panel_nodes["restock_tab_button"] as Button
+	_item_title = panel_nodes["item_title"] as Label
 	_customer_label = panel_nodes["customer_label"] as Label
 	_request_label = panel_nodes["request_label"] as Label
 	_selected_label = panel_nodes["selected_label"] as Label
 	_guide_label = panel_nodes["guide_label"] as Label
 	_action_row = panel_nodes["action_row"] as Container
 	_item_list = panel_nodes["item_list"] as VBoxContainer
-
-	if _pos_tab_button != null and not _pos_tab_button.pressed.is_connected(_on_pos_tab_pressed):
-		_pos_tab_button.pressed.connect(_on_pos_tab_pressed)
-
-	if _restock_tab_button != null and not _restock_tab_button.pressed.is_connected(_on_restock_tab_pressed):
-		_restock_tab_button.pressed.connect(_on_restock_tab_pressed)
 
 
 func _set_panel_guidance_once(key: String, text: String) -> void:

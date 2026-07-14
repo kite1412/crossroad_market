@@ -40,26 +40,6 @@ static func ensure(owner: Node) -> Dictionary:
 	shell_title.add_theme_font_size_override("font_size", PANEL_TITLE_FONT_SIZE)
 	root.add_child(shell_title)
 
-	var tab_row := HBoxContainer.new()
-	tab_row.name = "AppTabs"
-	tab_row.add_theme_constant_override("separation", 4)
-	root.add_child(tab_row)
-
-	var pos_tab_button := Button.new()
-	pos_tab_button.text = "POS"
-	pos_tab_button.toggle_mode = true
-	pos_tab_button.button_pressed = true
-	pos_tab_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	pos_tab_button.add_theme_font_size_override("font_size", PANEL_FONT_SIZE)
-	tab_row.add_child(pos_tab_button)
-
-	var restock_tab_button := Button.new()
-	restock_tab_button.text = "Restock"
-	restock_tab_button.toggle_mode = true
-	restock_tab_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	restock_tab_button.add_theme_font_size_override("font_size", PANEL_FONT_SIZE)
-	tab_row.add_child(restock_tab_button)
-
 	var panel_title := Label.new()
 	panel_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	panel_title.add_theme_font_size_override("font_size", PANEL_TITLE_FONT_SIZE)
@@ -147,8 +127,7 @@ static func ensure(owner: Node) -> Dictionary:
 		"layer": cashier_layer,
 		"panel": cashier_panel,
 		"title": panel_title,
-		"pos_tab_button": pos_tab_button,
-		"restock_tab_button": restock_tab_button,
+		"item_title": item_title,
 		"customer_label": customer_label,
 		"request_label": request_label,
 		"selected_label": selected_label,
