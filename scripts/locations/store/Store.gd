@@ -52,6 +52,10 @@ var yard_scene: PackedScene = preload("res://scenes/locations/Yard.tscn")
 
 @onready var counter_pos: Marker2D = get_node_or_null("CounterPos") as Marker2D
 @onready var entrance_pos: Marker2D = get_node_or_null("EntrancePos") as Marker2D
+@onready var npc_entry_marker: Marker2D = get_node_or_null("NPCEntryMarker") as Marker2D
+@onready var npc_exit_marker: Marker2D = get_node_or_null("NPCExitMarker") as Marker2D
+@onready var npc_store_path_marker: Marker2D = get_node_or_null("NPCStorePathMarker") as Marker2D
+@onready var npc_queue_marker: Marker2D = get_node_or_null("NPCQueueMarker") as Marker2D
 @onready var storage_door: Area2D = get_node_or_null("StorageDoor") as Area2D
 @onready var storage_return_pos: Marker2D = get_node_or_null("StorageReturnPos") as Marker2D
 @onready var yard_door: Area2D = get_node_or_null("YardDoor") as Area2D
@@ -73,6 +77,7 @@ var _restricted_placement_warning_line: Line2D = null
 var _restricted_placement_warning_tween: Tween = null
 var _is_transitioning: bool = false
 var _shown_location_titles: Dictionary = {}
+var _completed_task_notices: Dictionary = {}
 
 var _normal_items_taken: int = 0
 var _human_items_placed: int = 0
@@ -261,6 +266,7 @@ func get_activity_board_guidance() -> Dictionary:
 
 func on_gooby_resolved() -> void:
 	_gooby_resolved = true
+	_show_task_complete_notice("gooby_resolved", "Gooby branch resolved.")
 	_update_objective()
 
 
@@ -286,11 +292,13 @@ func _connect_scene_signals() -> void:
 		push_error("Store: StorageDoor is missing.")
 	else:
 		storage_door.set_meta("door_type", "storage")
+		_connect_cursor_tooltip(storage_door, "Storage Door")
 
 	if yard_door == null:
 		push_error("Store: YardDoor is missing.")
 	else:
 		yard_door.set_meta("door_type", "yard")
+		_connect_cursor_tooltip(yard_door, "Yard Door")
 
 
 func _show_morning_intro() -> void:
@@ -497,6 +505,7 @@ func _on_yard_return(_door_type: String) -> void:
 
 func _on_storage_mystery_discovered() -> void:
 	_mystery_discovered = true
+	_show_task_complete_notice("mystery_discovered", "Mystery corner discovered.")
 	_update_objective()
 
 
@@ -1155,6 +1164,7 @@ func _register_installed_shelf(object: Node2D) -> void:
 		_connect_human_shelf_signals(human_shelf)
 		_set_human_stock_count(_get_shelf_stock_count(human_shelf))
 		_update_objective()
+		_show_task_complete_notice("human_shelf_placed", "Human Shelf placed.")
 
 		if _human_items_placed < NORMAL_STOCK_REQUIRED:
 			_show_notification("Now stock the human shelf with normal items.", 3.0)
@@ -1169,6 +1179,7 @@ func _register_installed_shelf(object: Node2D) -> void:
 		ghost_shelf.apply_ghost_glow(true)
 		_check_customer_spawning_ready()
 		_update_objective()
+		_show_task_complete_notice("ghost_shelf_placed", "Ghost Shelf placed.")
 
 	_setup_npc_static_data()
 
@@ -1190,6 +1201,9 @@ func _connect_human_shelf_signals(shelf: Shelf) -> void:
 
 func _set_human_stock_count(stock_count: int) -> void:
 	_human_items_placed = clampi(stock_count, 0, NORMAL_STOCK_REQUIRED)
+
+	if _human_items_placed >= NORMAL_STOCK_REQUIRED:
+		_show_task_complete_notice("human_shelf_stocked", "Human Shelf stocked.")
 
 	if not StoreProgressionController.can_unlock_mystery_phase(
 		_human_items_placed,
@@ -1311,11 +1325,23 @@ func _fade_from_black() -> void:
 
 
 func _setup_npc_static_data() -> void:
-	if counter_pos != null:
+	if npc_queue_marker != null:
+		NPC.counter_position = npc_queue_marker.global_position
+	elif counter_pos != null:
 		NPC.counter_position = counter_pos.global_position
 
 	if entrance_pos != null:
 		NPC.entrance_position = entrance_pos.global_position
+
+	if npc_exit_marker != null:
+		NPC.exit_position = npc_exit_marker.global_position
+	elif entrance_pos != null:
+		NPC.exit_position = entrance_pos.global_position
+
+	if npc_store_path_marker != null:
+		NPC.store_path_position = npc_store_path_marker.global_position
+	else:
+		NPC.store_path_position = Vector2.INF
 
 
 func _is_descendant_of(node: Node, ancestor: Node) -> bool:
@@ -1330,11 +1356,40 @@ func _close_cashier_runtime_ui() -> void:
 		cashier.call("reset_runtime_ui")
 
 
+func _connect_cursor_tooltip(area: Area2D, tooltip_text: String) -> void:
+	if area == null:
+		return
+
+	area.input_pickable = true
+	var entered := Callable(self, "_on_cursor_tooltip_entered").bind(tooltip_text)
+	var exited := Callable(self, "_on_cursor_tooltip_exited")
+
+	if not area.mouse_entered.is_connected(entered):
+		area.mouse_entered.connect(entered)
+
+	if not area.mouse_exited.is_connected(exited):
+		area.mouse_exited.connect(exited)
+
+
+func _on_cursor_tooltip_entered(tooltip_text: String) -> void:
+	var hud := get_tree().get_first_node_in_group("hud")
+
+	if hud != null and hud.has_method("show_cursor_tooltip"):
+		hud.call("show_cursor_tooltip", tooltip_text)
+
+
+func _on_cursor_tooltip_exited() -> void:
+	var hud := get_tree().get_first_node_in_group("hud")
+
+	if hud != null and hud.has_method("hide_cursor_tooltip"):
+		hud.call("hide_cursor_tooltip")
+
+
 func _on_npc_spawn_requested(npc_data: NPCData) -> void:
 	StoreNpcSpawner.spawn_npc(
 		self,
 		npc_scene,
-		entrance_pos,
+		npc_entry_marker if npc_entry_marker != null else entrance_pos,
 		npc_data,
 		_on_npc_purchase,
 		_on_npc_exited
@@ -1343,6 +1398,9 @@ func _on_npc_spawn_requested(npc_data: NPCData) -> void:
 
 func _on_npc_purchase(_npc: NPC, _item_id: String, price: int) -> void:
 	EconomyManager.add_gold(price)
+
+	if price > 0:
+		_show_task_complete_notice("normal_customer_served", "First customer served.")
 
 
 func _on_npc_exited(_npc: NPC) -> void:
@@ -1411,6 +1469,7 @@ func _on_ghost_shelf_item_placed(_slot_index: int, item_id: String) -> void:
 
 	var became_ready := _check_customer_spawning_ready(false)
 	_update_objective()
+	_show_task_complete_notice("ghost_shelf_stocked", "Ghost Shelf stocked.")
 
 	if _ghost_shelf_lesson_shown:
 		if became_ready:
@@ -1508,6 +1567,24 @@ func _get_current_objective_text() -> String:
 
 func _show_notification(text: String, duration: float = 2.0) -> void:
 	StoreNotificationBridge.show(get_tree(), text, duration)
+
+
+func _show_task_complete_notice(key: String, message: String) -> void:
+	if _completed_task_notices.has(key):
+		return
+
+	_completed_task_notices[key] = true
+
+	var hud := get_tree().get_first_node_in_group("hud")
+	var text := "Task Complete! %s Check the Activity Board." % message
+
+	if hud != null and hud.has_method("show_notification"):
+		hud.call("show_notification", text, 2.2, false)
+
+	var activity_board := get_node_or_null("ActivityBoard")
+
+	if activity_board != null and activity_board.has_method("play_completion_glow"):
+		activity_board.call("play_completion_glow")
 
 
 func _show_notification_sequence(messages: Array[String]) -> void:

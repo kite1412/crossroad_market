@@ -33,6 +33,8 @@ const QUEUE_ACTION_DISTANCE: float = 14.0
 static var current_queue: Array[NPC] = []
 static var counter_position: Vector2 = Vector2.ZERO
 static var entrance_position: Vector2 = Vector2.ZERO
+static var exit_position: Vector2 = Vector2.ZERO
+static var store_path_position: Vector2 = Vector2.INF
 
 signal purchase_completed(npc: NPC, item_id: String, price: int)
 signal npc_exited(npc: NPC)
@@ -55,6 +57,8 @@ var _checkout_timer: float = 0.0
 var _search_timer: float = 0.0
 var _search_announced: bool = false
 var _trust_label: Label = null
+var _movement_route: Array[Vector2] = []
+var _movement_route_destination: Vector2 = Vector2.INF
 
 
 func _ready() -> void:
@@ -231,7 +235,7 @@ func _process_enter() -> void:
 	if target_shelf == null:
 		_show_dialog("Nothing I need is on the shelves right now.")
 		_dialog_timer = DIALOG_DURATION
-		target_position = entrance_position
+		target_position = _get_exit_position()
 		_set_state(State.EXIT)
 		return
 
@@ -273,7 +277,7 @@ func _process_search_item(delta: float) -> void:
 				_search_announced = true
 
 			if _search_timer >= SEARCH_PATIENCE:
-				target_position = entrance_position
+				target_position = _get_exit_position()
 				_set_state(State.EXIT)
 
 		BlueprintManager.Action.QUEUE:
@@ -305,7 +309,7 @@ func _process_search_item(delta: float) -> void:
 					_show_dialog("Oh? This looks good actually.")
 					_set_state(State.TAKE_ITEM)
 				else:
-					target_position = entrance_position
+					target_position = _get_exit_position()
 					_set_state(State.EXIT)
 
 
@@ -324,7 +328,7 @@ func _process_browse_item(delta: float) -> void:
 		_set_state(State.TAKE_ITEM)
 	else:
 		_show_dialog("Nothing here for me...")
-		target_position = entrance_position
+		target_position = _get_exit_position()
 		_set_state(State.EXIT)
 
 
@@ -340,7 +344,7 @@ func _process_take_item() -> void:
 		return
 
 	_show_dialog("Someone must have taken it already.")
-	target_position = entrance_position
+	target_position = _get_exit_position()
 	_set_state(State.EXIT)
 
 
@@ -368,7 +372,7 @@ func _process_checkout(delta: float) -> void:
 		_show_dialog(BlueprintManager.get_checkout_wait_dialog(self))
 		_leave_queue()
 		_return_item_to_shelf()
-		target_position = entrance_position
+		target_position = _get_exit_position()
 		_set_state(State.EXIT)
 
 
@@ -384,7 +388,66 @@ func _process_exit() -> void:
 
 
 func _move_to(target: Vector2) -> bool:
-	return NPCMovement.move_to(self, target, SPEED, ARRIVAL_THRESHOLD)
+	if _should_rebuild_movement_route(target):
+		_movement_route = _build_movement_route(target)
+		_movement_route_destination = target
+
+	if _movement_route.is_empty():
+		return NPCMovement.move_to(self, target, SPEED, ARRIVAL_THRESHOLD)
+
+	var next_target := _movement_route[0]
+
+	if not NPCMovement.move_to(self, next_target, SPEED, ARRIVAL_THRESHOLD):
+		return false
+
+	_movement_route.remove_at(0)
+	return _movement_route.is_empty()
+
+
+func _should_rebuild_movement_route(target: Vector2) -> bool:
+	if _movement_route.is_empty():
+		return true
+
+	return not _movement_route_destination.is_equal_approx(target)
+
+
+func _build_movement_route(destination: Vector2) -> Array[Vector2]:
+	var route: Array[Vector2] = []
+	var path_position := _get_store_path_position()
+
+	if _should_use_store_path(destination, path_position):
+		route.append(path_position)
+
+	route.append(destination)
+	return route
+
+
+func _should_use_store_path(destination: Vector2, path_position: Vector2) -> bool:
+	if not _is_valid_route_point(path_position):
+		return false
+
+	if global_position.distance_to(path_position) <= ARRIVAL_THRESHOLD:
+		return false
+
+	if destination.distance_to(path_position) <= ARRIVAL_THRESHOLD:
+		return false
+
+	return true
+
+
+func _is_valid_route_point(point: Vector2) -> bool:
+	return point.is_finite()
+
+
+func _get_store_path_position() -> Vector2:
+	return store_path_position
+
+
+func _get_exit_position() -> Vector2:
+	if _is_valid_route_point(exit_position) and exit_position != Vector2.ZERO:
+		return exit_position
+
+	return entrance_position
 
 
 func _choose_item_to_buy() -> void:
@@ -532,7 +595,7 @@ func _return_cart_items_to_shelf() -> void:
 func _finish_checkout_and_exit() -> void:
 	_dialog_timer = DIALOG_DURATION
 	_leave_queue()
-	target_position = entrance_position
+	target_position = _get_exit_position()
 	_set_state(State.EXIT)
 
 
@@ -550,6 +613,8 @@ func _set_state(new_state: State) -> void:
 	if new_state == State.EXIT:
 		_leave_queue()
 
+	_movement_route.clear()
+	_movement_route_destination = Vector2.INF
 	current_state = new_state
 
 
