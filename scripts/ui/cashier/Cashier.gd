@@ -7,6 +7,8 @@ const NPCQueueSystem = preload("res://scripts/npc/behavior/NPCQueueSystem.gd")
 
 const GOOBY_ID: String = "gooby"
 const STORY_INTERACTION_TRUST_GAIN: int = 20
+const CASHIER_BUTTON_FONT_SIZE: int = 8
+const CASHIER_BUTTON_MIN_HEIGHT: float = 20.0
 
 @onready var interaction_area: Area2D = $InteractionArea
 
@@ -300,7 +302,7 @@ func _show_scan_panel() -> void:
 	_request_label.text = _get_ask_again_panel_text()
 	_set_panel_guidance_once(
 		"scan",
-		"Pick the matching item from the list. Ask Again makes the customer repeat it in their speech bubble."
+		"Select item, confirm, or ask again."
 	)
 
 	var store_items: Array[ItemData] = ItemDatabase.get_all_items()
@@ -311,6 +313,7 @@ func _show_scan_panel() -> void:
 
 		var button := Button.new()
 		button.text = "%s  %dG" % [item.display_name, item.sell_price]
+		button.custom_minimum_size = Vector2(0, CASHIER_BUTTON_MIN_HEIGHT)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_configure_button_guidance(button, "Select or unselect this scanned item.")
 		button.toggle_mode = true
@@ -573,6 +576,12 @@ func _configure_button_guidance(button: Button, tooltip: String) -> void:
 
 	button.tooltip_text = tooltip
 	button.focus_mode = Control.FOCUS_ALL
+	button.clip_text = true
+	button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	button.add_theme_font_size_override("font_size", CASHIER_BUTTON_FONT_SIZE)
+
+	if button.custom_minimum_size.y < CASHIER_BUTTON_MIN_HEIGHT:
+		button.custom_minimum_size.y = CASHIER_BUTTON_MIN_HEIGHT
 
 
 func _hide_cashier_panel() -> void:
