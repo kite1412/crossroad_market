@@ -1,32 +1,37 @@
 [gd_scene format=3 uid="uid://dauvgwqeqn80k"]
 
-[ext_resource type="Script" path="res://scripts/ui/HUD.gd" id="1"]
-[ext_resource type="PackedScene" path="res://scenes/ui/InventoryUI.tscn" id="2"]
+[ext_resource type="Script" uid="uid://dwm4go4nyknla" path="res://scripts/ui/HUD.gd" id="1"]
+[ext_resource type="PackedScene" uid="uid://cnvnuy02s2gg3" path="res://scenes/ui/InventoryUI.tscn" id="2"]
 
-[node name="HUD" type="CanvasLayer" groups=["hud"]]
+[node name="HUD" type="CanvasLayer" unique_id=162570791 groups=["hud"]]
 layer = 10
 script = ExtResource("1")
 
-[node name="TopLeftHUD" type="Control" parent="."]
+[node name="TopLeftHUD" type="Control" parent="." unique_id=291624904]
+layout_mode = 3
+anchors_preset = 0
 offset_left = 10.0
 offset_top = 5.0
 offset_right = 180.0
 offset_bottom = 37.0
 
-[node name="GoldLabel" type="Label" parent="TopLeftHUD"]
+[node name="GoldLabel" type="Label" parent="TopLeftHUD" unique_id=360390043]
+layout_mode = 0
 offset_right = 170.0
 offset_bottom = 15.0
 theme_override_font_sizes/font_size = 10
 text = "Wallet: 0G"
 
-[node name="TargetLabel" type="Label" parent="TopLeftHUD"]
+[node name="TargetLabel" type="Label" parent="TopLeftHUD" unique_id=1621932291]
+layout_mode = 0
 offset_top = 17.0
 offset_right = 170.0
 offset_bottom = 32.0
 theme_override_font_sizes/font_size = 10
 text = "0G / 50G"
 
-[node name="TopCenterHUD" type="Control" parent="."]
+[node name="TopCenterHUD" type="Control" parent="." unique_id=726511409]
+layout_mode = 3
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
@@ -36,14 +41,16 @@ offset_right = 58.0
 offset_bottom = 54.0
 grow_horizontal = 2
 
-[node name="DayLabel" type="Label" parent="TopCenterHUD"]
+[node name="DayLabel" type="Label" parent="TopCenterHUD" unique_id=1887743367]
+layout_mode = 0
 offset_right = 116.0
 offset_bottom = 15.0
 theme_override_font_sizes/font_size = 10
 text = "Day 1"
 horizontal_alignment = 1
 
-[node name="PhaseLabel" type="Label" parent="TopCenterHUD"]
+[node name="PhaseLabel" type="Label" parent="TopCenterHUD" unique_id=986019436]
+layout_mode = 0
 offset_top = 17.0
 offset_right = 116.0
 offset_bottom = 32.0
@@ -51,7 +58,8 @@ theme_override_font_sizes/font_size = 10
 text = "Morning"
 horizontal_alignment = 1
 
-[node name="TimeLabel" type="Label" parent="TopCenterHUD"]
+[node name="TimeLabel" type="Label" parent="TopCenterHUD" unique_id=772018088]
+layout_mode = 0
 offset_top = 34.0
 offset_right = 116.0
 offset_bottom = 49.0
@@ -59,7 +67,8 @@ theme_override_font_sizes/font_size = 10
 text = "08:00"
 horizontal_alignment = 1
 
-[node name="TopRightHUD" type="Control" parent="."]
+[node name="TopRightHUD" type="Control" parent="." unique_id=957427048]
+layout_mode = 3
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
@@ -69,9 +78,10 @@ offset_right = -10.0
 offset_bottom = 20.0
 grow_horizontal = 0
 
-[node name="InventoryUI" parent="." instance=ExtResource("2")]
+[node name="InventoryUI" parent="." unique_id=1582218282 instance=ExtResource("2")]
+layout_mode = 3
 
-[node name="ObjectiveLabel" type="Label" parent="."]
+[node name="ObjectiveLabel" type="Label" parent="." unique_id=319350362]
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
@@ -91,22 +101,18 @@ vertical_alignment = 1
 clip_text = true
 text_overrun_behavior = 3
 
-[node name="NotificationLabel" type="Label" parent="."]
+[node name="NotificationLabel" type="Label" parent="." unique_id=810952579]
 anchors_preset = 5
 anchor_left = 0.5
-anchor_top = 0.0
 anchor_right = 0.5
-anchor_bottom = 0.0
 offset_left = -125.0
 offset_top = 58.0
 offset_right = 125.0
 offset_bottom = 82.0
 grow_horizontal = 2
-grow_vertical = 1
 theme_override_colors/font_color = Color(1, 1, 0.8, 1)
 theme_override_font_sizes/font_size = 9
 text = "Item name"
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 3
-visible_chars = 0

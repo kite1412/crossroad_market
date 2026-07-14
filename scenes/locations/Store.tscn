@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://c3jpds51r7i41" path="res://scenes/ui/Cashier.tscn" id="3_cashier"]
 [ext_resource type="PackedScene" uid="uid://dauvgwqeqn80k" path="res://scenes/ui/HUD.tscn" id="5_hud"]
 [ext_resource type="Script" uid="uid://bo1heio3gctaa" path="res://scripts/locations/WorldLighting.gd" id="6_lighting"]
+[ext_resource type="PackedScene" uid="uid://br1sgb3dkgi8i" path="res://scenes/ui/ActivityCompletionNotification.tscn" id="7_0h4lu"]
 [ext_resource type="Script" uid="uid://bjp5fq8jdv4wb" path="res://scripts/objects/ActivityBoard.gd" id="7_activity_board"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_horizontal"]
@@ -209,5 +210,9 @@ grow_vertical = 2
 color = Color(0.13, 0.09, 0.04, 0.18)
 
 [node name="HUD" parent="." unique_id=926205373 instance=ExtResource("5_hud")]
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1532187267]
+
+[node name="ActivityCompletionNotification" parent="CanvasLayer" unique_id=1553991951 instance=ExtResource("7_0h4lu")]
 
 [editable path="Cashier"]

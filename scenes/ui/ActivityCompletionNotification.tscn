@@ -1,0 +1,45 @@
+[gd_scene format=3 uid="uid://br1sgb3dkgi8i"]
+
+[ext_resource type="Script" uid="uid://b8imjflmkncbb" path="res://scripts/ui/ActivityCompletionNotification.gd" id="1_3goof"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_due37"]
+font_size = 10
+
+[sub_resource type="LabelSettings" id="LabelSettings_vnbpn"]
+font_size = 7
+font_color = Color(0.5882353, 0.5882353, 0.5882353, 1)
+
+[node name="ActivityCompletionNotification" type="Control" unique_id=1553991951]
+visible = false
+layout_mode = 3
+anchor_left = 0.81600004
+anchor_right = 1.0
+anchor_bottom = 0.093
+offset_left = 88.31998
+offset_bottom = -25.11
+grow_horizontal = 0
+script = ExtResource("1_3goof")
+
+[node name="Panel" type="Panel" parent="." unique_id=993565968]
+layout_mode = 0
+offset_left = -192.0
+offset_top = 6.0
+offset_right = -4.0
+offset_bottom = 38.0
+
+[node name="Title" type="Label" parent="Panel" unique_id=1103965036]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 2.0
+offset_right = 96.0
+offset_bottom = 16.0
+text = "Activity Completed"
+label_settings = SubResource("LabelSettings_due37")
+
+[node name="Message" type="Label" parent="Panel" unique_id=1555314528]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 17.0
+offset_right = 181.0
+offset_bottom = 28.0
+label_settings = SubResource("LabelSettings_vnbpn")
