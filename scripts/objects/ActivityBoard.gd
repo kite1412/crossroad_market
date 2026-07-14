@@ -14,6 +14,7 @@ var _board_layer: CanvasLayer = null
 var _board_panel: ColorRect = null
 var _glow_line: Line2D = null
 var _glow_tween: Tween = null
+var _board_lock_active: bool = false
 
 
 func _ready() -> void:
@@ -22,7 +23,7 @@ func _ready() -> void:
 
 
 func _exit_tree() -> void:
-	pass
+	_unlock_player_actions()
 
 
 func open_board() -> void:
@@ -157,6 +158,7 @@ func _show_board_panel(title: String, lines_variant: Variant) -> void:
 	close_button.pressed.connect(_hide_board_panel)
 	content.add_child(close_button)
 
+	_lock_player_actions()
 	_board_panel.visible = true
 
 
@@ -195,6 +197,31 @@ func _ensure_board_panel() -> void:
 func _hide_board_panel() -> void:
 	if _board_panel != null:
 		_board_panel.visible = false
+
+	_unlock_player_actions()
+
+
+func _lock_player_actions() -> void:
+	if _board_lock_active:
+		return
+
+	var hud := get_tree().get_first_node_in_group("hud")
+
+	if hud != null and hud.has_method("begin_action_lock"):
+		hud.call("begin_action_lock")
+		_board_lock_active = true
+
+
+func _unlock_player_actions() -> void:
+	if not _board_lock_active:
+		return
+
+	var hud := get_tree().get_first_node_in_group("hud")
+
+	if hud != null and hud.has_method("end_action_lock"):
+		hud.call("end_action_lock")
+
+	_board_lock_active = false
 
 
 func _clear_container(container: Container) -> void:
