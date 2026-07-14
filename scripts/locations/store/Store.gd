@@ -592,7 +592,7 @@ func _drop_carried_shelf_in_store(object: Node2D) -> void:
 				DROP_REJECTION_COLLISION,
 				"I can't place the shelf here.",
 				primary_object_rect,
-				true
+				false
 			)
 
 		_show_drop_restriction_feedback(primary_restriction)
@@ -733,7 +733,7 @@ func _evaluate_shelf_drop_restriction(object: Node2D, candidate: Vector2) -> Dic
 			DROP_REJECTION_STORAGE_DOOR,
 			"This blocks the storage door.",
 			storage_door_rect,
-			true
+			false
 		)
 
 	var yard_door_rect := _get_door_no_drop_rect(yard_door, DOOR_NO_DROP_MARGIN)
@@ -744,7 +744,7 @@ func _evaluate_shelf_drop_restriction(object: Node2D, candidate: Vector2) -> Dic
 			DROP_REJECTION_YARD_DOOR,
 			"This blocks the yard door.",
 			yard_door_rect,
-			true
+			false
 		)
 
 	var cashier_flow_rect := _get_cashier_flow_restricted_rect()
@@ -764,7 +764,7 @@ func _evaluate_shelf_drop_restriction(object: Node2D, candidate: Vector2) -> Dic
 			DROP_REJECTION_COLLISION,
 			"I can't place the shelf here.",
 			object_rect,
-			true
+			false
 		)
 
 	if not _has_clear_standing_spot_near_shelf(object, candidate):
@@ -773,7 +773,7 @@ func _evaluate_shelf_drop_restriction(object: Node2D, candidate: Vector2) -> Dic
 			DROP_REJECTION_REACHABILITY,
 			"I can't reach the shelf there.",
 			object_rect,
-			true
+			false
 		)
 
 	return _make_drop_restriction()

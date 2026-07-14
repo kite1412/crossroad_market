@@ -28,7 +28,7 @@ var _request_label: Label = null
 var _selected_label: Label = null
 var _guide_label: Label = null
 var _item_list: VBoxContainer = null
-var _action_row: HBoxContainer = null
+var _action_row: Container = null
 var _cashier_lock_active: bool = false
 var _seen_panel_guidance: Dictionary = {}
 
@@ -170,6 +170,7 @@ func _process_scan(npc: NPC) -> void:
 	_ask_again_count = 0
 
 	print("SCAN: %s - %dG" % [item_label, price])
+	_show_customer_request_bubble()
 	_show_scan_panel()
 
 
@@ -296,10 +297,10 @@ func _show_scan_panel() -> void:
 	_cashier_panel.visible = true
 	_panel_title.text = "CHECKOUT"
 	_customer_label.text = "Customer: %s" % _get_scanned_customer_name()
-	_request_label.text = _get_request_panel_text()
+	_request_label.text = _get_ask_again_panel_text()
 	_set_panel_guidance_once(
 		"scan",
-		"Choose the item the customer asked for. Confirm Scan checks it. Ask Again repeats the request. Close cancels."
+		"Pick the matching item from the list. Ask Again makes the customer repeat it in their speech bubble."
 	)
 
 	var store_items: Array[ItemData] = ItemDatabase.get_all_items()
@@ -310,6 +311,7 @@ func _show_scan_panel() -> void:
 
 		var button := Button.new()
 		button.text = "%s  %dG" % [item.display_name, item.sell_price]
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_configure_button_guidance(button, "Select or unselect this scanned item.")
 		button.toggle_mode = true
 		button.button_pressed = item.item_id in _selected_item_ids
@@ -353,7 +355,7 @@ func _show_paid_panel() -> void:
 	_cashier_panel.visible = true
 	_panel_title.text = "PAID"
 	_customer_label.text = "Customer: %s" % _get_scanned_customer_name()
-	_request_label.text = _get_request_panel_text()
+	_request_label.text = _get_ask_again_panel_text()
 	_selected_label.text = "Selected: %s | Total %dG" % [_scanned_item_label, _scanned_total]
 	_set_panel_guidance_once(
 		"paid",
@@ -384,7 +386,7 @@ func _show_gooby_choice_panel() -> void:
 	_cashier_panel.visible = true
 	_panel_title.text = "GOOBY REQUEST"
 	_customer_label.text = "Customer: %s" % _get_scanned_customer_name()
-	_request_label.text = "Request: \"%s\"" % _get_customer_request_line()
+	_request_label.text = _get_ask_again_panel_text()
 	_selected_label.text = "Item: %s | Revenue: 0G" % _scanned_item_label
 	_set_panel_guidance_once(
 		"gooby_choice",
@@ -444,8 +446,7 @@ func _on_ask_again_pressed() -> void:
 		_clear_scan()
 		return
 
-	if _has_scanned_customer() and _scanned_npc.has_method("repeat_checkout_request"):
-		_scanned_npc.repeat_checkout_request()
+	_show_customer_request_bubble()
 
 	_show_scan_panel()
 
@@ -472,9 +473,13 @@ func _get_customer_request_line() -> String:
 	return "I want %s." % item_label
 
 
-func _get_request_panel_text() -> String:
-	var count_text := "Ask Again: %d/3" % _ask_again_count
-	return "Request: \"%s\" | %s" % [_get_customer_request_line(), count_text]
+func _get_ask_again_panel_text() -> String:
+	return "Ask Again used: %d/3" % _ask_again_count
+
+
+func _show_customer_request_bubble() -> void:
+	if _has_scanned_customer() and _scanned_npc.has_method("repeat_checkout_request"):
+		_scanned_npc.repeat_checkout_request()
 
 
 func _selection_matches_customer() -> bool:
@@ -544,7 +549,7 @@ func _ensure_cashier_panel() -> void:
 	_request_label = panel_nodes["request_label"] as Label
 	_selected_label = panel_nodes["selected_label"] as Label
 	_guide_label = panel_nodes["guide_label"] as Label
-	_action_row = panel_nodes["action_row"] as HBoxContainer
+	_action_row = panel_nodes["action_row"] as Container
 	_item_list = panel_nodes["item_list"] as VBoxContainer
 
 

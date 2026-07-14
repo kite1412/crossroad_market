@@ -16,6 +16,9 @@ size = Vector2(16, 270)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_storage_door"]
 size = Vector2(40, 74)
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_yard_door"]
+size = Vector2(60, 76)
+
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_activity_board_body"]
 size = Vector2(72, 20)
 
@@ -79,14 +82,15 @@ position = Vector2(288, 92)
 position = Vector2(432, 242)
 
 [node name="DoorVisual" type="ColorRect" parent="YardDoor" unique_id=1382336787]
-offset_left = -20.0
-offset_top = -20.0
-offset_right = 20.0
-offset_bottom = 20.0
+offset_left = -30.0
+offset_top = -52.0
+offset_right = 30.0
+offset_bottom = 24.0
 color = Color(0.18, 0.36, 0.28, 1)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="YardDoor" unique_id=1576413889]
-shape = SubResource("RectangleShape2D_storage_door")
+position = Vector2(0, -14)
+shape = SubResource("RectangleShape2D_yard_door")
 
 [node name="YardReturnPos" type="Marker2D" parent="." unique_id=585886703]
 position = Vector2(432, 210)
@@ -95,7 +99,7 @@ position = Vector2(432, 210)
 position = Vector2(95, 160)
 
 [node name="EntrancePos" type="Marker2D" parent="." unique_id=1239426469]
-position = Vector2(239, 259)
+position = Vector2(432, 242)
 
 [node name="Cashier" parent="." unique_id=1316385707 instance=ExtResource("3_cashier")]
 position = Vector2(95, 122)
