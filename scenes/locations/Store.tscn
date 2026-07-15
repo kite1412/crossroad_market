@@ -1,13 +1,13 @@
 [gd_scene format=3 uid="uid://d0k6caqo7l0hn"]
 
 [ext_resource type="PackedScene" uid="uid://b1wj8f3aim6fb" path="res://scenes/player/Player.tscn" id="1_player"]
-[ext_resource type="Script" uid="uid://33mapa6rpeyi" path="res://scripts/locations/Store.gd" id="2_store"]
+[ext_resource type="Script" uid="uid://by4w0dl6ij82o" path="res://scripts/locations/Store.gd" id="2_store"]
 [ext_resource type="PackedScene" uid="uid://c3jpds51r7i41" path="res://scenes/ui/Cashier.tscn" id="3_cashier"]
 [ext_resource type="PackedScene" uid="uid://dauvgwqeqn80k" path="res://scenes/ui/HUD.tscn" id="5_hud"]
-[ext_resource type="Script" uid="uid://bo1heio3gctaa" path="res://scripts/locations/WorldLighting.gd" id="6_lighting"]
+[ext_resource type="Script" uid="uid://cftax4a7xovpj" path="res://scripts/locations/WorldLighting.gd" id="6_lighting"]
 [ext_resource type="PackedScene" uid="uid://br1sgb3dkgi8i" path="res://scenes/ui/ActivityCompletionNotification.tscn" id="7_0h4lu"]
-[ext_resource type="Script" uid="uid://bjp5fq8jdv4wb" path="res://scripts/objects/ActivityBoard.gd" id="7_activity_board"]
-[ext_resource type="Script" path="res://scripts/objects/OpenCloseBoard.gd" id="8_open_close_board"]
+[ext_resource type="Script" uid="uid://cv1loh5wawax2" path="res://scripts/objects/ActivityBoard.gd" id="7_activity_board"]
+[ext_resource type="Script" uid="uid://bo6xe1yfdwqhh" path="res://scripts/objects/OpenCloseBoard.gd" id="8_open_close_board"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_horizontal"]
 size = Vector2(480, 49)
@@ -16,16 +16,16 @@ size = Vector2(480, 49)
 size = Vector2(16, 270)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_storage_door_body"]
-size = Vector2(44, 11)
+size = Vector2(53, 17.5)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_storage_door"]
 size = Vector2(40, 22)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_yard_door_body"]
-size = Vector2(64, 54)
+size = Vector2(54, 46)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_yard_door"]
-size = Vector2(52, 54)
+size = Vector2(44, 46)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_customer_path_entry_to_aisle"]
 size = Vector2(72, 36)
@@ -36,17 +36,17 @@ size = Vector2(264, 36)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_customer_path_cashier_to_queue"]
 size = Vector2(36, 64)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_activity_board_body"]
-size = Vector2(72, 20)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_activity_board_area"]
-size = Vector2(85, 49)
-
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_open_close_board_body"]
 size = Vector2(78, 18)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_open_close_board_area"]
-size = Vector2(88, 54)
+size = Vector2(82, 32)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_activity_board_body"]
+size = Vector2(72, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_activity_board_area"]
+size = Vector2(78, 45)
 
 [node name="Store" type="Node2D" unique_id=915059892]
 y_sort_enabled = true
@@ -100,7 +100,7 @@ polygon = PackedVector2Array(10, -2, 14, -2, 14, 2, 10, 2)
 [node name="DoorBody" type="StaticBody2D" parent="StorageDoor" unique_id=705277412]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StorageDoor/DoorBody" unique_id=1402322409]
-position = Vector2(0, 14)
+position = Vector2(1, 15)
 shape = SubResource("RectangleShape2D_storage_door_body")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StorageDoor" unique_id=1207501204]
@@ -117,20 +117,20 @@ position = Vector2(432, 242)
 [node name="VisualRoot" type="Node2D" parent="YardDoor" unique_id=1684920367]
 
 [node name="DoorVisual" type="ColorRect" parent="YardDoor/VisualRoot" unique_id=1382336787]
-offset_left = -30.0
-offset_top = -52.0
-offset_right = 30.0
-offset_bottom = 24.0
+offset_left = -25.5
+offset_top = -44.0
+offset_right = 25.5
+offset_bottom = 20.0
 color = Color(0.18, 0.36, 0.28, 1)
 
 [node name="DoorBody" type="StaticBody2D" parent="YardDoor" unique_id=842596692]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="YardDoor/DoorBody" unique_id=641495373]
-position = Vector2(0, -14)
+position = Vector2(0, -12)
 shape = SubResource("RectangleShape2D_yard_door_body")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="YardDoor" unique_id=1576413889]
-position = Vector2(0, -14)
+position = Vector2(0, -12)
 shape = SubResource("RectangleShape2D_yard_door")
 
 [node name="YardReturnPos" type="Marker2D" parent="." unique_id=585886703]
@@ -202,12 +202,6 @@ shape = SubResource("RectangleShape2D_customer_path_cashier_to_queue")
 [node name="Cashier" parent="." unique_id=1316385707 instance=ExtResource("3_cashier")]
 position = Vector2(95, 122)
 
-[node name="InteractionArea" parent="Cashier" index="3" unique_id=1288971911]
-position = Vector2(0, -2)
-
-[node name="CollisionShape2D" parent="Cashier/InteractionArea" index="0" unique_id=1674095232]
-position = Vector2(-1, -8)
-
 [node name="OpenCloseBoard" type="StaticBody2D" parent="." unique_id=826491342]
 position = Vector2(426, 180)
 script = ExtResource("8_open_close_board")
@@ -271,7 +265,7 @@ shape = SubResource("RectangleShape2D_activity_board_body")
 [node name="InteractionArea" type="Area2D" parent="ActivityBoard" unique_id=1132306788]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="ActivityBoard/InteractionArea" unique_id=1012384419]
-position = Vector2(-0.5, -15.5)
+position = Vector2(0, -14)
 shape = SubResource("RectangleShape2D_activity_board_area")
 
 [node name="Player" parent="." unique_id=1580443777 instance=ExtResource("1_player")]
@@ -300,5 +294,3 @@ color = Color(0.13, 0.09, 0.04, 0.18)
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1532187267]
 
 [node name="ActivityCompletionNotification" parent="CanvasLayer" unique_id=1553991951 instance=ExtResource("7_0h4lu")]
-
-[editable path="Cashier"]

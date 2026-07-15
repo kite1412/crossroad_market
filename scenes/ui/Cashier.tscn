@@ -6,10 +6,10 @@
 size = Vector2(40, 20)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_back_counter"]
-size = Vector2(160, 84)
+size = Vector2(160, 81)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_area"]
-size = Vector2(152, 136)
+size = Vector2(157.5, 79)
 
 [node name="Cashier" type="StaticBody2D" unique_id=386895166]
 y_sort_enabled = true
@@ -30,12 +30,13 @@ position = Vector2(0, -10)
 shape = SubResource("RectangleShape2D_body")
 
 [node name="BackCounterCollision" type="CollisionShape2D" parent="." unique_id=991886323]
-position = Vector2(-14, -40)
+position = Vector2(-14, -38.5)
 shape = SubResource("RectangleShape2D_back_counter")
 disabled = true
 
 [node name="InteractionArea" type="Area2D" parent="." unique_id=1288971911]
+position = Vector2(0, -2)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="InteractionArea" unique_id=1674095232]
-position = Vector2(0, -8)
+position = Vector2(-14.25, -36)
 shape = SubResource("RectangleShape2D_area")
