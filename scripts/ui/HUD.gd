@@ -16,9 +16,12 @@ const NOTIFY_CHARS_PER_SECOND: float = 34.0
 const HINT_DIALOG_WIDTH: float = 300.0
 const HINT_DIALOG_HEIGHT: float = 54.0
 const HINT_DIALOG_BOTTOM_MARGIN: float = 74.0
+const HINT_DIALOG_DURATION: float = 1.0
 const CURSOR_TOOLTIP_OFFSET := Vector2(12, 14)
 const CURSOR_TOOLTIP_PADDING := Vector2(12, 8)
 const CURSOR_HOVER_QUERY_LIMIT: int = 32
+const OBJECTIVE_TOAST_DURATION: float = 5.0
+const OBJECTIVE_ANIM_DURATION: float = 0.22
 
 var _notify_timer: float = 0.0
 var _notify_duration: float = NOTIFY_DURATION
@@ -30,15 +33,23 @@ var _hint_dialog: ColorRect = null
 var _hint_label: Label = null
 var _hint_tween: Tween = null
 var _hint_dialog_visible: bool = false
+var _hint_dialog_timer: float = 0.0
 var _cursor_tooltip: ColorRect = null
 var _cursor_tooltip_label: Label = null
 var _cursor_tooltip_tween: Tween = null
 var _cursor_tooltip_visible: bool = false
 var _cursor_tooltip_text: String = ""
+var _objective_tween: Tween = null
+var _objective_timer: float = 0.0
+var _objective_base_position: Vector2 = Vector2.ZERO
 
 func _ready() -> void:
 	add_to_group("hud")
 	notification_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	objective_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_objective_base_position = objective_label.position
+	objective_label.visible = false
+	objective_label.modulate.a = 0.0
 	_create_hint_dialog()
 	_create_cursor_tooltip()
 
@@ -59,7 +70,9 @@ func _process(delta: float) -> void:
 	if _action_lock_timer > 0.0:
 		_action_lock_timer = max(0.0, _action_lock_timer - delta)
 
+	_update_objective_toast(delta)
 	_update_cursor_hover_tooltip()
+	_update_hint_dialog_timer(delta)
 
 	if _notify_timer <= 0.0:
 		return
@@ -188,6 +201,7 @@ func show_hint_dialog(_key: String, text: String) -> void:
 	_hint_label.text = text
 	_hint_dialog.visible = true
 	_hint_dialog_visible = true
+	_hint_dialog_timer = HINT_DIALOG_DURATION
 	_hint_dialog.modulate.a = 0.0
 	_hint_dialog.position.y = _get_hint_dialog_base_position().y + 8.0
 	_hint_dialog.scale = Vector2(0.98, 0.98)
@@ -406,11 +420,68 @@ func set_objective(text: String) -> void:
 		return
 
 	if text == "":
-		objective_label.visible = false
+		_hide_objective_toast(false)
 		return
 
 	objective_label.visible = true
 	objective_label.text = "Objective: %s" % text
+	objective_label.position = _objective_base_position + Vector2(0, 8)
+	objective_label.modulate.a = 0.0
+	_objective_timer = OBJECTIVE_TOAST_DURATION
+
+	if _objective_tween != null and _objective_tween.is_valid():
+		_objective_tween.kill()
+
+	_objective_tween = create_tween()
+	_objective_tween.set_parallel(true)
+	_objective_tween.tween_property(objective_label, "modulate:a", 1.0, OBJECTIVE_ANIM_DURATION)
+	_objective_tween.tween_property(objective_label, "position", _objective_base_position, OBJECTIVE_ANIM_DURATION)
+
+
+func _update_objective_toast(delta: float) -> void:
+	if objective_label == null or not objective_label.visible:
+		return
+
+	if _objective_timer <= 0.0:
+		return
+
+	_objective_timer = max(0.0, _objective_timer - delta)
+
+	if _objective_timer <= 0.0:
+		_hide_objective_toast(true)
+
+
+func _hide_objective_toast(animated: bool) -> void:
+	_objective_timer = 0.0
+
+	if objective_label == null:
+		return
+
+	if _objective_tween != null and _objective_tween.is_valid():
+		_objective_tween.kill()
+	_objective_tween = null
+
+	if not animated:
+		objective_label.visible = false
+		objective_label.modulate.a = 0.0
+		objective_label.position = _objective_base_position
+		return
+
+	_objective_tween = create_tween()
+	_objective_tween.set_parallel(true)
+	_objective_tween.tween_property(objective_label, "modulate:a", 0.0, OBJECTIVE_ANIM_DURATION)
+	_objective_tween.tween_property(
+		objective_label,
+		"position",
+		_objective_base_position + Vector2(0, 8),
+		OBJECTIVE_ANIM_DURATION
+	)
+	_objective_tween.set_parallel(false)
+	_objective_tween.tween_callback(func() -> void:
+		if objective_label != null:
+			objective_label.visible = false
+			objective_label.position = _objective_base_position
+	)
 
 
 func _get_readable_notification_duration(text: String, requested_duration: float) -> float:
@@ -519,6 +590,16 @@ func _get_hint_dialog_base_position() -> Vector2:
 	)
 
 
+func _update_hint_dialog_timer(delta: float) -> void:
+	if not _hint_dialog_visible:
+		return
+
+	_hint_dialog_timer = max(0.0, _hint_dialog_timer - delta)
+
+	if _hint_dialog_timer <= 0.0:
+		_hide_hint_dialog(true)
+
+
 func _hide_hint_dialog(animated: bool = true) -> void:
 	if _hint_dialog == null:
 		return
@@ -527,6 +608,7 @@ func _hide_hint_dialog(animated: bool = true) -> void:
 		_hint_tween.kill()
 
 	_hint_dialog_visible = false
+	_hint_dialog_timer = 0.0
 
 	if not animated:
 		_hint_dialog.visible = false
