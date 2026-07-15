@@ -70,6 +70,11 @@ func apply_motion_vector(motion: Vector2) -> void:
 	set_moving(true)
 
 
+func refresh_sprite_frames() -> void:
+	_needs_refresh = true
+	_refresh_sprite_frames()
+
+
 func set_direction_from_vector(motion: Vector2) -> void:
 	if motion != Vector2.ZERO:
 		set_direction(_direction_from_vector(motion))

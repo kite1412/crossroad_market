@@ -1,14 +1,13 @@
-[gd_resource type="Resource" script_class="NPCData" format=3 uid="uid://d47ps13xmetn"]
+[gd_resource type="Resource" script_class="NPCData" format=3 uid="uid://uycxhqkrm2gv"]
 
 [ext_resource type="Script" uid="uid://bn3774x1uxfq7" path="res://data/npc/NPCData.gd" id="1"]
 
 [resource]
 script = ExtResource("1")
-npc_id = "human_1"
+npc_id = "human_4"
 display_name = "Customer"
 visit_days = Array[int]([1])
-spawn_order = 2
-patience_type = 0
+spawn_order = 9
 behavior_profile_id = "normal_shopper"
-spawn_chance = 0.7
-assets_path = "npcs/humans/human1"
+spawn_chance = 0.55
+assets_path = "npcs/humans/human4"

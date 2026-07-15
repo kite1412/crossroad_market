@@ -2,12 +2,61 @@
 
 [ext_resource type="Script" uid="uid://bfhbydvnuhv0v" path="res://scripts/npc/NPC.gd" id="1"]
 [ext_resource type="Script" uid="uid://d4loq3mtp16wy" path="res://scripts/components/characters/CharacterSprite.gd" id="2"]
-[ext_resource type="Script" path="res://scripts/components/characters/AnimatedCharacterSpriteConfig.gd" id="3_config"]
+[ext_resource type="Script" uid="uid://b5ph47kd021yl" path="res://scripts/components/characters/AnimatedCharacterSpriteConfig.gd" id="3_config"]
 
-[sub_resource type="SpriteFrames" id="SpriteFrames_mi3m7"]
+[sub_resource type="SpriteFrames" id="SpriteFrames_xwdbm"]
 
-[sub_resource type="Resource" id="AnimatedCharacterSpriteConfig_npc"]
+[sub_resource type="Resource" id="AnimatedCharacterSpriteConfig_move"]
 script = ExtResource("3_config")
+down_rows = 2
+down_columns = 6
+down_frames_per_row = 4
+down_start_row = 1
+down_end_row = 1
+down_end_column = 3
+left_rows = 2
+left_columns = 6
+left_frames_per_row = 4
+left_start_row = 1
+left_end_row = 1
+left_end_column = 3
+right_rows = 2
+right_columns = 6
+right_frames_per_row = 4
+right_start_row = 1
+right_end_row = 1
+right_end_column = 3
+up_rows = 2
+up_columns = 6
+up_frames_per_row = 4
+up_start_row = 1
+up_end_row = 1
+up_end_column = 3
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_q24ip"]
+
+[sub_resource type="Resource" id="AnimatedCharacterSpriteConfig_idle"]
+script = ExtResource("3_config")
+down_rows = 2
+down_columns = 6
+down_frames_per_row = 6
+down_end_row = 0
+down_end_column = 5
+left_rows = 2
+left_columns = 6
+left_frames_per_row = 6
+left_end_row = 0
+left_end_column = 5
+right_rows = 2
+right_columns = 6
+right_frames_per_row = 6
+right_end_row = 0
+right_end_column = 5
+up_rows = 2
+up_columns = 6
+up_frames_per_row = 6
+up_end_row = 0
+up_end_column = 5
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_npc"]
 size = Vector2(26, 12)
@@ -22,14 +71,21 @@ script = ExtResource("1")
 
 [node name="VisualRoot" type="Node2D" parent="." unique_id=415530661]
 
-[node name="AssetSprite" type="AnimatedSprite2D" parent="VisualRoot" unique_id=978034633]
-sprite_frames = SubResource("SpriteFrames_mi3m7")
+[node name="SpriteMove" type="AnimatedSprite2D" parent="VisualRoot" unique_id=978034633]
+sprite_frames = SubResource("SpriteFrames_xwdbm")
+script = ExtResource("2")
+animation_fps = 5.0
+direction_config = SubResource("AnimatedCharacterSpriteConfig_move")
+
+[node name="SpriteIdle" type="AnimatedSprite2D" parent="VisualRoot" unique_id=271152184]
+sprite_frames = SubResource("SpriteFrames_q24ip")
 script = ExtResource("2")
 animation_fps = 5.0
 animate_idle = true
-direction_config = SubResource("AnimatedCharacterSpriteConfig_npc")
+direction_config = SubResource("AnimatedCharacterSpriteConfig_idle")
 
 [node name="PlaceholderRect" type="ColorRect" parent="VisualRoot" unique_id=635499183]
+visible = false
 offset_left = -12.0
 offset_top = -40.0
 offset_right = 12.0

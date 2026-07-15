@@ -1,16 +1,14 @@
-[gd_resource type="Resource" script_class="NPCData" format=3]
+[gd_resource type="Resource" script_class="NPCData" format=3 uid="uid://n7vr5ktu307a"]
 
-[ext_resource type="Script" path="res://data/npc/NPCData.gd" id="1"]
+[ext_resource type="Script" uid="uid://bn3774x1uxfq7" path="res://data/npc/NPCData.gd" id="1"]
 
 [resource]
 script = ExtResource("1")
 npc_id = "ghost_1"
 display_name = "Ghost Customer"
-npc_category = 1
 visit_phase = 2
-patience_type = 0
-favorite_items = PackedStringArray("phantom_ice_cream")
-visit_days = PackedInt32Array(1, 3, 5)
 spawn_order = 5
+patience_type = 0
 behavior_profile_id = "normal_shopper"
 spawn_chance = 0.6
+assets_path = "npcs/ghosts/ghost1"

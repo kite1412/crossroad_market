@@ -10,4 +10,4 @@ spawn_order = 4
 patience_type = 2
 behavior_profile_id = "fast_buyer"
 spawn_chance = 0.5
-assets_path = "humans/human3"
+assets_path = "npcs/humans/human3"
