@@ -18,6 +18,7 @@ const HINT_DIALOG_HEIGHT: float = 54.0
 const HINT_DIALOG_BOTTOM_MARGIN: float = 74.0
 const CURSOR_TOOLTIP_OFFSET := Vector2(12, 14)
 const CURSOR_TOOLTIP_PADDING := Vector2(12, 8)
+const CURSOR_HOVER_QUERY_LIMIT: int = 32
 
 var _notify_timer: float = 0.0
 var _notify_duration: float = NOTIFY_DURATION
@@ -33,6 +34,7 @@ var _cursor_tooltip: ColorRect = null
 var _cursor_tooltip_label: Label = null
 var _cursor_tooltip_tween: Tween = null
 var _cursor_tooltip_visible: bool = false
+var _cursor_tooltip_text: String = ""
 
 func _ready() -> void:
 	add_to_group("hud")
@@ -57,11 +59,7 @@ func _process(delta: float) -> void:
 	if _action_lock_timer > 0.0:
 		_action_lock_timer = max(0.0, _action_lock_timer - delta)
 
-	if _cursor_tooltip_visible:
-		if _has_interactive_overlay_open():
-			hide_cursor_tooltip()
-		else:
-			_update_cursor_tooltip_position()
+	_update_cursor_hover_tooltip()
 
 	if _notify_timer <= 0.0:
 		return
@@ -210,22 +208,21 @@ func show_cursor_tooltip(text: String) -> void:
 
 	if _cursor_tooltip_tween != null and _cursor_tooltip_tween.is_valid():
 		_cursor_tooltip_tween.kill()
+	_cursor_tooltip_tween = null
 
-	_cursor_tooltip_label.text = text
-	_cursor_tooltip_label.reset_size()
-	_cursor_tooltip.size = _cursor_tooltip_label.get_minimum_size() + CURSOR_TOOLTIP_PADDING
-	_cursor_tooltip_label.position = CURSOR_TOOLTIP_PADDING * 0.5
+	if _cursor_tooltip_text != text:
+		_cursor_tooltip_text = text
+		_cursor_tooltip_label.text = text
+		_cursor_tooltip_label.reset_size()
+		_cursor_tooltip.size = _cursor_tooltip_label.get_minimum_size() + CURSOR_TOOLTIP_PADDING
+		_cursor_tooltip_label.position = CURSOR_TOOLTIP_PADDING * 0.5
+
 	_update_cursor_tooltip_position()
 
 	_cursor_tooltip.visible = true
 	_cursor_tooltip_visible = true
-	_cursor_tooltip.modulate.a = 0.0
-	_cursor_tooltip.scale = Vector2(0.96, 0.96)
-
-	_cursor_tooltip_tween = create_tween()
-	_cursor_tooltip_tween.set_parallel(true)
-	_cursor_tooltip_tween.tween_property(_cursor_tooltip, "modulate:a", 1.0, 0.12)
-	_cursor_tooltip_tween.tween_property(_cursor_tooltip, "scale", Vector2.ONE, 0.12)
+	_cursor_tooltip.modulate.a = 1.0
+	_cursor_tooltip.scale = Vector2.ONE
 
 
 func hide_cursor_tooltip() -> void:
@@ -234,14 +231,174 @@ func hide_cursor_tooltip() -> void:
 
 	if _cursor_tooltip_tween != null and _cursor_tooltip_tween.is_valid():
 		_cursor_tooltip_tween.kill()
+	_cursor_tooltip_tween = null
 
 	_cursor_tooltip_visible = false
-	_cursor_tooltip_tween = create_tween()
-	_cursor_tooltip_tween.tween_property(_cursor_tooltip, "modulate:a", 0.0, 0.08)
-	_cursor_tooltip_tween.tween_callback(func() -> void:
-		if _cursor_tooltip != null:
-			_cursor_tooltip.visible = false
-	)
+	_cursor_tooltip_text = ""
+	_cursor_tooltip.visible = false
+	_cursor_tooltip.modulate.a = 0.0
+
+
+func _update_cursor_hover_tooltip() -> void:
+	if _has_interactive_overlay_open():
+		hide_cursor_tooltip()
+		return
+
+	var hover_text := _get_cursor_world_hover_text()
+
+	if hover_text != "":
+		show_cursor_tooltip(hover_text)
+	elif _cursor_tooltip_visible:
+		hide_cursor_tooltip()
+
+
+func _get_cursor_world_hover_text() -> String:
+	var viewport := get_viewport()
+
+	if viewport == null:
+		return ""
+
+	var world_2d := viewport.world_2d
+
+	if world_2d == null:
+		return ""
+
+	var query := PhysicsPointQueryParameters2D.new()
+	query.position = viewport.get_canvas_transform().affine_inverse() * viewport.get_mouse_position()
+	query.collide_with_areas = true
+	query.collide_with_bodies = false
+
+	var hits := world_2d.direct_space_state.intersect_point(query, CURSOR_HOVER_QUERY_LIMIT)
+	var best_text := ""
+	var best_priority := 999
+
+	for hit in hits:
+		var collider: Variant = hit.get("collider", null)
+
+		if not (collider is Area2D):
+			continue
+
+		var area := collider as Area2D
+		var candidate := _get_hover_candidate_from_area(area)
+
+		if candidate.is_empty():
+			continue
+
+		var priority := int(candidate.get("priority", 999))
+
+		if priority < best_priority:
+			best_priority = priority
+			best_text = str(candidate.get("text", ""))
+
+	return best_text
+
+
+func _get_hover_candidate_from_area(area: Area2D) -> Dictionary:
+	if area == null:
+		return {}
+
+	var shelf_slot_candidate := _get_shelf_slot_hover_candidate(area)
+
+	if not shelf_slot_candidate.is_empty():
+		return shelf_slot_candidate
+
+	var door_text := _get_door_hover_text(area)
+
+	if door_text != "":
+		return {
+			"text": door_text,
+			"priority": 10
+		}
+
+	var current: Node = area
+
+	while current != null and current != self and current != get_tree().root:
+		if current.has_method("get_hover_display_name"):
+			return {
+				"text": str(current.call("get_hover_display_name")),
+				"priority": _get_hover_target_priority(current)
+			}
+
+		if current is Cashier:
+			return {
+				"text": "Cashier",
+				"priority": 20
+			}
+
+		if current is ActivityBoard:
+			return {
+				"text": "Activity Board",
+				"priority": 30
+			}
+
+		current = current.get_parent()
+
+	return {}
+
+
+func _get_shelf_slot_hover_candidate(area: Area2D) -> Dictionary:
+	var slot_node := area.get_parent()
+
+	if slot_node == null:
+		return {}
+
+	var slot_name := String(slot_node.name)
+
+	if not slot_name.begins_with("Slot"):
+		return {}
+
+	var slot_index := int(slot_name.trim_prefix("Slot"))
+	var current := slot_node.get_parent()
+
+	while current != null and current != get_tree().root:
+		if current is Shelf:
+			var shelf := current as Shelf
+			var text := ""
+
+			if shelf.has_method("_get_slot_hover_name"):
+				text = str(shelf.call("_get_slot_hover_name", slot_index))
+			elif shelf.has_method("get_hover_display_name"):
+				text = str(shelf.call("get_hover_display_name"))
+
+			if text == "":
+				return {}
+
+			return {
+				"text": text,
+				"priority": 4
+			}
+
+		current = current.get_parent()
+
+	return {}
+
+
+func _get_door_hover_text(area: Area2D) -> String:
+	if not area.has_meta("door_type"):
+		return ""
+
+	var door_type := str(area.get_meta("door_type"))
+
+	if door_type == "storage":
+		return "Storage Door"
+
+	if door_type == "yard":
+		return "Yard Door"
+
+	if door_type.ends_with("_return") or door_type == "return":
+		return "Store Door"
+
+	return ""
+
+
+func _get_hover_target_priority(target: Node) -> int:
+	if target is Shelf:
+		return 5
+
+	if target is SupplyBox:
+		return 15
+
+	return 50
 
 
 func set_objective(text: String) -> void:
