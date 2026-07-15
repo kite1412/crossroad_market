@@ -4,12 +4,11 @@ extends Control
 
 
 func _ready() -> void:
-	var store: Store = get_parent().get_parent() as Store # must be the exact position -> Store/CanvasLayer
-	
-	store.activity_completion.connect(_show_message)
+	if not ActivityCompletionManager.activity_completion.is_connected(_show_message):
+		ActivityCompletionManager.activity_completion.connect(_show_message)
 
 
-func _show_message(msg: String):
+func _show_message(msg: String) -> void:
 	message.text = msg
 	visible = true
 	scale = Vector2.ZERO
@@ -21,8 +20,9 @@ func _show_message(msg: String):
 		
 	await get_tree().create_timer(2.0).timeout
 	_hide()
-	
-func _hide():
+
+
+func _hide() -> void:
 	var tween = create_tween()
 	tween.tween_property(self, "scale", Vector2.ZERO, 0.15)
 	tween.finished.connect(func():

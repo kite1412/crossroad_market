@@ -139,7 +139,7 @@ func _show_board_panel(title: String, lines_variant: Variant) -> void:
 
 	for line in lines:
 		var label := Label.new()
-		label.text = "- %s" % line
+		label.text = "%s" % line
 		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		label.add_theme_font_size_override("font_size", 9)

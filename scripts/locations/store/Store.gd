@@ -1,8 +1,6 @@
 class_name Store
 extends Node2D
 
-signal activity_completion(message: String)
-
 const StoreNotificationBridge = preload("res://scripts/locations/store/StoreNotificationBridge.gd")
 const StoreNpcSpawner = preload("res://scripts/locations/store/StoreNpcSpawner.gd")
 const StoreProgressionController = preload("res://scripts/locations/store/StoreProgressionController.gd")
@@ -238,6 +236,7 @@ func _open_store_at(_open_minutes: int) -> void:
 	NPCScheduler.set_store_open(true)
 	_update_store_status_board()
 	_show_status_notification("Store is OPEN.", 1.0)
+	_show_task_complete_notice("store_opened", "Open sign flipped.")
 	_update_objective()
 
 
@@ -323,99 +322,35 @@ func get_npc_exit_route_from_cashier() -> Array[Vector2]:
 
 
 func get_activity_board_guidance() -> Dictionary:
-	if TimeManager.current_phase == TimeManager.Phase.NIGHT and _customer_spawning_unlocked:
-		return {
-			"title": "Night Choice",
-			"lines": [
-				"Watch the store at night.",
-				"Gooby may ask for Phantom Ice Cream.",
-				"Give item: gain trust, Revenue 0G.",
-				"Refuse sale: item returns, another customer may come.",
-				"Press E at the cashier when a customer is waiting.",
-				"Press E at doors to move between rooms."
-			]
-		}
+	var activities := [
+		{"text": "Pick the Human Shelf at the Storage, and bring it to the Store", "done": _human_shelf_installed},
+		{"text": "Take stock from the Storage and bring it to the Human Shelf", "done": _completed_task_notices.has("human_shelf_stocked")},
+		{"text": "Check the dark corner inside the Storage", "done": _mystery_discovered},
+		{"text": "Pick the Ghost Shelf at the Storage, and bring it to the Store", "done": _completed_task_notices.has("ghost_shelf_placed")},
+		{"text": "Stock the Ghost Shelf", "done": _completed_task_notices.has("ghost_shelf_stocked")},
+		{"text": "Flip the Open Sign outside the Store", "done": _store_opened_today},
+		{"text": "Serve customers at the Store cashier", "done": _completed_task_notices.has("normal_customer_served")}
+	]
 
-	if not _human_shelf_installed:
-		return {
-			"title": "Today's Work",
-			"lines": [
-				"Go to storage.",
-				"Press E to pick up the human shelf.",
-				"Press Q to place carried shelves.",
-				"Return and place it in the store.",
-				"Keep shelves clear of doors and the cashier.",
-				"Press E at this board anytime to review actions."
-			]
-		}
+	var lines: Array[String] = []
+	var next_todo_index: int = -1
 
-	if _human_items_placed < NORMAL_STOCK_REQUIRED:
-		return {
-			"title": "Today's Work",
-			"lines": [
-				"Take stock from the normal box.",
-				"Press Q at the human shelf to stock items.",
-				"%d/%d human stock ready." % [_human_items_placed, NORMAL_STOCK_REQUIRED],
-				"Press E at doors to move between store and storage.",
-				"Press E at the cashier once customers arrive."
-			]
-		}
+	for i in activities.size():
+		if bool(activities[i]["done"]):
+			lines.append("[x] %s" % [str(activities[i]["text"])])
+		elif next_todo_index == -1:
+			next_todo_index = i
 
-	if not _store_open and not _store_closed_for_day:
-		return {
-			"title": "Open Shop",
-			"lines": [
-				"Human shelf stock is ready.",
-				"Press E at the OPEN/CLOSED board.",
-				"Customers arrive only while the sign is OPEN.",
-				"You can close the store again before evening."
-			]
-		}
-
-	if not _mystery_phase_unlocked or not _mystery_discovered:
-		return {
-			"title": "Strange Notes",
-			"lines": [
-				"Check the dark storage corner.",
-				"Look for the glowing box.",
-				"Bring anything strange back to the store.",
-				"Press E to inspect or pick up nearby objects.",
-				"Press Q to place carried shelves."
-			]
-		}
-
-	if not _ghost_shelf_installed:
-		return {
-			"title": "Strange Notes",
-			"lines": [
-				"Press E to pick up the ghost shelf.",
-				"Press Q to place it on clear shop floor.",
-				"Keep normal and ghost items separate.",
-				"Do not place shelves in doorways or behind the cashier."
-			]
-		}
-
-	if ghost_shelf == null or not ghost_shelf.has_stock():
-		return {
-			"title": "Strange Notes",
-			"lines": [
-				"Take Phantom Ice Cream from storage.",
-				"Press Q at the ghost shelf to stock it.",
-				"Watch the store at night.",
-				"Use E at doors and cashier.",
-				"Use Q only for placing or stocking shelves."
-			]
-		}
+	if next_todo_index != -1:
+		lines.append("[ ] %s" % [str(activities[next_todo_index]["text"])])
+	elif lines.is_empty():
+		lines.append("[ ] Pick the Human Shelf at the Storage, and bring it to the Store")
+	else:
+		lines.append("All listed activities are complete.")
 
 	return {
 		"title": "Today's Work",
-		"lines": [
-			"Press E at the cashier to serve customers.",
-			"Scan the item they are buying.",
-			"Reach the daily revenue target.",
-			"Press E at this board if you need the action list.",
-			"Keep shelf placement clear near checkout."
-		]
+		"lines": lines
 	}
 
 
@@ -1893,11 +1828,12 @@ func _show_task_complete_notice(key: String, message: String) -> void:
 	if hud != null and hud.has_method("show_notification"):
 		hud.call("show_notification", text, 2.2, false)
 
+	ActivityCompletionManager.notify(message)
+
 	var activity_board := get_node_or_null("ActivityBoard")
 
 	if activity_board != null and activity_board.has_method("play_completion_glow"):
 		activity_board.call("play_completion_glow")
-		activity_completion.emit(message)
 
 
 func _show_notification_sequence(messages: Array[String]) -> void:

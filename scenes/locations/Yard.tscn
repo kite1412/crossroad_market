@@ -1,7 +1,8 @@
 [gd_scene format=3 uid="uid://b3lvay4upsxqy"]
 
-[ext_resource type="Script" uid="uid://cla6db5iibcno" path="res://scripts/locations/Yard.gd" id="1_yard"]
+[ext_resource type="Script" uid="uid://dbej24xib71dn" path="res://scripts/locations/Yard.gd" id="1_yard"]
 [ext_resource type="Script" uid="uid://bo6xe1yfdwqhh" path="res://scripts/objects/OpenCloseBoard.gd" id="2_open_close_board"]
+[ext_resource type="PackedScene" uid="uid://br1sgb3dkgi8i" path="res://scenes/ui/ActivityCompletionNotification.tscn" id="3_pa3ab"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_door"]
 size = Vector2(48, 28)
@@ -147,3 +148,7 @@ shape = SubResource("RectangleShape2D_vnbpn")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="DoorWall" unique_id=1377064147]
 position = Vector2(240, 55)
 shape = SubResource("RectangleShape2D_due37")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=850577035]
+
+[node name="ActivityCompletionNotification" parent="CanvasLayer" unique_id=1553991951 instance=ExtResource("3_pa3ab")]

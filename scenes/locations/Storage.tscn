@@ -5,6 +5,7 @@
 [ext_resource type="Script" uid="uid://bj1v64tu0xt4a" path="res://scripts/objects/MysterySupplyBox.gd" id="3_mystery_box"]
 [ext_resource type="PackedScene" uid="uid://cvet81vdrn7lk" path="res://scenes/objects/Shelf.tscn" id="4_shelf"]
 [ext_resource type="Script" uid="uid://bo1heio3gctaa" path="res://scripts/locations/WorldLighting.gd" id="5_lighting"]
+[ext_resource type="PackedScene" uid="uid://br1sgb3dkgi8i" path="res://scenes/ui/ActivityCompletionNotification.tscn" id="6_xqq5b"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_horizontal"]
 size = Vector2(480, 16)
@@ -136,6 +137,10 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.09, 0.07, 0.12, 0.16)
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1963939891]
+
+[node name="ActivityCompletionNotification" parent="CanvasLayer" unique_id=1553991951 instance=ExtResource("6_xqq5b")]
 
 [editable path="Normal"]
 [editable path="ShelfHuman"]

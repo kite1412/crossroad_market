@@ -1,12 +1,12 @@
 [gd_scene format=3 uid="uid://d0k6caqo7l0hn"]
 
 [ext_resource type="PackedScene" uid="uid://b1wj8f3aim6fb" path="res://scenes/player/Player.tscn" id="1_player"]
-[ext_resource type="Script" uid="uid://by4w0dl6ij82o" path="res://scripts/locations/Store.gd" id="2_store"]
+[ext_resource type="Script" uid="uid://33mapa6rpeyi" path="res://scripts/locations/Store.gd" id="2_store"]
 [ext_resource type="PackedScene" uid="uid://c3jpds51r7i41" path="res://scenes/ui/Cashier.tscn" id="3_cashier"]
 [ext_resource type="PackedScene" uid="uid://dauvgwqeqn80k" path="res://scenes/ui/HUD.tscn" id="5_hud"]
-[ext_resource type="Script" uid="uid://cftax4a7xovpj" path="res://scripts/locations/WorldLighting.gd" id="6_lighting"]
+[ext_resource type="Script" uid="uid://bo1heio3gctaa" path="res://scripts/locations/WorldLighting.gd" id="6_lighting"]
 [ext_resource type="PackedScene" uid="uid://br1sgb3dkgi8i" path="res://scenes/ui/ActivityCompletionNotification.tscn" id="7_0h4lu"]
-[ext_resource type="Script" uid="uid://cv1loh5wawax2" path="res://scripts/objects/ActivityBoard.gd" id="7_activity_board"]
+[ext_resource type="Script" uid="uid://bjp5fq8jdv4wb" path="res://scripts/objects/ActivityBoard.gd" id="7_activity_board"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_horizontal"]
 size = Vector2(480, 49)
@@ -146,10 +146,10 @@ position = Vector2(396, 248)
 [node name="NPCPathAisleRight" type="Marker2D" parent="NPCPathMarkers" unique_id=490125028]
 position = Vector2(360, 224)
 
-[node name="NPCPathAisleMid" type="Marker2D" parent="NPCPathMarkers"]
+[node name="NPCPathAisleMid" type="Marker2D" parent="NPCPathMarkers" unique_id=55945420]
 position = Vector2(240, 224)
 
-[node name="NPCPathAisleLeft" type="Marker2D" parent="NPCPathMarkers"]
+[node name="NPCPathAisleLeft" type="Marker2D" parent="NPCPathMarkers" unique_id=504919570]
 position = Vector2(120, 224)
 
 [node name="NPCPathCashier" type="Marker2D" parent="NPCPathMarkers" unique_id=2106467302]
@@ -158,10 +158,10 @@ position = Vector2(96, 224)
 [node name="NPCQueueFront" type="Marker2D" parent="NPCPathMarkers" unique_id=1532996586]
 position = Vector2(96, 160)
 
-[node name="NPCQueueBack1" type="Marker2D" parent="NPCPathMarkers"]
+[node name="NPCQueueBack1" type="Marker2D" parent="NPCPathMarkers" unique_id=666068317]
 position = Vector2(96, 180)
 
-[node name="NPCQueueBack2" type="Marker2D" parent="NPCPathMarkers"]
+[node name="NPCQueueBack2" type="Marker2D" parent="NPCPathMarkers" unique_id=366603415]
 position = Vector2(96, 200)
 
 [node name="CustomerPathZones" type="Node2D" parent="." unique_id=1702022746]

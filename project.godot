@@ -16,7 +16,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 config/name="Crossroad Market"
 run/main_scene="uid://d0k6caqo7l0hn"
-config/features=PackedStringArray("4.6")
+config/features=PackedStringArray("4.7")
 
 [autoload]
 
@@ -27,6 +27,7 @@ NPCScheduler="*res://scripts/managers/NPCScheduler.gd"
 EconomyManager="*res://scripts/managers/EconomyManager.gd"
 RelationshipManager="*res://scripts/managers/RelationshipManager.gd"
 BlueprintManager="*res://scripts/managers/BlueprintManager.gd"
+ActivityCompletionManager="*uid://dpipkroklo0em"
 
 [display]
 
