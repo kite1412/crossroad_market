@@ -10,6 +10,7 @@ const PlayerShelfInteraction = preload("res://scripts/player/PlayerShelfInteract
 @export var interaction_distance: float = 20.0
 
 @onready var interaction_area: Area2D = $InteractionArea
+@onready var character_sprite: Node = $VisualRoot/AssetSprite
 
 var facing_direction: Vector2 = Vector2.DOWN
 var _supply_box_cursor: int = 0
@@ -32,6 +33,7 @@ func _physics_process(_delta: float) -> void:
 	if _is_action_locked():
 		velocity = Vector2.ZERO
 		move_and_slide()
+		_update_character_sprite(Vector2.ZERO)
 		return
 
 	var input_dir: Vector2 = Input.get_vector(
@@ -47,6 +49,7 @@ func _physics_process(_delta: float) -> void:
 
 	velocity = input_dir * speed
 	move_and_slide()
+	_update_character_sprite(input_dir)
 	_update_interaction_hint()
 
 
@@ -67,6 +70,14 @@ func _update_interaction_area_position() -> void:
 		return
 
 	interaction_area.position = facing_direction * interaction_distance
+
+
+func _update_character_sprite(motion: Vector2) -> void:
+	if character_sprite == null:
+		return
+
+	if character_sprite.has_method("apply_motion_vector"):
+		character_sprite.call("apply_motion_vector", motion)
 
 
 func _try_interact() -> void:

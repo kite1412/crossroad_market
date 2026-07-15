@@ -67,12 +67,15 @@ var _last_watchdog_position: Vector2 = Vector2.INF
 var _stuck_watchdog_timer: float = 0.0
 var _stuck_watchdog_rebuilds: int = 0
 
+@onready var character_sprite: Node = $VisualRoot/AssetSprite
+
 
 func _ready() -> void:
 	add_to_group("dialog_skip_target")
 	_trust_label = get_node_or_null("TrustLabel") as Label
 	_update_trust_display()
 	_set_dialog_mouse_filter()
+	_update_character_sprite()
 
 
 func _exit_tree() -> void:
@@ -113,6 +116,7 @@ func _physics_process(delta: float) -> void:
 			_process_exit()
 
 	_update_dialog(delta)
+	_update_character_sprite()
 
 
 func complete_checkout() -> void:
@@ -421,6 +425,14 @@ func _move_to(target: Vector2) -> bool:
 
 	_movement_route.remove_at(0)
 	return _movement_route.is_empty()
+
+
+func _update_character_sprite() -> void:
+	if character_sprite == null:
+		return
+
+	if character_sprite.has_method("apply_motion_vector"):
+		character_sprite.call("apply_motion_vector", velocity)
 
 
 func _update_stuck_watchdog(delta: float) -> void:

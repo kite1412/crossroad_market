@@ -46,13 +46,14 @@ static func apply_visual(npc: Node, npc_data: NPCData) -> void:
 
 
 static func _apply_visual_tint(npc: Node, color: Color) -> void:
+	var visual := npc.get_node_or_null("VisualRoot/AssetSprite") as CanvasItem
+
+	if visual != null:
+		visual.modulate = color
+		return
+
 	var color_rect := npc.get_node_or_null("VisualRoot/PlaceholderRect") as ColorRect
 
 	if color_rect != null:
 		color_rect.color = color
 		return
-
-	var visual := npc.get_node_or_null("VisualRoot/AssetSprite") as CanvasItem
-
-	if visual != null:
-		visual.modulate = color
