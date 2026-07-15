@@ -7,6 +7,7 @@
 [ext_resource type="Script" uid="uid://bo1heio3gctaa" path="res://scripts/locations/WorldLighting.gd" id="6_lighting"]
 [ext_resource type="PackedScene" uid="uid://br1sgb3dkgi8i" path="res://scenes/ui/ActivityCompletionNotification.tscn" id="7_0h4lu"]
 [ext_resource type="Script" uid="uid://bjp5fq8jdv4wb" path="res://scripts/objects/ActivityBoard.gd" id="7_activity_board"]
+[ext_resource type="Script" path="res://scripts/objects/OpenCloseBoard.gd" id="8_open_close_board"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_horizontal"]
 size = Vector2(480, 49)
@@ -40,6 +41,12 @@ size = Vector2(72, 20)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_activity_board_area"]
 size = Vector2(85, 49)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_open_close_board_body"]
+size = Vector2(78, 18)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_open_close_board_area"]
+size = Vector2(88, 54)
 
 [node name="Store" type="Node2D" unique_id=915059892]
 y_sort_enabled = true
@@ -200,6 +207,40 @@ position = Vector2(0, -2)
 
 [node name="CollisionShape2D" parent="Cashier/InteractionArea" index="0" unique_id=1674095232]
 position = Vector2(-1, -8)
+
+[node name="OpenCloseBoard" type="StaticBody2D" parent="." unique_id=826491342]
+position = Vector2(426, 180)
+script = ExtResource("8_open_close_board")
+
+[node name="VisualRoot" type="Node2D" parent="OpenCloseBoard" unique_id=665968225]
+
+[node name="BoardBase" type="Polygon2D" parent="OpenCloseBoard/VisualRoot" unique_id=1193915372]
+color = Color(0.18, 0.11, 0.06, 1)
+polygon = PackedVector2Array(-39, -28, 39, -28, 39, 0, -39, 0)
+
+[node name="StatusPanel" type="Polygon2D" parent="OpenCloseBoard/VisualRoot" unique_id=1397638412]
+color = Color(0.36, 0.1, 0.06, 1)
+polygon = PackedVector2Array(-32, -23, 32, -23, 32, -5, -32, -5)
+
+[node name="StatusLabel" type="Label" parent="OpenCloseBoard/VisualRoot" unique_id=593656285]
+offset_left = -30.0
+offset_top = -25.0
+offset_right = 30.0
+offset_bottom = -4.0
+theme_type_variation = &"SmallLabel"
+text = "CLOSED"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="OpenCloseBoard" unique_id=1376479872]
+position = Vector2(0, -14)
+shape = SubResource("RectangleShape2D_open_close_board_body")
+
+[node name="InteractionArea" type="Area2D" parent="OpenCloseBoard" unique_id=213861113]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="OpenCloseBoard/InteractionArea" unique_id=52015257]
+position = Vector2(0, -14)
+shape = SubResource("RectangleShape2D_open_close_board_area")
 
 [node name="ActivityBoard" type="StaticBody2D" parent="." unique_id=1462224847]
 position = Vector2(382, 104)

@@ -2,14 +2,14 @@ class_name StoreNotificationBridge
 extends RefCounted
 
 
-static func show(tree: SceneTree, text: String, duration: float = 2.0) -> void:
+static func show(tree: SceneTree, text: String, duration: float = 2.0, blocks_actions: bool = true) -> void:
 	if tree == null:
 		return
 
 	var hud := tree.get_first_node_in_group("hud")
 
 	if hud != null and hud.has_method("show_notification"):
-		hud.call("show_notification", text, duration)
+		hud.call("show_notification", text, duration, blocks_actions)
 
 
 static func show_sequence(owner: Node, messages: Array[String], duration: float = 2.5) -> void:

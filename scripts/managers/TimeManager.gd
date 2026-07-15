@@ -112,6 +112,10 @@ func get_world_minutes() -> int:
 	return (phase_start + phase_minutes) % (24 * 60)
 
 
+func get_current_clock_minutes() -> int:
+	return get_world_minutes()
+
+
 func _advance_phase() -> void:
 	match current_phase:
 		Phase.MORNING:

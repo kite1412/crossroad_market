@@ -8,6 +8,7 @@ const DAY_ONE_DAY_SPAWN_END_BUFFER: float = 8.0
 const DAY_ONE_MIN_SPAWN_INTERVAL: float = 8.0
 const DAY_ONE_RUSH_SPAWN_INTERVAL: float = 0.5
 const DAY_ONE_SLIME_FOLLOW_UP_DELAY: float = 3.0
+const DEFAULT_DYNAMIC_CLOSE_MINUTES: int = 18 * 60
 
 var _npc_database: Dictionary = {}
 var _day_schedule: Array = []
@@ -20,6 +21,13 @@ var _day_one_night_monster_follow_up_requested: bool = false
 var _day_one_night_monster_follow_up_timer: float = 0.0
 var _day_one_day_spawning_started: bool = false
 var _spawning_unlocked: bool = false
+var _normal_spawning_unlocked: bool = false
+var _store_open: bool = false
+var _dynamic_customer_target: int = 0
+var _dynamic_spawned_customers: int = 0
+var _dynamic_interval_minutes: float = 0.0
+var _dynamic_close_minutes: int = DEFAULT_DYNAMIC_CLOSE_MINUTES
+var _next_customer_spawn_minutes: float = 0.0
 
 func _ready() -> void:
 	_load_npc_data()
@@ -62,26 +70,31 @@ func _on_day_started(day: int) -> void:
 	_day_one_night_monster_follow_up_requested = false
 	_day_one_night_monster_follow_up_timer = 0.0
 	_day_one_day_spawning_started = false
+	_normal_spawning_unlocked = false
+	_store_open = false
+	_reset_dynamic_day_pacing()
 	_generate_schedule(day)
 
 func _on_phase_changed(phase) -> void:
-	if not _spawning_unlocked:
-		_stop_spawning()
-		return
-
 	if phase == TimeManager.Phase.MORNING:
-		if TimeManager.current_day == 1:
+		if TimeManager.current_day == 1 and _normal_spawning_unlocked:
 			_start_day_one_spawning(NPCData.VisitPhase.DAY)
-		elif TimeManager.current_day > 1:
+		elif TimeManager.current_day > 1 and _normal_spawning_unlocked:
 			_start_spawning(NPCData.VisitPhase.MORNING)
 		else:
 			_stop_spawning()
 	elif phase == TimeManager.Phase.DAY:
-		if TimeManager.current_day == 1:
+		if TimeManager.current_day == 1 and _normal_spawning_unlocked:
 			_start_day_one_spawning(NPCData.VisitPhase.DAY)
-		else:
+		elif _normal_spawning_unlocked:
 			_start_spawning(NPCData.VisitPhase.DAY)
+		else:
+			_stop_spawning()
 	elif phase == TimeManager.Phase.NIGHT:
+		if not _spawning_unlocked:
+			_stop_spawning()
+			return
+
 		if TimeManager.current_day == 1:
 			_start_day_one_spawning(NPCData.VisitPhase.NIGHT)
 		else:
@@ -90,19 +103,68 @@ func _on_phase_changed(phase) -> void:
 
 func lock_spawning_until_ready() -> void:
 	_spawning_unlocked = false
+	_normal_spawning_unlocked = false
+	_store_open = false
+	_reset_dynamic_day_pacing()
 	_stop_spawning()
 
 
 func unlock_spawning_now(start_day_one_customers_now: bool = false) -> void:
-	if _spawning_unlocked:
-		return
+	var was_unlocked := _spawning_unlocked
+	if not _spawning_unlocked:
+		_spawning_unlocked = true
 
-	_spawning_unlocked = true
+	if was_unlocked and not start_day_one_customers_now:
+		return
 
 	if start_day_one_customers_now:
 		_start_day_one_spawning(NPCData.VisitPhase.DAY)
 	else:
 		_on_phase_changed(TimeManager.current_phase)
+
+
+func unlock_normal_day_spawning_now() -> void:
+	_normal_spawning_unlocked = true
+	_start_day_one_spawning(NPCData.VisitPhase.DAY)
+
+
+func set_store_open(is_open: bool) -> void:
+	_store_open = is_open
+
+	if not _store_open:
+		stop_normal_customer_spawning()
+
+
+func configure_dynamic_day_pacing(customer_target: int, interval_minutes: float, close_minutes: int) -> void:
+	_dynamic_customer_target = max(0, customer_target)
+	_dynamic_spawned_customers = 0
+	_dynamic_interval_minutes = max(0.0, interval_minutes)
+	_dynamic_close_minutes = close_minutes
+	_next_customer_spawn_minutes = float(TimeManager.get_current_clock_minutes())
+	_store_open = _dynamic_customer_target > 0
+	_day_one_day_spawning_started = false
+
+
+func stop_normal_customer_spawning() -> void:
+	_store_open = false
+
+	if _is_spawning and _spawn_queue.size() > 0:
+		var filtered_queue: Array = []
+
+		for npc_data in _spawn_queue:
+			if not _is_normal_day_customer(npc_data):
+				filtered_queue.append(npc_data)
+
+		_spawn_queue = filtered_queue
+		_is_spawning = not _spawn_queue.is_empty()
+
+
+func _reset_dynamic_day_pacing() -> void:
+	_dynamic_customer_target = 0
+	_dynamic_spawned_customers = 0
+	_dynamic_interval_minutes = 0.0
+	_dynamic_close_minutes = DEFAULT_DYNAMIC_CLOSE_MINUTES
+	_next_customer_spawn_minutes = 0.0
 
 
 func _generate_schedule(day: int) -> void:
@@ -138,11 +200,20 @@ func _start_day_one_spawning(phase) -> void:
 
 		_spawn_queue.clear()
 		_day_one_day_spawning_started = true
-		_spawn_queue.append(_make_day_one_customer("day1_bread_customer", "Customer", ["bread"], 10, phase))
-		_spawn_queue.append(_make_day_one_customer("day1_water_customer", "Customer", ["water"], 5, phase))
-		_spawn_queue.append(_make_day_one_customer("day1_bandage_customer", "Customer", ["bandage"], 15, phase))
-		_spawn_queue.append(_make_day_one_customer("irene", "Irene", ["painkiller"], 10, phase, NPCData.NPCCategory.STORY))
-		_configure_day_one_day_pacing()
+		var day_customers: Array[NPCData] = [
+			_make_day_one_customer("day1_bread_customer", "Customer", ["bread"], 10, phase),
+			_make_day_one_customer("day1_water_customer", "Customer", ["water"], 5, phase),
+			_make_day_one_customer("day1_bandage_customer", "Customer", ["bandage"], 15, phase),
+			_make_day_one_customer("irene", "Irene", ["painkiller"], 10, phase, NPCData.NPCCategory.STORY),
+			_make_day_one_customer("day1_bread_customer_2", "Customer", ["bread"], 10, phase),
+			_make_day_one_customer("day1_water_customer_2", "Customer", ["water"], 5, phase)
+		]
+		var customer_limit := mini(_dynamic_customer_target, day_customers.size())
+
+		for i in customer_limit:
+			_spawn_queue.append(day_customers[i])
+
+		_spawn_interval = maxf(0.1, _get_real_seconds_for_world_minutes(_dynamic_interval_minutes))
 	elif phase == NPCData.VisitPhase.NIGHT:
 		if not _can_spawn_phase_now(phase):
 			_stop_spawning()
@@ -200,14 +271,21 @@ func _spawn_next_npc() -> void:
 	if _spawn_queue.is_empty():
 		_is_spawning = false
 		return
-	var npc_data = _spawn_queue.pop_front()
+	var npc_data = _spawn_queue[0]
 
 	if not _can_spawn_npc_now(npc_data.visit_phase):
+		if _should_wait_for_normal_customer_window(npc_data):
+			return
+
 		_is_spawning = false
 		_spawn_queue.clear()
 		return
 
+	_spawn_queue.pop_front()
 	npc_spawn_requested.emit(npc_data)
+
+	if _is_normal_day_customer(npc_data):
+		_on_normal_customer_spawned()
 
 
 func _can_spawn_phase_now(visit_phase: NPCData.VisitPhase) -> bool:
@@ -235,6 +313,48 @@ func _can_spawn_day_one_day_customers_now() -> bool:
 	return (
 		TimeManager.current_day == 1
 		and TimeManager.current_phase != TimeManager.Phase.NIGHT
+		and _can_spawn_normal_customer()
+	)
+
+func _can_spawn_normal_customer() -> bool:
+	if not _store_open:
+		return false
+
+	if TimeManager.get_current_clock_minutes() >= _dynamic_close_minutes:
+		return false
+
+	if _dynamic_spawned_customers >= _dynamic_customer_target:
+		return false
+
+	if float(TimeManager.get_current_clock_minutes()) < _next_customer_spawn_minutes:
+		return false
+
+	return true
+
+func _on_normal_customer_spawned() -> void:
+	_dynamic_spawned_customers += 1
+
+	if _dynamic_spawned_customers >= _dynamic_customer_target:
+		return
+
+	var variation := randf_range(0.85, 1.15)
+	var next_interval := _dynamic_interval_minutes * variation
+	_next_customer_spawn_minutes = minf(
+		float(_dynamic_close_minutes),
+		float(TimeManager.get_current_clock_minutes()) + next_interval
+	)
+
+
+func _is_normal_day_customer(npc_data: NPCData) -> bool:
+	return npc_data != null and npc_data.visit_phase == NPCData.VisitPhase.DAY
+
+
+func _should_wait_for_normal_customer_window(npc_data: NPCData) -> bool:
+	return (
+		_is_normal_day_customer(npc_data)
+		and _store_open
+		and TimeManager.get_current_clock_minutes() < _dynamic_close_minutes
+		and _dynamic_spawned_customers < _dynamic_customer_target
 	)
 
 func _configure_day_one_day_pacing() -> void:
@@ -265,6 +385,14 @@ func _get_real_seconds_until_night() -> float:
 			return 0.0
 
 	return 0.0
+
+func _get_real_seconds_for_world_minutes(world_minutes: float) -> float:
+	var day_world_minutes := float(TimeManager.NIGHT_START_MINUTES - TimeManager.DAY_START_MINUTES)
+
+	if day_world_minutes <= 0.0:
+		return world_minutes
+
+	return maxf(0.1, world_minutes * (TimeManager.PHASE_DURATION / day_world_minutes))
 
 func _make_day_one_customer(
 	npc_id: String,

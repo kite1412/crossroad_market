@@ -1,6 +1,7 @@
 extends CharacterBody2D
 
 const ActivityBoard = preload("res://scripts/objects/ActivityBoard.gd")
+const OpenCloseBoard = preload("res://scripts/objects/OpenCloseBoard.gd")
 const PlayerInteraction = preload("res://scripts/player/PlayerInteraction.gd")
 const PlayerNotificationBridge = preload("res://scripts/player/PlayerNotificationBridge.gd")
 const PlayerShelfInteraction = preload("res://scripts/player/PlayerShelfInteraction.gd")
@@ -106,6 +107,10 @@ func _try_interact() -> void:
 
 	if best_target is ActivityBoard:
 		_interact_with_activity_board(best_target as ActivityBoard)
+		return
+
+	if best_target is OpenCloseBoard:
+		_interact_with_open_close_board(best_target as OpenCloseBoard)
 		return
 
 
@@ -269,6 +274,13 @@ func _trigger_interaction_guidance(areas: Array[Area2D]) -> void:
 			"activity_board",
 			"Activity Board. Press E to read current work guidance."
 		)
+		return
+
+	if best_target is OpenCloseBoard:
+		_show_guided_hint_once(
+			"open_close_board",
+			"Open/Close Board. Press E to flip the store sign."
+		)
 
 
 func _trigger_shelf_guidance(shelf: Shelf) -> void:
@@ -418,6 +430,11 @@ func _interact_with_shelf(shelf: Shelf) -> void:
 		return
 
 	_show_notification("Press Q to stock this shelf.", 0.8)
+
+
+func _interact_with_open_close_board(board: OpenCloseBoard) -> void:
+	if board != null and board.has_method("request_interaction"):
+		board.call("request_interaction")
 
 
 func _try_put() -> void:

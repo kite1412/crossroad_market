@@ -25,6 +25,10 @@ const DOOR_NO_DROP_MARGIN: float = 8.0
 const CASHIER_FLOW_RESTRICTED_SIZE := Vector2(180, 110)
 const CASHIER_FLOW_RESTRICTED_OFFSET := Vector2(0, -40)
 const CUSTOMER_PATH_ALERT_COOLDOWN_MS: int = 1000
+const STORE_CLOSE_MINUTES: int = 18 * 60
+const BASE_DAY_CUSTOMER_TARGET: int = 6
+const MIN_CUSTOMER_INTERVAL_MINUTES: int = 20
+const MAX_CUSTOMER_INTERVAL_MINUTES: int = 120
 const SHELF_INTERACTION_STAND_DISTANCE: float = 54.0
 const RESTRICTED_DROP_MESSAGE_COUNT: int = 3
 const RESTRICTED_DROP_MESSAGE_DURATION: float = 0.55
@@ -70,6 +74,7 @@ var yard_scene: PackedScene = preload("res://scenes/locations/Yard.tscn")
 @onready var yard_return_pos: Marker2D = get_node_or_null("YardReturnPos") as Marker2D
 @onready var player: Node2D = get_node_or_null("Player") as Node2D
 @onready var cashier: Node2D = get_node_or_null("Cashier") as Node2D
+@onready var open_close_board: Node = get_node_or_null("OpenCloseBoard")
 
 var _current_storage: Node2D = null
 var _current_yard: Node2D = null
@@ -96,9 +101,14 @@ var _mystery_supply_depleted: bool = false
 var _human_shelf_installed: bool = false
 var _ghost_shelf_installed: bool = false
 var _customer_spawning_unlocked: bool = false
+var _store_open: bool = false
+var _store_opened_today: bool = false
+var _store_closed_for_day: bool = false
 var _customer_open_notification_shown: bool = false
 var _suppress_next_day_open_notification: bool = false
 var _intro_shown: bool = false
+var _yard_intro_shown: bool = false
+var _pending_store_intro_after_yard: bool = true
 var _first_activity_board_shown: bool = false
 var _ghost_shelf_lesson_shown: bool = false
 var _gooby_resolved: bool = false
@@ -116,6 +126,7 @@ func _ready() -> void:
 	_connect_manager_signals()
 	_connect_scene_signals()
 	_set_customer_path_visual_visible(false)
+	_update_store_status_board(false)
 	_create_fade_layer()
 	_create_location_title_layer()
 	_create_carry_shelf_blocker()
@@ -125,9 +136,7 @@ func _ready() -> void:
 	NPCScheduler.lock_spawning_until_ready()
 
 	TimeManager.start_game()
-	_update_objective()
-	_show_location_title_once("store", "Store")
-	call_deferred("_show_morning_intro")
+	call_deferred("_start_game_in_yard")
 
 
 func _process(_delta: float) -> void:
@@ -189,6 +198,123 @@ func is_shelf_type_installed(shelf_type: ItemData.ShelfType) -> bool:
 			return _ghost_shelf_installed
 
 	return false
+
+
+func request_toggle_store_open() -> void:
+	if _store_open:
+		_manual_close_store()
+		return
+
+	if _store_closed_for_day:
+		_show_notification("Store is closed for the day.", 1.2)
+		_update_store_status_board()
+		return
+
+	if _store_opened_today:
+		_show_notification("The store has already opened today.", 1.2)
+		_update_store_status_board()
+		return
+
+	if not _is_day_setup_complete():
+		_show_notification("Set up the shelf and stock items before opening.", 1.5)
+		_update_store_status_board()
+		return
+
+	var current_minutes := TimeManager.get_current_clock_minutes()
+
+	if current_minutes >= STORE_CLOSE_MINUTES:
+		_show_notification("Not enough time left for customers today.", 1.4)
+		_store_closed_for_day = true
+		_update_store_status_board()
+		return
+
+	_open_store_at(current_minutes)
+
+
+func _is_day_setup_complete() -> bool:
+	return _human_shelf_installed and _human_items_placed >= NORMAL_STOCK_REQUIRED
+
+
+func _calculate_customer_pacing(open_minutes: int) -> Dictionary:
+	var remaining_minutes: int = maxi(0, STORE_CLOSE_MINUTES - open_minutes)
+	var possible_customers: int = int(floor(float(remaining_minutes) / float(MIN_CUSTOMER_INTERVAL_MINUTES)))
+	var customer_target: int = mini(BASE_DAY_CUSTOMER_TARGET, possible_customers)
+
+	if customer_target <= 0:
+		return {
+			"customer_target": 0,
+			"interval_minutes": 0.0
+		}
+
+	var interval_minutes := float(remaining_minutes) / float(customer_target)
+	interval_minutes = clampf(
+		interval_minutes,
+		float(MIN_CUSTOMER_INTERVAL_MINUTES),
+		float(MAX_CUSTOMER_INTERVAL_MINUTES)
+	)
+
+	return {
+		"customer_target": customer_target,
+		"interval_minutes": interval_minutes
+	}
+
+
+func _open_store_at(open_minutes: int) -> void:
+	var pacing := _calculate_customer_pacing(open_minutes)
+	var customer_target := int(pacing.get("customer_target", 0))
+	var interval_minutes := float(pacing.get("interval_minutes", 0.0))
+
+	if customer_target <= 0:
+		_show_notification("Not enough time left for customers today.", 1.4)
+		_store_open = false
+		_store_closed_for_day = true
+		_update_store_status_board()
+		return
+
+	_store_open = true
+	_store_opened_today = true
+	_store_closed_for_day = false
+
+	NPCScheduler.configure_dynamic_day_pacing(
+		customer_target,
+		interval_minutes,
+		STORE_CLOSE_MINUTES
+	)
+	NPCScheduler.set_store_open(true)
+	NPCScheduler.unlock_normal_day_spawning_now()
+	_update_store_status_board()
+	_show_status_notification("Store is OPEN.", 1.0)
+	_update_objective()
+
+
+func _manual_close_store() -> void:
+	_store_open = false
+	_store_closed_for_day = true
+	NPCScheduler.set_store_open(false)
+	NPCScheduler.stop_normal_customer_spawning()
+	_update_store_status_board()
+	_show_status_notification("Store is CLOSED.", 1.0)
+	_update_objective()
+
+
+func _close_store_for_day() -> void:
+	if _store_closed_for_day:
+		return
+
+	_store_open = false
+	_store_closed_for_day = true
+	NPCScheduler.set_store_open(false)
+	NPCScheduler.stop_normal_customer_spawning()
+	_update_store_status_board()
+	_update_objective()
+
+
+func _update_store_status_board(animated: bool = true) -> void:
+	if open_close_board == null:
+		open_close_board = get_node_or_null("OpenCloseBoard")
+
+	if open_close_board != null and open_close_board.has_method("set_open_state"):
+		open_close_board.call("set_open_state", _store_open, animated)
 
 
 func get_npc_entry_route_to_shelf(shelf_position: Vector2) -> Array[Vector2]:
@@ -290,6 +416,17 @@ func get_activity_board_guidance() -> Dictionary:
 			]
 		}
 
+	if not _store_open and not _store_closed_for_day:
+		return {
+			"title": "Open Shop",
+			"lines": [
+				"Human shelf stock is ready.",
+				"Press E at the OPEN/CLOSED board.",
+				"Customers arrive only while the sign is OPEN.",
+				"You can close the store again before evening."
+			]
+		}
+
 	if not _mystery_phase_unlocked or not _mystery_discovered:
 		return {
 			"title": "Strange Notes",
@@ -353,6 +490,9 @@ func _connect_manager_signals() -> void:
 	if not TimeManager.day_ended.is_connected(_on_day_ended):
 		TimeManager.day_ended.connect(_on_day_ended)
 
+	if not TimeManager.day_started.is_connected(_on_day_started):
+		TimeManager.day_started.connect(_on_day_started)
+
 	if not EconomyManager.daily_target_reached.is_connected(_on_target_reached):
 		EconomyManager.daily_target_reached.connect(_on_target_reached)
 
@@ -397,6 +537,62 @@ func _show_first_activity_board() -> void:
 
 	if activity_board != null and activity_board.has_method("open_board"):
 		activity_board.call("open_board")
+
+
+func _start_game_in_yard() -> void:
+	if _yard_intro_shown:
+		return
+
+	if yard_scene == null:
+		_show_location_title_once("store", "Store")
+		call_deferred("_show_morning_intro")
+		return
+
+	if player == null:
+		player = get_node_or_null("Player") as Node2D
+
+	if player == null:
+		push_error("Store: Player is missing.")
+		return
+
+	_current_yard = yard_scene.instantiate() as Node2D
+	add_child(_current_yard)
+	_current_yard.position = Vector2.ZERO
+	_current_yard.z_index = 100
+	_connect_yard_return_signal()
+
+	var spawn_marker := _current_yard.get_node_or_null("PlayerSpawn") as Node2D
+	var spawn_position := spawn_marker.global_position if spawn_marker != null else Vector2(240, 136)
+
+	_set_store_world_active(false)
+	StoreTransitionController.prepare_player_for_location(player, _current_yard, spawn_position)
+	_show_location_title_once("yard", "Yard")
+	_show_yard_intro()
+
+
+func _show_yard_intro() -> void:
+	if _yard_intro_shown:
+		return
+
+	_yard_intro_shown = true
+	await _show_notification_sequence([
+		"Grandma's old shop is just ahead.",
+		"Take a breath, then head inside.",
+		"Press E at the shop door to enter."
+	])
+
+
+func _connect_yard_return_signal() -> void:
+	if _current_yard == null:
+		return
+
+	if _current_yard.has_signal("return_to_store"):
+		var return_callable := Callable(self, "_on_yard_return")
+
+		if not _current_yard.is_connected("return_to_store", return_callable):
+			_current_yard.connect("return_to_store", return_callable)
+	else:
+		push_error("Store: Yard scene must emit return_to_store.")
 
 
 func _enter_storage() -> void:
@@ -529,14 +725,7 @@ func _enter_yard() -> void:
 	add_child(_current_yard)
 	_current_yard.position = Vector2.ZERO
 	_current_yard.z_index = 100
-
-	if _current_yard.has_signal("return_to_store"):
-		var return_callable := Callable(self, "_on_yard_return")
-
-		if not _current_yard.is_connected("return_to_store", return_callable):
-			_current_yard.connect("return_to_store", return_callable)
-	else:
-		push_error("Store: Yard scene must emit return_to_store.")
+	_connect_yard_return_signal()
 
 	var spawn_marker := _current_yard.get_node_or_null("PlayerSpawn") as Node2D
 	var spawn_position := spawn_marker.global_position if spawn_marker != null else Vector2(240, 136)
@@ -576,6 +765,11 @@ func _on_yard_return(_door_type: String) -> void:
 
 	await _fade_from_black()
 	_is_transitioning = false
+
+	if _pending_store_intro_after_yard:
+		_pending_store_intro_after_yard = false
+		_show_location_title_once("store", "Store")
+		call_deferred("_show_morning_intro")
 
 
 func _on_storage_mystery_discovered() -> void:
@@ -1657,7 +1851,7 @@ func _on_npc_exited(_npc: NPC) -> void:
 func _on_phase_changed(phase) -> void:
 	match phase:
 		TimeManager.Phase.DAY:
-			if _customer_spawning_unlocked:
+			if _is_day_setup_complete():
 				if _suppress_next_day_open_notification:
 					_suppress_next_day_open_notification = false
 				else:
@@ -1665,6 +1859,7 @@ func _on_phase_changed(phase) -> void:
 			else:
 				_show_notification("Finish setting up before customers arrive.", 3.0)
 		TimeManager.Phase.NIGHT:
+			_close_store_for_day()
 			if _customer_spawning_unlocked:
 				_show_notification("Night falls. Strange customers may arrive.", 3.0)
 			else:
@@ -1690,6 +1885,19 @@ func _on_daily_report(report: Dictionary) -> void:
 
 func _on_day_ended(_day: int) -> void:
 	_show_notification("Close the store and rest for the night.", 3.0)
+
+
+func _on_day_started(_day: int) -> void:
+	_store_open = false
+	_store_opened_today = false
+	_store_closed_for_day = false
+	_customer_open_notification_shown = false
+	NPCScheduler.set_store_open(false)
+	NPCScheduler.stop_normal_customer_spawning()
+	_update_store_status_board(false)
+
+	if not _pending_store_intro_after_yard:
+		_update_objective()
 
 
 func _on_human_shelf_item_placed(_slot_index: int, item_id: String) -> void:
@@ -1756,7 +1964,7 @@ func _check_customer_spawning_ready(show_notice: bool = true) -> bool:
 	else:
 		_suppress_next_day_open_notification = should_start_day_one_customers_now
 
-	NPCScheduler.unlock_spawning_now(should_start_day_one_customers_now)
+	NPCScheduler.unlock_spawning_now(false)
 	_update_objective()
 	return true
 
@@ -1766,7 +1974,7 @@ func _show_customer_open_notification() -> void:
 		return
 
 	_customer_open_notification_shown = true
-	_show_notification("Store is ready. Human customers can come in. Ghost customers wait for night.", 2.5)
+	_show_notification("Store setup is ready. Flip the OPEN board when you want customers.", 2.5)
 	_update_objective()
 
 
@@ -1797,6 +2005,9 @@ func _get_current_objective_text() -> String:
 	if _human_items_placed < NORMAL_STOCK_REQUIRED:
 		return "Stock the human shelf with normal items."
 
+	if not _store_open and not _store_closed_for_day:
+		return "Flip the OPEN board when ready."
+
 	if not _mystery_phase_unlocked or not _mystery_discovered:
 		return "Check the dark storage corner."
 
@@ -1806,14 +2017,21 @@ func _get_current_objective_text() -> String:
 	if ghost_shelf == null or not ghost_shelf.has_stock():
 		return "Stock Phantom Ice Cream on ghost shelf."
 
-	if not _customer_spawning_unlocked:
+	if not _is_day_setup_complete():
 		return "Prepare the store for customers."
+
+	if _store_closed_for_day:
+		return "Store closed. Prepare for night."
 
 	return "Serve customers at the cashier."
 
 
 func _show_notification(text: String, duration: float = 2.0) -> void:
 	StoreNotificationBridge.show(get_tree(), text, duration)
+
+
+func _show_status_notification(text: String, duration: float = 1.0) -> void:
+	StoreNotificationBridge.show(get_tree(), text, duration, false)
 
 
 func _show_task_complete_notice(key: String, message: String) -> void:
