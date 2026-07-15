@@ -9,4 +9,4 @@ display_name = "Customer"
 spawn_order = 3
 behavior_profile_id = "bargain_hunter"
 spawn_chance = 0.6
-assets_path = "humans/human2"
+assets_path = "npcs/humans/human2"

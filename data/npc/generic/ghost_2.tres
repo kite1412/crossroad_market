@@ -4,14 +4,14 @@
 
 [resource]
 script = ExtResource("1")
-npc_id = "monster_2"
-display_name = "Werewolf Costumer"
+npc_id = "ghost_2"
+display_name = "Ghost Customer"
 npc_category = 1
 visit_phase = 2
-patience_type = 2
-favorite_items = PackedStringArray("spirit_water", "bandage")
+patience_type = 1
+favorite_items = PackedStringArray("spirit_water", "phantom_ice_cream")
 visit_days = PackedInt32Array(2, 4, 6)
-spawn_order = 7
+spawn_order = 8
 behavior_profile_id = "normal_shopper"
 spawn_chance = 0.5
-assets_path = "npcs/monsters/monster2"
+assets_path = "npcs/ghosts/ghost2"

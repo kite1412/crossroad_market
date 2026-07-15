@@ -216,18 +216,59 @@ func _get_daily_customer_blueprint(day: int) -> Dictionary:
 
 func _build_daily_customer_pool(day: int, blueprint: Dictionary) -> Array[NPCData]:
 	if str(blueprint.get("customer_pool", "")) == "day_one":
-		return [
-			_make_day_one_customer("day1_bread_customer", "Customer", ["bread"], 10, NPCData.VisitPhase.DAY),
-			_make_day_one_customer("day1_water_customer", "Customer", ["water"], 5, NPCData.VisitPhase.DAY),
-			_make_day_one_customer("day1_bandage_customer", "Customer", ["bandage"], 15, NPCData.VisitPhase.DAY),
-			_make_day_one_customer("irene", "Irene", ["painkiller"], 10, NPCData.VisitPhase.DAY, NPCData.NPCCategory.STORY)
-		]
+		var human_customers := _get_customer_npc_data(day, "npcs/humans/", false)
+		human_customers.shuffle()
 
+		var day_one_pool: Array[NPCData] = []
+		if human_customers.size() > 0:
+			day_one_pool.append(_make_day_one_customer_from_data(human_customers[0], "water"))
+		if human_customers.size() > 1:
+			day_one_pool.append(_make_day_one_customer_from_data(human_customers[1], "bandage"))
+
+		var irene := _npc_database.get("irene") as NPCData
+		if irene != null:
+			day_one_pool.append(_make_day_one_customer_from_data(irene, "painkiller"))
+
+		var gooby := _npc_database.get("gooby") as NPCData
+		if gooby != null:
+			day_one_pool.append(_make_day_one_customer_from_data(gooby, "phantom_ice_cream"))
+
+		return day_one_pool
+
+	var pool := _get_customer_npc_data(day)
+	pool.shuffle()
+	return pool
+
+
+func _make_day_one_customer_from_data(npc_data: NPCData, shopping_item: String) -> NPCData:
+	var customer := npc_data.duplicate() as NPCData
+	customer.set_meta("shopping_list", [shopping_item])
+	return customer
+
+
+func _get_customer_npc_data(
+	day: int,
+	asset_path_prefix: String = "",
+	require_day_phase: bool = true
+) -> Array[NPCData]:
 	var pool: Array[NPCData] = []
 
-	for npc in _day_schedule:
-		if npc.visit_phase == NPCData.VisitPhase.DAY and (npc.visit_days.is_empty() or day in npc.visit_days):
-			pool.append(npc)
+	for npc in _npc_database.values():
+		if require_day_phase and npc.visit_phase != NPCData.VisitPhase.DAY:
+			continue
+		if not npc.visit_days.is_empty() and day not in npc.visit_days:
+			continue
+		if npc.assets_path.is_empty():
+			continue
+		if not asset_path_prefix.is_empty() and not npc.assets_path.begins_with(asset_path_prefix):
+			continue
+		if asset_path_prefix.is_empty() and not (
+			npc.assets_path.begins_with("npcs/")
+			or npc.assets_path == "irene"
+			or npc.assets_path == "gooby"
+		):
+			continue
+		pool.append(npc)
 
 	return pool
 
@@ -320,9 +361,9 @@ func _start_day_one_spawning(phase) -> void:
 
 		_spawn_queue.clear()
 		_spawn_interval = DAY_ONE_NIGHT_SPAWN_INTERVAL
-		_spawn_queue.append(_make_day_one_customer("gooby", "Gooby The Phantom", ["phantom_ice_cream"], 10, phase, NPCData.NPCCategory.STORY, "reject_return"))
 
-	_is_spawning = not _spawn_queue.is_empty()
+	# Gooby is already part of the day-one daily customer pool.
+	_is_spawning = false
 	_spawn_timer = minf(2.0, _spawn_interval) if phase == NPCData.VisitPhase.NIGHT else _spawn_interval
 
 func spawn_day_one_night_monster_customer() -> void:

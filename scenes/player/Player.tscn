@@ -419,7 +419,7 @@ script = ExtResource("1")
 [node name="SpriteMove" type="AnimatedSprite2D" parent="VisualRoot" unique_id=686780664]
 sprite_frames = SubResource("SpriteFrames_ro0t8")
 animation = &"down"
-frame_progress = 0.559701
+frame_progress = 0.6634066
 script = ExtResource("2")
 animation_fps = 5.0
 animate_idle = true
@@ -428,7 +428,7 @@ direction_config = SubResource("AnimatedCharacterSpriteConfig_move")
 [node name="SpriteIdle" type="AnimatedSprite2D" parent="VisualRoot" unique_id=643144298]
 sprite_frames = SubResource("SpriteFrames_q4eru")
 animation = &"down"
-frame_progress = 0.559701
+frame_progress = 0.6634066
 script = ExtResource("2")
 animation_fps = 5.0
 animate_idle = true
