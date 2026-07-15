@@ -5,12 +5,12 @@ signal npc_spawn_requested(npc_data)
 const SPAWN_INTERVAL: float = 60.0
 const DAY_ONE_NIGHT_SPAWN_INTERVAL: float = 8.0
 const DAY_ONE_SLIME_FOLLOW_UP_DELAY: float = 3.0
-const DEFAULT_OPEN_WINDOW_START_MINUTES: int = 10 * 60
-const DEFAULT_CLOSE_MINUTES: int = 18 * 60
-const DEFAULT_FIRST_DELAY_MINUTES: int = 20
-const DEFAULT_END_BUFFER_MINUTES: int = 60
+const HUMAN_CUSTOMER_START_MINUTES: int = TimeManager.MORNING_START_MINUTES
+const HUMAN_CUSTOMER_END_MINUTES: int = TimeManager.NIGHT_START_MINUTES
+const DEFAULT_FIRST_DELAY_MINUTES: int = 30
+const DEFAULT_END_BUFFER_MINUTES: int = 30
 const DEFAULT_MIN_INTERVAL_MINUTES: int = 20
-const DEFAULT_MAX_INTERVAL_MINUTES: int = 140
+const DEFAULT_MAX_INTERVAL_MINUTES: int = 180
 const DAY_ONE_CUSTOMER_COUNT: int = 4
 
 var _npc_database: Dictionary = {}
@@ -86,7 +86,7 @@ func _on_phase_changed(phase) -> void:
 	elif phase == TimeManager.Phase.DAY:
 		_stop_spawning()
 	elif phase == TimeManager.Phase.NIGHT:
-		close_normal_customer_schedule_for_day()
+		close_human_customer_schedule_for_day()
 
 		if not _spawning_unlocked:
 			_stop_spawning()
@@ -128,12 +128,16 @@ func set_store_open(is_open: bool) -> void:
 	_store_open = is_open
 
 
-func close_normal_customer_schedule_for_day() -> void:
+func close_human_customer_schedule_for_day() -> void:
 	_store_open = false
 	_daily_customer_schedule_closed = true
 
 	while _daily_customer_index < _daily_customer_pool.size():
 		_miss_daily_customer()
+
+
+func close_normal_customer_schedule_for_day() -> void:
+	close_human_customer_schedule_for_day()
 
 
 func stop_normal_customer_spawning() -> void:
@@ -183,8 +187,8 @@ func _get_daily_customer_blueprint(day: int) -> Dictionary:
 	if day == 1:
 		return {
 			"customer_count": DAY_ONE_CUSTOMER_COUNT,
-			"open_window_start": DEFAULT_OPEN_WINDOW_START_MINUTES,
-			"close_time": DEFAULT_CLOSE_MINUTES,
+			"window_start": HUMAN_CUSTOMER_START_MINUTES,
+			"window_end": HUMAN_CUSTOMER_END_MINUTES,
 			"first_delay": DEFAULT_FIRST_DELAY_MINUTES,
 			"end_buffer": DEFAULT_END_BUFFER_MINUTES,
 			"min_interval": DEFAULT_MIN_INTERVAL_MINUTES,
@@ -200,8 +204,8 @@ func _get_daily_customer_blueprint(day: int) -> Dictionary:
 
 	return {
 		"customer_count": day_customer_count,
-		"open_window_start": DEFAULT_OPEN_WINDOW_START_MINUTES,
-		"close_time": DEFAULT_CLOSE_MINUTES,
+		"window_start": HUMAN_CUSTOMER_START_MINUTES,
+		"window_end": HUMAN_CUSTOMER_END_MINUTES,
 		"first_delay": DEFAULT_FIRST_DELAY_MINUTES,
 		"end_buffer": DEFAULT_END_BUFFER_MINUTES,
 		"min_interval": DEFAULT_MIN_INTERVAL_MINUTES,
@@ -234,13 +238,13 @@ func _build_daily_customer_slots(blueprint: Dictionary, customer_count: int) -> 
 	if customer_count <= 0:
 		return slots
 
-	var open_window_start := int(blueprint.get("open_window_start", DEFAULT_OPEN_WINDOW_START_MINUTES))
-	var close_time := int(blueprint.get("close_time", DEFAULT_CLOSE_MINUTES))
+	var window_start := int(blueprint.get("window_start", HUMAN_CUSTOMER_START_MINUTES))
+	var window_end := int(blueprint.get("window_end", HUMAN_CUSTOMER_END_MINUTES))
 	var first_delay := int(blueprint.get("first_delay", DEFAULT_FIRST_DELAY_MINUTES))
 	var end_buffer := int(blueprint.get("end_buffer", DEFAULT_END_BUFFER_MINUTES))
 	var min_interval := int(blueprint.get("min_interval", DEFAULT_MIN_INTERVAL_MINUTES))
 	var max_interval := int(blueprint.get("max_interval", DEFAULT_MAX_INTERVAL_MINUTES))
-	var usable_window: int = max(0, close_time - open_window_start - first_delay - end_buffer)
+	var usable_window: int = max(0, window_end - window_start - first_delay - end_buffer)
 	var interval := 0.0
 
 	if customer_count > 1:
@@ -248,7 +252,7 @@ func _build_daily_customer_slots(blueprint: Dictionary, customer_count: int) -> 
 		interval = clampf(interval, float(min_interval), float(max_interval))
 
 	for i in customer_count:
-		slots.append(open_window_start + first_delay + int(floor(interval * float(i))))
+		slots.append(window_start + first_delay + int(floor(interval * float(i))))
 
 	return slots
 
@@ -257,7 +261,10 @@ func _process_daily_customer_schedule() -> void:
 	if _daily_customer_schedule_closed:
 		return
 
-	if TimeManager.current_phase != TimeManager.Phase.DAY:
+	if (
+		TimeManager.current_phase != TimeManager.Phase.MORNING
+		and TimeManager.current_phase != TimeManager.Phase.DAY
+	):
 		return
 
 	if _daily_customer_index >= _daily_customer_pool.size():

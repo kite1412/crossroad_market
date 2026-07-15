@@ -25,7 +25,7 @@ const DOOR_NO_DROP_MARGIN: float = 8.0
 const CASHIER_FLOW_RESTRICTED_SIZE := Vector2(180, 110)
 const CASHIER_FLOW_RESTRICTED_OFFSET := Vector2(0, -40)
 const CUSTOMER_PATH_ALERT_COOLDOWN_MS: int = 1000
-const STORE_CLOSE_MINUTES: int = 18 * 60
+const HUMAN_CUSTOMER_END_MINUTES: int = TimeManager.NIGHT_START_MINUTES
 const SHELF_INTERACTION_STAND_DISTANCE: float = 54.0
 const RESTRICTED_DROP_MESSAGE_COUNT: int = 3
 const RESTRICTED_DROP_MESSAGE_DURATION: float = 0.55
@@ -214,7 +214,7 @@ func request_toggle_store_open() -> void:
 
 	var current_minutes := TimeManager.get_current_clock_minutes()
 
-	if current_minutes >= STORE_CLOSE_MINUTES:
+	if current_minutes >= HUMAN_CUSTOMER_END_MINUTES:
 		_show_notification("Not enough time left for customers today.", 1.4)
 		_store_closed_for_day = true
 		_update_store_status_board()
@@ -253,7 +253,7 @@ func _close_store_for_day() -> void:
 	_store_open = false
 	_store_closed_for_day = true
 	NPCScheduler.set_store_open(false)
-	NPCScheduler.close_normal_customer_schedule_for_day()
+	NPCScheduler.close_human_customer_schedule_for_day()
 	_update_store_status_board()
 	_update_objective()
 
