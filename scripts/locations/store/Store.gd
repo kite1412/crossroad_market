@@ -27,6 +27,14 @@ const CASHIER_FLOW_RESTRICTED_OFFSET := Vector2(0, -40)
 const CUSTOMER_PATH_ALERT_COOLDOWN_MS: int = 1000
 const HUMAN_CUSTOMER_END_MINUTES: int = TimeManager.NIGHT_START_MINUTES
 const NPC_SHELF_EXIT_OFFSET := Vector2(0, 72)
+const NPC_SHELF_VISIT_OFFSETS: Array[Vector2] = [
+	Vector2(0, 56),
+	Vector2(-64, 0),
+	Vector2(64, 0),
+	Vector2(0, -56)
+]
+const NPC_STANDING_SHAPE_SIZE := Vector2(28, 12)
+const NPC_STANDING_SHAPE_OFFSET := Vector2(0, -8)
 const SHELF_INTERACTION_STAND_DISTANCE: float = 54.0
 const RESTRICTED_DROP_MESSAGE_COUNT: int = 3
 const RESTRICTED_DROP_MESSAGE_DURATION: float = 0.55
@@ -267,10 +275,16 @@ func _update_store_status_board(animated: bool = true) -> void:
 		open_close_board.call("set_open_state", _store_open, animated)
 
 
-func get_npc_entry_route_to_shelf(shelf_position: Vector2) -> Array[Vector2]:
+func get_npc_entry_route_to_shelf(shelf_position: Vector2, from_position: Vector2 = Vector2.INF) -> Array[Vector2]:
 	var route: Array[Vector2] = []
 
-	if npc_entry_marker != null:
+	if from_position.is_finite():
+		if npc_store_path_marker != null:
+			_append_orthogonal_route_to(route, npc_store_path_marker.global_position, true, from_position)
+		else:
+			_append_orthogonal_route_to(route, shelf_position, true, from_position)
+			return _dedupe_route_points(route)
+	elif npc_entry_marker != null:
 		route.append(npc_entry_marker.global_position)
 
 	if npc_store_path_marker != null:
@@ -278,6 +292,13 @@ func get_npc_entry_route_to_shelf(shelf_position: Vector2) -> Array[Vector2]:
 
 	_append_orthogonal_route_to(route, shelf_position, true)
 	return _dedupe_route_points(route)
+
+
+func get_npc_shelf_visit_position(shelf: Shelf, npc: Node = null) -> Vector2:
+	if shelf == null:
+		return Vector2.INF
+
+	return _get_npc_shelf_visit_position_at(shelf, shelf.global_position, npc)
 
 
 func get_npc_route_to_cashier_from(from_position: Vector2) -> Array[Vector2]:
@@ -1034,11 +1055,11 @@ func _evaluate_shelf_drop_restriction(object: Node2D, candidate: Vector2) -> Dic
 			false
 		)
 
-	if not _has_clear_standing_spot_near_shelf(object, candidate):
+	if not _has_reachable_npc_shelf_visit_position(object, candidate):
 		return _make_drop_restriction(
 			true,
 			DROP_REJECTION_REACHABILITY,
-			"I can't reach the shelf there.",
+			"Customers can't reach the shelf there.",
 			object_rect,
 			false
 		)
@@ -1240,63 +1261,36 @@ func _get_nearest_npc_path_marker(position: Vector2, markers: Array[Marker2D]) -
 	return nearest
 
 
-func _has_clear_standing_spot_near_shelf(object: Node2D, candidate: Vector2) -> bool:
-	var interaction_center := _get_shelf_interaction_center_at(object, candidate)
-	var standing_offsets: Array[Vector2] = [
-		Vector2(0, SHELF_INTERACTION_STAND_DISTANCE),
-		Vector2(-SHELF_INTERACTION_STAND_DISTANCE, 0),
-		Vector2(SHELF_INTERACTION_STAND_DISTANCE, 0),
-		Vector2(0, -SHELF_INTERACTION_STAND_DISTANCE)
-	]
-
-	for offset in standing_offsets:
-		if _is_player_standing_position_clear(interaction_center + offset, object):
-			return true
-
-	return false
+func _has_reachable_npc_shelf_visit_position(object: Node2D, candidate: Vector2) -> bool:
+	return _get_npc_shelf_visit_position_at(object, candidate).is_finite()
 
 
-func _get_shelf_interaction_center_at(object: Node2D, candidate: Vector2) -> Vector2:
-	var interaction_area := object.get_node_or_null("InteractionArea") as Area2D
+func _get_npc_shelf_visit_position_at(shelf_object: Node2D, shelf_position: Vector2, npc: Node = null) -> Vector2:
+	for offset in NPC_SHELF_VISIT_OFFSETS:
+		var candidate := shelf_position + offset
 
-	if interaction_area == null:
-		return candidate
+		if _is_npc_standing_position_clear(candidate, npc):
+			return candidate
 
-	return candidate + interaction_area.position
+	return Vector2.INF
 
 
-func _is_player_standing_position_clear(position: Vector2, shelf_object: Node2D) -> bool:
-	if player == null:
-		return true
-
-	var player_shape := player.get_node_or_null("CollisionShape2D") as CollisionShape2D
-
-	if player_shape == null or player_shape.shape == null:
-		return true
+func _is_npc_standing_position_clear(position: Vector2, npc: Node = null) -> bool:
+	var shape := RectangleShape2D.new()
+	shape.size = NPC_STANDING_SHAPE_SIZE
 
 	var query := PhysicsShapeQueryParameters2D.new()
-	query.shape = player_shape.shape
-	query.transform = Transform2D(0.0, position + player_shape.position)
+	query.shape = shape
+	query.transform = Transform2D(0.0, position + NPC_STANDING_SHAPE_OFFSET)
 	query.collide_with_bodies = true
 	query.collide_with_areas = false
+	query.collision_mask = 1
+
+	if npc is CollisionObject2D:
+		query.exclude = [(npc as CollisionObject2D).get_rid()]
 
 	var hits := get_world_2d().direct_space_state.intersect_shape(query, 16)
-
-	for hit in hits:
-		var collider: Node = hit.get("collider", null)
-
-		if collider == null:
-			continue
-
-		if collider == player or _is_descendant_of(collider, player):
-			continue
-
-		if collider == shelf_object or _is_descendant_of(collider, shelf_object):
-			continue
-
-		return false
-
-	return true
+	return hits.is_empty()
 
 
 func _get_object_collision_shape(object: Node2D) -> CollisionShape2D:
