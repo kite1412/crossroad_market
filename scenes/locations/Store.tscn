@@ -21,10 +21,10 @@ size = Vector2(44, 11)
 size = Vector2(40, 22)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_yard_door_body"]
-size = Vector2(64, 12)
+size = Vector2(64, 54)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_yard_door"]
-size = Vector2(52, 24)
+size = Vector2(52, 54)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_customer_path_entry_to_aisle"]
 size = Vector2(72, 36)
@@ -119,11 +119,11 @@ color = Color(0.18, 0.36, 0.28, 1)
 [node name="DoorBody" type="StaticBody2D" parent="YardDoor" unique_id=842596692]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="YardDoor/DoorBody" unique_id=641495373]
-position = Vector2(0, -42)
+position = Vector2(0, -14)
 shape = SubResource("RectangleShape2D_yard_door_body")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="YardDoor" unique_id=1576413889]
-position = Vector2(0, -44)
+position = Vector2(0, -14)
 shape = SubResource("RectangleShape2D_yard_door")
 
 [node name="YardReturnPos" type="Marker2D" parent="." unique_id=585886703]
