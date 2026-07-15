@@ -6,3 +6,6 @@ CLAUDE.md
 .godot/
 *.uid
 *.import
+
+# OS generated files
+.DS_Store

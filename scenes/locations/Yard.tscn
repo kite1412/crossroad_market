@@ -1,8 +1,11 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene format=3 uid="uid://b3lvay4upsxqy"]
 
-[ext_resource type="Script" path="res://scripts/locations/Yard.gd" id="1_yard"]
+[ext_resource type="Script" uid="uid://dbej24xib71dn" path="res://scripts/locations/Yard.gd" id="1_yard"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_door"]
+size = Vector2(48, 28)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1lpbb"]
 size = Vector2(48, 28)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_horizontal"]
@@ -11,24 +14,32 @@ size = Vector2(480, 16)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_vertical"]
 size = Vector2(16, 270)
 
-[node name="Yard" type="Node2D"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_vnbpn"]
+size = Vector2(481, 64)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_due37"]
+size = Vector2(160, 62)
+
+[node name="Yard" type="Node2D" unique_id=1319554124]
 y_sort_enabled = true
 script = ExtResource("1_yard")
 
-[node name="Sky" type="ColorRect" parent="."]
+[node name="Sky" type="ColorRect" parent="." unique_id=1326115772]
 z_index = -100
-offset_right = 480.0
-offset_bottom = 270.0
+offset_left = 3.0
+offset_top = 2.0
+offset_right = 483.0
+offset_bottom = 272.0
 color = Color(0.12, 0.2, 0.18, 1)
 
-[node name="Ground" type="ColorRect" parent="."]
+[node name="Ground" type="ColorRect" parent="." unique_id=1392980352]
 z_index = -99
 offset_top = 64.0
 offset_right = 480.0
 offset_bottom = 270.0
 color = Color(0.22, 0.42, 0.24, 1)
 
-[node name="Path" type="ColorRect" parent="."]
+[node name="Path" type="ColorRect" parent="." unique_id=1478054354]
 z_index = -98
 offset_left = 200.0
 offset_top = 64.0
@@ -36,43 +47,61 @@ offset_right = 280.0
 offset_bottom = 270.0
 color = Color(0.45, 0.35, 0.22, 1)
 
-[node name="ShopFront" type="ColorRect" parent="."]
+[node name="ShopFront" type="ColorRect" parent="." unique_id=600183613]
 offset_left = 160.0
 offset_top = 24.0
 offset_right = 320.0
 offset_bottom = 86.0
 color = Color(0.42, 0.24, 0.15, 1)
 
-[node name="ReturnDoor" type="Area2D" parent="."]
+[node name="ReturnDoor" type="Area2D" parent="." unique_id=2034334382]
 position = Vector2(240, 86)
 
-[node name="DoorVisual" type="ColorRect" parent="ReturnDoor"]
+[node name="DoorVisual" type="ColorRect" parent="ReturnDoor" unique_id=620889129]
 offset_left = -24.0
 offset_top = -28.0
 offset_right = 24.0
 color = Color(0.2, 0.12, 0.08, 1)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="ReturnDoor"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ReturnDoor" unique_id=91024505]
 position = Vector2(0, 10)
 shape = SubResource("RectangleShape2D_door")
 
-[node name="PlayerSpawn" type="Marker2D" parent="."]
+[node name="StaticBody2D" type="StaticBody2D" parent="ReturnDoor" unique_id=786689483]
+
+[node name="NotPassable" type="CollisionShape2D" parent="ReturnDoor/StaticBody2D" unique_id=1463384097]
+position = Vector2(0, -14)
+shape = SubResource("RectangleShape2D_1lpbb")
+
+[node name="PlayerSpawn" type="Marker2D" parent="." unique_id=1621017233]
 position = Vector2(240, 136)
 
-[node name="WorldBounds" type="StaticBody2D" parent="."]
+[node name="WorldBounds" type="StaticBody2D" parent="." unique_id=1845996801]
 
-[node name="Top" type="CollisionShape2D" parent="WorldBounds"]
+[node name="Top" type="CollisionShape2D" parent="WorldBounds" unique_id=672592816]
 position = Vector2(240, -8)
 shape = SubResource("RectangleShape2D_wall_horizontal")
 
-[node name="Bottom" type="CollisionShape2D" parent="WorldBounds"]
+[node name="Bottom" type="CollisionShape2D" parent="WorldBounds" unique_id=1240936673]
 position = Vector2(240, 278)
 shape = SubResource("RectangleShape2D_wall_horizontal")
 
-[node name="Left" type="CollisionShape2D" parent="WorldBounds"]
+[node name="Left" type="CollisionShape2D" parent="WorldBounds" unique_id=473340574]
 position = Vector2(-8, 135)
 shape = SubResource("RectangleShape2D_wall_vertical")
 
-[node name="Right" type="CollisionShape2D" parent="WorldBounds"]
+[node name="Right" type="CollisionShape2D" parent="WorldBounds" unique_id=2118654783]
 position = Vector2(488, 135)
 shape = SubResource("RectangleShape2D_wall_vertical")
+
+[node name="Wall" type="StaticBody2D" parent="." unique_id=960830054]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Wall" unique_id=956983745]
+position = Vector2(240.5, 32)
+shape = SubResource("RectangleShape2D_vnbpn")
+
+[node name="DoorWall" type="StaticBody2D" parent="." unique_id=1136095287]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DoorWall" unique_id=1377064147]
+position = Vector2(240, 55)
+shape = SubResource("RectangleShape2D_due37")

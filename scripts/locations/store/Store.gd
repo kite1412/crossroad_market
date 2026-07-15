@@ -1,4 +1,7 @@
+class_name Store
 extends Node2D
+
+signal activity_completion(message: String)
 
 const StoreNotificationBridge = preload("res://scripts/locations/store/StoreNotificationBridge.gd")
 const StoreNpcSpawner = preload("res://scripts/locations/store/StoreNpcSpawner.gd")
@@ -1713,6 +1716,7 @@ func _show_task_complete_notice(key: String, message: String) -> void:
 
 	if activity_board != null and activity_board.has_method("play_completion_glow"):
 		activity_board.call("play_completion_glow")
+		activity_completion.emit(message)
 
 
 func _show_notification_sequence(messages: Array[String]) -> void:
