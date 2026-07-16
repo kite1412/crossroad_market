@@ -69,20 +69,26 @@ static func ensure(owner: Node) -> Dictionary:
 	item_column.add_child(item_title)
 
 	var scroll := ScrollContainer.new()
+	scroll.name = "ItemScroll"
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	# Keep the item list's natural height so ScrollContainer can expose all rows.
+	# An expanding child is otherwise allowed to match the viewport and its
+	# overflow can be clipped without producing a usable vertical range.
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	scroll.clip_contents = true
 	item_column.add_child(scroll)
 
 	var item_margin := MarginContainer.new()
 	item_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	item_margin.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	item_margin.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	item_margin.add_theme_constant_override("margin_right", 10)
-	item_margin.clip_contents = true
 	scroll.add_child(item_margin)
 
 	var item_list := VBoxContainer.new()
 	item_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	item_list.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	item_list.add_theme_constant_override("separation", 2)
 	item_margin.add_child(item_list)
 
