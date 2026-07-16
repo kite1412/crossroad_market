@@ -25,6 +25,7 @@ const SHELF_SEARCH_MIN_TIME: float = 1.0
 const SHELF_TAKE_PAUSE_TIME: float = 1.25
 const SHELF_VISIT_OFFSET: Vector2 = Vector2(0, 34)
 const SHELF_ACTION_DISTANCE: float = 56.0
+const SHELF_VISIT_ARRIVAL_DISTANCE: float = 8.0
 const QUEUE_ACTION_DISTANCE: float = 14.0
 const STUCK_WATCHDOG_SECONDS: float = 1.5
 const STUCK_MIN_MOVE_DISTANCE: float = 1.0
@@ -276,7 +277,7 @@ func _process_enter() -> void:
 
 
 func _process_walk_to_shelf() -> void:
-	if global_position.distance_to(target_position) <= SHELF_ACTION_DISTANCE:
+	if global_position.distance_to(target_position) <= SHELF_VISIT_ARRIVAL_DISTANCE:
 		velocity = Vector2.ZERO
 		move_and_slide()
 		_set_state(State.SEARCH_ITEM)

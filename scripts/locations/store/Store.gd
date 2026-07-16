@@ -15,7 +15,7 @@ const CASHIER_DEPTH_BACK_OFFSET: float = 64.0
 const CASHIER_DEPTH_FRONT_OFFSET: float = 8.0
 const CARRY_SHELF_CASHIER_BLOCKER_SIZE := Vector2(96, 36)
 const CARRY_SHELF_CASHIER_BLOCKER_OFFSET := Vector2(0, -70)
-const STORE_SHELF_PICKUP_DISTANCE: float = 76.0
+const STORE_SHELF_PICKUP_DISTANCE: float = 20.0
 const DOOR_NO_DROP_MARGIN: float = 8.0
 const CASHIER_FLOW_RESTRICTED_SIZE := Vector2(180, 110)
 const CASHIER_FLOW_RESTRICTED_OFFSET := Vector2(0, -40)
@@ -991,7 +991,7 @@ func _get_directional_shelf_drop_fallbacks() -> Array[Vector2]:
 		forward + right * 0.75,
 		forward - right * 0.75,
 		right,
-		-right,
+		- right,
 		back
 	]
 
