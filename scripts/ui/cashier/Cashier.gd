@@ -394,10 +394,6 @@ func _show_scan_panel() -> void:
 
 		_item_list.add_child(_create_scan_item_row(item))
 
-	_item_list.queue_sort()
-	_item_scroll.queue_sort()
-	call_deferred("_refresh_cashier_item_scroll")
-
 	var add_button := Button.new()
 	add_button.text = "Add Item"
 	add_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -424,6 +420,13 @@ func _show_scan_panel() -> void:
 	_add_app_navigation_buttons()
 
 	_update_selected_label()
+
+	# Refresh after the customer-specific cart/action controls are present. They
+	# affect the column layout and must not be allowed to leave the item scroll
+	# range based on an intermediate panel size.
+	_item_list.queue_sort()
+	_item_scroll.queue_sort()
+	call_deferred("_refresh_cashier_item_scroll")
 
 
 func _add_cart_rows_to_panel() -> void:
