@@ -1,0 +1,100 @@
+[gd_scene format=3 uid="uid://bhpkwnqnn3c67"]
+
+[ext_resource type="Texture2D" uid="uid://bqwe2aeenad3" path="res://assets/store/base-floor.png" id="1_iev3q"]
+[ext_resource type="Texture2D" uid="uid://drcd7jd2w0hmq" path="res://assets/store/board-note.png" id="2_cjp8v"]
+[ext_resource type="Texture2D" uid="uid://82c6ce6f5c7k" path="res://assets/store/box.png" id="3_cdayl"]
+[ext_resource type="Texture2D" uid="uid://c882lq1vdm2ac" path="res://assets/store/cabinet.png" id="4_ko6q8"]
+[ext_resource type="Texture2D" uid="uid://b6xrvwb23ilrm" path="res://assets/store/door.png" id="5_hlgcr"]
+[ext_resource type="Texture2D" uid="uid://h6kuk5xh2ehe" path="res://assets/store/storage.png" id="6_uddl5"]
+[ext_resource type="Texture2D" uid="uid://cy6hsaiih45i0" path="res://assets/store/flower.png" id="7_g28me"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ry2rs"]
+size = Vector2(27, 236)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_834bb"]
+size = Vector2(453, 17)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_due37"]
+size = Vector2(27, 242)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_vnbpn"]
+size = Vector2(453, 24)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1lpbb"]
+size = Vector2(27, 63)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_vu4nj"]
+size = Vector2(8, 42)
+
+[node name="StoreStructure" type="Node2D" unique_id=1722790553]
+
+[node name="BaseFloor" type="Sprite2D" parent="." unique_id=1590971830]
+position = Vector2(240, 135)
+texture = ExtResource("1_iev3q")
+
+[node name="BoardNote" type="Sprite2D" parent="." unique_id=602427740]
+position = Vector2(240, 135)
+texture = ExtResource("2_cjp8v")
+
+[node name="Box" type="Sprite2D" parent="." unique_id=692690964]
+position = Vector2(240, 135)
+texture = ExtResource("3_cdayl")
+
+[node name="Cabinet" type="Sprite2D" parent="." unique_id=1373016527]
+position = Vector2(240, 135)
+texture = ExtResource("4_ko6q8")
+
+[node name="StorageDoor" type="Sprite2D" parent="." unique_id=963356562]
+position = Vector2(240, 135)
+texture = ExtResource("5_hlgcr")
+
+[node name="StorageDoorSign" type="Sprite2D" parent="." unique_id=351443004]
+position = Vector2(240, 135)
+texture = ExtResource("6_uddl5")
+
+[node name="Flower" type="Sprite2D" parent="." unique_id=237841062]
+position = Vector2(240, 135)
+texture = ExtResource("7_g28me")
+
+[node name="Boundaries" type="Node2D" parent="." unique_id=1046197010]
+visible = false
+
+[node name="Left" type="StaticBody2D" parent="Boundaries" unique_id=328219842]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Boundaries/Left" unique_id=1663145832]
+position = Vector2(13.5, 118)
+shape = SubResource("RectangleShape2D_ry2rs")
+
+[node name="Top" type="StaticBody2D" parent="Boundaries" unique_id=927975432]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Boundaries/Top" unique_id=1854830309]
+position = Vector2(253.5, 8.5)
+shape = SubResource("RectangleShape2D_834bb")
+
+[node name="Right" type="StaticBody2D" parent="Boundaries" unique_id=1463653417]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Boundaries/Right" unique_id=2086061411]
+position = Vector2(466.5, 138)
+shape = SubResource("RectangleShape2D_due37")
+
+[node name="Bottom" type="StaticBody2D" parent="Boundaries" unique_id=2067126254]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Boundaries/Bottom" unique_id=1405424887]
+position = Vector2(226.5, 247)
+shape = SubResource("RectangleShape2D_vnbpn")
+
+[node name="Collidables" type="Node2D" parent="." unique_id=57461496]
+
+[node name="Box" type="Node2D" parent="Collidables" unique_id=1933223235]
+
+[node name="Box1" type="StaticBody2D" parent="Collidables/Box" unique_id=2002395459]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Collidables/Box/Box1" unique_id=225386101]
+position = Vector2(40.5, 81.5)
+shape = SubResource("RectangleShape2D_1lpbb")
+
+[node name="Box2" type="StaticBody2D" parent="Collidables/Box" unique_id=865897386]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Collidables/Box/Box2" unique_id=2121673639]
+position = Vector2(58, 82)
+shape = SubResource("RectangleShape2D_vu4nj")

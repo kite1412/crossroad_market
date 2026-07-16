@@ -19,8 +19,10 @@ script = ExtResource("1")
 position = Vector2(0, 1)
 
 [node name="AssetSprite" type="Sprite2D" parent="VisualRoot" unique_id=1901160011]
+visible = false
 
 [node name="PlaceholderRect" type="ColorRect" parent="VisualRoot" unique_id=1830826980]
+visible = false
 offset_left = -45.0
 offset_top = -33.0
 offset_right = 20.0
