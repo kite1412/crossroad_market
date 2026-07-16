@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/items/night-items/potion-bottle-empty.png" id="1_icon"]
+[ext_resource type="Script" uid="uid://cbwrfuql3trc" path="res://data/items/ItemData.gd" id="2_script"]
+
+[resource]
+script = ExtResource("2_script")
+item_id = "potion_bottle_empty"
+display_name = "Empty Potion Bottle"
+description = "An empty bottle that still carries the faint scent of unfinished magic."
+buy_cost = 8
+sell_price = 8
+shelf_type = 1
+icon = ExtResource("1_icon")

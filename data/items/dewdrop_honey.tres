@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/items/night-items/dewdrop-honey.png" id="1_icon"]
+[ext_resource type="Script" uid="uid://cbwrfuql3trc" path="res://data/items/ItemData.gd" id="2_script"]
+
+[resource]
+script = ExtResource("2_script")
+item_id = "dewdrop_honey"
+display_name = "Dewdrop Honey"
+description = "Sweet honey gathered from dew-covered flowers. A rare treat for strange customers."
+buy_cost = 10
+sell_price = 12
+shelf_type = 1
+icon = ExtResource("1_icon")

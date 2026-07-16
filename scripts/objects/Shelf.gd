@@ -47,6 +47,7 @@ func place_item(item_id: String) -> int:
 		return -1
 
 	_slots[slot] = item_id
+	_refresh_slot_visual(slot, item_id)
 	item_placed.emit(slot, item_id)
 	return slot
 
@@ -64,6 +65,7 @@ func stock_item_direct(item_id: String) -> int:
 		return -1
 
 	_slots[slot] = item_id
+	_refresh_slot_visual(slot, item_id)
 	item_placed.emit(slot, item_id)
 	return slot
 
@@ -76,6 +78,7 @@ func remove_item(slot_index: int) -> String:
 		return ""
 
 	_slots[slot_index] = null
+	_refresh_slot_visual(slot_index, "")
 	Inventory.add_item(item_id)
 	item_removed.emit(slot_index, item_id)
 	return item_id
@@ -91,6 +94,7 @@ func take_item_for_npc(item_id: String) -> bool:
 	for i in _slots.size():
 		if _slots[i] == item_id:
 			_slots[i] = null
+			_refresh_slot_visual(i, "")
 			item_removed.emit(i, item_id)
 			return true
 	return false
@@ -145,6 +149,31 @@ func _apply_visual_tint(color: Color) -> void:
 
 	if visual != null:
 		visual.modulate = color
+
+
+func _refresh_slot_visual(slot_index: int, item_id: String) -> void:
+	var slot := get_node_or_null("Slots/Slot%d" % slot_index) as Node2D
+
+	if slot == null:
+		return
+
+	var item_sprite := slot.get_node_or_null("ItemSprite") as Sprite2D
+
+	if item_sprite == null:
+		item_sprite = Sprite2D.new()
+		item_sprite.name = "ItemSprite"
+		item_sprite.z_index = 1
+		var collision_shape := slot.get_node_or_null("CollisionShape2D") as CollisionShape2D
+		item_sprite.position = collision_shape.position if collision_shape != null else Vector2.ZERO
+		slot.add_child(item_sprite)
+
+	var item: ItemData = null
+
+	if item_id != "":
+		item = ItemDatabase.get_item(item_id)
+
+	item_sprite.texture = item.icon if item != null else null
+	item_sprite.visible = item != null and item.icon != null
 
 
 func _setup_cursor_hover() -> void:
