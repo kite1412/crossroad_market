@@ -7,10 +7,15 @@ const DAY_ONE_NIGHT_SPAWN_INTERVAL: float = 8.0
 const DAY_ONE_SLIME_FOLLOW_UP_DELAY: float = 3.0
 const HUMAN_CUSTOMER_START_MINUTES: int = TimeManager.MORNING_START_MINUTES
 const HUMAN_CUSTOMER_END_MINUTES: int = TimeManager.NIGHT_START_MINUTES
+const NIGHT_CUSTOMER_START_MINUTES: int = TimeManager.NIGHT_START_MINUTES
+const NIGHT_CUSTOMER_END_MINUTES: int = TimeManager.END_START_MINUTES
 const DEFAULT_FIRST_DELAY_MINUTES: int = 30
 const DEFAULT_END_BUFFER_MINUTES: int = 30
 const DEFAULT_MIN_INTERVAL_MINUTES: int = 20
 const DEFAULT_MAX_INTERVAL_MINUTES: int = 180
+const SESSION_NONE: StringName = &"none"
+const SESSION_HUMAN: StringName = &"human"
+const SESSION_NIGHT: StringName = &"night"
 const DAY_ONE_CUSTOMER_COUNT: int = 4
 const DAY_ONE_BREAD_CUSTOMER_GOLD: int = 10
 const DAY_ONE_WATER_CUSTOMER_GOLD: int = 5
@@ -29,11 +34,8 @@ var _day_one_night_monster_follow_up_timer: float = 0.0
 var _spawning_unlocked: bool = false
 var _normal_spawning_unlocked: bool = false
 var _store_open: bool = false
-var _daily_customer_pool: Array[NPCData] = []
-var _daily_customer_slots: Array[int] = []
-var _daily_customer_index: int = 0
-var _missed_daily_customers: int = 0
-var _daily_customer_schedule_closed: bool = false
+var _customer_sessions: Dictionary = {}
+var _active_customer_session: StringName = SESSION_NONE
 
 func _ready() -> void:
 	_load_npc_data()
@@ -42,7 +44,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_process_day_one_night_monster_follow_up(delta)
-	_process_daily_customer_schedule()
+	_process_active_customer_session()
 
 	if not _is_spawning or _spawn_queue.is_empty():
 		return
@@ -79,7 +81,8 @@ func _on_day_started(day: int) -> void:
 	_normal_spawning_unlocked = false
 	_store_open = false
 	_generate_schedule(day)
-	_generate_daily_customer_schedule(day)
+	_generate_customer_sessions_for_day(day)
+	_start_customer_session(SESSION_HUMAN)
 
 func _on_phase_changed(phase) -> void:
 	if phase == TimeManager.Phase.MORNING:
@@ -90,23 +93,20 @@ func _on_phase_changed(phase) -> void:
 	elif phase == TimeManager.Phase.DAY:
 		_stop_spawning()
 	elif phase == TimeManager.Phase.NIGHT:
-		close_human_customer_schedule_for_day()
+		start_night_customer_session()
 
 		if not _spawning_unlocked:
 			_stop_spawning()
 			return
 
-		if TimeManager.current_day == 1:
-			_start_day_one_spawning(NPCData.VisitPhase.NIGHT)
-		else:
-			_start_spawning(NPCData.VisitPhase.NIGHT)
+		_stop_spawning()
 
 
 func lock_spawning_until_ready() -> void:
 	_spawning_unlocked = false
 	_normal_spawning_unlocked = false
 	_store_open = false
-	_reset_daily_customer_schedule()
+	_reset_customer_sessions()
 	_stop_spawning()
 
 
@@ -132,16 +132,12 @@ func set_store_open(is_open: bool) -> void:
 	_store_open = is_open
 
 
-func close_human_customer_schedule_for_day() -> void:
-	_store_open = false
-	_daily_customer_schedule_closed = true
+func start_night_customer_session() -> void:
+	if _active_customer_session == SESSION_NIGHT:
+		return
 
-	while _daily_customer_index < _daily_customer_pool.size():
-		_miss_daily_customer()
-
-
-func close_normal_customer_schedule_for_day() -> void:
-	close_human_customer_schedule_for_day()
+	_finish_active_customer_session()
+	_start_customer_session(SESSION_NIGHT)
 
 
 func stop_normal_customer_spawning() -> void:
@@ -156,12 +152,9 @@ func stop_normal_customer_spawning() -> void:
 		_is_spawning = not _spawn_queue.is_empty()
 
 
-func _reset_daily_customer_schedule() -> void:
-	_daily_customer_pool.clear()
-	_daily_customer_slots.clear()
-	_daily_customer_index = 0
-	_missed_daily_customers = 0
-	_daily_customer_schedule_closed = false
+func _reset_customer_sessions() -> void:
+	_customer_sessions.clear()
+	_active_customer_session = SESSION_NONE
 
 
 func _generate_schedule(day: int) -> void:
@@ -174,46 +167,50 @@ func _generate_schedule(day: int) -> void:
 	_day_schedule.sort_custom(func(a, b): return a.spawn_order < b.spawn_order)
 
 
-func _generate_daily_customer_schedule(day: int) -> void:
-	_reset_daily_customer_schedule()
+func _generate_customer_sessions_for_day(day: int) -> void:
+	_reset_customer_sessions()
 
-	var blueprint := _get_daily_customer_blueprint(day)
-	_daily_customer_pool = _build_daily_customer_pool(day, blueprint)
-	_daily_customer_slots = _build_daily_customer_slots(blueprint, _daily_customer_pool.size())
+	var human_blueprint := _get_customer_session_blueprint(day, SESSION_HUMAN)
+	var human_pool := _build_customer_session_pool(day, human_blueprint)
+	_customer_sessions[SESSION_HUMAN] = _make_customer_session(human_blueprint, human_pool)
+
+	var night_blueprint := _get_customer_session_blueprint(day, SESSION_NIGHT)
+	var night_pool := _build_customer_session_pool(day, night_blueprint)
+	_customer_sessions[SESSION_NIGHT] = _make_customer_session(night_blueprint, night_pool)
 
 
-func _get_daily_customer_blueprint(day: int) -> Dictionary:
-	if day == 1:
+func _get_customer_session_blueprint(day: int, session_name: StringName) -> Dictionary:
+	if session_name == SESSION_HUMAN and day == 1:
 		return {
 			"customer_count": DAY_ONE_CUSTOMER_COUNT,
 			"window_start": HUMAN_CUSTOMER_START_MINUTES,
 			"window_end": HUMAN_CUSTOMER_END_MINUTES,
-			"use_centered_average_slots": true,
 			"min_interval": DEFAULT_MIN_INTERVAL_MINUTES,
 			"max_interval": DEFAULT_MAX_INTERVAL_MINUTES,
-			"customer_pool": "day_one"
+			"customer_pool": "day_one_human"
 		}
 
-	var day_customer_count := 0
+	var customer_count := 0
+	var visit_phase := NPCData.VisitPhase.DAY if session_name == SESSION_HUMAN else NPCData.VisitPhase.NIGHT
 
 	for npc in _day_schedule:
-		if npc.visit_phase == NPCData.VisitPhase.DAY:
-			day_customer_count += 1
+		if npc.visit_phase == visit_phase and not _is_day_one_follow_up_story_npc(day, npc):
+			customer_count += 1
 
 	return {
-		"customer_count": day_customer_count,
-		"window_start": HUMAN_CUSTOMER_START_MINUTES,
-		"window_end": HUMAN_CUSTOMER_END_MINUTES,
-		"first_delay": DEFAULT_FIRST_DELAY_MINUTES,
-		"end_buffer": DEFAULT_END_BUFFER_MINUTES,
+		"customer_count": customer_count,
+		"window_start": HUMAN_CUSTOMER_START_MINUTES if session_name == SESSION_HUMAN else NIGHT_CUSTOMER_START_MINUTES,
+		"window_end": HUMAN_CUSTOMER_END_MINUTES if session_name == SESSION_HUMAN else NIGHT_CUSTOMER_END_MINUTES,
 		"min_interval": DEFAULT_MIN_INTERVAL_MINUTES,
 		"max_interval": DEFAULT_MAX_INTERVAL_MINUTES,
-		"customer_pool": "daily_schedule"
+		"customer_pool": String(session_name)
 	}
 
 
-func _build_daily_customer_pool(day: int, blueprint: Dictionary) -> Array[NPCData]:
-	if str(blueprint.get("customer_pool", "")) == "day_one":
+func _build_customer_session_pool(day: int, blueprint: Dictionary) -> Array[NPCData]:
+	var pool_name := str(blueprint.get("customer_pool", ""))
+
+	if pool_name == "day_one_human":
 		return [
 			_make_day_one_customer("day1_bread_customer", "Customer", ["bread"], DAY_ONE_BREAD_CUSTOMER_GOLD, NPCData.VisitPhase.DAY, NPCData.NPCCategory.GENERIC, "paid", NPCData.PatienceType.PATIENT, "npcs/humans/human1"),
 			_make_day_one_customer("day1_water_customer", "Customer", ["water"], DAY_ONE_WATER_CUSTOMER_GOLD, NPCData.VisitPhase.DAY, NPCData.NPCCategory.GENERIC, "paid", NPCData.PatienceType.PATIENT, "npcs/humans/human2"),
@@ -221,7 +218,8 @@ func _build_daily_customer_pool(day: int, blueprint: Dictionary) -> Array[NPCDat
 			_make_day_one_customer("irene", "Irene", ["painkiller"], DAY_ONE_IRENE_CUSTOMER_GOLD, NPCData.VisitPhase.DAY, NPCData.NPCCategory.STORY, "paid", NPCData.PatienceType.PATIENT, "irene")
 		]
 
-	var pool := _get_customer_npc_data(day)
+	var visit_phase := NPCData.VisitPhase.NIGHT if pool_name == String(SESSION_NIGHT) else NPCData.VisitPhase.DAY
+	var pool := _get_customer_npc_data(day, "", visit_phase)
 	pool.shuffle()
 	return pool
 
@@ -235,12 +233,14 @@ func _make_day_one_customer_from_data(npc_data: NPCData, shopping_item: String) 
 func _get_customer_npc_data(
 	day: int,
 	asset_path_prefix: String = "",
-	require_day_phase: bool = true
+	visit_phase: NPCData.VisitPhase = NPCData.VisitPhase.DAY
 ) -> Array[NPCData]:
 	var pool: Array[NPCData] = []
 
 	for npc in _npc_database.values():
-		if require_day_phase and npc.visit_phase != NPCData.VisitPhase.DAY:
+		if npc.visit_phase != visit_phase:
+			continue
+		if _is_day_one_follow_up_story_npc(day, npc):
 			continue
 		if not npc.visit_days.is_empty() and day not in npc.visit_days:
 			continue
@@ -259,7 +259,17 @@ func _get_customer_npc_data(
 	return pool
 
 
-func _build_daily_customer_slots(blueprint: Dictionary, customer_count: int) -> Array[int]:
+func _make_customer_session(blueprint: Dictionary, pool: Array[NPCData]) -> Dictionary:
+	return {
+		"pool": pool,
+		"slots": _build_customer_session_slots(blueprint, pool.size()),
+		"index": 0,
+		"missed": 0,
+		"closed": false
+	}
+
+
+func _build_customer_session_slots(blueprint: Dictionary, customer_count: int) -> Array[int]:
 	var slots: Array[int] = []
 
 	if customer_count <= 0:
@@ -267,71 +277,73 @@ func _build_daily_customer_slots(blueprint: Dictionary, customer_count: int) -> 
 
 	var window_start := int(blueprint.get("window_start", HUMAN_CUSTOMER_START_MINUTES))
 	var window_end := int(blueprint.get("window_end", HUMAN_CUSTOMER_END_MINUTES))
-	var use_centered_average_slots := bool(blueprint.get("use_centered_average_slots", false))
-
-	if use_centered_average_slots:
-		var average_interval := float(max(0, window_end - window_start)) / float(customer_count)
-
-		for i in customer_count:
-			slots.append(window_start + int(round(average_interval * (float(i) + 0.5))))
-
-		return slots
-
-	var first_delay := int(blueprint.get("first_delay", DEFAULT_FIRST_DELAY_MINUTES))
-	var end_buffer := int(blueprint.get("end_buffer", DEFAULT_END_BUFFER_MINUTES))
-	var min_interval := int(blueprint.get("min_interval", DEFAULT_MIN_INTERVAL_MINUTES))
-	var max_interval := int(blueprint.get("max_interval", DEFAULT_MAX_INTERVAL_MINUTES))
-	var usable_window: int = max(0, window_end - window_start - first_delay - end_buffer)
-	var interval := 0.0
-
-	if customer_count > 1:
-		interval = float(usable_window) / float(customer_count - 1)
-		interval = clampf(interval, float(min_interval), float(max_interval))
+	var average_interval := float(max(0, window_end - window_start)) / float(customer_count)
 
 	for i in customer_count:
-		slots.append(window_start + first_delay + int(floor(interval * float(i))))
+		slots.append(window_start + int(round(average_interval * (float(i) + 0.5))))
 
 	return slots
 
 
-func _process_daily_customer_schedule() -> void:
-	if _daily_customer_schedule_closed:
+func _process_active_customer_session() -> void:
+	if _active_customer_session == SESSION_NONE or not _customer_sessions.has(_active_customer_session):
 		return
 
-	if (
-		TimeManager.current_phase != TimeManager.Phase.MORNING
-		and TimeManager.current_phase != TimeManager.Phase.DAY
-	):
+	var session := _customer_sessions[_active_customer_session] as Dictionary
+
+	if bool(session.get("closed", false)):
 		return
 
-	if _daily_customer_index >= _daily_customer_pool.size():
+	var pool := session.get("pool", []) as Array[NPCData]
+	var slots := session.get("slots", []) as Array[int]
+	var index := int(session.get("index", 0))
+
+	if index >= pool.size():
 		return
 
 	var current_minutes := TimeManager.get_current_clock_minutes()
 
-	while _daily_customer_index < _daily_customer_slots.size():
-		var slot_minutes := _daily_customer_slots[_daily_customer_index]
+	if current_minutes >= TimeManager.END_START_MINUTES:
+		_finish_active_customer_session()
+		return
+
+	while index < slots.size():
+		var slot_minutes := slots[index]
 
 		if current_minutes < slot_minutes:
 			return
 
-		if _store_open:
-			_spawn_daily_customer()
+		var session_can_spawn := _active_customer_session != SESSION_NIGHT or _spawning_unlocked
+
+		if _store_open and session_can_spawn:
+			npc_spawn_requested.emit(pool[index])
 		else:
-			_miss_daily_customer()
+			session["missed"] = int(session.get("missed", 0)) + 1
+
+		index += 1
+		session["index"] = index
+		_customer_sessions[_active_customer_session] = session
 
 
-func _spawn_daily_customer() -> void:
-	if _daily_customer_index >= _daily_customer_pool.size():
+func _start_customer_session(session_name: StringName) -> void:
+	if not _customer_sessions.has(session_name):
+		_active_customer_session = SESSION_NONE
 		return
 
-	npc_spawn_requested.emit(_daily_customer_pool[_daily_customer_index])
-	_daily_customer_index += 1
+	_active_customer_session = session_name
 
 
-func _miss_daily_customer() -> void:
-	_missed_daily_customers += 1
-	_daily_customer_index += 1
+func _finish_active_customer_session() -> void:
+	if _active_customer_session == SESSION_NONE or not _customer_sessions.has(_active_customer_session):
+		return
+
+	var session := _customer_sessions[_active_customer_session] as Dictionary
+	var pool := session.get("pool", []) as Array[NPCData]
+	var index := int(session.get("index", 0))
+	session["missed"] = int(session.get("missed", 0)) + maxi(0, pool.size() - index)
+	session["index"] = pool.size()
+	session["closed"] = true
+	_customer_sessions[_active_customer_session] = session
 
 
 func _start_spawning(phase) -> void:
@@ -429,6 +441,10 @@ func _can_spawn_npc_now(visit_phase: NPCData.VisitPhase) -> bool:
 
 func _is_normal_day_customer(npc_data: NPCData) -> bool:
 	return npc_data != null and npc_data.visit_phase == NPCData.VisitPhase.DAY
+
+
+func _is_day_one_follow_up_story_npc(day: int, npc_data: NPCData) -> bool:
+	return day == 1 and npc_data != null and npc_data.npc_id == "gooby"
 
 
 func _make_day_one_customer(

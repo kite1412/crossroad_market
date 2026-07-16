@@ -19,9 +19,10 @@ const STORE_SHELF_PICKUP_DISTANCE: float = 76.0
 const DOOR_NO_DROP_MARGIN: float = 8.0
 const CASHIER_FLOW_RESTRICTED_SIZE := Vector2(180, 110)
 const CASHIER_FLOW_RESTRICTED_OFFSET := Vector2(0, -40)
-const CUSTOMER_PATH_ALERT_COOLDOWN_MS: int = 1000
-const HUMAN_CUSTOMER_END_MINUTES: int = TimeManager.NIGHT_START_MINUTES
 const SHELF_INTERACTION_STAND_DISTANCE: float = 54.0
+const SHELF_DROP_DISTANCE: float = 40.0
+const SHELF_DROP_ANCHOR_SEARCH_RADIUS: float = 84.0
+const SHELF_DROP_ANCHOR_LIMIT: int = 8
 const RESTRICTED_DROP_MESSAGE_COUNT: int = 3
 const RESTRICTED_DROP_MESSAGE_DURATION: float = 0.55
 const RESTRICTED_DANGER_LINE_CYCLES: int = 3
@@ -32,20 +33,11 @@ const LOCATION_TITLE_DURATION: float = 1.25
 const DROP_REJECTION_NONE: StringName = &"none"
 const DROP_REJECTION_STORAGE_DOOR: StringName = &"storage_door"
 const DROP_REJECTION_YARD_DOOR: StringName = &"yard_door"
-const DROP_REJECTION_CUSTOMER_PATH: StringName = &"customer_path"
 const DROP_REJECTION_CASHIER_FLOW: StringName = &"cashier_flow"
 const DROP_REJECTION_COLLISION: StringName = &"collision"
 const DROP_REJECTION_REACHABILITY: StringName = &"reachability"
-const SHELF_DROP_FALLBACKS: Array[Vector2] = [
-	Vector2(0, 56),
-	Vector2(56, 0),
-	Vector2(-56, 0),
-	Vector2(0, -36),
-	Vector2(56, 36),
-	Vector2(-56, 36),
-	Vector2(56, -36),
-	Vector2(-56, -36)
-]
+const SHELF_DROP_FALLBACK_DISTANCE: float = 44.0
+const QUEUE_MARKER_DROP_BLOCK_SIZE := Vector2(56, 18)
 
 var npc_scene: PackedScene = preload("res://scenes/npc/NPC.tscn")
 var storage_scene: PackedScene = preload("res://scenes/locations/Storage.tscn")
@@ -54,17 +46,18 @@ var home_scene: PackedScene = preload("res://scenes/locations/Home.tscn")
 
 @onready var counter_pos: Marker2D = get_node_or_null("CounterPos") as Marker2D
 @onready var entrance_pos: Marker2D = get_node_or_null("EntrancePos") as Marker2D
-@onready var npc_path_markers: Node2D = get_node_or_null("NPCPathMarkers") as Node2D
-@onready var npc_entry_marker: Marker2D = _get_marker2d(NodePath("NPCPathMarkers/NPCPathEntry"), NodePath("NPCEntryMarker"))
-@onready var npc_exit_marker: Marker2D = _get_marker2d(NodePath("NPCPathMarkers/NPCPathExit"), NodePath("NPCExitMarker"))
-@onready var npc_store_path_marker: Marker2D = _get_marker2d(NodePath("NPCPathMarkers/NPCPathAisleRight"), NodePath("NPCStorePathMarker"))
-@onready var npc_path_cashier_marker: Marker2D = _get_marker2d(NodePath("NPCPathMarkers/NPCPathCashier"), NodePath("NPCPathCashier"))
-@onready var npc_queue_marker: Marker2D = _get_marker2d(NodePath("NPCPathMarkers/NPCQueueFront"), NodePath("NPCQueueMarker"))
+@onready var store_path_markers: Node2D = get_node_or_null("StorePathMarkers") as Node2D
+@onready var npc_entry_marker: Marker2D = _get_store_path_marker_by_role(&"entry", NodePath("StorePathMarkers/StorePathEntry"), NodePath("NPCEntryMarker"))
+@onready var npc_enter_store_marker: Marker2D = _get_store_path_marker_by_role(&"enter_store", NodePath("StorePathMarkers/StorePathEnterStore"), NodePath("NPCEnterStoreMarker"))
+@onready var npc_exit_marker: Marker2D = _get_store_path_marker_by_role(&"exit", NodePath("StorePathMarkers/StorePathExit"), NodePath("NPCExitMarker"))
+@onready var npc_store_path_marker: Marker2D = _get_store_path_marker_by_role(&"aisle_right", NodePath("StorePathMarkers/StorePathAisleRight"), NodePath("NPCStorePathMarker"))
+@onready var npc_path_cashier_marker: Marker2D = _get_store_path_marker_by_role(&"cashier", NodePath("StorePathMarkers/StorePathCashier"), NodePath("StorePathCashier"))
+@onready var npc_queue_marker: Marker2D = _get_store_path_marker_by_role(&"queue_front", NodePath("StorePathMarkers/StorePathQueueFront"), NodePath("StorePathQueueMarker"))
 @onready var customer_path_zones: Node2D = get_node_or_null("CustomerPathZones") as Node2D
 @onready var storage_door: Area2D = get_node_or_null("StorageDoor") as Area2D
-@onready var storage_return_pos: Marker2D = get_node_or_null("StorageReturnPos") as Marker2D
+@onready var storage_return_pos: Marker2D = _get_store_path_marker_by_role(&"storage_return", NodePath("StorePathMarkers/StorePathStorageReturn"), NodePath("StorageReturnPos"))
 @onready var yard_door: Area2D = get_node_or_null("YardDoor") as Area2D
-@onready var yard_return_pos: Marker2D = get_node_or_null("YardReturnPos") as Marker2D
+@onready var yard_return_pos: Marker2D = _get_store_path_marker_by_role(&"yard_return", NodePath("StorePathMarkers/StorePathExit"), NodePath("YardReturnPos"))
 @onready var player: Node2D = get_node_or_null("Player") as Node2D
 @onready var cashier: Node2D = get_node_or_null("Cashier") as Node2D
 @onready var open_close_board: Node = get_node_or_null("OpenCloseBoard")
@@ -82,7 +75,7 @@ var _carry_shelf_blocker_shape: CollisionShape2D = null
 var _restricted_placement_warning: Node2D = null
 var _restricted_placement_warning_line: Line2D = null
 var _restricted_placement_warning_tween: Tween = null
-var _npc_path_graph: StoreNPCPathGraph = null
+var _store_path_graph: StorePathGraph = null
 var _is_transitioning: bool = false
 var _shown_location_titles: Dictionary = {}
 var _completed_task_notices: Dictionary = {}
@@ -98,7 +91,6 @@ var _ghost_shelf_installed: bool = false
 var _customer_spawning_unlocked: bool = false
 var _store_open: bool = false
 var _store_opened_today: bool = false
-var _store_closed_for_day: bool = false
 var _customer_open_notification_shown: bool = false
 var _suppress_next_day_open_notification: bool = false
 var _intro_shown: bool = false
@@ -109,7 +101,6 @@ var _ghost_shelf_lesson_shown: bool = false
 var _gooby_resolved: bool = false
 var _last_objective_text: String = ""
 var _restricted_drop_feedback_token: int = 0
-var _last_customer_path_alert_msec: int = 0
 
 var human_shelf: Shelf = null
 var ghost_shelf: Shelf = null
@@ -117,7 +108,7 @@ var ghost_shelf: Shelf = null
 
 func _ready() -> void:
 	add_to_group("store")
-	_npc_path_graph = StoreNPCPathGraph.new(self, npc_path_markers)
+	_store_path_graph = StorePathGraph.new(self, store_path_markers)
 
 	_connect_manager_signals()
 	_connect_scene_signals()
@@ -198,12 +189,7 @@ func is_shelf_type_installed(shelf_type: ItemData.ShelfType) -> bool:
 
 func request_toggle_store_open() -> void:
 	if _store_open:
-		_manual_close_store()
-		return
-
-	if _store_closed_for_day:
-		_show_notification("Store is closed for the day.", 1.2)
-		_update_store_status_board()
+		_close_store()
 		return
 
 	if not _store_opened_today and not _is_day_setup_complete():
@@ -211,25 +197,16 @@ func request_toggle_store_open() -> void:
 		_update_store_status_board()
 		return
 
-	var current_minutes := TimeManager.get_current_clock_minutes()
-
-	if current_minutes >= HUMAN_CUSTOMER_END_MINUTES:
-		_show_notification("Not enough time left for customers today.", 1.4)
-		_store_closed_for_day = true
-		_update_store_status_board()
-		return
-
-	_open_store_at(current_minutes)
+	_open_store()
 
 
 func _is_day_setup_complete() -> bool:
 	return _human_shelf_installed and _human_items_placed >= NORMAL_STOCK_REQUIRED
 
 
-func _open_store_at(_open_minutes: int) -> void:
+func _open_store() -> void:
 	_store_open = true
 	_store_opened_today = true
-	_store_closed_for_day = false
 
 	TimeManager.start_clock()
 	NPCScheduler.set_store_open(true)
@@ -239,23 +216,11 @@ func _open_store_at(_open_minutes: int) -> void:
 	_update_objective()
 
 
-func _manual_close_store() -> void:
+func _close_store() -> void:
 	_store_open = false
 	NPCScheduler.set_store_open(false)
 	_update_store_status_board()
 	_show_status_notification("Store is CLOSED.", 1.0)
-	_update_objective()
-
-
-func _close_store_for_day() -> void:
-	if _store_closed_for_day:
-		return
-
-	_store_open = false
-	_store_closed_for_day = true
-	NPCScheduler.set_store_open(false)
-	NPCScheduler.close_human_customer_schedule_for_day()
-	_update_store_status_board()
 	_update_objective()
 
 
@@ -287,11 +252,11 @@ func _get_open_close_board() -> Node:
 
 
 func get_npc_entry_route_to_shelf(shelf_position: Vector2, from_position: Vector2 = Vector2.INF) -> Array[Vector2]:
-	return _get_npc_path_graph().get_entry_route_to_shelf(shelf_position, from_position)
+	return _get_store_path_graph().get_entry_route_to_shelf(shelf_position, from_position)
 
 
 func get_npc_shelf_access_position(shelf: Shelf) -> Vector2:
-	return _get_npc_path_graph().get_shelf_access_position(shelf)
+	return _get_store_path_graph().get_shelf_access_position(shelf)
 
 
 func get_npc_shelf_visit_position(shelf: Shelf, _npc: Node = null) -> Vector2:
@@ -299,20 +264,24 @@ func get_npc_shelf_visit_position(shelf: Shelf, _npc: Node = null) -> Vector2:
 
 
 func get_npc_route_to_shelf_access(shelf: Shelf) -> Array[Vector2]:
-	return _get_npc_path_graph().get_route_to_shelf_access(shelf)
+	return _get_store_path_graph().get_route_to_shelf_access(shelf)
 
 
 func get_npc_route_to_cashier_from(from_position: Vector2) -> Array[Vector2]:
-	return _get_npc_path_graph().get_route_to_cashier_from(from_position)
+	return _get_store_path_graph().get_route_to_cashier_from(from_position)
+
+
+func get_npc_queue_target(queue_index: int, fallback_position: Vector2) -> Vector2:
+	return _get_store_path_graph().get_queue_target_position(queue_index, fallback_position)
 
 
 func get_npc_route_from_shelf_to_cashier(shelf: Shelf) -> Array[Vector2]:
-	return _get_npc_path_graph().get_route_from_shelf_to_cashier(shelf)
+	return _get_store_path_graph().get_route_from_shelf_to_cashier(shelf)
 
 
 func get_npc_exit_route_from(from_position: Vector2) -> Array[Vector2]:
 	var exit_position := _get_marker_position_or(npc_exit_marker, Vector2(392, 248))
-	return _get_npc_path_graph().get_exit_route_from(from_position, exit_position)
+	return _get_store_path_graph().get_exit_route_from(from_position, exit_position)
 
 
 func get_npc_exit_route_from_cashier() -> Array[Vector2]:
@@ -845,6 +814,11 @@ func _drop_carried_shelf_in_store(object: Node2D) -> void:
 
 	var primary_drop_position := _get_primary_shelf_drop_position()
 	var primary_restriction := _evaluate_shelf_drop_restriction(object, primary_drop_position)
+
+	if primary_restriction.get("type", DROP_REJECTION_NONE) == DROP_REJECTION_CASHIER_FLOW:
+		_show_drop_restriction_feedback(primary_restriction)
+		return
+
 	var drop_position := _find_safe_drop_position(object)
 
 	if drop_position == Vector2.INF:
@@ -917,7 +891,7 @@ func _update_carry_shelf_blocker() -> void:
 
 
 func _update_customer_path_visual() -> void:
-	_set_customer_path_visual_visible(_get_carried_object_from_player() != null)
+	_set_customer_path_visual_visible(false)
 
 
 func _set_customer_path_visual_visible(should_show: bool) -> void:
@@ -954,14 +928,88 @@ func _get_drop_failure_context(object: Node2D) -> Dictionary:
 
 func _get_drop_candidates() -> Array[Vector2]:
 	var candidates: Array[Vector2] = []
+	var primary_position := _get_primary_shelf_drop_position()
 
-	candidates.append(_get_primary_shelf_drop_position())
+	candidates.append_array(_get_nearby_shelf_anchor_drop_candidates(primary_position, true))
+	candidates.append_array(_get_nearby_shelf_anchor_drop_candidates(player.global_position, false))
+
+	if primary_position not in candidates:
+		candidates.append(primary_position)
+
+	for offset in _get_directional_shelf_drop_fallbacks():
+		var candidate := player.global_position + offset
+
+		if candidate not in candidates:
+			candidates.append(candidate)
 
 	return candidates
 
 
+func _get_nearby_shelf_anchor_drop_candidates(origin: Vector2, use_direction_filter: bool) -> Array[Vector2]:
+	var anchors := _get_store_path_graph().get_shelf_anchor_positions()
+
+	if anchors.is_empty():
+		return []
+
+	var nearby: Array[Vector2] = []
+
+	for anchor in anchors:
+		if player != null and player.global_position.distance_to(anchor) > SHELF_DROP_ANCHOR_SEARCH_RADIUS:
+			continue
+		if use_direction_filter and not _is_anchor_in_player_drop_direction(anchor, origin):
+			continue
+
+		nearby.append(anchor)
+
+	nearby.sort_custom(func(a: Vector2, b: Vector2) -> bool:
+		return a.distance_to(origin) < b.distance_to(origin)
+	)
+
+	var limited: Array[Vector2] = []
+
+	for anchor in nearby:
+		limited.append(anchor)
+
+		if limited.size() >= SHELF_DROP_ANCHOR_LIMIT:
+			break
+
+	return limited
+
+
 func _get_primary_shelf_drop_position() -> Vector2:
-	return player.global_position + _get_player_facing_direction() * 56.0
+	return player.global_position + _get_player_facing_direction() * SHELF_DROP_DISTANCE
+
+
+func _get_directional_shelf_drop_fallbacks() -> Array[Vector2]:
+	var facing := _get_player_facing_direction()
+	var forward := facing * SHELF_DROP_FALLBACK_DISTANCE
+	var right := Vector2(-facing.y, facing.x) * SHELF_DROP_FALLBACK_DISTANCE
+	var back := -facing * SHELF_DROP_FALLBACK_DISTANCE
+
+	return [
+		forward,
+		forward + right * 0.75,
+		forward - right * 0.75,
+		right,
+		-right,
+		back
+	]
+
+
+func _is_anchor_in_player_drop_direction(anchor: Vector2, primary_position: Vector2) -> bool:
+	if player == null:
+		return true
+
+	var facing := _get_player_facing_direction()
+	var to_anchor := anchor - player.global_position
+
+	if to_anchor.length() <= 2.0:
+		return true
+
+	if to_anchor.normalized().dot(facing) >= -0.35:
+		return true
+
+	return anchor.distance_to(primary_position) <= SHELF_DROP_DISTANCE * 0.75
 
 
 func _get_player_facing_direction() -> Vector2:
@@ -1004,45 +1052,23 @@ func _is_drop_position_clear(object: Node2D, candidate: Vector2) -> bool:
 func _evaluate_shelf_drop_restriction(object: Node2D, candidate: Vector2) -> Dictionary:
 	var object_rect := _get_object_body_rect_at(object, candidate)
 
-	var storage_door_rect := _get_door_no_drop_rect(storage_door, DOOR_NO_DROP_MARGIN)
-
-	if _rect_has_area(storage_door_rect) and object_rect.intersects(storage_door_rect):
-		return _make_drop_restriction(
-			true,
-			DROP_REJECTION_STORAGE_DOOR,
-			"This blocks the storage door.",
-			storage_door_rect,
-			false
-		)
-
-	var yard_door_rect := _get_door_no_drop_rect(yard_door, DOOR_NO_DROP_MARGIN)
-
-	if _rect_has_area(yard_door_rect) and object_rect.intersects(yard_door_rect):
-		return _make_drop_restriction(
-			true,
-			DROP_REJECTION_YARD_DOOR,
-			"This blocks the yard door.",
-			yard_door_rect,
-			false
-		)
-
-	if _object_rect_intersects_customer_path(object_rect):
-		return _make_drop_restriction(
-			true,
-			DROP_REJECTION_CUSTOMER_PATH,
-			"Keep the customer path clear.",
-			object_rect,
-			false
-		)
-
-	var cashier_flow_rect := _get_cashier_flow_restricted_rect()
-
-	if _rect_has_area(cashier_flow_rect) and object_rect.intersects(cashier_flow_rect):
+	var cashier_rect := _get_cashier_drop_restricted_rect(object_rect)
+	if _rect_has_area(cashier_rect):
 		return _make_drop_restriction(
 			true,
 			DROP_REJECTION_CASHIER_FLOW,
-			"Keep this area clear for customers.",
-			cashier_flow_rect,
+			"Keep the cashier area clear.",
+			cashier_rect,
+			true
+		)
+
+	var queue_marker_rect := _get_queue_marker_drop_restricted_rect(object_rect)
+	if _rect_has_area(queue_marker_rect):
+		return _make_drop_restriction(
+			true,
+			DROP_REJECTION_CASHIER_FLOW,
+			"Keep the checkout queue clear.",
+			queue_marker_rect,
 			true
 		)
 
@@ -1051,15 +1077,6 @@ func _evaluate_shelf_drop_restriction(object: Node2D, candidate: Vector2) -> Dic
 			true,
 			DROP_REJECTION_COLLISION,
 			"I can't place the shelf here.",
-			object_rect,
-			false
-		)
-
-	if not _has_reachable_npc_shelf_visit_position(object, candidate):
-		return _make_drop_restriction(
-			true,
-			DROP_REJECTION_REACHABILITY,
-			"Customers can't reach the shelf there.",
 			object_rect,
 			false
 		)
@@ -1144,35 +1161,77 @@ func _get_cashier_flow_restricted_rect() -> Rect2:
 	return Rect2(center - CASHIER_FLOW_RESTRICTED_SIZE * 0.5, CASHIER_FLOW_RESTRICTED_SIZE)
 
 
-func _object_rect_intersects_customer_path(object_rect: Rect2) -> bool:
-	if not _rect_has_area(object_rect):
-		return false
-
-	for zone_rect in _get_customer_path_zone_rects():
-		if object_rect.intersects(zone_rect):
-			return true
-
-	return false
-
-
-func _get_customer_path_zone_rects() -> Array[Rect2]:
-	var rects: Array[Rect2] = []
-
-	if customer_path_zones == null:
-		return rects
-
-	for child in customer_path_zones.get_children():
-		var zone := child as Area2D
-
-		if zone == null:
+func _get_queue_marker_drop_restricted_rect(object_rect: Rect2) -> Rect2:
+	for marker in _get_queue_drop_block_markers():
+		if marker == null:
 			continue
 
-		var zone_rect := _get_area_rect(zone)
+		var marker_rect := Rect2(
+			marker.global_position - QUEUE_MARKER_DROP_BLOCK_SIZE * 0.5,
+			QUEUE_MARKER_DROP_BLOCK_SIZE
+		)
 
-		if _rect_has_area(zone_rect):
-			rects.append(zone_rect)
+		if object_rect.intersects(marker_rect):
+			return marker_rect
 
-	return rects
+	return Rect2()
+
+
+func _get_cashier_drop_restricted_rect(object_rect: Rect2) -> Rect2:
+	if cashier == null:
+		cashier = get_node_or_null("Cashier") as Node2D
+
+	if cashier == null:
+		return Rect2()
+
+	var restricted_rects: Array[Rect2] = []
+
+	for shape_name in ["CollisionShape2D", "BackCounterCollision"]:
+		var collision_shape := cashier.get_node_or_null(shape_name) as CollisionShape2D
+		var rect := _get_collision_shape_rect(collision_shape)
+
+		if _rect_has_area(rect):
+			restricted_rects.append(rect)
+
+	for rect in restricted_rects:
+		if object_rect.intersects(rect):
+			return rect
+
+	return Rect2()
+
+
+func _get_collision_shape_rect(collision_shape: CollisionShape2D) -> Rect2:
+	if collision_shape == null:
+		return Rect2()
+
+	var rectangle := collision_shape.shape as RectangleShape2D
+
+	if rectangle == null:
+		return Rect2()
+
+	return Rect2(collision_shape.global_position - rectangle.size * 0.5, rectangle.size)
+
+
+func _get_queue_drop_block_markers() -> Array[Marker2D]:
+	var markers: Array[Marker2D] = []
+
+	if store_path_markers == null:
+		return markers
+
+	for child in store_path_markers.get_children():
+		var marker := child as Marker2D
+		if marker == null:
+			continue
+
+		var role := StringName()
+		if marker.has_meta("store_path_role"):
+			var role_value: Variant = marker.get_meta("store_path_role")
+			role = StringName(str(role_value))
+
+		if role == &"queue_front" or role == &"queue_back":
+			markers.append(marker)
+
+	return markers
 
 
 func _get_marker_position_or(marker: Marker2D, fallback: Vector2) -> Vector2:
@@ -1194,17 +1253,44 @@ func _get_marker2d(primary_path: NodePath, fallback_path: NodePath = NodePath(""
 	return null
 
 
-func _get_npc_path_graph() -> StoreNPCPathGraph:
-	if _npc_path_graph == null:
-		_npc_path_graph = StoreNPCPathGraph.new(self, npc_path_markers)
+func _get_store_path_marker_by_role(
+	role: StringName,
+	fallback_path: NodePath = NodePath(""),
+	legacy_fallback_path: NodePath = NodePath("")
+) -> Marker2D:
+	if store_path_markers != null:
+		for child in store_path_markers.get_children():
+			if not child is Marker2D:
+				continue
+
+			var marker := child as Marker2D
+			var marker_role: Variant = marker.get_meta(&"store_path_role", StringName())
+
+			if marker_role is String and StringName(marker_role) == role:
+				return marker
+
+			if marker_role is StringName and marker_role == role:
+				return marker
+
+	var marker := _get_marker2d(fallback_path, legacy_fallback_path)
+
+	if marker != null:
+		return marker
+
+	return null
+
+
+func _get_store_path_graph() -> StorePathGraph:
+	if _store_path_graph == null:
+		_store_path_graph = StorePathGraph.new(self, store_path_markers)
 	else:
-		_npc_path_graph.setup(self, npc_path_markers)
+		_store_path_graph.setup(self, store_path_markers)
 
-	return _npc_path_graph
+	return _store_path_graph
 
 
-func _has_reachable_npc_shelf_visit_position(object: Node2D, candidate: Vector2) -> bool:
-	return _get_npc_path_graph().has_reachable_shelf_access(object, candidate)
+func _has_reachable_store_shelf_visit_position(object: Node2D, candidate: Vector2) -> bool:
+	return _get_store_path_graph().has_reachable_shelf_access(object, candidate)
 
 
 func _get_object_collision_shape(object: Node2D) -> CollisionShape2D:
@@ -1258,7 +1344,6 @@ func _pickup_installed_shelf(object: Node2D) -> void:
 	if player.has_method("update_carried_object_visual"):
 		player.call("update_carried_object_visual", object)
 	_clear_shelf_access_metadata(object)
-	_set_customer_path_visual_visible(true)
 	_update_objective()
 	_show_notification("Shelf picked up. Press Q to place it.")
 
@@ -1277,36 +1362,21 @@ func _set_shelf_carried_state(object: Node2D, is_carried: bool) -> void:
 		_set_node_enabled_recursive(object, true)
 
 
-func _store_shelf_access_metadata(object: Node2D, drop_position: Vector2) -> void:
-	_get_npc_path_graph().store_shelf_access_metadata(object, drop_position)
+func _store_shelf_access_metadata(object: Node2D, _drop_position: Vector2) -> void:
+	_get_store_path_graph().clear_shelf_access_metadata(object)
 
 
 func _clear_shelf_access_metadata(object: Node2D) -> void:
-	_get_npc_path_graph().clear_shelf_access_metadata(object)
+	_get_store_path_graph().clear_shelf_access_metadata(object)
 
 
 func _show_drop_restriction_feedback(restriction: Dictionary) -> void:
 	var message := str(restriction.get("message", "I can't place the shelf here."))
-	var rejection_type := restriction.get("type", DROP_REJECTION_NONE) as StringName
-
-	if rejection_type == DROP_REJECTION_CUSTOMER_PATH:
-		_show_customer_path_rejection_alert(message)
-		return
 
 	if bool(restriction.get("show_warning", false)):
 		_show_restricted_drop_feedback(restriction)
 		return
 
-	_show_notification(message, 0.9)
-
-
-func _show_customer_path_rejection_alert(message: String) -> void:
-	var now := int(Time.get_ticks_msec())
-
-	if now - _last_customer_path_alert_msec < CUSTOMER_PATH_ALERT_COOLDOWN_MS:
-		return
-
-	_last_customer_path_alert_msec = now
 	_show_notification(message, 0.9)
 
 
@@ -1649,6 +1719,11 @@ func _setup_npc_static_data() -> void:
 	if entrance_pos != null:
 		NPC.entrance_position = entrance_pos.global_position
 
+	if npc_enter_store_marker != null:
+		NPC.entrance_position = npc_enter_store_marker.global_position
+	elif npc_exit_marker != null:
+		NPC.entrance_position = npc_exit_marker.global_position
+
 	if npc_exit_marker != null:
 		NPC.exit_position = npc_exit_marker.global_position
 	elif entrance_pos != null:
@@ -1705,11 +1780,24 @@ func _on_npc_spawn_requested(npc_data: NPCData) -> void:
 	StoreNpcSpawner.spawn_npc(
 		self,
 		npc_scene,
-		npc_entry_marker if npc_entry_marker != null else entrance_pos,
+		_get_npc_spawn_marker(),
 		npc_data,
 		_on_npc_purchase,
 		_on_npc_exited
 	)
+
+
+func _get_npc_spawn_marker() -> Marker2D:
+	if npc_enter_store_marker != null:
+		return npc_enter_store_marker
+
+	if npc_entry_marker != null:
+		return npc_entry_marker
+
+	if npc_exit_marker != null:
+		return npc_exit_marker
+
+	return entrance_pos
 
 
 func _on_npc_purchase(_npc: NPC, _item_id: String, price: int) -> void:
@@ -1734,7 +1822,6 @@ func _on_phase_changed(phase) -> void:
 			else:
 				_show_notification("Finish setting up before customers arrive.", 3.0)
 		TimeManager.Phase.NIGHT:
-			_close_store_for_day()
 			if _customer_spawning_unlocked:
 				_show_notification("Night falls. Strange customers may arrive.", 3.0)
 			else:
@@ -1764,7 +1851,6 @@ func _on_day_ended(_day: int) -> void:
 func _on_day_started(_day: int) -> void:
 	_store_open = false
 	_store_opened_today = false
-	_store_closed_for_day = false
 	_customer_open_notification_shown = false
 	NPCScheduler.set_store_open(false)
 	NPCScheduler.stop_normal_customer_spawning()
@@ -1873,9 +1959,6 @@ func _get_current_objective_text() -> String:
 	if TimeManager.current_phase == TimeManager.Phase.NIGHT and _customer_spawning_unlocked:
 		return "Serve Gooby at the cashier."
 
-	if _store_closed_for_day:
-		return "Store closed. Prepare for night."
-
 	if _store_opened_today:
 		if not _store_open:
 			return "Flip the OPEN board when ready."
@@ -1897,7 +1980,7 @@ func _get_current_objective_text() -> String:
 	if _human_items_placed < NORMAL_STOCK_REQUIRED:
 		return "Stock the human shelf with normal items."
 
-	if not _store_open and not _store_closed_for_day:
+	if not _store_open:
 		return "Flip the OPEN board when ready."
 
 	if not _mystery_phase_unlocked or not _mystery_discovered:

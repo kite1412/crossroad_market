@@ -29,6 +29,7 @@ const QUEUE_ACTION_DISTANCE: float = 14.0
 const STUCK_WATCHDOG_SECONDS: float = 1.5
 const STUCK_MIN_MOVE_DISTANCE: float = 1.0
 const STUCK_WATCHDOG_MAX_REBUILDS: int = 2
+const DEBUG_NPC_EXIT_LIFECYCLE: bool = true
 
 static var current_queue: Array[NPC] = []
 static var counter_position: Vector2 = Vector2.ZERO
@@ -65,6 +66,9 @@ var _target_shelf: Shelf = null
 var _last_watchdog_position: Vector2 = Vector2.INF
 var _stuck_watchdog_timer: float = 0.0
 var _stuck_watchdog_rebuilds: int = 0
+var _exit_completed: bool = false
+var _exit_debug_last_dialog_bucket: int = -1
+var _exit_debug_route_logged: bool = false
 
 @onready var sprite_move: CharacterSprite = $VisualRoot/SpriteMove
 @onready var sprite_idle: CharacterSprite = $VisualRoot/SpriteIdle
@@ -83,6 +87,7 @@ func _ready() -> void:
 
 
 func _exit_tree() -> void:
+	_debug_exit("exit_tree")
 	_disconnect_trust_signal()
 	_leave_queue()
 
@@ -100,8 +105,6 @@ func setup(data: NPCData) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	_update_stuck_watchdog(delta)
-
 	match current_state:
 		State.ENTER:
 			_process_enter()
@@ -120,6 +123,10 @@ func _physics_process(delta: float) -> void:
 		State.EXIT:
 			_process_exit()
 
+	if is_queued_for_deletion():
+		return
+
+	_update_stuck_watchdog(delta)
 	_update_dialog(delta)
 	_update_character_sprite()
 
@@ -182,6 +189,7 @@ func cancel_checkout_and_leave() -> void:
 
 
 func queue_done() -> void:
+	_debug_exit("queue_free_requested")
 	queue_free()
 
 
@@ -248,10 +256,12 @@ func _process_enter() -> void:
 
 	_choose_available_item_to_buy()
 
-	var target_shelf := _find_matching_shelf()
+	var target_shelf := _find_reachable_matching_shelf()
 
 	if target_shelf == null:
-		_show_dialog("Nothing I need is on the shelves right now.")
+		var fallback_shelf := _find_matching_shelf()
+		_debug_shelf_selection("no_reachable_shelf", fallback_shelf)
+		_show_dialog("I can't reach that shelf." if fallback_shelf != null else "Nothing I need is on the shelves right now.")
 		_dialog_timer = DIALOG_DURATION
 		target_position = _get_exit_position()
 		_set_state(State.EXIT)
@@ -260,6 +270,7 @@ func _process_enter() -> void:
 	var visit_position := _get_shelf_visit_position(target_shelf)
 
 	if not visit_position.is_finite():
+		_debug_shelf_selection("invalid_visit_position", target_shelf)
 		_show_dialog("I can't reach that shelf.")
 		_dialog_timer = DIALOG_DURATION
 		target_position = _get_exit_position()
@@ -268,6 +279,7 @@ func _process_enter() -> void:
 
 	_target_shelf = target_shelf
 	target_position = visit_position
+	_debug_shelf_selection("selected_shelf", target_shelf)
 	_set_state(State.WALK_TO_SHELF)
 
 
@@ -417,14 +429,44 @@ func _process_checkout(delta: float) -> void:
 
 
 func _process_exit() -> void:
+	if global_position.distance_to(target_position) <= ARRIVAL_THRESHOLD:
+		velocity = Vector2.ZERO
+		_debug_exit("arrived")
+		_complete_exit()
+		return
+
 	if _dialog_timer > 0.0:
+		var dialog_bucket := int(ceil(_dialog_timer))
+
+		if dialog_bucket != _exit_debug_last_dialog_bucket:
+			_exit_debug_last_dialog_bucket = dialog_bucket
+			_debug_exit("waiting_dialog", "remaining=%.2f" % _dialog_timer)
+
 		velocity = Vector2.ZERO
 		move_and_slide()
 		return
 
+	if not _exit_debug_route_logged:
+		_exit_debug_route_logged = true
+		_debug_exit("moving_to_exit")
+
 	if _move_to(target_position):
-		npc_exited.emit(self)
-		queue_done()
+		_debug_exit("move_to_finished")
+		_complete_exit()
+
+
+func _complete_exit() -> void:
+	if _exit_completed or is_queued_for_deletion():
+		return
+
+	_exit_completed = true
+	velocity = Vector2.ZERO
+	_movement_route.clear()
+	_movement_route_destination = Vector2.INF
+	_reset_stuck_watchdog()
+	_debug_exit("complete_exit")
+	npc_exited.emit(self)
+	queue_done()
 
 
 func _move_to(target: Vector2) -> bool:
@@ -606,6 +648,14 @@ func _update_stuck_watchdog(delta: float) -> void:
 		_reset_stuck_watchdog()
 		return
 
+	if _dialog_timer > 0.0 or _take_item_pause_timer > 0.0:
+		_reset_stuck_watchdog()
+		return
+
+	if current_state == State.EXIT and global_position.distance_to(target_position) <= ARRIVAL_THRESHOLD:
+		_reset_stuck_watchdog()
+		return
+
 	if not _last_watchdog_position.is_finite():
 		_last_watchdog_position = global_position
 		_stuck_watchdog_timer = 0.0
@@ -711,8 +761,6 @@ func _get_store_route_for_current_state(destination: Vector2) -> Array[Vector2]:
 
 			return _call_store_route(store, &"get_npc_route_to_cashier_from", [global_position])
 		State.EXIT:
-			if _is_near_cashier_area():
-				return _call_store_route(store, &"get_npc_exit_route_from_cashier", [])
 			return _call_store_route(store, &"get_npc_exit_route_from", [global_position])
 
 	return []
@@ -910,6 +958,19 @@ func _leave_queue() -> void:
 
 
 func _get_queue_target() -> Vector2:
+	var position_in_queue := current_queue.find(self)
+
+	if position_in_queue < 0:
+		return counter_position
+
+	var store := _get_store_route_provider()
+
+	if store != null and store.has_method("get_npc_queue_target"):
+		var result: Variant = store.call("get_npc_queue_target", position_in_queue, counter_position)
+
+		if result is Vector2:
+			return result as Vector2
+
 	return NPCQueueSystem.get_queue_target(current_queue, self, counter_position)
 
 
@@ -934,6 +995,42 @@ func _find_matching_shelf() -> Shelf:
 	return NPCShoppingBehavior.find_matching_shelf(get_tree(), item_to_buy)
 
 
+func _find_reachable_matching_shelf() -> Shelf:
+	for shelf in _get_matching_shelf_candidates():
+		var visit_position := _get_shelf_visit_position(shelf)
+
+		if visit_position.is_finite():
+			return shelf
+
+	return null
+
+
+func _get_matching_shelf_candidates() -> Array[Shelf]:
+	var stocked_shelves: Array[Shelf] = []
+	var fallback_shelves: Array[Shelf] = []
+	var item: ItemData = ItemDatabase.get_item(item_to_buy)
+
+	if item == null:
+		return []
+
+	for shelf_node in get_tree().get_nodes_in_group("shelves"):
+		var shelf := shelf_node as Shelf
+
+		if shelf == null:
+			continue
+
+		if shelf.shelf_type != item.shelf_type:
+			continue
+
+		if shelf.has_item(item_to_buy):
+			stocked_shelves.append(shelf)
+		else:
+			fallback_shelves.append(shelf)
+
+	stocked_shelves.append_array(fallback_shelves)
+	return stocked_shelves
+
+
 func _find_shelf_with_item(item_id: String) -> Shelf:
 	return NPCShoppingBehavior.find_shelf_with_item(get_tree(), item_id)
 
@@ -948,6 +1045,39 @@ func _get_shelf_visit_position(shelf: Shelf) -> Vector2:
 			return result as Vector2
 
 	return NPCShoppingBehavior.get_shelf_visit_position(shelf, SHELF_VISIT_OFFSET)
+
+
+func _debug_shelf_selection(event: String, shelf: Shelf = null) -> void:
+	if not DEBUG_NPC_EXIT_LIFECYCLE:
+		return
+
+	var shelf_name := "null"
+	var shelf_pos := Vector2.INF
+	var shelf_has_item := false
+	var visit_position := Vector2.INF
+	var candidate_count := 0
+
+	if shelf != null:
+		shelf_name = shelf.name
+		shelf_pos = shelf.global_position
+		shelf_has_item = shelf.has_item(item_to_buy)
+		visit_position = _get_shelf_visit_position(shelf)
+
+	candidate_count = _get_matching_shelf_candidates().size()
+
+	print(
+		"NPC_SHELF_DEBUG event=%s id=%s item=%s candidates=%s shelf=%s shelf_pos=%s has_item=%s visit=%s" %
+		[
+			event,
+			npc_data.npc_id if npc_data != null else "unknown",
+			item_to_buy,
+			str(candidate_count),
+			shelf_name,
+			str(shelf_pos),
+			str(shelf_has_item),
+			str(visit_position)
+		]
+	)
 
 
 func _refresh_shelf_visit_target() -> bool:
@@ -1062,6 +1192,47 @@ func _set_state(new_state: State) -> void:
 	_movement_route_destination = Vector2.INF
 	_reset_stuck_watchdog()
 	current_state = new_state
+
+	if new_state == State.EXIT:
+		_exit_debug_last_dialog_bucket = -1
+		_exit_debug_route_logged = false
+		_debug_exit("state_entered")
+
+
+func _debug_exit(event: String, extra: String = "") -> void:
+	if not DEBUG_NPC_EXIT_LIFECYCLE:
+		return
+
+	var npc_id := "unknown"
+	var display_name := name
+
+	if npc_data != null:
+		npc_id = npc_data.npc_id
+		display_name = npc_data.display_name
+
+	var suffix := ""
+
+	if extra != "":
+		suffix = " %s" % extra
+
+	print(
+		"NPC_EXIT_DEBUG event=%s id=%s node=%s instance=%s state=%s pos=%s target=%s dist=%.2f dialog=%.2f route_size=%s queued=%s completed=%s%s" %
+		[
+			event,
+			npc_id,
+			display_name,
+			str(get_instance_id()),
+			str(current_state),
+			str(global_position),
+			str(target_position),
+			global_position.distance_to(target_position),
+			_dialog_timer,
+			str(_movement_route.size()),
+			str(is_queued_for_deletion()),
+			str(_exit_completed),
+			suffix
+		]
+	)
 
 
 func _show_dialog(text: String) -> void:
