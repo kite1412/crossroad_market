@@ -57,6 +57,7 @@ position = Vector2(240, 135)
 texture = ExtResource("7_g28me")
 
 [node name="Boundaries" type="Node2D" parent="." unique_id=1046197010]
+visible = false
 
 [node name="Left" type="StaticBody2D" parent="Boundaries" unique_id=328219842]
 

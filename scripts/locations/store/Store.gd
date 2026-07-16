@@ -38,6 +38,8 @@ const DROP_REJECTION_COLLISION: StringName = &"collision"
 const DROP_REJECTION_REACHABILITY: StringName = &"reachability"
 const SHELF_DROP_FALLBACK_DISTANCE: float = 44.0
 const QUEUE_MARKER_DROP_BLOCK_SIZE := Vector2(56, 18)
+const STORE_ENTRY_FALLBACK_POSITION := Vector2(240, 204)
+const STORE_STORAGE_RETURN_FALLBACK_POSITION := Vector2(383, 76)
 
 var npc_scene: PackedScene = preload("res://scenes/npc/NPC.tscn")
 var storage_scene: PackedScene = preload("res://scenes/locations/Storage.tscn")
@@ -57,7 +59,7 @@ var home_scene: PackedScene = preload("res://scenes/locations/Home.tscn")
 @onready var storage_door: Area2D = get_node_or_null("StorageDoor") as Area2D
 @onready var storage_return_pos: Marker2D = _get_store_path_marker_by_role(&"storage_return", NodePath("StorePathMarkers/StorePathStorageReturn"), NodePath("StorageReturnPos"))
 @onready var yard_door: Area2D = get_node_or_null("YardDoor") as Area2D
-@onready var yard_return_pos: Marker2D = _get_store_path_marker_by_role(&"yard_return", NodePath("StorePathMarkers/StorePathExit"), NodePath("YardReturnPos"))
+@onready var store_entry_pos: Marker2D = get_node_or_null("StoreEntryPos") as Marker2D
 @onready var player: Node2D = get_node_or_null("Player") as Node2D
 @onready var cashier: Node2D = get_node_or_null("Cashier") as Node2D
 @onready var open_close_board: Node = get_node_or_null("OpenCloseBoard")
@@ -281,7 +283,7 @@ func get_npc_route_from_shelf_to_cashier(shelf: Shelf) -> Array[Vector2]:
 
 
 func get_npc_exit_route_from(from_position: Vector2) -> Array[Vector2]:
-	var exit_position := _get_marker_position_or(npc_exit_marker, Vector2(392, 248))
+	var exit_position := _get_marker_position_or(npc_exit_marker, STORE_ENTRY_FALLBACK_POSITION)
 	return _get_store_path_graph().get_exit_route_from(from_position, exit_position)
 
 
@@ -764,17 +766,48 @@ func _get_storage_return_position() -> Vector2:
 	if storage_door != null:
 		return storage_door.global_position + Vector2(0, 44)
 
-	return Vector2(120, 96)
+	return STORE_STORAGE_RETURN_FALLBACK_POSITION
 
 
 func _get_yard_return_position() -> Vector2:
-	if yard_return_pos != null:
-		return yard_return_pos.global_position
+	if store_entry_pos != null:
+		return store_entry_pos.global_position
+
+	var structure_bottom := get_node_or_null("StoreStructure/Boundaries/Bottom/CollisionShape2D") as CollisionShape2D
+	var bottom_shape: RectangleShape2D = null
+
+	if structure_bottom != null:
+		bottom_shape = structure_bottom.shape as RectangleShape2D
+
+	if structure_bottom != null and bottom_shape != null:
+		var player_bottom_offset := 30.0
+		var player_collision: CollisionShape2D = null
+		var player_shape: RectangleShape2D = null
+
+		if player != null:
+			player_collision = player.get_node_or_null("CollisionShape2D") as CollisionShape2D
+
+		if player_collision != null:
+			player_shape = player_collision.shape as RectangleShape2D
+
+		if player_collision != null and player_shape != null:
+			player_bottom_offset = player_collision.position.y + player_shape.size.y * 0.5
+
+		var structure_center_x := 240.0
+		var base_floor := get_node_or_null("StoreStructure/BaseFloor") as Node2D
+
+		if base_floor != null:
+			structure_center_x = base_floor.global_position.x
+
+		return Vector2(
+			structure_center_x,
+			structure_bottom.global_position.y - bottom_shape.size.y * 0.5 - player_bottom_offset - 1.0
+		)
 
 	if yard_door != null:
-		return yard_door.global_position + Vector2(0, -32)
+		return yard_door.global_position + Vector2(0, -47)
 
-	return Vector2(432, 210)
+	return STORE_ENTRY_FALLBACK_POSITION
 
 
 func _is_put_pressed() -> bool:
