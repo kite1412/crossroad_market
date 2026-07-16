@@ -3,6 +3,8 @@ extends CharacterBody2D
 const ActivityBoard = preload("res://scripts/objects/ActivityBoard.gd")
 const OpenCloseBoard = preload("res://scripts/objects/OpenCloseBoard.gd")
 const SleepBed = preload("res://scripts/objects/SleepBed.gd")
+const StorageRestockTerminal = preload("res://scripts/objects/StorageRestockTerminal.gd")
+const RestockPackage = preload("res://scripts/objects/RestockPackage.gd")
 const PlayerInteraction = preload("res://scripts/player/PlayerInteraction.gd")
 const PlayerNotificationBridge = preload("res://scripts/player/PlayerNotificationBridge.gd")
 const PlayerShelfInteraction = preload("res://scripts/player/PlayerShelfInteraction.gd")
@@ -241,6 +243,14 @@ func _try_interact() -> void:
 		_interact_with_sleep_bed(best_target as SleepBed)
 		return
 
+	if best_target is StorageRestockTerminal:
+		_interact_with_storage_restock_terminal(best_target as StorageRestockTerminal)
+		return
+
+	if best_target is RestockPackage:
+		_interact_with_restock_package(best_target as RestockPackage)
+		return
+
 
 func _try_storage_door_interaction(area: Area2D) -> bool:
 	var door_type: String = _get_storage_door_type(area)
@@ -305,12 +315,16 @@ func _get_best_interaction_target(areas: Array[Area2D]) -> Node:
 	var best_distance: float = INF
 
 	for area in areas:
-		var parent: Node = area.get_parent()
+		var target: Node = area
+		var priority: int = _get_interaction_priority(target)
 
-		if parent == null:
-			continue
+		if priority == 999:
+			target = area.get_parent()
 
-		var priority: int = _get_interaction_priority(parent)
+			if target == null:
+				continue
+
+			priority = _get_interaction_priority(target)
 
 		if priority == 999:
 			continue
@@ -318,11 +332,11 @@ func _get_best_interaction_target(areas: Array[Area2D]) -> Node:
 		var distance: float = global_position.distance_squared_to(area.global_position)
 
 		if priority < best_priority:
-			best_target = parent
+			best_target = target
 			best_priority = priority
 			best_distance = distance
 		elif priority == best_priority and distance < best_distance:
-			best_target = parent
+			best_target = target
 			best_distance = distance
 
 	return best_target
@@ -429,6 +443,21 @@ func _trigger_interaction_guidance(areas: Array[Area2D]) -> void:
 			"sleep_bed",
 			"Bed. Press E to sleep when the night is over."
 		)
+		return
+
+	if best_target is StorageRestockTerminal:
+		_show_guided_hint_once(
+			"storage_restock",
+			"Storage Restock Terminal. Press E to order stock."
+		)
+		return
+
+	if best_target is RestockPackage:
+		_show_guided_hint_once(
+			"restock_package",
+			"Restock Package. Press E to pick it up."
+		)
+		return
 
 
 func _trigger_shelf_guidance(shelf: Shelf) -> void:
@@ -829,6 +858,14 @@ func _interact_with_sleep_bed(sleep_bed: SleepBed) -> void:
 		return
 
 	sleep_bed.request_interaction()
+
+
+func _interact_with_storage_restock_terminal(terminal: StorageRestockTerminal) -> void:
+	terminal.request_interaction()
+
+
+func _interact_with_restock_package(restock_package: RestockPackage) -> void:
+	restock_package.request_interaction()
 
 
 func _try_pickup_shelf(shelf: Shelf) -> bool:

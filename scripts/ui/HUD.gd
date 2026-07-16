@@ -151,7 +151,11 @@ func _skip_world_dialogs() -> bool:
 
 
 func _has_interactive_overlay_open() -> bool:
-	return _has_visible_overlay_named("CashierUILayer") or _has_visible_overlay_named("ActivityBoardLayer")
+	return (
+		_has_visible_overlay_named("CashierUILayer")
+		or _has_visible_overlay_named("ActivityBoardLayer")
+		or _has_visible_overlay_named("StorageRestockLayer")
+	)
 
 
 func _has_visible_overlay_named(node_name: String) -> bool:

@@ -102,6 +102,8 @@ var _ghost_shelf_lesson_shown: bool = false
 var _gooby_resolved: bool = false
 var _last_objective_text: String = ""
 var _restricted_drop_feedback_token: int = 0
+var _pending_restock_deliveries: Array[Dictionary] = []
+var _restock_delivery_counter: int = 0
 
 var human_shelf: Shelf = null
 var ghost_shelf: Shelf = null
@@ -128,7 +130,7 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	if _current_storage != null or _current_yard != null or _is_transitioning:
+	if _current_storage != null or _current_yard != null or _current_home != null or _is_transitioning:
 		_set_carry_shelf_blocker_enabled(false)
 		_set_customer_path_visual_visible(false)
 		_hide_restricted_placement_warning()
@@ -199,6 +201,31 @@ func request_toggle_store_open() -> void:
 		return
 
 	_open_store()
+
+
+func can_player_sleep() -> Dictionary:
+	if TimeManager.current_phase != TimeManager.Phase.NIGHT:
+		return {
+			"allowed": false,
+			"message": "It's too early to sleep."
+		}
+
+	if _store_open:
+		return {
+			"allowed": false,
+			"message": "Close the store before sleeping."
+		}
+
+	if _get_carried_object_from_player() != null:
+		return {
+			"allowed": false,
+			"message": "Put down the shelf first."
+		}
+
+	return {
+		"allowed": true,
+		"message": ""
+	}
 
 
 func _is_day_setup_complete() -> bool:
@@ -408,7 +435,7 @@ func _start_game_in_yard() -> void:
 	add_child(_current_yard)
 	_current_yard.position = Vector2.ZERO
 	_current_yard.z_index = 100
-	_connect_yard_return_signal()
+	_configure_yard_scene()
 	open_close_board = null
 	_update_store_status_board(false)
 
@@ -452,6 +479,18 @@ func _connect_yard_return_signal() -> void:
 			_current_yard.connect("enter_home", home_callable)
 	else:
 		push_error("Store: Yard scene must emit enter_home.")
+
+
+func _configure_yard_scene() -> void:
+	_connect_yard_return_signal()
+
+	if _current_yard != null and _current_yard.has_signal("restock_delivery_collected"):
+		var restock_collected_callable := Callable(self, "_on_yard_restock_delivery_collected")
+
+		if not _current_yard.is_connected("restock_delivery_collected", restock_collected_callable):
+			_current_yard.connect("restock_delivery_collected", restock_collected_callable)
+
+	_sync_restock_deliveries_to_yard()
 
 
 func _enter_storage() -> void:
@@ -531,6 +570,12 @@ func _enter_storage() -> void:
 		if not _current_storage.is_connected("ghost_shelf_item_placed", ghost_shelf_callable):
 			_current_storage.connect("ghost_shelf_item_placed", ghost_shelf_callable)
 
+	if _current_storage.has_signal("restock_item_purchased"):
+		var restock_callable := Callable(self, "_on_storage_restock_item_purchased")
+
+		if not _current_storage.is_connected("restock_item_purchased", restock_callable):
+			_current_storage.connect("restock_item_purchased", restock_callable)
+
 	var spawn_marker := _current_storage.get_node_or_null("PlayerSpawn") as Node2D
 	var spawn_position := spawn_marker.global_position if spawn_marker != null else Vector2(42, 68)
 
@@ -593,7 +638,7 @@ func _enter_yard() -> void:
 	add_child(_current_yard)
 	_current_yard.position = Vector2.ZERO
 	_current_yard.z_index = 100
-	_connect_yard_return_signal()
+	_configure_yard_scene()
 	open_close_board = null
 	_update_store_status_board(false)
 
@@ -682,6 +727,7 @@ func _enter_home() -> void:
 	var spawn_marker := _current_home.get_node_or_null("PlayerSpawn") as Node2D
 	var spawn_position := spawn_marker.global_position if spawn_marker != null else Vector2(240, 210)
 
+	_set_store_world_active(false)
 	StoreTransitionController.prepare_player_for_location(player, _current_home, spawn_position)
 
 	var yard_to_remove := _current_yard
@@ -691,6 +737,7 @@ func _enter_home() -> void:
 
 	_current_yard = null
 	open_close_board = null
+	_set_store_world_active(false)
 
 	await _fade_from_black()
 	_show_location_title_once("home", "Home")
@@ -715,7 +762,7 @@ func _on_home_return_to_yard(_door_type: String) -> void:
 	add_child(_current_yard)
 	_current_yard.position = Vector2.ZERO
 	_current_yard.z_index = 100
-	_connect_yard_return_signal()
+	_configure_yard_scene()
 	open_close_board = null
 	_update_store_status_board(false)
 
@@ -733,6 +780,7 @@ func _on_home_return_to_yard(_door_type: String) -> void:
 		home_to_remove.queue_free()
 
 	_current_home = null
+	_set_store_world_active(false)
 
 	await _fade_from_black()
 	_show_location_title_once("yard", "Yard")
@@ -755,6 +803,38 @@ func _on_storage_mystery_item_taken(item_id: String) -> void:
 func _on_storage_mystery_supply_depleted() -> void:
 	_mystery_supply_depleted = true
 	_update_objective()
+
+
+func _on_storage_restock_item_purchased(item_id: String, quantity: int) -> void:
+	if item_id == "" or quantity <= 0:
+		return
+
+	_restock_delivery_counter += 1
+	_pending_restock_deliveries.append({
+		"id": _restock_delivery_counter,
+		"item_id": item_id,
+		"quantity": quantity
+	})
+	_sync_restock_deliveries_to_yard()
+
+
+func _on_yard_restock_delivery_collected(delivery_id: int) -> void:
+	for i in range(_pending_restock_deliveries.size() - 1, -1, -1):
+		var delivery := _pending_restock_deliveries[i]
+
+		if int(delivery.get("id", -1)) == delivery_id:
+			_pending_restock_deliveries.remove_at(i)
+			return
+
+
+func _sync_restock_deliveries_to_yard() -> void:
+	if _current_yard == null or not is_instance_valid(_current_yard):
+		return
+
+	if not _current_yard.has_method("set_restock_deliveries"):
+		return
+
+	_current_yard.call("set_restock_deliveries", _pending_restock_deliveries)
 
 
 func _get_storage_return_position() -> Vector2:
@@ -814,7 +894,9 @@ func request_pickup_shelf(shelf: Shelf) -> bool:
 	if shelf.has_meta("is_carried_storage_object") and bool(shelf.get_meta("is_carried_storage_object")):
 		return false
 
-	if player.global_position.distance_to(shelf.global_position) > STORE_SHELF_PICKUP_DISTANCE:
+	var is_within_pickup_distance := player.global_position.distance_to(shelf.global_position) <= STORE_SHELF_PICKUP_DISTANCE
+
+	if not is_within_pickup_distance and not _is_player_overlapping_shelf_interaction(shelf):
 		return false
 
 	_pickup_installed_shelf(shelf)
@@ -1345,6 +1427,19 @@ func _get_nearest_installed_shelf() -> Node2D:
 	return nearest_shelf
 
 
+func _is_player_overlapping_shelf_interaction(shelf: Shelf) -> bool:
+	if player == null or shelf == null:
+		return false
+
+	var player_area := player.get_node_or_null("InteractionArea") as Area2D
+	var shelf_area := shelf.get_node_or_null("InteractionArea") as Area2D
+
+	if player_area == null or shelf_area == null:
+		return false
+
+	return shelf_area in player_area.get_overlapping_areas()
+
+
 func _pickup_installed_shelf(object: Node2D) -> void:
 	if player == null:
 		return
@@ -1794,6 +1889,9 @@ func _on_cursor_tooltip_exited() -> void:
 
 
 func _on_npc_spawn_requested(npc_data: NPCData) -> void:
+	if _current_home != null:
+		return
+
 	StoreNpcSpawner.spawn_npc(
 		self,
 		npc_scene,

@@ -81,8 +81,8 @@ func can_sleep() -> bool:
 	return _day_finished
 
 
-func sleep_until_next_day() -> bool:
-	if not can_sleep():
+func sleep_until_next_day(force: bool = false) -> bool:
+	if not force and not can_sleep():
 		return false
 
 	start_next_day()

@@ -1,14 +1,15 @@
 [gd_scene format=3 uid="uid://bdnwm42gkma72"]
 
-[ext_resource type="Script" uid="uid://dfc0qo1xtfmn3" path="res://scripts/locations/Storage.gd" id="1_storage"]
+[ext_resource type="Script" uid="uid://dq8v7xm2y3pkl" path="res://scripts/locations/Storage.gd" id="1_storage"]
 [ext_resource type="PackedScene" uid="uid://catgco5tfi312" path="res://scenes/objects/SupplyBox.tscn" id="2_supply_box"]
-[ext_resource type="Script" uid="uid://bj1v64tu0xt4a" path="res://scripts/objects/MysterySupplyBox.gd" id="3_mystery_box"]
+[ext_resource type="Script" uid="uid://dyfcg4fpvs7ga" path="res://scripts/objects/MysterySupplyBox.gd" id="3_mystery_box"]
 [ext_resource type="PackedScene" uid="uid://cvet81vdrn7lk" path="res://scenes/objects/Shelf.tscn" id="4_shelf"]
-[ext_resource type="Script" uid="uid://bo1heio3gctaa" path="res://scripts/locations/WorldLighting.gd" id="5_lighting"]
+[ext_resource type="Script" uid="uid://cftax4a7xovpj" path="res://scripts/locations/WorldLighting.gd" id="5_lighting"]
 [ext_resource type="PackedScene" uid="uid://br1sgb3dkgi8i" path="res://scenes/ui/ActivityCompletionNotification.tscn" id="6_xqq5b"]
+[ext_resource type="Script" uid="uid://cjjcspebaasm0" path="res://scripts/objects/StorageRestockTerminal.gd" id="7_restock_terminal"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_horizontal"]
-size = Vector2(480, 16)
+size = Vector2(480, 61)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_vertical"]
 size = Vector2(16, 270)
@@ -18,6 +19,12 @@ size = Vector2(16, 57)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_return_door"]
 size = Vector2(36, 70)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_restock_terminal_interaction"]
+size = Vector2(84, 58)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_restock_terminal_body"]
+size = Vector2(64, 38)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_locked_ghost"]
 size = Vector2(160, 270)
@@ -42,7 +49,7 @@ color = Color(0.17, 0.14, 0.16, 1)
 [node name="WorldBounds" type="StaticBody2D" parent="." unique_id=1012820168]
 
 [node name="Top" type="CollisionShape2D" parent="WorldBounds" unique_id=482888272]
-position = Vector2(240, 8)
+position = Vector2(240, 30.5)
 shape = SubResource("RectangleShape2D_wall_horizontal")
 
 [node name="Bottom" type="CollisionShape2D" parent="WorldBounds" unique_id=1963640723]
@@ -80,6 +87,34 @@ shape = SubResource("RectangleShape2D_return_door")
 
 [node name="PlayerSpawn" type="Marker2D" parent="." unique_id=1125312585]
 position = Vector2(64, 136)
+
+[node name="RestockTerminal" type="Area2D" parent="." unique_id=2048367496]
+position = Vector2(254, 72)
+script = ExtResource("7_restock_terminal")
+
+[node name="TerminalVisual" type="ColorRect" parent="RestockTerminal" unique_id=1828788217]
+offset_left = -36.0
+offset_top = -28.0
+offset_right = 36.0
+offset_bottom = 16.0
+color = Color(0.11, 0.16, 0.17, 1)
+
+[node name="Screen" type="ColorRect" parent="RestockTerminal" unique_id=1973256991]
+offset_left = -26.0
+offset_top = -20.0
+offset_right = 26.0
+offset_bottom = 2.0
+color = Color(0.18, 0.43, 0.42, 1)
+
+[node name="InteractionShape" type="CollisionShape2D" parent="RestockTerminal" unique_id=550542297]
+position = Vector2(-0.5, -7)
+shape = SubResource("RectangleShape2D_restock_terminal_interaction")
+
+[node name="TerminalBody" type="StaticBody2D" parent="RestockTerminal" unique_id=2098292246]
+
+[node name="BodyShape" type="CollisionShape2D" parent="RestockTerminal/TerminalBody" unique_id=155392436]
+position = Vector2(0, -8)
+shape = SubResource("RectangleShape2D_restock_terminal_body")
 
 [node name="Normal" parent="." unique_id=849810382 instance=ExtResource("2_supply_box")]
 position = Vector2(170, 218)

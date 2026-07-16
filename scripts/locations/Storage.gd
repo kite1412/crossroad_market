@@ -9,6 +9,9 @@ signal mystery_discovered()
 signal mystery_item_taken(item_id: String)
 signal mystery_supply_depleted()
 signal ghost_shelf_item_placed(slot_index: int, item_id: String)
+signal restock_item_purchased(item_id: String, quantity: int)
+
+const StorageRestockPanel = preload("res://scripts/ui/storage/StorageRestockPanel.gd")
 
 const SUPPLY_BOX_DEPTH_HALF_WIDTH: float = 34.0
 const SUPPLY_BOX_DEPTH_BACK_OFFSET: float = 48.0
@@ -38,6 +41,7 @@ const SHELF_DROP_FALLBACKS: Array[Vector2] = [
 @onready var shelf_ghost: Shelf = get_node_or_null("ShelfGhost") as Shelf
 @onready var locked_overlay: CanvasItem = get_node_or_null("LockedGhostSection") as CanvasItem
 @onready var locked_blocker: Node = get_node_or_null("LockedGhostBlocker")
+@onready var restock_terminal: Area2D = get_node_or_null("RestockTerminal") as Area2D
 
 var _entry_door: String = "storage"
 var _mystery_phase_unlocked: bool = false
@@ -48,6 +52,14 @@ var _ghost_shelf_installed: bool = false
 var _normal_supply_depleted: bool = false
 var _player: Node2D = null
 var _carried_object: Node2D = null
+var _restock_layer: CanvasLayer = null
+var _restock_panel: ColorRect = null
+var _restock_item_list: VBoxContainer = null
+var _restock_wallet_label: Label = null
+var _restock_selected_label: Label = null
+var _restock_guide_label: Label = null
+var _restock_action_row: Container = null
+var _selected_restock_item_id: String = ""
 
 
 func _ready() -> void:
@@ -144,6 +156,12 @@ func _connect_signals() -> void:
 	if shelf_ghost != null and not shelf_ghost.item_placed.is_connected(_on_ghost_shelf_item_placed):
 		shelf_ghost.item_placed.connect(_on_ghost_shelf_item_placed)
 
+	if restock_terminal != null:
+		restock_terminal.input_pickable = true
+
+	if not EconomyManager.gold_changed.is_connected(_on_gold_changed):
+		EconomyManager.gold_changed.connect(_on_gold_changed)
+
 
 func request_return_to_store() -> bool:
 	if _is_action_locked():
@@ -151,6 +169,165 @@ func request_return_to_store() -> bool:
 
 	return_to_store.emit(_entry_door)
 	return true
+
+
+func open_restock_panel() -> void:
+	_ensure_restock_panel()
+	_render_restock_panel()
+
+
+func _ensure_restock_panel() -> void:
+	if _restock_layer != null and is_instance_valid(_restock_layer):
+		return
+
+	var panel_nodes := StorageRestockPanel.ensure(self)
+	_restock_layer = panel_nodes["layer"] as CanvasLayer
+	_restock_panel = panel_nodes["panel"] as ColorRect
+	_restock_item_list = panel_nodes["item_list"] as VBoxContainer
+	_restock_wallet_label = panel_nodes["wallet_label"] as Label
+	_restock_selected_label = panel_nodes["selected_label"] as Label
+	_restock_guide_label = panel_nodes["guide_label"] as Label
+	_restock_action_row = panel_nodes["action_row"] as Container
+
+
+func _render_restock_panel() -> void:
+	if _restock_panel == null:
+		return
+
+	if _restock_layer != null:
+		_restock_layer.visible = true
+
+	_restock_panel.visible = true
+	StorageRestockPanel.clear_container(_restock_item_list)
+	StorageRestockPanel.clear_container(_restock_action_row)
+	_update_restock_wallet()
+
+	var items := _get_restock_items()
+
+	for item in items:
+		if item == null:
+			continue
+
+		_restock_item_list.add_child(_create_restock_item_row(item))
+
+	if _selected_restock_item_id == "" and not items.is_empty():
+		_selected_restock_item_id = items[0].item_id
+
+	_render_restock_detail()
+
+
+func _create_restock_item_row(item: ItemData) -> Control:
+	var button := Button.new()
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.text = "%s  %dG" % [item.display_name, _get_item_buy_cost(item)]
+	button.pressed.connect(func() -> void:
+		_selected_restock_item_id = item.item_id
+		_render_restock_panel()
+	)
+	return button
+
+
+func _render_restock_detail() -> void:
+	StorageRestockPanel.clear_container(_restock_action_row)
+
+	var item := ItemDatabase.get_item(_selected_restock_item_id)
+
+	if item == null:
+		_restock_selected_label.text = "Select an item."
+		_restock_guide_label.text = ""
+		_add_restock_close_button()
+		return
+
+	var buy_cost := _get_item_buy_cost(item)
+	var shelf_label := "Ghost" if item.shelf_type == ItemData.ShelfType.GHOST else "Human"
+	_restock_selected_label.text = "%s\nShelf: %s\nBuy: %dG | In bag: %d" % [
+		item.display_name,
+		shelf_label,
+		buy_cost,
+		Inventory.get_quantity(item.item_id)
+	]
+	_restock_guide_label.text = "Purchases are delivered outside in the yard."
+
+	var buy_button := Button.new()
+	buy_button.text = "Buy 1"
+	buy_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	buy_button.pressed.connect(func() -> void:
+		_purchase_restock_item(item.item_id)
+	)
+	_restock_action_row.add_child(buy_button)
+
+	_add_restock_close_button()
+
+
+func _add_restock_close_button() -> void:
+	var close_button := Button.new()
+	close_button.text = "Close"
+	close_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	close_button.pressed.connect(_hide_restock_panel)
+	_restock_action_row.add_child(close_button)
+
+
+func _purchase_restock_item(item_id: String) -> void:
+	var item := ItemDatabase.get_item(item_id)
+
+	if item == null:
+		return
+
+	var buy_cost := _get_item_buy_cost(item)
+
+	if not EconomyManager.spend_gold(buy_cost):
+		_show_notification("Not enough gold.", 0.9)
+		_render_restock_panel()
+		return
+
+	restock_item_purchased.emit(item_id, 1)
+	_show_notification("%s ordered. Pick it up in the yard." % item.display_name, 1.2)
+	_render_restock_panel()
+
+
+func _hide_restock_panel() -> void:
+	if _restock_panel != null:
+		_restock_panel.visible = false
+
+	if _restock_layer != null:
+		_restock_layer.visible = false
+
+
+func _get_restock_items() -> Array[ItemData]:
+	var items: Array[ItemData] = []
+
+	for item in ItemDatabase.get_all_items():
+		if item == null:
+			continue
+
+		if item.shelf_type == ItemData.ShelfType.GHOST and not _mystery_phase_unlocked:
+			continue
+
+		items.append(item)
+
+	items.sort_custom(func(a: ItemData, b: ItemData) -> bool:
+		if a.shelf_type != b.shelf_type:
+			return int(a.shelf_type) < int(b.shelf_type)
+
+		return a.display_name < b.display_name
+	)
+	return items
+
+
+func _get_item_buy_cost(item: ItemData) -> int:
+	if item.buy_cost > 0:
+		return item.buy_cost
+
+	return maxi(1, ceili(float(item.sell_price) * 0.5))
+
+
+func _update_restock_wallet() -> void:
+	if _restock_wallet_label != null:
+		_restock_wallet_label.text = "Wallet: %dG" % EconomyManager.gold
+
+
+func _on_gold_changed(_amount: int) -> void:
+	_update_restock_wallet()
 
 
 func _resize_background_to_viewport() -> void:
