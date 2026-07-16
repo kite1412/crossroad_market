@@ -1,3 +1,4 @@
+class_name Cashier
 extends StaticBody2D
 
 const CashierCheckoutHistory = preload("res://scripts/ui/cashier/CashierCheckoutHistory.gd")
@@ -35,6 +36,7 @@ var _selected_label: Label = null
 var _guide_label: Label = null
 var _item_title: Label = null
 var _item_list: VBoxContainer = null
+var _item_scroll: ScrollContainer = null
 var _action_row: Container = null
 var _cashier_lock_active: bool = false
 var _seen_panel_guidance: Dictionary = {}
@@ -392,6 +394,10 @@ func _show_scan_panel() -> void:
 
 		_item_list.add_child(_create_scan_item_row(item))
 
+	_item_list.queue_sort()
+	_item_scroll.queue_sort()
+	call_deferred("_refresh_cashier_item_scroll")
+
 	var add_button := Button.new()
 	add_button.text = "Add Item"
 	add_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -630,6 +636,10 @@ func _on_confirm_scan_pressed() -> void:
 
 	_scanned_total = _calculate_selected_total()
 	_scanned_item_label = _get_selected_item_label()
+	if _is_story_gift_checkout():
+		_show_gooby_choice_panel()
+		return
+
 	_show_paid_panel()
 
 
@@ -729,6 +739,14 @@ func _set_item_title(text: String) -> void:
 	_item_title.text = text
 
 
+func _refresh_cashier_item_scroll() -> void:
+	if _item_list == null or _item_scroll == null:
+		return
+
+	_item_list.queue_sort()
+	_item_scroll.queue_sort()
+
+
 func _render_empty_pos_app() -> void:
 	_ensure_cashier_panel()
 	_set_store_os_app(STORE_OS_APP_POS)
@@ -771,6 +789,9 @@ func _create_scan_item_row(item: ItemData) -> Control:
 	button.button_pressed = item.item_id == _pending_item_id
 	button.pressed.connect(Callable(self, "_on_scan_item_pressed").bind(item.item_id))
 	row.add_child(button)
+	if item.item_id == _pending_item_id:
+		button.call_deferred("grab_focus")
+		_item_scroll.call_deferred("ensure_control_visible", button)
 
 	return row
 
@@ -1047,6 +1068,7 @@ func _ensure_cashier_panel() -> void:
 	_guide_label = panel_nodes["guide_label"] as Label
 	_action_row = panel_nodes["action_row"] as Container
 	_item_list = panel_nodes["item_list"] as VBoxContainer
+	_item_scroll = panel_nodes["item_scroll"] as ScrollContainer
 
 
 func _set_panel_guidance_once(key: String, text: String) -> void:

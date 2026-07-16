@@ -68,17 +68,26 @@ static func ensure(owner: Node) -> Dictionary:
 	item_title.add_theme_font_size_override("font_size", PANEL_FONT_SIZE)
 	item_column.add_child(item_title)
 
+	# Keep the scroll viewport constrained by the checkout panel. Without this
+	# wrapper, the ScrollContainer can propagate the full item-list minimum
+	# height into the HBox and get clipped instead of becoming scrollable.
+	var scroll_viewport := Control.new()
+	scroll_viewport.name = "ItemScrollViewport"
+	scroll_viewport.custom_minimum_size = Vector2(0, 0)
+	scroll_viewport.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll_viewport.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll_viewport.clip_contents = true
+	item_column.add_child(scroll_viewport)
+
 	var scroll := ScrollContainer.new()
 	scroll.name = "ItemScroll"
-	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	# Keep the item list's natural height so ScrollContainer can expose all rows.
-	# An expanding child is otherwise allowed to match the viewport and its
-	# overflow can be clipped without producing a usable vertical range.
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_ALWAYS
+	scroll.follow_focus = true
+	scroll.mouse_filter = Control.MOUSE_FILTER_STOP
 	scroll.clip_contents = true
-	item_column.add_child(scroll)
+	scroll_viewport.add_child(scroll)
+	scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	var item_margin := MarginContainer.new()
 	item_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -139,7 +148,8 @@ static func ensure(owner: Node) -> Dictionary:
 		"selected_label": selected_label,
 		"guide_label": guide_label,
 		"action_row": action_row,
-		"item_list": item_list
+		"item_list": item_list,
+		"item_scroll": scroll
 	}
 
 
@@ -148,4 +158,5 @@ static func clear_container(container: Container) -> void:
 		return
 
 	for child in container.get_children():
+		container.remove_child(child)
 		child.queue_free()

@@ -204,6 +204,9 @@ func _get_customer_session_blueprint(day: int, session_name: StringName) -> Dict
 		if npc.visit_phase == visit_phase and not _is_day_one_follow_up_story_npc(day, npc):
 			customer_count += 1
 
+	if session_name == SESSION_NIGHT and day == 1 and _npc_database.has("gooby"):
+		customer_count += 1
+
 	return {
 		"customer_count": customer_count,
 		"window_start": HUMAN_CUSTOMER_START_MINUTES if session_name == SESSION_HUMAN else NIGHT_CUSTOMER_START_MINUTES,
@@ -230,6 +233,13 @@ func _build_customer_session_pool(day: int, blueprint: Dictionary) -> Array[NPCD
 	if visit_phase == NPCData.VisitPhase.NIGHT:
 		pool = _align_night_customer_items(pool)
 	pool.shuffle()
+
+	if visit_phase == NPCData.VisitPhase.NIGHT and day == 1:
+		var gooby := _npc_database.get("gooby") as NPCData
+
+		if gooby != null:
+			pool.push_front(_make_day_one_customer_from_data(gooby, "phantom_ice_cream"))
+
 	return pool
 
 
@@ -262,6 +272,10 @@ func _is_ghost_or_monster_customer(npc: NPCData) -> bool:
 func _make_day_one_customer_from_data(npc_data: NPCData, shopping_item: String) -> NPCData:
 	var customer := npc_data.duplicate() as NPCData
 	customer.set_meta("shopping_list", [shopping_item])
+	# Gooby cannot pay for the phantom ice cream. This drives the existing
+	# cashier gift/refuse decision instead of treating the checkout as paid.
+	customer.set_meta("checkout_total", 0)
+	customer.set_meta("checkout_outcome", "reject_return")
 	return customer
 
 
@@ -405,7 +419,7 @@ func _start_day_one_spawning(phase) -> void:
 		_spawn_queue.clear()
 		_spawn_interval = DAY_ONE_NIGHT_SPAWN_INTERVAL
 
-	# Gooby is already part of the day-one daily customer pool.
+	# Gooby is part of the day-one night customer session.
 	_is_spawning = false
 	_spawn_timer = minf(2.0, _spawn_interval) if phase == NPCData.VisitPhase.NIGHT else _spawn_interval
 
@@ -435,10 +449,8 @@ func _process_day_one_night_monster_follow_up(delta: float) -> void:
 
 	_day_one_night_monster_follow_up_requested = false
 	_day_one_night_monster_spawned = true
-	var gooby := _npc_database.get("gooby") as NPCData
-	if gooby == null:
-		return
-	npc_spawn_requested.emit(_make_day_one_customer_from_data(gooby, "phantom_ice_cream"))
+	# The monster is already scheduled in the night session. The old hook
+	# emitted Gooby again here, which duplicated the first customer.
 
 func _stop_spawning() -> void:
 	_is_spawning = false
