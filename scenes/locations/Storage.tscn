@@ -1,10 +1,10 @@
 [gd_scene format=3 uid="uid://bdnwm42gkma72"]
 
-[ext_resource type="Script" uid="uid://dfc0qo1xtfmn3" path="res://scripts/locations/Storage.gd" id="1_storage"]
+[ext_resource type="Script" uid="uid://dq8v7xm2y3pkl" path="res://scripts/locations/Storage.gd" id="1_storage"]
 [ext_resource type="PackedScene" uid="uid://catgco5tfi312" path="res://scenes/objects/SupplyBox.tscn" id="2_supply_box"]
-[ext_resource type="Script" uid="uid://bj1v64tu0xt4a" path="res://scripts/objects/MysterySupplyBox.gd" id="3_mystery_box"]
+[ext_resource type="Script" uid="uid://dyfcg4fpvs7ga" path="res://scripts/objects/MysterySupplyBox.gd" id="3_mystery_box"]
 [ext_resource type="PackedScene" uid="uid://cvet81vdrn7lk" path="res://scenes/objects/Shelf.tscn" id="4_shelf"]
-[ext_resource type="Script" uid="uid://bo1heio3gctaa" path="res://scripts/locations/WorldLighting.gd" id="5_lighting"]
+[ext_resource type="Script" uid="uid://cftax4a7xovpj" path="res://scripts/locations/WorldLighting.gd" id="5_lighting"]
 [ext_resource type="PackedScene" uid="uid://br1sgb3dkgi8i" path="res://scenes/ui/ActivityCompletionNotification.tscn" id="6_xqq5b"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_horizontal"]
@@ -14,10 +14,10 @@ size = Vector2(480, 16)
 size = Vector2(16, 270)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_return_door_body"]
-size = Vector2(10, 58)
+size = Vector2(16, 57)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_return_door"]
-size = Vector2(28, 47)
+size = Vector2(36, 70)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_locked_ghost"]
 size = Vector2(160, 270)
@@ -71,11 +71,11 @@ polygon = PackedVector2Array(-15, -35, 9, -35, 9, 22, -15, 22)
 [node name="DoorBody" type="StaticBody2D" parent="ReturnDoor" unique_id=477717542]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="ReturnDoor/DoorBody" unique_id=532631987]
-position = Vector2(2, 6)
+position = Vector2(-1, -0.5)
 shape = SubResource("RectangleShape2D_return_door_body")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="ReturnDoor" unique_id=1653769841]
-position = Vector2(19, -5.5)
+position = Vector2(9, 0)
 shape = SubResource("RectangleShape2D_return_door")
 
 [node name="PlayerSpawn" type="Marker2D" parent="." unique_id=1125312585]
@@ -91,7 +91,7 @@ color = Color(0.46, 0.31, 0.16, 1)
 [node name="ShelfHuman" parent="." unique_id=155469397 instance=ExtResource("4_shelf")]
 position = Vector2(168, 118)
 
-[node name="PlaceholderRect" parent="ShelfHuman/VisualRoot" index="1" unique_id=28098589]
+[node name="PlaceholderRect" parent="ShelfHuman/VisualRoot" parent_id_path=PackedInt32Array(155469397, 1552276096) index="1" unique_id=28098589]
 metadata/_edit_use_anchors_ = true
 
 [node name="Mystery" parent="." unique_id=2107622966 instance=ExtResource("2_supply_box")]
@@ -108,7 +108,7 @@ color = Color(0.22, 0.18, 0.34, 1)
 position = Vector2(360, 118)
 shelf_type = 1
 
-[node name="PlaceholderRect" parent="ShelfGhost/VisualRoot" index="1" unique_id=28098589]
+[node name="PlaceholderRect" parent="ShelfGhost/VisualRoot" parent_id_path=PackedInt32Array(2014346637, 1552276096) index="1" unique_id=28098589]
 metadata/_edit_use_anchors_ = true
 
 [node name="LockedGhostBlocker" type="StaticBody2D" parent="." unique_id=332481026]

@@ -406,7 +406,7 @@ up_end_column = 5
 size = Vector2(13, 7)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_area"]
-size = Vector2(32, 32)
+size = Vector2(22, 31)
 
 [node name="NPC" type="CharacterBody2D" unique_id=1185801003]
 collision_layer = 3
@@ -418,7 +418,7 @@ script = ExtResource("1")
 [node name="SpriteMove" type="AnimatedSprite2D" parent="VisualRoot" unique_id=978034633]
 sprite_frames = SubResource("SpriteFrames_uuxmv")
 animation = &"down"
-frame_progress = 0.81426114
+frame_progress = 0.49957883
 script = ExtResource("2")
 animation_fps = 5.0
 animate_idle = true
@@ -427,7 +427,7 @@ direction_config = SubResource("AnimatedCharacterSpriteConfig_move")
 [node name="SpriteIdle" type="AnimatedSprite2D" parent="VisualRoot" unique_id=271152184]
 sprite_frames = SubResource("SpriteFrames_benak")
 animation = &"down"
-frame_progress = 0.81426114
+frame_progress = 0.49957883
 script = ExtResource("2")
 animation_fps = 5.0
 animate_idle = true
@@ -490,5 +490,5 @@ disabled = true
 collision_mask = 2
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="InteractionArea" unique_id=1470933991]
-position = Vector2(0, -5)
+position = Vector2(0, -4.5)
 shape = SubResource("RectangleShape2D_area")
