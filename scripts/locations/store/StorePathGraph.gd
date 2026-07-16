@@ -25,7 +25,6 @@ const SHELF_ACCESS_COLUMN_EPSILON: float = 8.0
 const SHELF_ACCESS_NEAR_COLUMN_EPSILON: float = 28.0
 const MAX_SHELF_ACCESS_DISTANCE: float = 96.0
 const MAX_SHELF_ACCESS_CANDIDATES: int = 96
-const DEBUG_SHELF_ACCESS_RESOLUTION: bool = true
 
 var _store: Node2D = null
 var _markers: Node2D = null
@@ -183,9 +182,6 @@ func has_reachable_shelf_access(object: Node2D, candidate: Vector2) -> bool:
 
 func find_best_shelf_access(candidate_position: Vector2, shelf_object: Node2D) -> Dictionary:
 	var checked_candidates := 0
-	var blocked_candidates := 0
-	var unreachable_candidates := 0
-	var no_checkout_path_candidates := 0
 	var candidates := _get_shelf_access_candidates(candidate_position)
 
 	for access_candidate in candidates:
@@ -200,7 +196,6 @@ func find_best_shelf_access(candidate_position: Vector2, shelf_object: Node2D) -
 			continue
 
 		if not _is_npc_access_point_clear(access_point, shelf_object, candidate_position):
-			blocked_candidates += 1
 			continue
 
 		var reachable_node := _find_reachable_graph_node_for_access(
@@ -211,27 +206,21 @@ func find_best_shelf_access(candidate_position: Vector2, shelf_object: Node2D) -
 		)
 
 		if not bool(reachable_node.get("valid", false)):
-			unreachable_candidates += 1
 			continue
 
 		var graph_node := reachable_node.get("node", StringName()) as StringName
 		var graph_path := _find_checkout_graph_path(graph_node)
 
 		if graph_path.is_empty():
-			no_checkout_path_candidates += 1
 			continue
 
-		var result := {
+		return {
 			"valid": true,
 			"access_point": access_point,
 			"graph_node": graph_node,
 			"score": float(reachable_node.get("distance", 0.0)) + _get_graph_path_cost(graph_path)
 		}
 
-		_debug_shelf_access("success", shelf_object, candidate_position, result, candidates.size(), checked_candidates, blocked_candidates, unreachable_candidates, no_checkout_path_candidates)
-		return result
-
-	_debug_shelf_access("failed", shelf_object, candidate_position, {}, candidates.size(), checked_candidates, blocked_candidates, unreachable_candidates, no_checkout_path_candidates)
 	return {"valid": false}
 
 
@@ -266,44 +255,6 @@ func _store_access_metadata_from_result(object: Node2D, result: Dictionary) -> v
 
 	object.set_meta(ACCESS_META, result.get("access_point", Vector2.INF))
 	object.set_meta(ACCESS_NODE_META, result.get("graph_node", StringName()))
-
-
-func _debug_shelf_access(
-	event: String,
-	shelf_object: Node2D,
-	shelf_position: Vector2,
-	result: Dictionary,
-	total_candidates: int,
-	checked_candidates: int,
-	blocked_candidates: int,
-	unreachable_candidates: int,
-	no_checkout_path_candidates: int
-) -> void:
-	if not DEBUG_SHELF_ACCESS_RESOLUTION:
-		return
-
-	var shelf_name := "null"
-
-	if shelf_object != null:
-		shelf_name = shelf_object.name
-
-	print(
-		"SHELF_ACCESS_DEBUG event=%s shelf=%s shelf_pos=%s valid=%s access=%s node=%s total=%s checked=%s blocked=%s unreachable=%s no_checkout=%s limit=%s" %
-		[
-			event,
-			shelf_name,
-			str(shelf_position),
-			str(bool(result.get("valid", false))),
-			str(result.get("access_point", Vector2.INF)),
-			str(result.get("graph_node", StringName())),
-			str(total_candidates),
-			str(checked_candidates),
-			str(blocked_candidates),
-			str(unreachable_candidates),
-			str(no_checkout_path_candidates),
-			str(MAX_SHELF_ACCESS_CANDIDATES)
-		]
-	)
 
 
 func get_shelf_access_graph_node(shelf: Shelf) -> StringName:
