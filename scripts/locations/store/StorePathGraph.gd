@@ -8,6 +8,7 @@ const CASHIER: StringName = &"StorePathCashier"
 const QUEUE_FRONT: StringName = &"StorePathQueueFront"
 const ACCESS_META: StringName = &"npc_access_point"
 const ACCESS_NODE_META: StringName = &"npc_access_graph_node"
+const ACCESS_ROUTE_META: StringName = &"npc_access_surface_route"
 const PATH_ROLE_META: StringName = &"store_path_role"
 const SHELF_ANCHOR_META: StringName = &"store_path_allow_shelf_anchor"
 const ROLE_ENTRY: StringName = &"entry"
@@ -25,10 +26,17 @@ const SHELF_ACCESS_COLUMN_EPSILON: float = 8.0
 const SHELF_ACCESS_NEAR_COLUMN_EPSILON: float = 28.0
 const MAX_SHELF_ACCESS_DISTANCE: float = 96.0
 const MAX_SHELF_ACCESS_CANDIDATES: int = 96
+const SURFACE_CONNECTOR_LIMIT: int = 4
+const MAX_SURFACE_ROUTE_SEARCHES: int = 24
+const SURFACE_ALIGNMENT_EPSILON: float = 2.0
+const SURFACE_NEIGHBOR_MAX_DISTANCE: float = 36.0
+const DEBUG_SHELF_ACCESS_FAILURES: bool = false
 
 var _store: Node2D = null
 var _markers: Node2D = null
 var _shelf_access_points: Array[Vector2] = []
+var _surface_neighbor_cache := {}
+var _surface_neighbor_signature := ""
 var _cached_shelf_anchor_positions: Array[Vector2] = []
 var _cached_shelf_anchor_count: int = -1
 var _cached_graph_node_names: Array[StringName] = []
@@ -46,7 +54,18 @@ func setup(store: Node2D, markers: Node2D) -> void:
 
 
 func set_shelf_access_points(points: Array[Vector2]) -> void:
-	_shelf_access_points = points.duplicate()
+	var next_points := points.duplicate()
+
+	if _get_surface_points_signature(next_points) != _get_surface_points_signature(_shelf_access_points):
+		_surface_neighbor_cache.clear()
+		_surface_neighbor_signature = ""
+
+	_shelf_access_points = next_points
+
+
+func invalidate_surface_graph_cache() -> void:
+	_surface_neighbor_cache.clear()
+	_surface_neighbor_signature = ""
 
 
 func get_marker_for_role(role: StringName, fallback_node_name: StringName = StringName()) -> Marker2D:
@@ -132,7 +151,7 @@ func get_route_to_shelf_access(shelf: Shelf) -> Array[Vector2]:
 
 	var path := _find_graph_path(_get_role_node_name(ROLE_ENTRY, ENTRY), graph_node)
 	var route := _build_route_from_graph_path(path)
-	_append_orthogonal_route_to(route, access_point, true)
+	_append_surface_access_route_to(route, shelf, graph_node, access_point, true)
 	return _dedupe_route_points(route)
 
 
@@ -159,8 +178,9 @@ func get_route_from_shelf_to_cashier(shelf: Shelf) -> Array[Vector2]:
 		return []
 
 	var path := _find_checkout_graph_path(graph_node)
-	var route := _build_route_from_graph_path(path)
-	route = _prepend_orthogonal_route(access_point, route, true)
+	var route := _get_surface_access_route(shelf, graph_node, access_point)
+	route.reverse()
+	route.append_array(_build_route_from_graph_path(path))
 	return _dedupe_route_points(route)
 
 
@@ -188,6 +208,10 @@ func has_reachable_shelf_access(object: Node2D, candidate: Vector2) -> bool:
 func find_best_shelf_access(candidate_position: Vector2, shelf_object: Node2D) -> Dictionary:
 	var checked_candidates := 0
 	var candidates := _get_shelf_access_candidates(candidate_position)
+	var blocked_candidates := 0
+	var no_route_candidates := 0
+	var no_checkout_candidates := 0
+	var surface_searches := [0]
 
 	for access_candidate in candidates:
 		checked_candidates += 1
@@ -201,31 +225,44 @@ func find_best_shelf_access(candidate_position: Vector2, shelf_object: Node2D) -
 			continue
 
 		if not _is_npc_access_point_clear(access_point, shelf_object, candidate_position):
+			blocked_candidates += 1
 			continue
 
 		var reachable_node := _find_reachable_graph_node_for_access(
 			access_point,
 			access_candidate.get("graph_node", StringName()) as StringName,
 			shelf_object,
-			candidate_position
+			candidate_position,
+			surface_searches
 		)
 
 		if not bool(reachable_node.get("valid", false)):
+			no_route_candidates += 1
 			continue
 
 		var graph_node := reachable_node.get("node", StringName()) as StringName
 		var graph_path := _find_checkout_graph_path(graph_node)
 
 		if graph_path.is_empty():
+			no_checkout_candidates += 1
 			continue
 
 		return {
 			"valid": true,
 			"access_point": access_point,
 			"graph_node": graph_node,
+			"surface_route": reachable_node.get("route", []),
 			"score": float(reachable_node.get("distance", 0.0)) + _get_graph_path_cost(graph_path)
 		}
 
+	_print_shelf_access_failure(
+		candidate_position,
+		candidates.size(),
+		checked_candidates,
+		blocked_candidates,
+		no_route_candidates,
+		no_checkout_candidates
+	)
 	return {"valid": false}
 
 
@@ -250,6 +287,9 @@ func clear_shelf_access_metadata(object: Node2D) -> void:
 	if object.has_meta(ACCESS_NODE_META):
 		object.remove_meta(ACCESS_NODE_META)
 
+	if object.has_meta(ACCESS_ROUTE_META):
+		object.remove_meta(ACCESS_ROUTE_META)
+
 
 func _store_access_metadata_from_result(object: Node2D, result: Dictionary) -> void:
 	if object == null:
@@ -260,6 +300,7 @@ func _store_access_metadata_from_result(object: Node2D, result: Dictionary) -> v
 
 	object.set_meta(ACCESS_META, result.get("access_point", Vector2.INF))
 	object.set_meta(ACCESS_NODE_META, result.get("graph_node", StringName()))
+	object.set_meta(ACCESS_ROUTE_META, result.get("surface_route", []))
 
 
 func get_shelf_access_graph_node(shelf: Shelf) -> StringName:
@@ -317,15 +358,16 @@ func _find_reachable_graph_node_for_access(
 	access_point: Vector2,
 	preferred_node: StringName,
 	shelf_object: Node2D = null,
-	shelf_position: Vector2 = Vector2.INF
+	shelf_position: Vector2 = Vector2.INF,
+	surface_searches: Array = []
 ) -> Dictionary:
 	if preferred_node != StringName():
 		var preferred_marker := _get_graph_marker(preferred_node)
 
 		if preferred_marker != null:
-			var preferred_route := _make_orthogonal_route(access_point, preferred_marker.global_position, true)
+			var preferred_route := _make_orthogonal_route(preferred_marker.global_position, access_point, true)
 
-			if _is_route_clear(access_point, preferred_route, shelf_object, shelf_position):
+			if _is_route_clear(preferred_marker.global_position, preferred_route, shelf_object, shelf_position):
 				return {
 					"valid": true,
 					"node": preferred_node,
@@ -333,7 +375,458 @@ func _find_reachable_graph_node_for_access(
 					"distance": _get_manhattan_distance(access_point, preferred_marker.global_position)
 				}
 
-	return _find_nearest_reachable_graph_node(access_point, shelf_object, shelf_position)
+			var preferred_surface_route := _find_surface_route_between_marker_and_access(
+				preferred_node,
+				access_point,
+				shelf_object,
+				shelf_position,
+				surface_searches
+			)
+
+			if bool(preferred_surface_route.get("valid", false)):
+				return preferred_surface_route
+
+	var best_result := {"valid": false}
+	var best_score := INF
+
+	for node_name in _get_graph_node_names():
+		var marker := _get_graph_marker(node_name)
+
+		if marker == null:
+			continue
+
+		var direct_route := _make_orthogonal_route(marker.global_position, access_point, true)
+		var distance := _get_manhattan_distance(access_point, marker.global_position)
+
+		if _is_route_clear(marker.global_position, direct_route, shelf_object, shelf_position):
+			if distance < best_score:
+				best_score = distance
+				best_result = {
+					"valid": true,
+					"node": node_name,
+					"route": direct_route,
+					"distance": distance
+				}
+			continue
+
+		var surface_route := _find_surface_route_between_marker_and_access(
+			node_name,
+			access_point,
+			shelf_object,
+			shelf_position,
+			surface_searches
+		)
+
+		if not bool(surface_route.get("valid", false)):
+			continue
+
+		distance = float(surface_route.get("distance", INF))
+
+		if distance < best_score:
+			best_score = distance
+			best_result = surface_route
+
+	return best_result
+
+
+func _append_surface_access_route_to(
+	route: Array[Vector2],
+	shelf: Shelf,
+	graph_node: StringName,
+	access_point: Vector2,
+	route_from_graph: bool
+) -> void:
+	var access_route := _get_surface_access_route(shelf, graph_node, access_point)
+
+	if access_route.is_empty():
+		_append_orthogonal_route_to(route, access_point, true)
+		return
+
+	if not route_from_graph:
+		access_route.reverse()
+
+	route.append_array(access_route)
+
+
+func _get_surface_access_route(shelf: Shelf, graph_node: StringName, access_point: Vector2) -> Array[Vector2]:
+	if shelf != null and shelf.has_meta(ACCESS_ROUTE_META):
+		var route_meta: Variant = shelf.get_meta(ACCESS_ROUTE_META)
+
+		if route_meta is Array:
+			var route: Array[Vector2] = []
+
+			for point in route_meta:
+				if point is Vector2:
+					route.append(point)
+
+			if not route.is_empty():
+				return route
+
+	var result := _find_surface_route_between_marker_and_access(
+		graph_node,
+		access_point,
+		shelf,
+		shelf.global_position if shelf != null else Vector2.INF
+	)
+
+	if bool(result.get("valid", false)):
+		var rebuilt_route := result.get("route", []) as Array[Vector2]
+
+		if shelf != null:
+			shelf.set_meta(ACCESS_ROUTE_META, rebuilt_route)
+
+		return rebuilt_route
+
+	return []
+
+
+func _find_surface_route_between_marker_and_access(
+	graph_node: StringName,
+	access_point: Vector2,
+	shelf_object: Node2D = null,
+	shelf_position: Vector2 = Vector2.INF,
+	surface_searches: Array = []
+) -> Dictionary:
+	var marker := _get_graph_marker(graph_node)
+
+	if marker == null or not access_point.is_finite():
+		return {"valid": false}
+
+	if _shelf_access_points.is_empty():
+		return {"valid": false}
+
+	var marker_position := marker.global_position
+	var access_indices := _get_nearest_surface_anchor_indices(
+		access_point,
+		SURFACE_CONNECTOR_LIMIT,
+		shelf_object,
+		shelf_position
+	)
+	var marker_indices := _get_nearest_surface_anchor_indices(
+		marker_position,
+		SURFACE_CONNECTOR_LIMIT,
+		shelf_object,
+		shelf_position
+	)
+	var best_route: Array[Vector2] = []
+	var best_distance := INF
+
+	for marker_index in marker_indices:
+		var marker_anchor := _shelf_access_points[marker_index]
+		var marker_route := _make_orthogonal_route(marker_position, marker_anchor, true)
+
+		if not _is_route_clear(marker_position, marker_route, shelf_object, shelf_position):
+			continue
+
+		for access_index in access_indices:
+			if not _reserve_surface_route_search(surface_searches):
+				return {"valid": false}
+
+			var access_anchor := _shelf_access_points[access_index]
+			var access_route := _make_orthogonal_route(access_anchor, access_point, true)
+
+			if not _is_route_clear(access_anchor, access_route, shelf_object, shelf_position):
+				continue
+
+			var surface_path := _find_surface_anchor_path(marker_index, access_index, shelf_object, shelf_position)
+
+			if surface_path.is_empty():
+				continue
+
+			var route := marker_route.duplicate()
+			_append_surface_anchor_path_to_route(route, surface_path)
+			route.append_array(access_route)
+			route = _dedupe_route_points(route)
+
+			if route.is_empty() or not _is_route_clear(marker_position, route, shelf_object, shelf_position):
+				continue
+
+			var distance := _get_route_distance(marker_position, route)
+
+			if distance < best_distance:
+				best_distance = distance
+				best_route = route
+
+	if best_route.is_empty():
+		return {"valid": false}
+
+	return {
+		"valid": true,
+		"node": graph_node,
+		"route": best_route,
+		"distance": best_distance
+	}
+
+
+func _reserve_surface_route_search(surface_searches: Array) -> bool:
+	if surface_searches.is_empty():
+		return true
+
+	var current := int(surface_searches[0])
+
+	if current >= MAX_SURFACE_ROUTE_SEARCHES:
+		return false
+
+	surface_searches[0] = current + 1
+	return true
+
+
+func _get_nearest_surface_anchor_indices(
+	position: Vector2,
+	limit: int,
+	shelf_object: Node2D = null,
+	shelf_position: Vector2 = Vector2.INF
+) -> Array[int]:
+	var indices: Array[int] = []
+
+	if not position.is_finite():
+		return indices
+
+	for index in range(_shelf_access_points.size()):
+		var point := _shelf_access_points[index]
+
+		if not _is_npc_access_point_clear(point, shelf_object, shelf_position):
+			continue
+
+		indices.append(index)
+
+	indices.sort_custom(func(a: int, b: int) -> bool:
+		return _shelf_access_points[a].distance_to(position) < _shelf_access_points[b].distance_to(position)
+	)
+
+	if indices.size() <= limit:
+		return indices
+
+	var limited: Array[int] = []
+
+	for index in range(limit):
+		limited.append(indices[index])
+
+	return limited
+
+
+func _find_surface_anchor_path(
+	start_index: int,
+	goal_index: int,
+	shelf_object: Node2D = null,
+	shelf_position: Vector2 = Vector2.INF
+) -> Array[int]:
+	var result: Array[int] = []
+
+	if start_index < 0 or goal_index < 0:
+		return result
+
+	if start_index >= _shelf_access_points.size() or goal_index >= _shelf_access_points.size():
+		return result
+
+	if start_index == goal_index:
+		result.append(start_index)
+		return result
+
+	var frontier: Array[int] = [start_index]
+	var distances := {start_index: 0.0}
+	var previous := {}
+	var visited := {}
+
+	while not frontier.is_empty():
+		var current := _pop_lowest_cost_surface_node(frontier, distances)
+
+		if visited.has(current):
+			continue
+
+		visited[current] = true
+
+		if current == goal_index:
+			break
+
+		var current_position := _shelf_access_points[current]
+
+		for neighbor in _get_surface_anchor_neighbors(current):
+			if visited.has(neighbor):
+				continue
+
+			var neighbor_position := _shelf_access_points[neighbor]
+
+			if not _is_route_segment_clear(current_position, neighbor_position, shelf_object, shelf_position):
+				continue
+
+			var edge_cost := current_position.distance_to(neighbor_position)
+			var next_cost := float(distances[current]) + edge_cost
+
+			if not distances.has(neighbor) or next_cost < float(distances[neighbor]):
+				distances[neighbor] = next_cost
+				previous[neighbor] = current
+
+				if neighbor not in frontier:
+					frontier.append(neighbor)
+
+	if not distances.has(goal_index):
+		return result
+
+	var cursor := goal_index
+
+	while cursor != start_index:
+		result.push_front(cursor)
+		cursor = int(previous.get(cursor, -1))
+
+		if cursor < 0:
+			result.clear()
+			return result
+
+	result.push_front(start_index)
+	return result
+
+
+func _append_surface_anchor_path_to_route(route: Array[Vector2], path: Array[int]) -> void:
+	for index in path:
+		if index < 0 or index >= _shelf_access_points.size():
+			continue
+
+		route.append(_shelf_access_points[index])
+
+
+func _get_surface_anchor_neighbors(index: int) -> Array[int]:
+	_ensure_surface_neighbor_cache()
+
+	var raw_neighbors: Variant = _surface_neighbor_cache.get(index, [])
+	var neighbors: Array[int] = []
+
+	if raw_neighbors is Array:
+		for neighbor in raw_neighbors:
+			if neighbor is int:
+				neighbors.append(neighbor)
+
+	return neighbors
+
+
+func _ensure_surface_neighbor_cache() -> void:
+	var signature := _get_surface_points_signature(_shelf_access_points)
+
+	if _surface_neighbor_signature == signature:
+		return
+
+	_surface_neighbor_cache.clear()
+	_surface_neighbor_signature = signature
+
+	for index in range(_shelf_access_points.size()):
+		_surface_neighbor_cache[index] = _find_axis_surface_neighbors(index)
+
+
+func _find_axis_surface_neighbors(source_index: int) -> Array[int]:
+	var neighbors: Array[int] = []
+
+	if source_index < 0 or source_index >= _shelf_access_points.size():
+		return neighbors
+
+	var source_position := _shelf_access_points[source_index]
+	_append_surface_axis_neighbor(neighbors, source_index, source_position, true, -1.0)
+	_append_surface_axis_neighbor(neighbors, source_index, source_position, true, 1.0)
+	_append_surface_axis_neighbor(neighbors, source_index, source_position, false, -1.0)
+	_append_surface_axis_neighbor(neighbors, source_index, source_position, false, 1.0)
+	return neighbors
+
+
+func _append_surface_axis_neighbor(
+	neighbors: Array[int],
+	source_index: int,
+	source_position: Vector2,
+	horizontal: bool,
+	direction: float
+) -> void:
+	var best_index := -1
+	var best_distance := INF
+
+	for candidate_index in range(_shelf_access_points.size()):
+		if candidate_index == source_index:
+			continue
+
+		var candidate_position := _shelf_access_points[candidate_index]
+		var same_axis := (
+			absf(candidate_position.y - source_position.y) <= SURFACE_ALIGNMENT_EPSILON
+			if horizontal
+			else absf(candidate_position.x - source_position.x) <= SURFACE_ALIGNMENT_EPSILON
+		)
+
+		if not same_axis:
+			continue
+
+		var offset := (
+			candidate_position.x - source_position.x
+			if horizontal
+			else candidate_position.y - source_position.y
+		)
+
+		if signf(offset) != signf(direction):
+			continue
+
+		var distance := absf(offset)
+
+		if distance <= SURFACE_ALIGNMENT_EPSILON or distance > SURFACE_NEIGHBOR_MAX_DISTANCE:
+			continue
+
+		if distance >= best_distance:
+			continue
+
+		if not _is_route_segment_clear(source_position, candidate_position):
+			continue
+
+		best_index = candidate_index
+		best_distance = distance
+
+	if best_index >= 0 and best_index not in neighbors:
+		neighbors.append(best_index)
+
+
+func _pop_lowest_cost_surface_node(frontier: Array[int], distances: Dictionary) -> int:
+	var best_index := 0
+	var best_cost := INF
+
+	for index in range(frontier.size()):
+		var node_index := frontier[index]
+		var cost := float(distances.get(node_index, INF))
+
+		if cost < best_cost:
+			best_cost = cost
+			best_index = index
+
+	return frontier.pop_at(best_index)
+
+
+func _get_route_distance(start: Vector2, route: Array[Vector2]) -> float:
+	var distance := 0.0
+	var cursor := start
+
+	for point in route:
+		distance += cursor.distance_to(point)
+		cursor = point
+
+	return distance
+
+
+func _get_surface_points_signature(points: Array[Vector2]) -> String:
+	var parts: Array[String] = []
+
+	for point in points:
+		parts.append("%d,%d" % [roundi(point.x), roundi(point.y)])
+
+	return "|".join(parts)
+
+
+func _print_shelf_access_failure(
+	shelf_position: Vector2,
+	total: int,
+	checked: int,
+	blocked: int,
+	no_route: int,
+	no_checkout: int
+) -> void:
+	if not DEBUG_SHELF_ACCESS_FAILURES:
+		return
+
+	print(
+		"SHELF_ACCESS_DEBUG event=failed shelf_pos=%s total=%d checked=%d blocked=%d no_route=%d no_checkout=%d"
+		% [shelf_position, total, checked, blocked, no_route, no_checkout]
+	)
 
 
 func _get_shelf_access_candidates(shelf_position: Vector2) -> Array[Dictionary]:
@@ -374,7 +867,13 @@ func _get_shelf_access_candidates(shelf_position: Vector2) -> Array[Dictionary]:
 		if not is_equal_approx(horizontal_a, horizontal_b):
 			return horizontal_a < horizontal_b
 
-		return float(a.get("vertical_distance", INF)) < float(b.get("vertical_distance", INF))
+		var vertical_a := float(a.get("vertical_distance", INF))
+		var vertical_b := float(b.get("vertical_distance", INF))
+
+		if not is_equal_approx(vertical_a, vertical_b):
+			return vertical_a < vertical_b
+
+		return float(a.get("direct_distance", INF)) < float(b.get("direct_distance", INF))
 	)
 
 	return candidates
@@ -391,15 +890,16 @@ func _append_shelf_access_candidate(
 
 	var horizontal_distance := absf(access_point.x - shelf_position.x)
 	var vertical_distance := absf(access_point.y - shelf_position.y)
+	var direct_distance := access_point.distance_to(shelf_position)
 
-	if vertical_distance <= MARKER_ALIGNMENT_EPSILON or vertical_distance > MAX_SHELF_ACCESS_DISTANCE:
+	if direct_distance <= MARKER_ALIGNMENT_EPSILON or direct_distance > MAX_SHELF_ACCESS_DISTANCE:
 		return
 
 	var tier := 2
 
-	if horizontal_distance <= SHELF_ACCESS_COLUMN_EPSILON:
+	if horizontal_distance <= SHELF_ACCESS_COLUMN_EPSILON and vertical_distance > MARKER_ALIGNMENT_EPSILON:
 		tier = 0
-	elif horizontal_distance <= SHELF_ACCESS_NEAR_COLUMN_EPSILON:
+	elif horizontal_distance <= SHELF_ACCESS_NEAR_COLUMN_EPSILON and vertical_distance > MARKER_ALIGNMENT_EPSILON:
 		tier = 1
 
 	candidates.append({
@@ -407,7 +907,8 @@ func _append_shelf_access_candidate(
 		"graph_node": graph_node,
 		"tier": tier,
 		"horizontal_distance": horizontal_distance,
-		"vertical_distance": vertical_distance
+		"vertical_distance": vertical_distance,
+		"direct_distance": direct_distance
 	})
 
 

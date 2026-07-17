@@ -22,7 +22,7 @@ const CASHIER_FLOW_RESTRICTED_SIZE := Vector2(180, 110)
 const CASHIER_FLOW_RESTRICTED_OFFSET := Vector2(0, -40)
 const SHELF_INTERACTION_STAND_DISTANCE: float = 54.0
 const SHELF_DROP_DISTANCE: float = 28.0
-const SHELF_DROP_FRONT_DISTANCE: float = 56.0
+const SHELF_DROP_FRONT_DISTANCE: float = 36.0
 const SHELF_DROP_ANCHOR_SEARCH_RADIUS: float = 72.0
 const SHELF_DROP_ANCHOR_LIMIT: int = 12
 const RESTRICTED_DROP_MESSAGE_COUNT: int = 3
@@ -41,6 +41,7 @@ const DROP_REJECTION_COLLISION: StringName = &"collision"
 const DROP_REJECTION_REACHABILITY: StringName = &"reachability"
 const SHELF_DROP_FALLBACK_DISTANCE: float = 44.0
 const QUEUE_MARKER_DROP_BLOCK_SIZE := Vector2(56, 18)
+const PENDING_ACCESS_UPDATE_META: StringName = &"pending_shelf_access_update_token"
 const STORE_ENTRY_FALLBACK_POSITION := Vector2(240, 204)
 const STORE_STORAGE_RETURN_FALLBACK_POSITION := Vector2(383, 76)
 
@@ -49,10 +50,13 @@ var storage_scene: PackedScene = preload("res://scenes/locations/Storage.tscn")
 var yard_scene: PackedScene = preload("res://scenes/locations/Yard.tscn")
 var home_scene: PackedScene = preload("res://scenes/locations/Home.tscn")
 
-@export var shelf_placement_grid_origin: Vector2 = Vector2(25, 112)
-@export var shelf_placement_grid_cell_size: Vector2 = Vector2(40, 24)
-@export_range(1, 64, 1) var shelf_placement_grid_columns: int = 11
-@export_range(1, 32, 1) var shelf_placement_grid_rows: int = 7
+@export var shelf_placement_fallback_polygon: PackedVector2Array = PackedVector2Array([
+	Vector2(48, 86),
+	Vector2(458, 86),
+	Vector2(458, 236),
+	Vector2(48, 236)
+])
+@export_range(4.0, 48.0, 1.0) var shelf_placement_fallback_spacing: float = 18.0
 
 @onready var counter_pos: Marker2D = get_node_or_null("CounterPos") as Marker2D
 @onready var entrance_pos: Marker2D = get_node_or_null("EntrancePos") as Marker2D
@@ -87,7 +91,9 @@ var _restricted_placement_warning_line: Line2D = null
 var _restricted_placement_warning_tween: Tween = null
 var _store_path_graph: StorePathGraph = null
 var _placement_grid: StorePlacementGrid = null
-var _placement_grid_preview: Node = null
+var _placement_surface: Node = null
+var _placement_surface_anchor_cache: Array[Vector2] = []
+var _shelf_access_metadata_update_token: int = 0
 var _is_transitioning: bool = false
 var _shown_location_titles: Dictionary = {}
 var _completed_task_notices: Dictionary = {}
@@ -130,12 +136,10 @@ var ghost_shelf: Shelf = null
 func _ready() -> void:
 	add_to_group("store")
 	_placement_grid = StorePlacementGrid.new(
-		shelf_placement_grid_origin,
-		shelf_placement_grid_cell_size,
-		shelf_placement_grid_columns,
-		shelf_placement_grid_rows
+		shelf_placement_fallback_polygon,
+		shelf_placement_fallback_spacing
 	)
-	_placement_grid_preview = get_node_or_null("ShelfPlacementGridPreview")
+	_placement_surface = get_node_or_null("StorePlacementSurface")
 	_store_path_graph = StorePathGraph.new(self, store_path_markers)
 
 	_connect_manager_signals()
@@ -1162,11 +1166,16 @@ func _drop_carried_shelf_in_store(object: Node2D) -> void:
 		_show_drop_restriction_feedback(primary_restriction)
 		return
 
-	var drop_position := _find_safe_drop_position(object)
+	var drop_candidates: Array[Vector2] = []
+	var drop_position := primary_drop_position
+
+	if bool(primary_restriction.get("blocked", false)):
+		drop_candidates = _get_drop_candidates()
+		drop_position = _find_safe_drop_position(object, drop_candidates)
 
 	if drop_position == Vector2.INF:
 		if not bool(primary_restriction.get("blocked", false)):
-			primary_restriction = _get_drop_failure_context(object)
+			primary_restriction = _get_drop_failure_context(object, drop_candidates)
 
 		if not bool(primary_restriction.get("blocked", false)):
 			var primary_object_rect := _get_object_body_rect_at(object, primary_drop_position)
@@ -1185,11 +1194,11 @@ func _drop_carried_shelf_in_store(object: Node2D) -> void:
 	object.global_position = drop_position
 	object.z_index = 0
 	_set_shelf_carried_state(object, false)
-	_store_shelf_access_metadata(object, drop_position)
-	_register_installed_shelf(object)
+	if not object.is_in_group("shelves"):
+		object.add_to_group("shelves")
+	_show_passive_notification("Shelf placed in the store.", 2.0, true)
+	_schedule_post_shelf_drop_update(object, drop_position)
 	_set_customer_path_visual_visible(false)
-
-	_show_notification("Shelf placed in the store.")
 
 
 func _create_carry_shelf_blocker() -> void:
@@ -1251,16 +1260,16 @@ func _set_carry_shelf_blocker_enabled(_enabled: bool) -> void:
 	_carry_shelf_blocker_shape.disabled = true
 
 
-func _find_safe_drop_position(object: Node2D) -> Vector2:
-	for candidate in _get_drop_candidates():
+func _find_safe_drop_position(object: Node2D, candidates: Array[Vector2]) -> Vector2:
+	for candidate in candidates:
 		if not bool(_evaluate_shelf_drop_restriction(object, candidate).get("blocked", false)):
 			return candidate
 
 	return Vector2.INF
 
 
-func _get_drop_failure_context(object: Node2D) -> Dictionary:
-	for candidate in _get_drop_candidates():
+func _get_drop_failure_context(object: Node2D, candidates: Array[Vector2]) -> Dictionary:
+	for candidate in candidates:
 		var rejection := _evaluate_shelf_drop_restriction(object, candidate)
 
 		if bool(rejection.get("blocked", false)):
@@ -1273,11 +1282,9 @@ func _get_drop_candidates() -> Array[Vector2]:
 	var candidates: Array[Vector2] = []
 	var primary_position := _get_primary_shelf_drop_position()
 
+	candidates.append(primary_position)
 	candidates.append_array(_get_nearby_shelf_anchor_drop_candidates(primary_position, true))
 	candidates.append_array(_get_nearby_shelf_anchor_drop_candidates(player.global_position, false))
-
-	if primary_position not in candidates:
-		candidates.append(primary_position)
 
 	for offset in _get_directional_shelf_drop_fallbacks():
 		var candidate := player.global_position + offset
@@ -1342,43 +1349,33 @@ func _get_shelf_anchor_drop_score(anchor: Vector2, origin: Vector2, use_directio
 
 
 func _get_shelf_placement_grid_positions() -> Array[Vector2]:
+	if not _placement_surface_anchor_cache.is_empty():
+		return _placement_surface_anchor_cache
+
+	if _placement_surface == null:
+		_placement_surface = get_node_or_null("StorePlacementSurface")
+
+	if _placement_surface != null and _placement_surface.has_method("get_anchor_positions"):
+		var anchors: Variant = _placement_surface.call("get_anchor_positions")
+
+		if anchors is Array:
+			_placement_surface_anchor_cache.clear()
+
+			for anchor in anchors:
+				if anchor is Vector2:
+					_placement_surface_anchor_cache.append(anchor)
+
+		return _placement_surface_anchor_cache
+
 	if _placement_grid == null:
 		_placement_grid = StorePlacementGrid.new()
 
-	var grid_config := _get_shelf_placement_grid_config()
 	_placement_grid.setup(
-		grid_config["origin"],
-		grid_config["cell_size"],
-		grid_config["columns"],
-		grid_config["rows"]
+		shelf_placement_fallback_polygon,
+		shelf_placement_fallback_spacing
 	)
-	return _placement_grid.get_positions()
-
-
-func _get_shelf_placement_grid_config() -> Dictionary:
-	if _placement_grid_preview == null:
-		_placement_grid_preview = get_node_or_null("ShelfPlacementGridPreview")
-
-	if _placement_grid_preview != null:
-		var preview_origin: Vector2 = _placement_grid_preview.global_position
-		var grid_origin: Variant = _placement_grid_preview.get("grid_origin")
-
-		if grid_origin is Vector2:
-			preview_origin = _placement_grid_preview.to_global(grid_origin)
-
-		return {
-			"origin": preview_origin,
-			"cell_size": _placement_grid_preview.get("grid_cell_size"),
-			"columns": _placement_grid_preview.get("grid_columns"),
-			"rows": _placement_grid_preview.get("grid_rows")
-		}
-
-	return {
-		"origin": shelf_placement_grid_origin,
-		"cell_size": shelf_placement_grid_cell_size,
-		"columns": shelf_placement_grid_columns,
-		"rows": shelf_placement_grid_rows
-	}
+	_placement_surface_anchor_cache = _placement_grid.get_positions()
+	return _placement_surface_anchor_cache
 
 
 func _get_primary_shelf_drop_position() -> Vector2:
@@ -1789,12 +1786,56 @@ func _set_shelf_carried_state(object: Node2D, is_carried: bool) -> void:
 		_set_node_enabled_recursive(object, true)
 
 
-func _store_shelf_access_metadata(object: Node2D, _drop_position: Vector2) -> void:
-	_get_store_path_graph().clear_shelf_access_metadata(object)
+func _store_shelf_access_metadata(object: Node2D, drop_position: Vector2) -> void:
+	var graph := _get_store_path_graph()
+	graph.store_shelf_access_metadata(object, drop_position)
+
+
+func _schedule_post_shelf_drop_update(object: Node2D, drop_position: Vector2) -> void:
+	if object == null:
+		return
+
+	_shelf_access_metadata_update_token += 1
+	var update_token := _shelf_access_metadata_update_token
+	object.set_meta(PENDING_ACCESS_UPDATE_META, update_token)
+	_defer_post_shelf_drop_update(object, drop_position, update_token)
+
+
+func _defer_post_shelf_drop_update(object: Node2D, drop_position: Vector2, update_token: int) -> void:
+	await get_tree().process_frame
+	await get_tree().physics_frame
+
+	if object == null or not is_instance_valid(object):
+		return
+
+	if not object.has_meta(PENDING_ACCESS_UPDATE_META):
+		return
+
+	if int(object.get_meta(PENDING_ACCESS_UPDATE_META)) != update_token:
+		return
+
+	if object.has_meta("is_carried_storage_object") and bool(object.get_meta("is_carried_storage_object")):
+		object.remove_meta(PENDING_ACCESS_UPDATE_META)
+		return
+
+	object.remove_meta(PENDING_ACCESS_UPDATE_META)
+	await get_tree().create_timer(0.15).timeout
+
+	if object == null or not is_instance_valid(object):
+		return
+
+	if object.has_meta("is_carried_storage_object") and bool(object.get_meta("is_carried_storage_object")):
+		return
+
+	_register_installed_shelf(object)
 
 
 func _clear_shelf_access_metadata(object: Node2D) -> void:
-	_get_store_path_graph().clear_shelf_access_metadata(object)
+	var graph := _get_store_path_graph()
+	graph.clear_shelf_access_metadata(object)
+
+	if object != null and object.has_meta(PENDING_ACCESS_UPDATE_META):
+		object.remove_meta(PENDING_ACCESS_UPDATE_META)
 
 
 func _show_drop_restriction_feedback(restriction: Dictionary) -> void:
@@ -1936,14 +1977,7 @@ func _update_player_depth_override() -> void:
 	if player == null or cashier == null:
 		return
 
-	var is_behind_depth_object: bool = _is_player_behind_depth_object(
-		cashier,
-		CASHIER_DEPTH_HALF_WIDTH,
-		CASHIER_DEPTH_BACK_OFFSET,
-		CASHIER_DEPTH_FRONT_OFFSET
-	)
-
-	player.z_index = -1 if is_behind_depth_object else 0
+	player.z_index = 0
 
 
 func _is_player_behind_depth_object(
@@ -1978,7 +2012,7 @@ func _register_installed_shelf(object: Node2D) -> void:
 		_show_task_complete_notice("human_shelf_placed", "Human Shelf placed.")
 
 		if _human_items_placed < NORMAL_STOCK_REQUIRED:
-			_show_notification("Now stock the human shelf with normal items.", 3.0)
+			_show_passive_notification("Now stock the human shelf with normal items.", 3.0)
 
 	if object.name == "ShelfGhost" and object is Shelf:
 		_ghost_shelf_installed = true
@@ -2442,6 +2476,10 @@ func _get_current_objective_text() -> String:
 
 func _show_notification(text: String, duration: float = 2.0) -> void:
 	StoreNotificationBridge.show(get_tree(), text, duration)
+
+
+func _show_passive_notification(text: String, duration: float = 2.0, instant_text: bool = false) -> void:
+	StoreNotificationBridge.show(get_tree(), text, duration, false, instant_text)
 
 
 func _show_status_notification(text: String, duration: float = 1.0) -> void:

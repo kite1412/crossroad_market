@@ -27,6 +27,7 @@ const OBJECTIVE_ANIM_DURATION: float = 0.22
 var _notify_timer: float = 0.0
 var _notify_duration: float = NOTIFY_DURATION
 var _notify_full_chars: int = 0
+var _notify_instant_text: bool = false
 var _action_lock_timer: float = 0.0
 var _action_lock_sessions: int = 0
 var _notification_finished_emitted: bool = true
@@ -88,8 +89,11 @@ func _process(delta: float) -> void:
 	var elapsed: float = _notify_duration - _notify_timer
 	var progress: float = clamp(elapsed / _notify_duration, 0.0, 1.0)
 
-	var reveal_progress: float = clamp(progress / 0.35, 0.0, 1.0)
-	notification_label.visible_characters = int(reveal_progress * _notify_full_chars)
+	if _notify_instant_text:
+		notification_label.visible_characters = _notify_full_chars
+	else:
+		var reveal_progress: float = clamp(progress / 0.35, 0.0, 1.0)
+		notification_label.visible_characters = int(reveal_progress * _notify_full_chars)
 
 	if progress < 0.75:
 		notification_label.modulate.a = 1.0
@@ -185,13 +189,19 @@ func _find_visible_overlay_named(node: Node, node_name: String) -> bool:
 	return false
 
 
-func show_notification(text: String, duration: float = NOTIFY_DURATION, blocks_actions: bool = true) -> void:
+func show_notification(
+	text: String,
+	duration: float = NOTIFY_DURATION,
+	blocks_actions: bool = true,
+	instant_text: bool = false
+) -> void:
 	notification_label.visible = true
 	notification_label.text = text
 	_notify_full_chars = text.length()
 	_notify_duration = _get_readable_notification_duration(text, duration)
 	_notify_timer = _notify_duration
-	notification_label.visible_characters = 0
+	_notify_instant_text = instant_text
+	notification_label.visible_characters = _notify_full_chars if instant_text else 0
 	notification_label.modulate.a = 1.0
 	_notification_finished_emitted = false
 
@@ -555,6 +565,7 @@ func has_interactive_overlay_open() -> bool:
 
 func _finish_notification() -> void:
 	_notify_timer = 0.0
+	_notify_instant_text = false
 	_action_lock_timer = 0.0
 	notification_label.modulate.a = 0.0
 	notification_label.visible_characters = 0

@@ -1,35 +1,34 @@
 [gd_scene format=3 uid="uid://d0k6caqo7l0hn"]
 
 [ext_resource type="PackedScene" uid="uid://b1wj8f3aim6fb" path="res://scenes/player/Player.tscn" id="1_player"]
-[ext_resource type="Script" uid="uid://33mapa6rpeyi" path="res://scripts/locations/Store.gd" id="2_store"]
-[ext_resource type="PackedScene" uid="uid://c3jpds51r7i41" path="res://scenes/ui/Cashier.tscn" id="3_cashier"]
+[ext_resource type="Script" uid="uid://by4w0dl6ij82o" path="res://scripts/locations/Store.gd" id="2_store"]
+[ext_resource type="PackedScene" uid="uid://c3jpds51r7i41" path="res://scenes/locations/store/structure/Cashier.tscn" id="3_cashier"]
 [ext_resource type="PackedScene" uid="uid://dauvgwqeqn80k" path="res://scenes/ui/HUD.tscn" id="5_hud"]
 [ext_resource type="PackedScene" uid="uid://bhpkwnqnn3c67" path="res://scenes/locations/store/structure/StoreStructure.tscn" id="6_e2t5y"]
-[ext_resource type="Script" uid="uid://bo1heio3gctaa" path="res://scripts/locations/WorldLighting.gd" id="6_lighting"]
+[ext_resource type="Script" uid="uid://cftax4a7xovpj" path="res://scripts/locations/WorldLighting.gd" id="6_lighting"]
 [ext_resource type="PackedScene" uid="uid://br1sgb3dkgi8i" path="res://scenes/ui/ActivityCompletionNotification.tscn" id="7_0h4lu"]
-[ext_resource type="PackedScene" uid="uid://cn6wj8olihcj7" path="res://scenes/locations/store/structure/Table.tscn" id="7_ac5hg"]
-[ext_resource type="Script" uid="uid://bjp5fq8jdv4wb" path="res://scripts/objects/ActivityBoard.gd" id="7_activity_board"]
+[ext_resource type="Script" uid="uid://cv1loh5wawax2" path="res://scripts/objects/ActivityBoard.gd" id="7_activity_board"]
 [ext_resource type="Script" uid="uid://bo6xe1yfdwqhh" path="res://scripts/objects/OpenCloseBoard.gd" id="8_open_close_board"]
 [ext_resource type="PackedScene" uid="uid://bcn1tcfnwf23b" path="res://scenes/locations/store/structure/NpcFeedbackBoard.tscn" id="8_opsjd"]
-[ext_resource type="Script" uid="uid://bdtdcofpixvph" path="res://scripts/locations/store/StorePlacementGridDebug.gd" id="9_grid_debug"]
+[ext_resource type="Script" uid="uid://bw2pr8y4n5qpt" path="res://scripts/locations/store/StorePlacementGridDebug.gd" id="9_grid_debug"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_horizontal"]
-size = Vector2(480, 63.5)
+size = Vector2(480, 48)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_vertical"]
-size = Vector2(16, 270)
+size = Vector2(32, 270)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_storage_door_body"]
-size = Vector2(53, 13.75)
+size = Vector2(53, 10.75)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_storage_door"]
-size = Vector2(40, 22)
+size = Vector2(40, 36)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_yard_door_body"]
-size = Vector2(58, 37.5)
+size = Vector2(58, 20)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_yard_door"]
-size = Vector2(78, 70)
+size = Vector2(58, 31)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_customer_path_entry_to_aisle"]
 size = Vector2(72, 36)
@@ -44,16 +43,13 @@ size = Vector2(36, 64)
 size = Vector2(78, 18)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_open_close_board_area"]
-size = Vector2(220, 120)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_ry2rs"]
-size = Vector2(480, 5)
+size = Vector2(80, 44)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_activity_board_body"]
-size = Vector2(72, 20)
+size = Vector2(53, 31)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_activity_board_area"]
-size = Vector2(78, 45)
+size = Vector2(67, 31)
 
 [node name="Store" type="Node2D" unique_id=915059892]
 y_sort_enabled = true
@@ -138,19 +134,19 @@ visible = false
 y_sort_enabled = true
 
 [node name="Top" type="CollisionShape2D" parent="WorldBounds" unique_id=216272337]
-position = Vector2(240, 31.75)
+position = Vector2(240, 22)
 shape = SubResource("RectangleShape2D_wall_horizontal")
 
 [node name="Bottom" type="CollisionShape2D" parent="WorldBounds" unique_id=1216563998]
-position = Vector2(241, 303.5)
+position = Vector2(241, 264.5)
 shape = SubResource("RectangleShape2D_wall_horizontal")
 
 [node name="Left" type="CollisionShape2D" parent="WorldBounds" unique_id=251851224]
-position = Vector2(-8, 135)
+position = Vector2(-3, 135)
 shape = SubResource("RectangleShape2D_wall_vertical")
 
 [node name="Right" type="CollisionShape2D" parent="WorldBounds" unique_id=1503097467]
-position = Vector2(488, 135)
+position = Vector2(483, 135)
 shape = SubResource("RectangleShape2D_wall_vertical")
 
 [node name="StorageDoor" type="Area2D" parent="." unique_id=134542565]
@@ -170,11 +166,11 @@ polygon = PackedVector2Array(10, -2, 14, -2, 14, 2, 10, 2)
 [node name="DoorBody" type="StaticBody2D" parent="StorageDoor" unique_id=705277412]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StorageDoor/DoorBody" unique_id=1402322409]
-position = Vector2(1, 13.125)
+position = Vector2(1, 11.625)
 shape = SubResource("RectangleShape2D_storage_door_body")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StorageDoor" unique_id=1207501204]
-position = Vector2(0, -8)
+position = Vector2(1, -1)
 shape = SubResource("RectangleShape2D_storage_door")
 
 [node name="YardDoor" type="Area2D" parent="." unique_id=985532799]
@@ -195,11 +191,11 @@ metadata/_edit_use_anchors_ = true
 [node name="DoorBody" type="StaticBody2D" parent="YardDoor" unique_id=842596692]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="YardDoor/DoorBody" unique_id=641495373]
-position = Vector2(0, 5.75)
+position = Vector2(0, -7)
 shape = SubResource("RectangleShape2D_yard_door_body")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="YardDoor" unique_id=1576413889]
-position = Vector2(0, -4)
+position = Vector2(0, -13.5)
 shape = SubResource("RectangleShape2D_yard_door")
 
 [node name="StorePathMarkers" type="Node2D" parent="." unique_id=971356701]
@@ -241,15 +237,12 @@ metadata/store_path_role = "queue_back"
 position = Vector2(254, 228)
 metadata/store_path_role = "queue_back"
 
-[node name="ShelfPlacementGridPreview" type="Node2D" parent="." unique_id=947167669]
+[node name="StorePlacementSurface" type="Node2D" parent="." unique_id=947167669]
 z_index = 80
-position = Vector2(10, 74)
+position = Vector2(-23, -37)
 script = ExtResource("9_grid_debug")
-grid_origin = Vector2(0, 0)
-grid_cell_size = Vector2(15, 15)
-grid_columns = 32
-grid_rows = 12
-grid_color = Color(0.9319725, 0.703867, 0.685626, 0.25882354)
+surface_polygon = PackedVector2Array(52, 86, 475, 86, 475, 270, 52, 270)
+anchor_spacing = 12.0
 
 [node name="QueueDropZoneVisuals" type="Node2D" parent="." unique_id=715509124]
 visible = false
@@ -339,21 +332,19 @@ shape = SubResource("RectangleShape2D_open_close_board_body")
 position = Vector2(2, 34)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="OpenCloseBoard/InteractionArea" unique_id=52015257]
-position = Vector2(0, -130)
+position = Vector2(0, -146)
 shape = SubResource("RectangleShape2D_open_close_board_area")
 
 [node name="StoreStructure" parent="." unique_id=1722790553 instance=ExtResource("6_e2t5y")]
 
 [node name="Player" parent="." unique_id=1580443777 instance=ExtResource("1_player")]
-y_sort_enabled = true
 position = Vector2(240, 204)
 
 [node name="StoreEntryPos" type="Marker2D" parent="." unique_id=1935776190]
 position = Vector2(240, 204)
 
 [node name="StoreNpcFeedbackBoard" parent="." unique_id=998557072 instance=ExtResource("8_opsjd")]
-
-[node name="StoreTable" parent="." unique_id=712131603 instance=ExtResource("7_ac5hg")]
+position = Vector2(319, 222)
 
 [node name="WorldLighting" type="CanvasLayer" parent="." unique_id=949113073]
 visible = false
@@ -377,12 +368,6 @@ color = Color(0.13, 0.09, 0.04, 0.18)
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1532187267]
 
 [node name="ActivityCompletionNotification" parent="CanvasLayer" unique_id=1553991951 instance=ExtResource("7_0h4lu")]
-
-[node name="StoreBounds" type="StaticBody2D" parent="." unique_id=366479035]
-
-[node name="Top" type="CollisionShape2D" parent="StoreBounds" unique_id=1206819288]
-position = Vector2(240, 2.5)
-shape = SubResource("RectangleShape2D_ry2rs")
 
 [node name="ActivityBoard" type="StaticBody2D" parent="." unique_id=1078498867]
 position = Vector2(227, 41)
@@ -410,14 +395,14 @@ offset_bottom = -26.0
 color = Color(0.8, 0.63, 0.32, 1)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="ActivityBoard" unique_id=1957864924]
-position = Vector2(0, -14)
+position = Vector2(3.5, -8.5)
 shape = SubResource("RectangleShape2D_activity_board_body")
 
 [node name="InteractionArea" type="Area2D" parent="ActivityBoard" unique_id=1911289979]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="ActivityBoard/InteractionArea" unique_id=1570732406]
-position = Vector2(0, -14)
+position = Vector2(3.5, -8.5)
 shape = SubResource("RectangleShape2D_activity_board_area")
 
 [node name="Cashier" parent="." unique_id=386895166 instance=ExtResource("3_cashier")]
-position = Vector2(255, 93)
+position = Vector2(258, 96)
