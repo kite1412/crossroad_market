@@ -748,11 +748,12 @@ collision_mask = 5
 script = ExtResource("1")
 
 [node name="VisualRoot" type="Node2D" parent="." unique_id=411674259]
+position = Vector2(0, -23)
 
 [node name="SpriteMove" type="AnimatedSprite2D" parent="VisualRoot" unique_id=686780664]
 sprite_frames = SubResource("SpriteFrames_ro0t8")
 animation = &"down"
-frame_progress = 0.7326889
+frame_progress = 0.9153482
 script = ExtResource("2")
 animation_fps = 5.0
 animate_idle = true
@@ -761,7 +762,7 @@ direction_config = SubResource("AnimatedCharacterSpriteConfig_move")
 [node name="SpriteIdle" type="AnimatedSprite2D" parent="VisualRoot" unique_id=643144298]
 sprite_frames = SubResource("SpriteFrames_q4eru")
 animation = &"down"
-frame_progress = 0.7326889
+frame_progress = 0.9153482
 script = ExtResource("2")
 animation_fps = 5.0
 animate_idle = true
@@ -771,7 +772,7 @@ direction_config = SubResource("AnimatedCharacterSpriteConfig_idle")
 visible = false
 sprite_frames = SubResource("SpriteFrames_jeao8")
 animation = &"idle_down"
-frame_progress = 0.7326889
+frame_progress = 0.9153482
 script = ExtResource("2")
 animation_fps = 5.0
 animate_idle = true
@@ -787,7 +788,7 @@ color = Color(0.259, 0.576, 1, 1)
 metadata/_edit_use_anchors_ = true
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1558566238]
-position = Vector2(0, 7.5)
+position = Vector2(0, -7.5)
 shape = SubResource("RectangleShape2D_p0vlq")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=1554819470]
@@ -797,5 +798,5 @@ position_smoothing_enabled = true
 [node name="InteractionArea" type="Area2D" parent="." unique_id=235852167]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="InteractionArea" unique_id=1042428147]
-position = Vector2(0, -0.5)
+position = Vector2(0, -22.5)
 shape = SubResource("RectangleShape2D_v6fml")

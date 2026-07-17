@@ -3,31 +3,30 @@
 [ext_resource type="Script" uid="uid://byjnuw3njeetx" path="res://scripts/objects/Shelf.gd" id="1_nf23d"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_interact"]
-size = Vector2(64, 48)
+size = Vector2(64, 47)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
-size = Vector2(64, 39)
+size = Vector2(64, 24)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_af1rm"]
-size = Vector2(20, 16)
+size = Vector2(21.3333, 24)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_nf23d"]
-size = Vector2(20, 16)
+size = Vector2(21.3333, 24)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_yvbur"]
-size = Vector2(20, 16)
+size = Vector2(21.3333, 24)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wcknk"]
-size = Vector2(20, 16)
+size = Vector2(21.3333, 24)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_xd4ll"]
-size = Vector2(20, 16)
+size = Vector2(21.3333, 24)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_kuack"]
-size = Vector2(20, 16)
+size = Vector2(21.3333, 24)
 
 [node name="Shelf" type="Node2D" unique_id=1353709811]
-y_sort_enabled = true
 script = ExtResource("1_nf23d")
 
 [node name="VisualRoot" type="Node2D" parent="." unique_id=1552276096]
@@ -41,59 +40,52 @@ offset_right = 32.0
 color = Color(0.7, 0.5, 0.3, 1)
 
 [node name="InteractionArea" type="Area2D" parent="." unique_id=673702384]
+position = Vector2(0, -17)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="InteractionArea" unique_id=217399561]
-y_sort_enabled = true
-position = Vector2(0, -24)
+position = Vector2(0, -7.5)
 shape = SubResource("RectangleShape2D_interact")
 
 [node name="PhysicsBody" type="StaticBody2D" parent="." unique_id=1397039525]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="PhysicsBody" unique_id=1234491431]
-position = Vector2(0, -19.5)
+position = Vector2(0, -12)
 shape = SubResource("RectangleShape2D_body")
 
 [node name="Slots" type="Node2D" parent="." unique_id=815516597]
-position = Vector2(0, 9)
 
 [node name="Slot0" type="Area2D" parent="Slots" unique_id=1041457075]
-position = Vector2(-20, -36)
+position = Vector2(-21.3333, -36)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Slots/Slot0" unique_id=1119126875]
-position = Vector2(0, -4)
 shape = SubResource("RectangleShape2D_af1rm")
 
 [node name="Slot1" type="Area2D" parent="Slots" unique_id=218059822]
 position = Vector2(0, -36)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Slots/Slot1" unique_id=1811112605]
-position = Vector2(0, -4)
 shape = SubResource("RectangleShape2D_nf23d")
 
 [node name="Slot2" type="Area2D" parent="Slots" unique_id=887197498]
-position = Vector2(20, -36)
+position = Vector2(21.3333, -36)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Slots/Slot2" unique_id=1254801357]
-position = Vector2(0, -4)
 shape = SubResource("RectangleShape2D_yvbur")
 
 [node name="Slot3" type="Area2D" parent="Slots" unique_id=708980556]
-position = Vector2(-20, -12)
+position = Vector2(-21.3333, -12)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Slots/Slot3" unique_id=1653582951]
-position = Vector2(0, -12)
 shape = SubResource("RectangleShape2D_wcknk")
 
 [node name="Slot4" type="Area2D" parent="Slots" unique_id=849157140]
 position = Vector2(0, -12)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Slots/Slot4" unique_id=123626644]
-position = Vector2(0, -12)
 shape = SubResource("RectangleShape2D_xd4ll")
 
 [node name="Slot5" type="Area2D" parent="Slots" unique_id=765638578]
-position = Vector2(20, -12)
+position = Vector2(21.3333, -12)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Slots/Slot5" unique_id=614442495]
-position = Vector2(0, -12)
 shape = SubResource("RectangleShape2D_kuack")

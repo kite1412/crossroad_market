@@ -3,16 +3,19 @@
 [ext_resource type="Texture2D" uid="uid://be3xsyx5m1fyk" path="res://assets/store/npc-feedback-board.png" id="1_ehuxv"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ry2rs"]
-size = Vector2(34, 19)
+size = Vector2(34, 14)
 
 [node name="NpcFeedbackBoard" type="Node2D" unique_id=998557072]
 
 [node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=17267162]
 
-[node name="NpcFeedbackBoard" type="Sprite2D" parent="StaticBody2D" unique_id=1406884544]
-position = Vector2(240, 135)
+[node name="AssetSprite" type="Sprite2D" parent="StaticBody2D" unique_id=1406884544]
+position = Vector2(-17, -34)
 texture = ExtResource("1_ehuxv")
+centered = false
+region_enabled = true
+region_rect = Rect2(301, 187, 34, 34)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=406131456]
-position = Vector2(318, 211.5)
+position = Vector2(0, -12)
 shape = SubResource("RectangleShape2D_ry2rs")
