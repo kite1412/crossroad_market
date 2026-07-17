@@ -11,6 +11,7 @@
 [ext_resource type="Script" uid="uid://bo6xe1yfdwqhh" path="res://scripts/objects/OpenCloseBoard.gd" id="8_open_close_board"]
 [ext_resource type="PackedScene" uid="uid://bcn1tcfnwf23b" path="res://scenes/locations/store/structure/NpcFeedbackBoard.tscn" id="8_opsjd"]
 [ext_resource type="Script" uid="uid://tmsfcq05xobk" path="res://scripts/locations/store/StorePlacementGridDebug.gd" id="9_grid_debug"]
+[ext_resource type="PackedScene" uid="uid://0gghjrd4abwo" path="res://scenes/locations/store/structure/BoardTax.tscn" id="12_opsjd"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_horizontal"]
 size = Vector2(480, 48)
@@ -405,3 +406,5 @@ shape = SubResource("RectangleShape2D_activity_board_area")
 
 [node name="Cashier" parent="." unique_id=386895166 instance=ExtResource("3_cashier")]
 position = Vector2(258, 96)
+
+[node name="BoardTax" parent="." unique_id=271375145 instance=ExtResource("12_opsjd")]

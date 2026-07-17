@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://0gghjrd4abwo"]
+
+[ext_resource type="Texture2D" uid="uid://cpe7iulu6eg5r" path="res://assets/store/board-tax.png" id="1_s2u2j"]
+
+[node name="BoardTax" type="Node2D" unique_id=271375145]
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=133345113]
+position = Vector2(240, 135)
+texture = ExtResource("1_s2u2j")
