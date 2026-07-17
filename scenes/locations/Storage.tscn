@@ -1,12 +1,14 @@
 [gd_scene format=3 uid="uid://bdnwm42gkma72"]
 
-[ext_resource type="Script" uid="uid://dq8v7xm2y3pkl" path="res://scripts/locations/Storage.gd" id="1_storage"]
+[ext_resource type="Script" uid="uid://dfc0qo1xtfmn3" path="res://scripts/locations/Storage.gd" id="1_storage"]
 [ext_resource type="PackedScene" uid="uid://catgco5tfi312" path="res://scenes/objects/SupplyBox.tscn" id="2_supply_box"]
-[ext_resource type="Script" uid="uid://dyfcg4fpvs7ga" path="res://scripts/objects/MysterySupplyBox.gd" id="3_mystery_box"]
+[ext_resource type="Script" uid="uid://bj1v64tu0xt4a" path="res://scripts/objects/MysterySupplyBox.gd" id="3_mystery_box"]
 [ext_resource type="PackedScene" uid="uid://cvet81vdrn7lk" path="res://scenes/objects/Shelf.tscn" id="4_shelf"]
-[ext_resource type="Script" uid="uid://cftax4a7xovpj" path="res://scripts/locations/WorldLighting.gd" id="5_lighting"]
+[ext_resource type="Script" uid="uid://bo1heio3gctaa" path="res://scripts/locations/WorldLighting.gd" id="5_lighting"]
 [ext_resource type="PackedScene" uid="uid://br1sgb3dkgi8i" path="res://scenes/ui/ActivityCompletionNotification.tscn" id="6_xqq5b"]
 [ext_resource type="Script" uid="uid://cjjcspebaasm0" path="res://scripts/objects/StorageRestockTerminal.gd" id="7_restock_terminal"]
+[ext_resource type="Texture2D" uid="uid://2fxl2iwyi5mx" path="res://assets/store/human-shelf.png" id="8_10ru3"]
+[ext_resource type="Texture2D" uid="uid://d24vy1yffvypp" path="res://assets/store/ghost-shelf.png" id="9_ieyae"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_horizontal"]
 size = Vector2(480, 61)
@@ -28,6 +30,57 @@ size = Vector2(64, 38)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_locked_ghost"]
 size = Vector2(160, 270)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_dnb1a"]
+size = Vector2(88, 60.5)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_xomv4"]
+size = Vector2(76, 38)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_31yo3"]
+size = Vector2(16, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_f4x8s"]
+size = Vector2(16, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_nv8ps"]
+size = Vector2(16, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_oyi2s"]
+size = Vector2(16, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_68gkr"]
+size = Vector2(16, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_2am28"]
+size = Vector2(16, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ry2rs"]
+size = Vector2(16, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_rusou"]
+size = Vector2(90, 60.5)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_g57a8"]
+size = Vector2(80, 36)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_xlp6v"]
+size = Vector2(8, 8)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_dwqbd"]
+size = Vector2(16, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_umemk"]
+size = Vector2(16, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_4dciv"]
+size = Vector2(16, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_eynth"]
+size = Vector2(16, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_3yt53"]
+size = Vector2(16, 16)
 
 [node name="Storage" type="Node2D" unique_id=1215434071]
 y_sort_enabled = true
@@ -123,12 +176,6 @@ items_to_give = Array[String](["bread", "water", "painkiller", "bandage"])
 [node name="PlaceholderRect" parent="Normal/VisualRoot" index="1" unique_id=1478309429]
 color = Color(0.46, 0.31, 0.16, 1)
 
-[node name="ShelfHuman" parent="." unique_id=155469397 instance=ExtResource("4_shelf")]
-position = Vector2(168, 118)
-
-[node name="PlaceholderRect" parent="ShelfHuman/VisualRoot" parent_id_path=PackedInt32Array(155469397, 1552276096) index="1" unique_id=28098589]
-metadata/_edit_use_anchors_ = true
-
 [node name="Mystery" parent="." unique_id=2107622966 instance=ExtResource("2_supply_box")]
 position = Vector2(374, 218)
 script = ExtResource("3_mystery_box")
@@ -139,20 +186,15 @@ items_to_give = Array[String](["phantom_ice_cream", "fresh_tombstone", "mandrake
 [node name="PlaceholderRect" parent="Mystery/VisualRoot" index="1" unique_id=1478309429]
 color = Color(0.22, 0.18, 0.34, 1)
 
-[node name="ShelfGhost" parent="." unique_id=2014346637 instance=ExtResource("4_shelf")]
-position = Vector2(360, 118)
-shelf_type = 1
-
-[node name="PlaceholderRect" parent="ShelfGhost/VisualRoot" parent_id_path=PackedInt32Array(2014346637, 1552276096) index="1" unique_id=28098589]
-metadata/_edit_use_anchors_ = true
-
 [node name="LockedGhostBlocker" type="StaticBody2D" parent="." unique_id=332481026]
+visible = false
 position = Vector2(400, 135)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="LockedGhostBlocker" unique_id=1844381840]
 shape = SubResource("RectangleShape2D_locked_ghost")
 
 [node name="LockedGhostSection" type="ColorRect" parent="." unique_id=275553101]
+visible = false
 z_index = 70
 offset_left = 320.0
 offset_right = 480.0
@@ -177,7 +219,132 @@ color = Color(0.09, 0.07, 0.12, 0.16)
 
 [node name="ActivityCompletionNotification" parent="CanvasLayer" unique_id=1553991951 instance=ExtResource("6_xqq5b")]
 
+[node name="ShelfHuman" parent="." unique_id=1353709811 instance=ExtResource("4_shelf")]
+position = Vector2(168, 118)
+
+[node name="AssetSprite" parent="ShelfHuman/VisualRoot" parent_id_path=PackedInt32Array(1353709811, 1552276096) index="0" unique_id=1116925469]
+texture = ExtResource("8_10ru3")
+
+[node name="PlaceholderRect" parent="ShelfHuman/VisualRoot" parent_id_path=PackedInt32Array(1353709811, 1552276096) index="1" unique_id=28098589]
+visible = false
+metadata/_edit_use_anchors_ = true
+
+[node name="CollisionShape2D" parent="ShelfHuman/InteractionArea" parent_id_path=PackedInt32Array(1353709811, 673702384) index="0" unique_id=217399561]
+position = Vector2(0, 31.25)
+shape = SubResource("RectangleShape2D_dnb1a")
+
+[node name="CollisionShape2D" parent="ShelfHuman/PhysicsBody" parent_id_path=PackedInt32Array(1353709811, 1397039525) index="0" unique_id=1234491431]
+position = Vector2(0, 18)
+shape = SubResource("RectangleShape2D_xomv4")
+
+[node name="CollisionShape2D" parent="ShelfHuman/Slots/Slot0" parent_id_path=PackedInt32Array(1353709811, 1041457075) index="0" unique_id=1119126875]
+position = Vector2(1.3332977, 22)
+shape = SubResource("RectangleShape2D_31yo3")
+
+[node name="CollisionShape2D" parent="ShelfHuman/Slots/Slot1" parent_id_path=PackedInt32Array(1353709811, 218059822) index="0" unique_id=1811112605]
+position = Vector2(0, 22)
+shape = SubResource("RectangleShape2D_f4x8s")
+
+[node name="CollisionShape2D" parent="ShelfHuman/Slots/Slot2" parent_id_path=PackedInt32Array(1353709811, 887197498) index="0" unique_id=1254801357]
+position = Vector2(-1.3332977, 22)
+shape = SubResource("RectangleShape2D_nv8ps")
+
+[node name="CollisionShape2D" parent="ShelfHuman/Slots/Slot3" parent_id_path=PackedInt32Array(1353709811, 708980556) index="0" unique_id=1653582951]
+position = Vector2(1.3332977, 14)
+shape = SubResource("RectangleShape2D_oyi2s")
+
+[node name="CollisionShape2D" parent="ShelfHuman/Slots/Slot4" parent_id_path=PackedInt32Array(1353709811, 849157140) index="0" unique_id=123626644]
+position = Vector2(0, 14)
+shape = SubResource("RectangleShape2D_68gkr")
+
+[node name="CollisionShape2D" parent="ShelfHuman/Slots/Slot5" parent_id_path=PackedInt32Array(1353709811, 765638578) index="0" unique_id=614442495]
+position = Vector2(-1.3332977, 14)
+shape = SubResource("RectangleShape2D_2am28")
+
+[node name="Slot6" type="Area2D" parent="ShelfHuman/Slots" parent_id_path=PackedInt32Array(1353709811, 815516597) index="6" unique_id=789959516]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ShelfHuman/Slots/Slot6" unique_id=1383625466]
+position = Vector2(-20, 18)
+shape = SubResource("RectangleShape2D_ry2rs")
+
+[node name="Slot7" type="Area2D" parent="ShelfHuman/Slots" parent_id_path=PackedInt32Array(1353709811, 815516597) index="7" unique_id=562117297]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ShelfHuman/Slots/Slot7" unique_id=1419500686]
+position = Vector2(0, 18)
+shape = SubResource("RectangleShape2D_ry2rs")
+
+[node name="Slot8" type="Area2D" parent="ShelfHuman/Slots" parent_id_path=PackedInt32Array(1353709811, 815516597) index="8" unique_id=557568649]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ShelfHuman/Slots/Slot8" unique_id=1881479675]
+position = Vector2(20, 18)
+shape = SubResource("RectangleShape2D_ry2rs")
+
+[node name="ShelfGhost" parent="." unique_id=1533134813 instance=ExtResource("4_shelf")]
+position = Vector2(365, 118)
+shelf_type = 1
+
+[node name="AssetSprite" parent="ShelfGhost/VisualRoot" parent_id_path=PackedInt32Array(1533134813, 1552276096) index="0" unique_id=1116925469]
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("9_ieyae")
+
+[node name="PlaceholderRect" parent="ShelfGhost/VisualRoot" parent_id_path=PackedInt32Array(1533134813, 1552276096) index="1" unique_id=28098589]
+visible = false
+metadata/_edit_use_anchors_ = true
+
+[node name="CollisionShape2D" parent="ShelfGhost/InteractionArea" parent_id_path=PackedInt32Array(1533134813, 673702384) index="0" unique_id=217399561]
+position = Vector2(0, 32.25)
+shape = SubResource("RectangleShape2D_rusou")
+
+[node name="CollisionShape2D" parent="ShelfGhost/PhysicsBody" parent_id_path=PackedInt32Array(1533134813, 1397039525) index="0" unique_id=1234491431]
+position = Vector2(0, 20)
+shape = SubResource("RectangleShape2D_g57a8")
+
+[node name="CollisionShape2D" parent="ShelfGhost/Slots/Slot0" parent_id_path=PackedInt32Array(1533134813, 1041457075) index="0" unique_id=1119126875]
+position = Vector2(12.333313, 30)
+shape = SubResource("RectangleShape2D_xlp6v")
+
+[node name="CollisionShape2D" parent="ShelfGhost/Slots/Slot1" parent_id_path=PackedInt32Array(1533134813, 218059822) index="0" unique_id=1811112605]
+position = Vector2(0, 23)
+shape = SubResource("RectangleShape2D_dwqbd")
+
+[node name="CollisionShape2D" parent="ShelfGhost/Slots/Slot2" parent_id_path=PackedInt32Array(1533134813, 887197498) index="0" unique_id=1254801357]
+position = Vector2(-1.333313, 23)
+shape = SubResource("RectangleShape2D_umemk")
+
+[node name="CollisionShape2D" parent="ShelfGhost/Slots/Slot3" parent_id_path=PackedInt32Array(1533134813, 708980556) index="0" unique_id=1653582951]
+position = Vector2(1.333313, 15)
+shape = SubResource("RectangleShape2D_4dciv")
+
+[node name="CollisionShape2D" parent="ShelfGhost/Slots/Slot4" parent_id_path=PackedInt32Array(1533134813, 849157140) index="0" unique_id=123626644]
+position = Vector2(0, 15)
+shape = SubResource("RectangleShape2D_eynth")
+
+[node name="CollisionShape2D" parent="ShelfGhost/Slots/Slot5" parent_id_path=PackedInt32Array(1533134813, 765638578) index="0" unique_id=614442495]
+position = Vector2(-1.333313, 15)
+shape = SubResource("RectangleShape2D_3yt53")
+
+[node name="Slot6" type="Area2D" parent="ShelfGhost/Slots" parent_id_path=PackedInt32Array(1533134813, 815516597) index="6" unique_id=1059571632]
+position = Vector2(21.3333, -12)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ShelfGhost/Slots/Slot6" unique_id=97074623]
+position = Vector2(-41.333313, 32)
+shape = SubResource("RectangleShape2D_3yt53")
+
+[node name="Slot7" type="Area2D" parent="ShelfGhost/Slots" parent_id_path=PackedInt32Array(1533134813, 815516597) index="7" unique_id=129046259]
+position = Vector2(21.3333, -12)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ShelfGhost/Slots/Slot7" unique_id=1702251341]
+position = Vector2(-21.333313, 32)
+shape = SubResource("RectangleShape2D_3yt53")
+
+[node name="Slot8" type="Area2D" parent="ShelfGhost/Slots" parent_id_path=PackedInt32Array(1533134813, 815516597) index="8" unique_id=15765835]
+position = Vector2(21.3333, -12)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ShelfGhost/Slots/Slot8" unique_id=1558064191]
+position = Vector2(-1.333313, 32)
+shape = SubResource("RectangleShape2D_3yt53")
+
 [editable path="Normal"]
-[editable path="ShelfHuman"]
 [editable path="Mystery"]
+[editable path="ShelfHuman"]
 [editable path="ShelfGhost"]

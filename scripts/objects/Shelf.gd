@@ -2,7 +2,7 @@ class_name Shelf
 extends Node2D
 
 @export var shelf_type: ItemData.ShelfType = ItemData.ShelfType.HUMAN
-@export var max_slots: int = 6
+@export var max_slots: int = 9
 
 signal item_placed(slot_index: int, item_id: String)
 signal item_removed(slot_index: int, item_id: String)
@@ -161,6 +161,7 @@ func _refresh_slot_visual(slot_index: int, item_id: String) -> void:
 
 	if item_sprite == null:
 		item_sprite = Sprite2D.new()
+		item_sprite.scale = Vector2(0.5, 0.5)
 		item_sprite.name = "ItemSprite"
 		item_sprite.z_index = 1
 		var collision_shape := slot.get_node_or_null("CollisionShape2D") as CollisionShape2D
