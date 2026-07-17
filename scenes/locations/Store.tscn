@@ -1,16 +1,16 @@
 [gd_scene format=3 uid="uid://d0k6caqo7l0hn"]
 
 [ext_resource type="PackedScene" uid="uid://b1wj8f3aim6fb" path="res://scenes/player/Player.tscn" id="1_player"]
-[ext_resource type="Script" uid="uid://by4w0dl6ij82o" path="res://scripts/locations/Store.gd" id="2_store"]
+[ext_resource type="Script" uid="uid://33mapa6rpeyi" path="res://scripts/locations/Store.gd" id="2_store"]
 [ext_resource type="PackedScene" uid="uid://c3jpds51r7i41" path="res://scenes/locations/store/structure/Cashier.tscn" id="3_cashier"]
 [ext_resource type="PackedScene" uid="uid://dauvgwqeqn80k" path="res://scenes/ui/HUD.tscn" id="5_hud"]
 [ext_resource type="PackedScene" uid="uid://bhpkwnqnn3c67" path="res://scenes/locations/store/structure/StoreStructure.tscn" id="6_e2t5y"]
-[ext_resource type="Script" uid="uid://cftax4a7xovpj" path="res://scripts/locations/WorldLighting.gd" id="6_lighting"]
+[ext_resource type="Script" uid="uid://bo1heio3gctaa" path="res://scripts/locations/WorldLighting.gd" id="6_lighting"]
 [ext_resource type="PackedScene" uid="uid://br1sgb3dkgi8i" path="res://scenes/ui/ActivityCompletionNotification.tscn" id="7_0h4lu"]
-[ext_resource type="Script" uid="uid://cv1loh5wawax2" path="res://scripts/objects/ActivityBoard.gd" id="7_activity_board"]
+[ext_resource type="Script" uid="uid://bjp5fq8jdv4wb" path="res://scripts/objects/ActivityBoard.gd" id="7_activity_board"]
 [ext_resource type="Script" uid="uid://bo6xe1yfdwqhh" path="res://scripts/objects/OpenCloseBoard.gd" id="8_open_close_board"]
 [ext_resource type="PackedScene" uid="uid://bcn1tcfnwf23b" path="res://scenes/locations/store/structure/NpcFeedbackBoard.tscn" id="8_opsjd"]
-[ext_resource type="Script" uid="uid://bw2pr8y4n5qpt" path="res://scripts/locations/store/StorePlacementGridDebug.gd" id="9_grid_debug"]
+[ext_resource type="Script" uid="uid://tmsfcq05xobk" path="res://scripts/locations/store/StorePlacementGridDebug.gd" id="9_grid_debug"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_horizontal"]
 size = Vector2(480, 48)
@@ -347,7 +347,6 @@ position = Vector2(240, 204)
 position = Vector2(319, 222)
 
 [node name="WorldLighting" type="CanvasLayer" parent="." unique_id=949113073]
-visible = false
 script = ExtResource("6_lighting")
 morning_color = Color(0.13, 0.09, 0.04, 0.18)
 day_color = Color(1, 0.93, 0.58, 0.05)
