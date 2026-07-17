@@ -202,15 +202,15 @@ shape = SubResource("RectangleShape2D_yard_door")
 position = Vector2(-14, -39)
 
 [node name="StorePathEntry" type="Marker2D" parent="StorePathMarkers" unique_id=1066596933]
-position = Vector2(254, 243)
+position = Vector2(254, 277)
 metadata/store_path_role = "entry"
 
 [node name="StorePathExit" type="Marker2D" parent="StorePathMarkers" unique_id=1608747220]
-position = Vector2(254, 243)
+position = Vector2(254, 277)
 metadata/store_path_role = "exit"
 
 [node name="StorePathEnterStore" type="Marker2D" parent="StorePathMarkers" unique_id=84289032]
-position = Vector2(254, 243)
+position = Vector2(254, 277)
 metadata/store_path_role = "enter_store"
 
 [node name="StorePathAisleRight" type="Marker2D" parent="StorePathMarkers" unique_id=490125028]
@@ -226,15 +226,15 @@ position = Vector2(397, 109)
 metadata/store_path_role = "storage_return"
 
 [node name="StorePathQueueFront" type="Marker2D" parent="StorePathMarkers" unique_id=1532996586]
-position = Vector2(254, 188)
+position = Vector2(272, 140)
 metadata/store_path_role = "queue_front"
 
 [node name="StorePathQueueBack1" type="Marker2D" parent="StorePathMarkers" unique_id=666068317]
-position = Vector2(254, 208)
+position = Vector2(272, 160)
 metadata/store_path_role = "queue_back"
 
 [node name="StorePathQueueBack2" type="Marker2D" parent="StorePathMarkers" unique_id=366603415]
-position = Vector2(254, 228)
+position = Vector2(272, 180)
 metadata/store_path_role = "queue_back"
 
 [node name="StorePlacementSurface" type="Node2D" parent="." unique_id=947167669]

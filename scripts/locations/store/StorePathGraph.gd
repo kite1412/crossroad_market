@@ -134,9 +134,16 @@ func get_shelf_access_position(shelf: Shelf) -> Vector2:
 		if access_point is Vector2:
 			return access_point as Vector2
 
-	var result := find_best_shelf_access(shelf.global_position, shelf)
+	var result := find_best_vertical_shelf_access(shelf.global_position, shelf)
 	_store_access_metadata_from_result(shelf, result)
 	return result.get("access_point", Vector2.INF) as Vector2
+
+
+func has_cached_shelf_access_metadata(shelf: Shelf) -> bool:
+	if shelf == null:
+		return false
+
+	return shelf.has_meta(ACCESS_META) and shelf.has_meta(ACCESS_NODE_META)
 
 
 func get_route_to_shelf_access(shelf: Shelf) -> Array[Vector2]:
@@ -164,6 +171,25 @@ func get_route_to_cashier_from(from_position: Vector2) -> Array[Vector2]:
 	var path := _find_checkout_graph_path(start.get("node", CASHIER) as StringName)
 	var route := start.get("route", []) as Array[Vector2]
 	route.append_array(_build_route_from_graph_path(path))
+	return _dedupe_route_points(route)
+
+
+func get_route_to_queue_target_from(from_position: Vector2, queue_index: int) -> Array[Vector2]:
+	var queue_target := get_queue_target_position(queue_index, from_position)
+	var start := _find_nearest_graph_node(from_position)
+
+	if not bool(start.get("valid", false)):
+		return _dedupe_route_points(_make_orthogonal_route(from_position, queue_target, true))
+
+	var queue_node := _get_queue_target_node_name(queue_index)
+	var path := _find_graph_path(start.get("node", queue_node) as StringName, queue_node)
+
+	if path.is_empty():
+		return _dedupe_route_points(_make_orthogonal_route(from_position, queue_target, true))
+
+	var route := start.get("route", []) as Array[Vector2]
+	route.append_array(_build_route_from_graph_path(path))
+	_append_orthogonal_route_to(route, queue_target, true, from_position)
 	return _dedupe_route_points(route)
 
 
@@ -206,6 +232,14 @@ func has_reachable_shelf_access(object: Node2D, candidate: Vector2) -> bool:
 
 
 func find_best_shelf_access(candidate_position: Vector2, shelf_object: Node2D) -> Dictionary:
+	return _find_best_shelf_access(candidate_position, shelf_object, false)
+
+
+func find_best_vertical_shelf_access(candidate_position: Vector2, shelf_object: Node2D) -> Dictionary:
+	return _find_best_shelf_access(candidate_position, shelf_object, true)
+
+
+func _find_best_shelf_access(candidate_position: Vector2, shelf_object: Node2D, vertical_only: bool) -> Dictionary:
 	var checked_candidates := 0
 	var candidates := _get_shelf_access_candidates(candidate_position)
 	var blocked_candidates := 0
@@ -220,8 +254,12 @@ func find_best_shelf_access(candidate_position: Vector2, shelf_object: Node2D) -
 			break
 
 		var access_point := access_candidate.get("access_point", Vector2.INF) as Vector2
+		var vertical_access := bool(access_candidate.get("vertical_access", false))
 
 		if not access_point.is_finite():
+			continue
+
+		if vertical_only and not vertical_access:
 			continue
 
 		if not _is_npc_access_point_clear(access_point, shelf_object, candidate_position):
@@ -267,7 +305,7 @@ func find_best_shelf_access(candidate_position: Vector2, shelf_object: Node2D) -
 
 
 func store_shelf_access_metadata(object: Node2D, drop_position: Vector2) -> void:
-	var result := find_best_shelf_access(drop_position, object)
+	var result := find_best_vertical_shelf_access(drop_position, object)
 
 	if not bool(result.get("valid", false)):
 		clear_shelf_access_metadata(object)
@@ -316,7 +354,7 @@ func get_shelf_access_graph_node(shelf: Shelf) -> StringName:
 		if graph_node is String:
 			return StringName(graph_node)
 
-	var result := find_best_shelf_access(shelf.global_position, shelf)
+	var result := find_best_vertical_shelf_access(shelf.global_position, shelf)
 	_store_access_metadata_from_result(shelf, result)
 	return result.get("graph_node", StringName()) as StringName
 
@@ -895,9 +933,10 @@ func _append_shelf_access_candidate(
 	if direct_distance <= MARKER_ALIGNMENT_EPSILON or direct_distance > MAX_SHELF_ACCESS_DISTANCE:
 		return
 
+	var vertical_access := horizontal_distance <= SHELF_ACCESS_COLUMN_EPSILON and vertical_distance > MARKER_ALIGNMENT_EPSILON
 	var tier := 2
 
-	if horizontal_distance <= SHELF_ACCESS_COLUMN_EPSILON and vertical_distance > MARKER_ALIGNMENT_EPSILON:
+	if vertical_access:
 		tier = 0
 	elif horizontal_distance <= SHELF_ACCESS_NEAR_COLUMN_EPSILON and vertical_distance > MARKER_ALIGNMENT_EPSILON:
 		tier = 1
@@ -905,6 +944,7 @@ func _append_shelf_access_candidate(
 	candidates.append({
 		"access_point": access_point,
 		"graph_node": graph_node,
+		"vertical_access": vertical_access,
 		"tier": tier,
 		"horizontal_distance": horizontal_distance,
 		"vertical_distance": vertical_distance,

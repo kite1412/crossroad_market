@@ -17,7 +17,8 @@ enum State {
 
 const SPEED: float = 80.0
 const ARRIVAL_THRESHOLD: float = 5.0
-const ENTER_PAUSE: float = 1.5
+const ENTER_PAUSE: float = 0.5
+const DEBUG_ENTER_TIMING: bool = false
 const DIALOG_DURATION: float = 2.5
 const CHECKOUT_PATIENCE: float = 20.0
 const SEARCH_PATIENCE: float = 15.0
@@ -26,7 +27,8 @@ const SHELF_TAKE_PAUSE_TIME: float = 1.25
 const SHELF_VISIT_OFFSET: Vector2 = Vector2(0, 34)
 const SHELF_ACTION_DISTANCE: float = 28.0
 const SHELF_VISIT_ARRIVAL_DISTANCE: float = 8.0
-const QUEUE_ACTION_DISTANCE: float = 14.0
+const QUEUE_ACTION_DISTANCE: float = 8.0
+const DEBUG_QUEUE_TARGET: bool = false
 const STUCK_WATCHDOG_SECONDS: float = 1.5
 const STUCK_MIN_MOVE_DISTANCE: float = 1.0
 const STUCK_WATCHDOG_MAX_REBUILDS: int = 2
@@ -63,6 +65,7 @@ var _trust_label: Label = null
 var _movement_route: Array[Vector2] = []
 var _movement_route_destination: Vector2 = Vector2.INF
 var _target_shelf: Shelf = null
+var _last_queue_index: int = -1
 var _last_watchdog_position: Vector2 = Vector2.INF
 var _stuck_watchdog_timer: float = 0.0
 var _stuck_watchdog_rebuilds: int = 0
@@ -251,12 +254,18 @@ func _process_enter() -> void:
 	if _enter_pause_timer < ENTER_PAUSE:
 		return
 
+	var choose_start := Time.get_ticks_usec()
 	_choose_available_item_to_buy()
+	var choose_duration := Time.get_ticks_usec() - choose_start
 
+	var shelf_start := Time.get_ticks_usec()
 	var target_shelf := _find_reachable_matching_shelf()
+	var shelf_duration := Time.get_ticks_usec() - shelf_start
 
 	if target_shelf == null:
 		var fallback_shelf := _find_matching_shelf()
+		if DEBUG_ENTER_TIMING:
+			_print_enter_timing(choose_duration, shelf_duration, -1)
 		_show_dialog("I can't reach that shelf." if fallback_shelf != null else "Nothing I need is on the shelves right now.")
 		_dialog_timer = DIALOG_DURATION
 		target_position = _get_exit_position()
@@ -274,7 +283,36 @@ func _process_enter() -> void:
 
 	_target_shelf = target_shelf
 	target_position = visit_position
+
+	if DEBUG_ENTER_TIMING:
+		var route_start := Time.get_ticks_usec()
+		var store := _get_store_route_provider()
+
+		if store != null:
+			_call_store_route(store, &"get_npc_entry_route_to_shelf", [visit_position, global_position])
+		else:
+			_build_movement_route(visit_position)
+
+		var route_duration := Time.get_ticks_usec() - route_start
+		_print_enter_timing(choose_duration, shelf_duration, route_duration)
+
 	_set_state(State.WALK_TO_SHELF)
+
+
+func _print_enter_timing(choose_duration_usec: int, shelf_duration_usec: int, route_duration_usec: int) -> void:
+	var route_text := "n/a"
+
+	if route_duration_usec >= 0:
+		route_text = "%.2fms" % (float(route_duration_usec) / 1000.0)
+
+	print(
+		"NPC enter timing [%s]: choose=%.2fms shelf=%.2fms route=%s" % [
+			name,
+			float(choose_duration_usec) / 1000.0,
+			float(shelf_duration_usec) / 1000.0,
+			route_text
+		]
+	)
 
 
 func _process_walk_to_shelf() -> void:
@@ -319,9 +357,7 @@ func _process_search_item(delta: float) -> void:
 				_show_dialog("Is there any restock coming...? I'll wait here.")
 				_search_timer = 0.0
 				_search_announced = false
-				_join_queue()
-				target_position = _get_queue_target()
-				_set_state(State.WAIT_IN_QUEUE)
+				_enter_checkout_queue()
 
 		BlueprintManager.Action.BROWSE_BUY:
 			if not _search_announced:
@@ -371,13 +407,13 @@ func _process_take_item() -> void:
 		if _take_item_pause_timer < SHELF_TAKE_PAUSE_TIME:
 			return
 
-		_join_queue()
-		target_position = _get_queue_target()
-		_set_state(State.WAIT_IN_QUEUE)
+		_enter_checkout_queue()
 		return
 
 	if global_position.distance_to(target_position) > SHELF_ACTION_DISTANCE and not _move_to(target_position):
 		return
+
+	_face_target_shelf()
 
 	if _take_requested_items_from_shelves():
 		_has_taken_shelf_item = true
@@ -391,14 +427,28 @@ func _process_take_item() -> void:
 
 
 func _process_wait_in_queue(_delta: float) -> void:
+	var queue_index := current_queue.find(self)
+
+	if queue_index < 0:
+		_enter_checkout_queue()
+		return
+
+	if queue_index != _last_queue_index:
+		_last_queue_index = queue_index
+		_movement_route.clear()
+		_movement_route_destination = Vector2.INF
+
 	target_position = _get_queue_target()
+
+	if DEBUG_QUEUE_TARGET:
+		_print_queue_target_debug(queue_index)
 
 	var arrived := global_position.distance_to(target_position) <= QUEUE_ACTION_DISTANCE
 
 	if not arrived:
 		arrived = _move_to(target_position)
 
-	if arrived and current_queue.find(self) == 0:
+	if arrived and queue_index == 0:
 		velocity = Vector2.ZERO
 		move_and_slide()
 		_set_state(State.CHECKOUT)
@@ -483,6 +533,15 @@ func _get_direction(motion: Vector2) -> CharacterSprite.Direction:
 	if abs(motion.x) > abs(motion.y):
 		return CharacterSprite.Direction.RIGHT if motion.x > 0.0 else CharacterSprite.Direction.LEFT
 	return CharacterSprite.Direction.DOWN if motion.y > 0.0 else CharacterSprite.Direction.UP
+
+
+func _face_target_shelf() -> void:
+	if _target_shelf == null or not is_instance_valid(_target_shelf):
+		return
+
+	velocity = Vector2.ZERO
+	_move_direction = CharacterSprite.Direction.UP if global_position.y >= _target_shelf.global_position.y else CharacterSprite.Direction.DOWN
+	_update_character_sprite()
 
 
 func _load_character_assets() -> void:
@@ -733,8 +792,10 @@ func _get_store_route_for_current_state(destination: Vector2) -> Array[Vector2]:
 
 			return _call_store_route(store, &"get_npc_entry_route_to_shelf", [destination, global_position])
 		State.WAIT_IN_QUEUE:
-			if _target_shelf != null and is_instance_valid(_target_shelf):
-				return _call_store_route(store, &"get_npc_route_from_shelf_to_cashier", [_target_shelf])
+			var queue_index := current_queue.find(self)
+
+			if queue_index >= 0 and store.has_method("get_npc_route_to_queue_target_from"):
+				return _call_store_route(store, &"get_npc_route_to_queue_target_from", [global_position, queue_index])
 
 			return _call_store_route(store, &"get_npc_route_to_cashier_from", [global_position])
 		State.EXIT:
@@ -932,6 +993,48 @@ func _join_queue() -> void:
 
 func _leave_queue() -> void:
 	NPCQueueSystem.leave_queue(current_queue, self)
+	_last_queue_index = -1
+
+
+func _enter_checkout_queue() -> void:
+	_join_queue()
+	_target_shelf = null
+	_last_queue_index = current_queue.find(self)
+	target_position = _get_queue_target()
+	_movement_route.clear()
+	_movement_route_destination = Vector2.INF
+	_set_state(State.WAIT_IN_QUEUE)
+
+	if DEBUG_QUEUE_TARGET:
+		_print_queue_target_debug(_last_queue_index)
+
+
+func is_ready_for_checkout_service() -> bool:
+	if is_queued_for_deletion():
+		return false
+
+	if current_queue.is_empty() or current_queue[0] != self:
+		return false
+
+	if current_state == State.CHECKOUT:
+		return true
+
+	if current_state != State.WAIT_IN_QUEUE:
+		return false
+
+	var queue_target := _get_queue_target()
+	return global_position.distance_to(queue_target) <= QUEUE_ACTION_DISTANCE
+
+
+func mark_checkout_ready() -> void:
+	if not is_ready_for_checkout_service():
+		return
+
+	velocity = Vector2.ZERO
+	target_position = _get_queue_target()
+	_movement_route.clear()
+	_movement_route_destination = Vector2.INF
+	_set_state(State.CHECKOUT)
 
 
 func _get_queue_target() -> Vector2:
@@ -949,6 +1052,26 @@ func _get_queue_target() -> Vector2:
 			return result as Vector2
 
 	return NPCQueueSystem.get_queue_target(current_queue, self, counter_position)
+
+
+func _print_queue_target_debug(queue_index: int) -> void:
+	var npc_id := ""
+	var visit_phase := ""
+
+	if npc_data != null:
+		npc_id = npc_data.npc_id
+		visit_phase = str(npc_data.visit_phase)
+
+	print(
+		"NPC queue target [%s/%s]: index=%d pos=%s target=%s distance=%.2f" % [
+			name if npc_id == "" else npc_id,
+			visit_phase,
+			queue_index,
+			str(global_position),
+			str(target_position),
+			global_position.distance_to(target_position)
+		]
+	)
 
 
 func _return_item_to_shelf() -> void:
