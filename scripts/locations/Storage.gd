@@ -23,7 +23,6 @@ const RESTOCK_SCROLL_STEP: int = 28
 const RESTOCK_ACTION_BUTTON_HEIGHT: float = 20.0
 const RESTOCK_CHECKOUT_BUTTON_WIDTH: float = 76.0
 const RESTOCK_CLOSE_BUTTON_WIDTH: float = 56.0
-const DEBUG_RESTOCK_TAX_FLOW: bool = false
 const SHELF_DROP_FALLBACKS: Array[Vector2] = [
 	Vector2(0, 56),
 	Vector2(56, 0),
@@ -183,7 +182,6 @@ func request_return_to_store() -> bool:
 
 func open_restock_panel() -> void:
 	_restock_checkout_completed_this_session = false
-	_debug_restock_tax("panel opened; session checkout reset")
 	restock_panel_opened.emit()
 	_ensure_restock_panel()
 	_render_restock_panel()
@@ -348,10 +346,7 @@ func _create_restock_close_button() -> Button:
 	var close_button := Button.new()
 	close_button.text = "Close"
 	_configure_restock_action_button(close_button, RESTOCK_CLOSE_BUTTON_WIDTH)
-	close_button.pressed.connect(func() -> void:
-		_debug_restock_tax("close button pressed")
-		_hide_restock_panel()
-	)
+	close_button.pressed.connect(_hide_restock_panel)
 	_connect_restock_scroll_forwarding(close_button)
 	return close_button
 
@@ -397,19 +392,16 @@ func _add_restock_cart_quantity(item_id: String, delta: int) -> void:
 
 func _checkout_restock_cart() -> void:
 	if not _has_restock_cart_items():
-		_debug_restock_tax("checkout rejected: cart empty")
 		_show_notification("Add items to the cart first.", 0.9)
 		return
 
 	var total := _get_restock_cart_total()
 
 	if total <= 0:
-		_debug_restock_tax("checkout rejected: total <= 0")
 		_show_notification("Add items to the cart first.", 0.9)
 		return
 
 	if not EconomyManager.spend_gold(total):
-		_debug_restock_tax("checkout rejected: not enough gold")
 		_show_notification("Not enough gold.", 0.9)
 		_render_restock_panel()
 		return
@@ -418,7 +410,6 @@ func _checkout_restock_cart() -> void:
 	_restock_cart.clear()
 	restock_order_purchased.emit(order_items)
 	_restock_checkout_completed_this_session = true
-	_debug_restock_tax("checkout success; order_items=%s" % [str(order_items)])
 	_show_notification("Restock ordered. Pick it up in the yard.", 1.2)
 	_render_restock_panel()
 
@@ -543,13 +534,7 @@ func _hide_restock_panel() -> void:
 	if _restock_layer != null:
 		_restock_layer.visible = false
 
-	_debug_restock_tax("panel closed; had_checkout=%s" % [str(_restock_checkout_completed_this_session)])
 	restock_panel_closed.emit(_restock_checkout_completed_this_session)
-
-
-func _debug_restock_tax(message: String) -> void:
-	if DEBUG_RESTOCK_TAX_FLOW:
-		print("[RestockTax][Storage] %s" % message)
 
 
 func _get_restock_items() -> Array[ItemData]:

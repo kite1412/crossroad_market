@@ -35,7 +35,6 @@ const LOCATION_TITLE_DURATION: float = 1.25
 const MIDNIGHT_BLACK_HOLD_DURATION: float = 3.0
 const RESTOCK_CLOSE_TAX_CHECK_DELAY: float = 3.0
 const RESTOCK_TAX_RETRY_INTERVAL: float = 0.25
-const DEBUG_TAX_FLOW: bool = false
 const DROP_REJECTION_NONE: StringName = &"none"
 const DROP_REJECTION_STORAGE_DOOR: StringName = &"storage_door"
 const DROP_REJECTION_YARD_DOOR: StringName = &"yard_door"
@@ -908,7 +907,6 @@ func _on_storage_mystery_supply_depleted() -> void:
 
 func _on_storage_restock_order_purchased(order_items: Array) -> void:
 	if order_items.is_empty():
-		_debug_tax_flow("restock order ignored: empty order")
 		return
 
 	_restock_delivery_counter += 1
@@ -918,7 +916,6 @@ func _on_storage_restock_order_purchased(order_items: Array) -> void:
 	})
 	_restock_ordered_today = true
 	_sync_restock_deliveries_to_yard()
-	_debug_tax_flow("restock order received; ordered_today=%s items=%s" % [str(_restock_ordered_today), str(order_items)])
 
 
 func _on_storage_restock_panel_opened() -> void:
@@ -927,49 +924,33 @@ func _on_storage_restock_panel_opened() -> void:
 	_tax_ready_after_restock_close = false
 	_tax_restock_close_ready_at_msec = 0
 	_tax_restock_retry_token += 1
-	_debug_tax_flow("restock panel opened; retry token cancelled")
 
 
 func _on_storage_restock_panel_closed(had_checkout: bool = false) -> void:
 	_restock_panel_open = false
-	_debug_tax_flow(
-		"restock panel closed received; had_checkout=%s phase=%s store_open=%s tax_paid=%s tax_showing=%s" % [
-			str(had_checkout),
-			TimeManager.get_phase_name(),
-			str(_store_open),
-			str(_tax_paid_today),
-			str(_tax_panel_showing)
-		]
-	)
 
 	if not had_checkout:
-		_debug_tax_flow("tax not scheduled: restock panel closed without checkout")
 		return
 
 	if TimeManager.current_phase != TimeManager.Phase.NIGHT:
-		_debug_tax_flow("tax not scheduled: restock closed outside night")
 		return
 
 	if _store_open:
-		_debug_tax_flow("tax not scheduled: store is still open")
 		return
 
 	if _tax_paid_today or _tax_panel_showing:
-		_debug_tax_flow("tax not scheduled: tax already paid or panel showing")
 		return
 
 	_restock_ordered_today = true
 	_tax_waiting_for_restock_close = true
 	_tax_ready_after_restock_close = true
 	_tax_restock_close_ready_at_msec = Time.get_ticks_msec() + int(RESTOCK_CLOSE_TAX_CHECK_DELAY * 1000.0)
-	_debug_tax_flow("tax scheduled after restock close; ready_at_msec=%d" % _tax_restock_close_ready_at_msec)
 	_schedule_restock_tax_retry()
 
 
 func _schedule_restock_tax_retry() -> void:
 	_tax_restock_retry_token += 1
 	var retry_token := _tax_restock_retry_token
-	_debug_tax_flow("tax retry scheduled; token=%d" % retry_token)
 	_defer_restock_tax_retry(retry_token)
 
 
@@ -978,21 +959,12 @@ func _defer_restock_tax_retry(retry_token: int) -> void:
 		var remaining_msec := _tax_restock_close_ready_at_msec - Time.get_ticks_msec()
 
 		if remaining_msec > 0:
-			_debug_tax_flow("tax retry waiting %.2fs before first attempt" % (float(remaining_msec) / 1000.0))
 			await get_tree().create_timer(float(remaining_msec) / 1000.0).timeout
 		else:
-			_debug_tax_flow("tax retry attempting show; token=%d" % retry_token)
 			if _try_show_tax_panel():
-				_debug_tax_flow("tax retry success; panel requested")
 				return
 
 			await get_tree().create_timer(RESTOCK_TAX_RETRY_INTERVAL).timeout
-
-	_debug_tax_flow("tax retry stopped; token=%d active_token=%d continue=%s" % [
-		retry_token,
-		_tax_restock_retry_token,
-		str(_should_continue_restock_tax_retry())
-	])
 
 
 func _should_continue_restock_tax_retry() -> bool:
@@ -1082,19 +1054,15 @@ func _update_end_day_tax_flow() -> void:
 
 func _try_show_tax_panel() -> bool:
 	if not _can_show_tax_panel():
-		if _should_debug_tax_block_reason():
-			_print_tax_flow_block_reason()
 		return false
 
 	if not _show_tax_panel():
-		_debug_tax_flow("tax blocked: HUD missing or cannot show tax report")
 		return false
 
 	_tax_waiting_for_restock_close = false
 	_tax_ready_after_restock_close = false
 	_tax_restock_close_ready_at_msec = 0
 	_tax_restock_retry_token += 1
-	_debug_tax_flow("tax panel show requested; tax state reset")
 	return true
 
 
@@ -1135,63 +1103,6 @@ func _has_active_customer_npcs() -> bool:
 
 func _has_blocking_overlay_for_tax() -> bool:
 	return false
-
-
-func _is_visible_overlay_named(node_name: String) -> bool:
-	var root := get_tree().root
-
-	if root == null:
-		return false
-
-	return _find_visible_overlay_named(root, node_name)
-
-
-func _find_visible_overlay_named(node: Node, node_name: String) -> bool:
-	if node.name == node_name:
-		if node is CanvasLayer and (node as CanvasLayer).visible:
-			return true
-
-		if node is CanvasItem and (node as CanvasItem).visible:
-			return true
-
-	for child in node.get_children():
-		if _find_visible_overlay_named(child, node_name):
-			return true
-
-	return false
-
-
-func _print_tax_flow_block_reason() -> void:
-	var hud := get_tree().get_first_node_in_group("hud")
-	_debug_tax_flow(
-		"tax blocked: phase=%s store_open=%s restock_ordered=%s restock_panel_open=%s waiting_close=%s ready_after_close=%s delay_ready=%s blocking_overlay=%s hud_found=%s customer_sessions_complete_info=%s active_npcs_info=%s tax_panel_showing=%s tax_paid=%s" % [
-			TimeManager.get_phase_name(),
-			str(_store_open),
-			str(_restock_ordered_today),
-			str(_restock_panel_open),
-			str(_tax_waiting_for_restock_close),
-			str(_tax_ready_after_restock_close),
-			str(Time.get_ticks_msec() >= _tax_restock_close_ready_at_msec),
-			"cashier=%s activity=%s" % [
-				str(_is_visible_overlay_named("CashierUILayer")),
-				str(_is_visible_overlay_named("ActivityBoardLayer"))
-			],
-			str(hud != null and hud.has_method("show_tax_report")),
-			str(NPCScheduler.are_customer_sessions_complete_for_day()),
-			str(_has_active_customer_npcs()),
-			str(_tax_panel_showing),
-			str(_tax_paid_today)
-		]
-	)
-
-
-func _should_debug_tax_block_reason() -> bool:
-	return _restock_ordered_today or _tax_waiting_for_restock_close or _tax_ready_after_restock_close
-
-
-func _debug_tax_flow(message: String) -> void:
-	if DEBUG_TAX_FLOW:
-		print("[RestockTax][Store] %s" % message)
 
 
 func _show_tax_panel(warning: String = "") -> bool:
