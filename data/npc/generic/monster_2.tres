@@ -1,17 +1,14 @@
-[gd_resource type="Resource" script_class="NPCData" format=3]
+[gd_resource type="Resource" script_class="NPCData" format=3 uid="uid://btbxcef4ivhiw"]
 
-[ext_resource type="Script" path="res://data/npc/NPCData.gd" id="1"]
+[ext_resource type="Script" uid="uid://bn3774x1uxfq7" path="res://data/npc/NPCData.gd" id="1"]
 
 [resource]
 script = ExtResource("1")
 npc_id = "monster_2"
-display_name = "Werewolf Costumer"
-npc_category = 1
+display_name = "Yeti Costumer"
 visit_phase = 2
-patience_type = 2
-favorite_items = PackedStringArray("phantom_ice_cream", "fresh_tombstone", "mandrake_root", "dewdrop_honey", "potion_bottle_empty")
-visit_days = PackedInt32Array(2, 4, 6)
 spawn_order = 7
+patience_type = 2
 behavior_profile_id = "normal_shopper"
 spawn_chance = 0.5
 assets_path = "npcs/monsters/monster2"

@@ -1,14 +1,13 @@
 [gd_resource type="Resource" script_class="NPCData" format=3 uid="uid://cm3m74f1eq6w5"]
 
-[ext_resource type="Script" path="res://data/npc/NPCData.gd" id="1"]
+[ext_resource type="Script" uid="uid://bn3774x1uxfq7" path="res://data/npc/NPCData.gd" id="1"]
 
 [resource]
 script = ExtResource("1")
 npc_id = "monster_1"
-display_name = "Vampire Costumer"
+display_name = "Slime Costumer"
 visit_phase = 2
 spawn_order = 6
 behavior_profile_id = "window_shopper"
-favorite_items = PackedStringArray("phantom_ice_cream", "fresh_tombstone", "mandrake_root", "dewdrop_honey", "potion_bottle_empty")
 spawn_chance = 0.5
 assets_path = "npcs/monsters/monster1"

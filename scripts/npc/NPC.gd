@@ -96,8 +96,8 @@ func setup(data: NPCData) -> void:
 	_apply_scripted_metadata()
 	_choose_item_to_buy()
 	item_to_buy_original = item_to_buy
-	_apply_visual()
 	_apply_name_label()
+	_apply_visual()
 	_setup_trust_display()
 	_set_state(State.ENTER)
 

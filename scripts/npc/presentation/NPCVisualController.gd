@@ -23,6 +23,8 @@ static func apply_visual(npc: Node, npc_data: NPCData) -> void:
 
 	if npc_data == null:
 		return
+		
+	name_label.add_theme_font_size_override("font_size", 6)
 
 	if npc_data.npc_category == NPCData.NPCCategory.STORY:
 		if npc_data.npc_id == "irene":
