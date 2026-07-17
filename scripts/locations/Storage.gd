@@ -11,6 +11,8 @@ signal mystery_supply_depleted()
 signal ghost_shelf_item_placed(slot_index: int, item_id: String)
 signal restock_item_purchased(item_id: String, quantity: int)
 signal restock_order_purchased(order_items: Array)
+signal restock_panel_opened()
+signal restock_panel_closed(had_checkout: bool)
 
 const StorageRestockPanel = preload("res://scripts/ui/storage/StorageRestockPanel.gd")
 
@@ -18,6 +20,10 @@ const SUPPLY_BOX_DEPTH_HALF_WIDTH: float = 34.0
 const SUPPLY_BOX_DEPTH_BACK_OFFSET: float = 48.0
 const SUPPLY_BOX_DEPTH_FRONT_OFFSET: float = 8.0
 const RESTOCK_SCROLL_STEP: int = 28
+const RESTOCK_ACTION_BUTTON_HEIGHT: float = 20.0
+const RESTOCK_CHECKOUT_BUTTON_WIDTH: float = 76.0
+const RESTOCK_CLOSE_BUTTON_WIDTH: float = 56.0
+const DEBUG_RESTOCK_TAX_FLOW: bool = false
 const SHELF_DROP_FALLBACKS: Array[Vector2] = [
 	Vector2(0, 56),
 	Vector2(56, 0),
@@ -63,6 +69,7 @@ var _restock_guide_label: Label = null
 var _restock_action_row: Container = null
 var _selected_restock_item_id: String = ""
 var _restock_cart: Dictionary = {}
+var _restock_checkout_completed_this_session: bool = false
 
 
 func _ready() -> void:
@@ -175,6 +182,9 @@ func request_return_to_store() -> bool:
 
 
 func open_restock_panel() -> void:
+	_restock_checkout_completed_this_session = false
+	_debug_restock_tax("panel opened; session checkout reset")
+	restock_panel_opened.emit()
 	_ensure_restock_panel()
 	_render_restock_panel()
 
@@ -321,28 +331,53 @@ func _render_restock_detail() -> void:
 
 	var checkout_button := Button.new()
 	checkout_button.text = "Checkout"
-	checkout_button.custom_minimum_size = Vector2(0, 22)
-	checkout_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	checkout_button.mouse_filter = Control.MOUSE_FILTER_STOP
-	checkout_button.focus_mode = Control.FOCUS_ALL
+	_configure_restock_action_button(checkout_button, RESTOCK_CHECKOUT_BUTTON_WIDTH)
 	checkout_button.disabled = not _has_restock_cart_items()
 	checkout_button.pressed.connect(_checkout_restock_cart)
 	_connect_restock_scroll_forwarding(checkout_button)
-	_restock_action_row.add_child(checkout_button)
 
-	_add_restock_close_button()
+	var close_button := _create_restock_close_button()
+	_add_restock_action_button_row([checkout_button, close_button])
 
 
 func _add_restock_close_button() -> void:
+	_add_restock_action_button_row([_create_restock_close_button()])
+
+
+func _create_restock_close_button() -> Button:
 	var close_button := Button.new()
 	close_button.text = "Close"
-	close_button.custom_minimum_size = Vector2(0, 22)
-	close_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	close_button.mouse_filter = Control.MOUSE_FILTER_STOP
-	close_button.focus_mode = Control.FOCUS_ALL
-	close_button.pressed.connect(_hide_restock_panel)
+	_configure_restock_action_button(close_button, RESTOCK_CLOSE_BUTTON_WIDTH)
+	close_button.pressed.connect(func() -> void:
+		_debug_restock_tax("close button pressed")
+		_hide_restock_panel()
+	)
 	_connect_restock_scroll_forwarding(close_button)
-	_restock_action_row.add_child(close_button)
+	return close_button
+
+
+func _configure_restock_action_button(button: Button, width: float) -> void:
+	button.custom_minimum_size = Vector2(width, RESTOCK_ACTION_BUTTON_HEIGHT)
+	button.size_flags_horizontal = Control.SIZE_SHRINK_END
+	button.mouse_filter = Control.MOUSE_FILTER_STOP
+	button.focus_mode = Control.FOCUS_ALL
+	button.clip_text = true
+	button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	button.add_theme_font_size_override("font_size", 8)
+
+
+func _add_restock_action_button_row(buttons: Array[Button]) -> void:
+	var row := HBoxContainer.new()
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_theme_constant_override("separation", 2)
+	_restock_action_row.add_child(row)
+
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(spacer)
+
+	for button in buttons:
+		row.add_child(button)
 
 
 func _add_restock_cart_quantity(item_id: String, delta: int) -> void:
@@ -362,16 +397,19 @@ func _add_restock_cart_quantity(item_id: String, delta: int) -> void:
 
 func _checkout_restock_cart() -> void:
 	if not _has_restock_cart_items():
+		_debug_restock_tax("checkout rejected: cart empty")
 		_show_notification("Add items to the cart first.", 0.9)
 		return
 
 	var total := _get_restock_cart_total()
 
 	if total <= 0:
+		_debug_restock_tax("checkout rejected: total <= 0")
 		_show_notification("Add items to the cart first.", 0.9)
 		return
 
 	if not EconomyManager.spend_gold(total):
+		_debug_restock_tax("checkout rejected: not enough gold")
 		_show_notification("Not enough gold.", 0.9)
 		_render_restock_panel()
 		return
@@ -379,6 +417,8 @@ func _checkout_restock_cart() -> void:
 	var order_items := _get_restock_cart_order_items()
 	_restock_cart.clear()
 	restock_order_purchased.emit(order_items)
+	_restock_checkout_completed_this_session = true
+	_debug_restock_tax("checkout success; order_items=%s" % [str(order_items)])
 	_show_notification("Restock ordered. Pick it up in the yard.", 1.2)
 	_render_restock_panel()
 
@@ -502,6 +542,14 @@ func _hide_restock_panel() -> void:
 
 	if _restock_layer != null:
 		_restock_layer.visible = false
+
+	_debug_restock_tax("panel closed; had_checkout=%s" % [str(_restock_checkout_completed_this_session)])
+	restock_panel_closed.emit(_restock_checkout_completed_this_session)
+
+
+func _debug_restock_tax(message: String) -> void:
+	if DEBUG_RESTOCK_TAX_FLOW:
+		print("[RestockTax][Storage] %s" % message)
 
 
 func _get_restock_items() -> Array[ItemData]:

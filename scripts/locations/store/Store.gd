@@ -33,6 +33,9 @@ const RESTRICTED_DANGER_LINE_WIDTH: float = 3.0
 const RESTRICTED_DANGER_LINE_COLOR := Color(1.0, 0.16, 0.08, 1.0)
 const LOCATION_TITLE_DURATION: float = 1.25
 const MIDNIGHT_BLACK_HOLD_DURATION: float = 3.0
+const RESTOCK_CLOSE_TAX_CHECK_DELAY: float = 3.0
+const RESTOCK_TAX_RETRY_INTERVAL: float = 0.25
+const DEBUG_TAX_FLOW: bool = false
 const DROP_REJECTION_NONE: StringName = &"none"
 const DROP_REJECTION_STORAGE_DOOR: StringName = &"storage_door"
 const DROP_REJECTION_YARD_DOOR: StringName = &"yard_door"
@@ -42,6 +45,8 @@ const DROP_REJECTION_REACHABILITY: StringName = &"reachability"
 const SHELF_DROP_FALLBACK_DISTANCE: float = 44.0
 const QUEUE_MARKER_DROP_BLOCK_SIZE := Vector2(56, 18)
 const PENDING_ACCESS_UPDATE_META: StringName = &"pending_shelf_access_update_token"
+const SHELF_ACCESS_WARMUP_DELAY: float = 1.0
+const DEBUG_SHELF_ACCESS_WARMUP: bool = false
 const STORE_ENTRY_FALLBACK_POSITION := Vector2(240, 204)
 const STORE_STORAGE_RETURN_FALLBACK_POSITION := Vector2(383, 76)
 
@@ -94,6 +99,7 @@ var _placement_grid: StorePlacementGrid = null
 var _placement_surface: Node = null
 var _placement_surface_anchor_cache: Array[Vector2] = []
 var _shelf_access_metadata_update_token: int = 0
+var _shelf_access_warmup_token: int = 0
 var _is_transitioning: bool = false
 var _shown_location_titles: Dictionary = {}
 var _completed_task_notices: Dictionary = {}
@@ -123,6 +129,11 @@ var _restricted_drop_feedback_token: int = 0
 var _pending_restock_deliveries: Array[Dictionary] = []
 var _restock_delivery_counter: int = 0
 var _restock_ordered_today: bool = false
+var _restock_panel_open: bool = false
+var _tax_waiting_for_restock_close: bool = false
+var _tax_ready_after_restock_close: bool = false
+var _tax_restock_close_ready_at_msec: int = 0
+var _tax_restock_retry_token: int = 0
 var _tax_pending: bool = false
 var _tax_paid_today: bool = false
 var _tax_panel_showing: bool = false
@@ -151,6 +162,7 @@ func _ready() -> void:
 	_create_carry_shelf_blocker()
 	_create_restricted_placement_warning()
 	_setup_npc_static_data()
+	_schedule_shelf_access_warmup(0.8)
 	NPC.current_queue.clear()
 	NPCScheduler.lock_spawning_until_ready()
 
@@ -285,6 +297,10 @@ func _open_store() -> void:
 func _close_store() -> void:
 	_store_open = false
 	NPCScheduler.set_store_open(false)
+
+	if TimeManager.current_phase == TimeManager.Phase.NIGHT:
+		NPCScheduler.close_customer_sessions_for_day()
+
 	_update_store_status_board()
 	_show_status_notification("Store is CLOSED.", 1.0)
 	_update_objective()
@@ -327,15 +343,29 @@ func get_npc_shelf_access_position(shelf: Shelf) -> Vector2:
 
 
 func get_npc_shelf_visit_position(shelf: Shelf, _npc: Node = null) -> Vector2:
+	if not has_npc_shelf_access_metadata(shelf):
+		return shelf.global_position + Vector2(0, 34) if shelf != null else Vector2.INF
+
 	return get_npc_shelf_access_position(shelf)
 
 
+func has_npc_shelf_access_metadata(shelf: Shelf) -> bool:
+	return _get_store_path_graph().has_cached_shelf_access_metadata(shelf)
+
+
 func get_npc_route_to_shelf_access(shelf: Shelf) -> Array[Vector2]:
+	if not has_npc_shelf_access_metadata(shelf):
+		return []
+
 	return _get_store_path_graph().get_route_to_shelf_access(shelf)
 
 
 func get_npc_route_to_cashier_from(from_position: Vector2) -> Array[Vector2]:
 	return _get_store_path_graph().get_route_to_cashier_from(from_position)
+
+
+func get_npc_route_to_queue_target_from(from_position: Vector2, queue_index: int) -> Array[Vector2]:
+	return _get_store_path_graph().get_route_to_queue_target_from(from_position, queue_index)
 
 
 func get_npc_queue_target(queue_index: int, fallback_position: Vector2) -> Vector2:
@@ -629,6 +659,18 @@ func _enter_storage() -> void:
 		if not _current_storage.is_connected("restock_order_purchased", restock_order_callable):
 			_current_storage.connect("restock_order_purchased", restock_order_callable)
 
+	if _current_storage.has_signal("restock_panel_opened"):
+		var restock_panel_opened_callable := Callable(self, "_on_storage_restock_panel_opened")
+
+		if not _current_storage.is_connected("restock_panel_opened", restock_panel_opened_callable):
+			_current_storage.connect("restock_panel_opened", restock_panel_opened_callable)
+
+	if _current_storage.has_signal("restock_panel_closed"):
+		var restock_panel_closed_callable := Callable(self, "_on_storage_restock_panel_closed")
+
+		if not _current_storage.is_connected("restock_panel_closed", restock_panel_closed_callable):
+			_current_storage.connect("restock_panel_closed", restock_panel_closed_callable)
+
 	if _current_storage.has_signal("restock_item_purchased"):
 		var restock_callable := Callable(self, "_on_storage_restock_item_purchased")
 
@@ -866,6 +908,7 @@ func _on_storage_mystery_supply_depleted() -> void:
 
 func _on_storage_restock_order_purchased(order_items: Array) -> void:
 	if order_items.is_empty():
+		_debug_tax_flow("restock order ignored: empty order")
 		return
 
 	_restock_delivery_counter += 1
@@ -875,7 +918,91 @@ func _on_storage_restock_order_purchased(order_items: Array) -> void:
 	})
 	_restock_ordered_today = true
 	_sync_restock_deliveries_to_yard()
-	_update_end_day_tax_flow()
+	_debug_tax_flow("restock order received; ordered_today=%s items=%s" % [str(_restock_ordered_today), str(order_items)])
+
+
+func _on_storage_restock_panel_opened() -> void:
+	_restock_panel_open = true
+	_tax_waiting_for_restock_close = false
+	_tax_ready_after_restock_close = false
+	_tax_restock_close_ready_at_msec = 0
+	_tax_restock_retry_token += 1
+	_debug_tax_flow("restock panel opened; retry token cancelled")
+
+
+func _on_storage_restock_panel_closed(had_checkout: bool = false) -> void:
+	_restock_panel_open = false
+	_debug_tax_flow(
+		"restock panel closed received; had_checkout=%s phase=%s store_open=%s tax_paid=%s tax_showing=%s" % [
+			str(had_checkout),
+			TimeManager.get_phase_name(),
+			str(_store_open),
+			str(_tax_paid_today),
+			str(_tax_panel_showing)
+		]
+	)
+
+	if not had_checkout:
+		_debug_tax_flow("tax not scheduled: restock panel closed without checkout")
+		return
+
+	if TimeManager.current_phase != TimeManager.Phase.NIGHT:
+		_debug_tax_flow("tax not scheduled: restock closed outside night")
+		return
+
+	if _store_open:
+		_debug_tax_flow("tax not scheduled: store is still open")
+		return
+
+	if _tax_paid_today or _tax_panel_showing:
+		_debug_tax_flow("tax not scheduled: tax already paid or panel showing")
+		return
+
+	_restock_ordered_today = true
+	_tax_waiting_for_restock_close = true
+	_tax_ready_after_restock_close = true
+	_tax_restock_close_ready_at_msec = Time.get_ticks_msec() + int(RESTOCK_CLOSE_TAX_CHECK_DELAY * 1000.0)
+	_debug_tax_flow("tax scheduled after restock close; ready_at_msec=%d" % _tax_restock_close_ready_at_msec)
+	_schedule_restock_tax_retry()
+
+
+func _schedule_restock_tax_retry() -> void:
+	_tax_restock_retry_token += 1
+	var retry_token := _tax_restock_retry_token
+	_debug_tax_flow("tax retry scheduled; token=%d" % retry_token)
+	_defer_restock_tax_retry(retry_token)
+
+
+func _defer_restock_tax_retry(retry_token: int) -> void:
+	while retry_token == _tax_restock_retry_token and _should_continue_restock_tax_retry():
+		var remaining_msec := _tax_restock_close_ready_at_msec - Time.get_ticks_msec()
+
+		if remaining_msec > 0:
+			_debug_tax_flow("tax retry waiting %.2fs before first attempt" % (float(remaining_msec) / 1000.0))
+			await get_tree().create_timer(float(remaining_msec) / 1000.0).timeout
+		else:
+			_debug_tax_flow("tax retry attempting show; token=%d" % retry_token)
+			if _try_show_tax_panel():
+				_debug_tax_flow("tax retry success; panel requested")
+				return
+
+			await get_tree().create_timer(RESTOCK_TAX_RETRY_INTERVAL).timeout
+
+	_debug_tax_flow("tax retry stopped; token=%d active_token=%d continue=%s" % [
+		retry_token,
+		_tax_restock_retry_token,
+		str(_should_continue_restock_tax_retry())
+	])
+
+
+func _should_continue_restock_tax_retry() -> bool:
+	return (
+		_tax_waiting_for_restock_close
+		and _tax_ready_after_restock_close
+		and not _tax_paid_today
+		and not _tax_panel_showing
+		and not _end_day_transition_started
+	)
 
 
 func _on_storage_restock_item_purchased(item_id: String, quantity: int) -> void:
@@ -938,18 +1065,44 @@ func _update_end_day_tax_flow() -> void:
 		return
 
 	if _tax_paid_today:
-		if TimeManager.can_sleep():
-			_start_midnight_to_morning_transition()
 		return
 
+	if _tax_waiting_for_restock_close:
+		if not _tax_ready_after_restock_close:
+			return
+
+		if Time.get_ticks_msec() < _tax_restock_close_ready_at_msec:
+			return
+
+	if _restock_panel_open:
+		return
+
+	_try_show_tax_panel()
+
+
+func _try_show_tax_panel() -> bool:
 	if not _can_show_tax_panel():
-		return
+		if _should_debug_tax_block_reason():
+			_print_tax_flow_block_reason()
+		return false
 
-	_show_tax_panel()
+	if not _show_tax_panel():
+		_debug_tax_flow("tax blocked: HUD missing or cannot show tax report")
+		return false
+
+	_tax_waiting_for_restock_close = false
+	_tax_ready_after_restock_close = false
+	_tax_restock_close_ready_at_msec = 0
+	_tax_restock_retry_token += 1
+	_debug_tax_flow("tax panel show requested; tax state reset")
+	return true
 
 
 func _can_show_tax_panel() -> bool:
 	if _tax_panel_showing:
+		return false
+
+	if _restock_panel_open:
 		return false
 
 	if TimeManager.current_phase != TimeManager.Phase.NIGHT:
@@ -961,15 +1114,7 @@ func _can_show_tax_panel() -> bool:
 	if not _restock_ordered_today:
 		return false
 
-	var hud := get_tree().get_first_node_in_group("hud")
-
-	if hud != null and hud.has_method("has_interactive_overlay_open") and bool(hud.call("has_interactive_overlay_open")):
-		return false
-
-	if not NPCScheduler.are_customer_sessions_complete_for_day():
-		return false
-
-	if _has_active_customer_npcs():
+	if _has_blocking_overlay_for_tax():
 		return false
 
 	return true
@@ -988,12 +1133,73 @@ func _has_active_customer_npcs() -> bool:
 	return false
 
 
-func _show_tax_panel(warning: String = "") -> void:
+func _has_blocking_overlay_for_tax() -> bool:
+	return false
+
+
+func _is_visible_overlay_named(node_name: String) -> bool:
+	var root := get_tree().root
+
+	if root == null:
+		return false
+
+	return _find_visible_overlay_named(root, node_name)
+
+
+func _find_visible_overlay_named(node: Node, node_name: String) -> bool:
+	if node.name == node_name:
+		if node is CanvasLayer and (node as CanvasLayer).visible:
+			return true
+
+		if node is CanvasItem and (node as CanvasItem).visible:
+			return true
+
+	for child in node.get_children():
+		if _find_visible_overlay_named(child, node_name):
+			return true
+
+	return false
+
+
+func _print_tax_flow_block_reason() -> void:
+	var hud := get_tree().get_first_node_in_group("hud")
+	_debug_tax_flow(
+		"tax blocked: phase=%s store_open=%s restock_ordered=%s restock_panel_open=%s waiting_close=%s ready_after_close=%s delay_ready=%s blocking_overlay=%s hud_found=%s customer_sessions_complete_info=%s active_npcs_info=%s tax_panel_showing=%s tax_paid=%s" % [
+			TimeManager.get_phase_name(),
+			str(_store_open),
+			str(_restock_ordered_today),
+			str(_restock_panel_open),
+			str(_tax_waiting_for_restock_close),
+			str(_tax_ready_after_restock_close),
+			str(Time.get_ticks_msec() >= _tax_restock_close_ready_at_msec),
+			"cashier=%s activity=%s" % [
+				str(_is_visible_overlay_named("CashierUILayer")),
+				str(_is_visible_overlay_named("ActivityBoardLayer"))
+			],
+			str(hud != null and hud.has_method("show_tax_report")),
+			str(NPCScheduler.are_customer_sessions_complete_for_day()),
+			str(_has_active_customer_npcs()),
+			str(_tax_panel_showing),
+			str(_tax_paid_today)
+		]
+	)
+
+
+func _should_debug_tax_block_reason() -> bool:
+	return _restock_ordered_today or _tax_waiting_for_restock_close or _tax_ready_after_restock_close
+
+
+func _debug_tax_flow(message: String) -> void:
+	if DEBUG_TAX_FLOW:
+		print("[RestockTax][Store] %s" % message)
+
+
+func _show_tax_panel(warning: String = "") -> bool:
 	_connect_hud_signals()
 	var hud := get_tree().get_first_node_in_group("hud")
 
 	if hud == null or not hud.has_method("show_tax_report"):
-		return
+		return false
 
 	_tax_pending = true
 	_tax_panel_showing = true
@@ -1003,6 +1209,8 @@ func _show_tax_panel(warning: String = "") -> void:
 		hud.call("show_tax_warning", warning, _latest_daily_report)
 	else:
 		hud.call("show_tax_report", _latest_daily_report)
+
+	return true
 
 
 func _on_tax_payment_requested() -> void:
@@ -1022,6 +1230,10 @@ func _on_tax_payment_requested() -> void:
 	_tax_pending = false
 	_tax_paid_today = true
 	_tax_panel_showing = false
+	_tax_waiting_for_restock_close = false
+	_tax_ready_after_restock_close = false
+	_tax_restock_close_ready_at_msec = 0
+	_tax_restock_retry_token += 1
 
 	var hud := get_tree().get_first_node_in_group("hud")
 
@@ -1029,9 +1241,6 @@ func _on_tax_payment_requested() -> void:
 		hud.call("hide_tax_report")
 
 	_show_notification("Tax paid.", 1.0)
-
-	if TimeManager.can_sleep():
-		_start_midnight_to_morning_transition()
 
 
 func _start_midnight_to_morning_transition() -> void:
@@ -1830,6 +2039,59 @@ func _defer_post_shelf_drop_update(object: Node2D, drop_position: Vector2, updat
 	_register_installed_shelf(object)
 
 
+func _schedule_shelf_access_warmup(delay: float = SHELF_ACCESS_WARMUP_DELAY) -> void:
+	_shelf_access_warmup_token += 1
+	var warmup_token := _shelf_access_warmup_token
+	_defer_shelf_access_warmup(warmup_token, delay)
+
+
+func _defer_shelf_access_warmup(warmup_token: int, delay: float) -> void:
+	await get_tree().process_frame
+
+	if delay > 0.0:
+		await get_tree().create_timer(delay).timeout
+
+	if warmup_token != _shelf_access_warmup_token:
+		return
+
+	if not _can_run_shelf_access_warmup():
+		_schedule_shelf_access_warmup(SHELF_ACCESS_WARMUP_DELAY)
+		return
+
+	var graph := _get_store_path_graph()
+
+	for shelf_node in get_tree().get_nodes_in_group("shelves"):
+		if warmup_token != _shelf_access_warmup_token:
+			return
+
+		var shelf := shelf_node as Shelf
+
+		if shelf == null:
+			continue
+
+		if graph.has_cached_shelf_access_metadata(shelf):
+			continue
+
+		var warmup_start := Time.get_ticks_usec()
+		graph.store_shelf_access_metadata(shelf, shelf.global_position)
+
+		if DEBUG_SHELF_ACCESS_WARMUP:
+			var duration_ms := float(Time.get_ticks_usec() - warmup_start) / 1000.0
+			print("Shelf access warmup [%s]: %.2fms" % [shelf.name, duration_ms])
+
+		await get_tree().process_frame
+
+
+func _can_run_shelf_access_warmup() -> bool:
+	if _current_storage != null or _current_yard != null or _current_home != null or _is_transitioning:
+		return false
+
+	if _is_action_locked():
+		return false
+
+	return _get_carried_object_from_player() == null
+
+
 func _clear_shelf_access_metadata(object: Node2D) -> void:
 	var graph := _get_store_path_graph()
 	graph.clear_shelf_access_metadata(object)
@@ -2319,6 +2581,11 @@ func _on_day_started(_day: int) -> void:
 	_tax_pending = false
 	_tax_paid_today = false
 	_tax_panel_showing = false
+	_restock_panel_open = false
+	_tax_waiting_for_restock_close = false
+	_tax_ready_after_restock_close = false
+	_tax_restock_close_ready_at_msec = 0
+	_tax_restock_retry_token += 1
 	_end_day_transition_started = false
 	_restock_ordered_today = false
 	_latest_daily_report.clear()

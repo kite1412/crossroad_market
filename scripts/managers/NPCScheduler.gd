@@ -157,6 +157,21 @@ func are_customer_sessions_complete_for_day() -> bool:
 	return true
 
 
+func close_customer_sessions_for_day() -> void:
+	for session_name in _customer_sessions.keys():
+		var session := _customer_sessions[session_name] as Dictionary
+		var pool := session.get("pool", []) as Array[NPCData]
+		var index := int(session.get("index", 0))
+		session["missed"] = int(session.get("missed", 0)) + maxi(0, pool.size() - index)
+		session["index"] = pool.size()
+		session["closed"] = true
+		_customer_sessions[session_name] = session
+
+	_active_customer_session = SESSION_NONE
+	_is_spawning = false
+	_spawn_queue.clear()
+
+
 func start_night_customer_session() -> void:
 	if _active_customer_session == SESSION_NIGHT:
 		return
