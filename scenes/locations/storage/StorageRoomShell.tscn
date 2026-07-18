@@ -1,0 +1,61 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" uid="uid://bo1heio3gctaa" path="res://scripts/locations/WorldLighting.gd" id="1_lighting"]
+[ext_resource type="PackedScene" uid="uid://br1sgb3dkgi8i" path="res://scenes/ui/ActivityCompletionNotification.tscn" id="2_activity_notification"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_horizontal"]
+size = Vector2(480, 61)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_vertical"]
+size = Vector2(16, 270)
+
+[node name="StorageRoomShell" type="Node2D"]
+
+[node name="Background" type="ColorRect" parent="."]
+z_index = -100
+offset_right = 480.0
+offset_bottom = 270.0
+color = Color(0.1, 0.08, 0.12, 1)
+
+[node name="Floor" type="ColorRect" parent="."]
+z_index = -99
+offset_top = 64.0
+offset_right = 480.0
+offset_bottom = 270.0
+color = Color(0.17, 0.14, 0.16, 1)
+
+[node name="WorldBounds" type="StaticBody2D" parent="."]
+
+[node name="Top" type="CollisionShape2D" parent="WorldBounds"]
+position = Vector2(240, 30.5)
+shape = SubResource("RectangleShape2D_wall_horizontal")
+
+[node name="Bottom" type="CollisionShape2D" parent="WorldBounds"]
+position = Vector2(240, 278)
+shape = SubResource("RectangleShape2D_wall_horizontal")
+
+[node name="Left" type="CollisionShape2D" parent="WorldBounds"]
+position = Vector2(-8, 135)
+shape = SubResource("RectangleShape2D_wall_vertical")
+
+[node name="Right" type="CollisionShape2D" parent="WorldBounds"]
+position = Vector2(488, 135)
+shape = SubResource("RectangleShape2D_wall_vertical")
+
+[node name="WorldLighting" type="CanvasLayer" parent="."]
+script = ExtResource("1_lighting")
+morning_color = Color(0.09, 0.07, 0.12, 0.16)
+day_color = Color(0.18, 0.13, 0.08, 0.12)
+night_color = Color(0.01, 0.03, 0.1, 0.52)
+
+[node name="Overlay" type="ColorRect" parent="WorldLighting"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.09, 0.07, 0.12, 0.16)
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="ActivityCompletionNotification" parent="CanvasLayer" instance=ExtResource("2_activity_notification")]

@@ -1,349 +1,45 @@
 [gd_scene format=3 uid="uid://bdnwm42gkma72"]
 
-[ext_resource type="Script" uid="uid://dfc0qo1xtfmn3" path="res://scripts/locations/Storage.gd" id="1_storage"]
-[ext_resource type="PackedScene" uid="uid://catgco5tfi312" path="res://scenes/objects/SupplyBox.tscn" id="2_supply_box"]
-[ext_resource type="Script" uid="uid://bj1v64tu0xt4a" path="res://scripts/objects/MysterySupplyBox.gd" id="3_mystery_box"]
-[ext_resource type="PackedScene" uid="uid://cvet81vdrn7lk" path="res://scenes/objects/Shelf.tscn" id="4_shelf"]
-[ext_resource type="Script" uid="uid://bo1heio3gctaa" path="res://scripts/locations/WorldLighting.gd" id="5_lighting"]
-[ext_resource type="PackedScene" uid="uid://br1sgb3dkgi8i" path="res://scenes/ui/ActivityCompletionNotification.tscn" id="6_xqq5b"]
-[ext_resource type="Script" uid="uid://cjjcspebaasm0" path="res://scripts/objects/StorageRestockTerminal.gd" id="7_restock_terminal"]
-[ext_resource type="Texture2D" uid="uid://2fxl2iwyi5mx" path="res://assets/store/human-shelf.png" id="8_10ru3"]
-[ext_resource type="Texture2D" uid="uid://d24vy1yffvypp" path="res://assets/store/ghost-shelf.png" id="9_ieyae"]
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_horizontal"]
-size = Vector2(480, 61)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_vertical"]
-size = Vector2(16, 270)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_return_door_body"]
-size = Vector2(16, 57)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_return_door"]
-size = Vector2(36, 70)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_restock_terminal_interaction"]
-size = Vector2(84, 58)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_restock_terminal_body"]
-size = Vector2(64, 38)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_locked_ghost"]
-size = Vector2(160, 270)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_dnb1a"]
-size = Vector2(48, 32)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_xomv4"]
-size = Vector2(38, 22.25)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_31yo3"]
-size = Vector2(8, 8)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_f4x8s"]
-size = Vector2(8, 8)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_nv8ps"]
-size = Vector2(8, 8)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_oyi2s"]
-size = Vector2(8, 8)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_68gkr"]
-size = Vector2(8, 8)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_2am28"]
-size = Vector2(8, 8)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_ry2rs"]
-size = Vector2(8, 8)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_rusou"]
-size = Vector2(50, 33)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_g57a8"]
-size = Vector2(40, 23)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_xlp6v"]
-size = Vector2(8, 8)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_dwqbd"]
-size = Vector2(8, 8)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_umemk"]
-size = Vector2(8, 8)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_4dciv"]
-size = Vector2(8, 8)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_eynth"]
-size = Vector2(8, 8)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_3yt53"]
-size = Vector2(8, 8)
+[ext_resource type="Script" uid="uid://dq8v7xm2y3pkl" path="res://scripts/locations/Storage.gd" id="1_storage"]
+[ext_resource type="Script" uid="uid://bupclgt7huro5" path="res://scripts/locations/storage/StorageSceneFlow.gd" id="2_scene_flow"]
+[ext_resource type="Script" uid="uid://bmarggnkig3p6" path="res://scripts/locations/storage/StorageRestockFlow.gd" id="3_restock_flow"]
+[ext_resource type="Script" uid="uid://rs4gtlkx3i1u" path="res://scripts/locations/storage/StorageShelfCarryController.gd" id="4_shelf_carry"]
+[ext_resource type="Script" uid="uid://ohvqo0bmxbyv" path="res://scripts/locations/storage/StorageMysteryFlow.gd" id="5_mystery_flow"]
+[ext_resource type="Script" uid="uid://2lyvvnir6jmg" path="res://scripts/locations/storage/StoragePresentation.gd" id="6_presentation"]
+[ext_resource type="PackedScene" path="res://scenes/locations/storage/StorageRoomShell.tscn" id="7_room_shell"]
+[ext_resource type="PackedScene" path="res://scenes/locations/storage/StorageReturnDoor.tscn" id="8_return_door"]
+[ext_resource type="PackedScene" path="res://scenes/locations/storage/StorageMarkers.tscn" id="9_markers"]
+[ext_resource type="PackedScene" path="res://scenes/locations/storage/StorageRestockTerminal.tscn" id="10_restock_terminal"]
+[ext_resource type="PackedScene" path="res://scenes/locations/storage/StorageSupplyArea.tscn" id="11_supply_area"]
+[ext_resource type="PackedScene" path="res://scenes/locations/storage/StorageShelves.tscn" id="12_shelves"]
 
 [node name="Storage" type="Node2D" unique_id=1215434071]
 y_sort_enabled = true
 script = ExtResource("1_storage")
 
-[node name="Background" type="ColorRect" parent="." unique_id=535134460]
-z_index = -100
-offset_right = 480.0
-offset_bottom = 270.0
-color = Color(0.1, 0.08, 0.12, 1)
+[node name="SceneFlow" type="Node" parent="." unique_id=1636063904]
+script = ExtResource("2_scene_flow")
 
-[node name="Floor" type="ColorRect" parent="." unique_id=693224531]
-z_index = -99
-offset_top = 64.0
-offset_right = 480.0
-offset_bottom = 270.0
-color = Color(0.17, 0.14, 0.16, 1)
+[node name="RestockFlow" type="Node" parent="." unique_id=1993167161]
+script = ExtResource("3_restock_flow")
 
-[node name="WorldBounds" type="StaticBody2D" parent="." unique_id=1012820168]
+[node name="ShelfCarryController" type="Node" parent="." unique_id=844652694]
+script = ExtResource("4_shelf_carry")
 
-[node name="Top" type="CollisionShape2D" parent="WorldBounds" unique_id=482888272]
-position = Vector2(240, 30.5)
-shape = SubResource("RectangleShape2D_wall_horizontal")
+[node name="MysteryFlow" type="Node" parent="." unique_id=2089526273]
+script = ExtResource("5_mystery_flow")
 
-[node name="Bottom" type="CollisionShape2D" parent="WorldBounds" unique_id=1963640723]
-position = Vector2(240, 278)
-shape = SubResource("RectangleShape2D_wall_horizontal")
+[node name="Presentation" type="Node" parent="." unique_id=1035586945]
+script = ExtResource("6_presentation")
 
-[node name="Left" type="CollisionShape2D" parent="WorldBounds" unique_id=165339808]
-position = Vector2(-8, 135)
-shape = SubResource("RectangleShape2D_wall_vertical")
+[node name="StorageRoomShell" parent="." unique_id=1041553559 instance=ExtResource("7_room_shell")]
 
-[node name="Right" type="CollisionShape2D" parent="WorldBounds" unique_id=378749077]
-position = Vector2(488, 135)
-shape = SubResource("RectangleShape2D_wall_vertical")
+[node name="ReturnDoor" parent="." unique_id=2083675771 instance=ExtResource("8_return_door")]
 
-[node name="ReturnDoor" type="Area2D" parent="." unique_id=682790548]
-z_index = -1
-position = Vector2(9, 136)
+[node name="StorageMarkers" parent="." unique_id=1140582313 instance=ExtResource("9_markers")]
 
-[node name="VisualRoot" type="Node2D" parent="ReturnDoor" unique_id=126889126]
+[node name="RestockTerminal" parent="." unique_id=2088293601 instance=ExtResource("10_restock_terminal")]
 
-[node name="ReturnDoorVisual" type="Polygon2D" parent="ReturnDoor/VisualRoot" unique_id=552706441]
-position = Vector2(6, 6)
-color = Color(0.24, 0.16, 0.1, 1)
-polygon = PackedVector2Array(-15, -35, 9, -35, 9, 22, -15, 22)
+[node name="StorageSupplyArea" parent="." unique_id=1228034625 instance=ExtResource("11_supply_area")]
 
-[node name="DoorBody" type="StaticBody2D" parent="ReturnDoor" unique_id=477717542]
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="ReturnDoor/DoorBody" unique_id=532631987]
-position = Vector2(-1, -0.5)
-shape = SubResource("RectangleShape2D_return_door_body")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="ReturnDoor" unique_id=1653769841]
-position = Vector2(9, 0)
-shape = SubResource("RectangleShape2D_return_door")
-
-[node name="PlayerSpawn" type="Marker2D" parent="." unique_id=1125312585]
-position = Vector2(64, 136)
-
-[node name="RestockTerminal" type="Area2D" parent="." unique_id=2048367496]
-position = Vector2(254, 72)
-script = ExtResource("7_restock_terminal")
-
-[node name="TerminalVisual" type="ColorRect" parent="RestockTerminal" unique_id=1828788217]
-offset_left = -36.0
-offset_top = -28.0
-offset_right = 36.0
-offset_bottom = 16.0
-color = Color(0.11, 0.16, 0.17, 1)
-
-[node name="Screen" type="ColorRect" parent="RestockTerminal" unique_id=1973256991]
-offset_left = -26.0
-offset_top = -20.0
-offset_right = 26.0
-offset_bottom = 2.0
-color = Color(0.18, 0.43, 0.42, 1)
-
-[node name="InteractionShape" type="CollisionShape2D" parent="RestockTerminal" unique_id=550542297]
-position = Vector2(-0.5, -7)
-shape = SubResource("RectangleShape2D_restock_terminal_interaction")
-
-[node name="TerminalBody" type="StaticBody2D" parent="RestockTerminal" unique_id=2098292246]
-
-[node name="BodyShape" type="CollisionShape2D" parent="RestockTerminal/TerminalBody" unique_id=155392436]
-position = Vector2(0, -8)
-shape = SubResource("RectangleShape2D_restock_terminal_body")
-
-[node name="Normal" parent="." unique_id=849810382 instance=ExtResource("2_supply_box")]
-position = Vector2(170, 218)
-items_to_give = Array[String](["bread", "water", "painkiller", "bandage"])
-
-[node name="PlaceholderRect" parent="Normal/VisualRoot" index="1" unique_id=1478309429]
-color = Color(0.46, 0.31, 0.16, 1)
-
-[node name="Mystery" parent="." unique_id=2107622966 instance=ExtResource("2_supply_box")]
-position = Vector2(374, 218)
-script = ExtResource("3_mystery_box")
-trigger_area_path = NodePath("Area2D")
-auto_place_on_ghost_shelf = false
-items_to_give = Array[String](["phantom_ice_cream", "fresh_tombstone", "mandrake_root", "dewdrop_honey", "potion_bottle_empty"])
-
-[node name="PlaceholderRect" parent="Mystery/VisualRoot" index="1" unique_id=1478309429]
-color = Color(0.22, 0.18, 0.34, 1)
-
-[node name="LockedGhostBlocker" type="StaticBody2D" parent="." unique_id=332481026]
-position = Vector2(400, 135)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="LockedGhostBlocker" unique_id=1844381840]
-shape = SubResource("RectangleShape2D_locked_ghost")
-
-[node name="LockedGhostSection" type="ColorRect" parent="." unique_id=275553101]
-z_index = 70
-offset_left = 320.0
-offset_right = 480.0
-offset_bottom = 270.0
-color = Color(0, 0, 0, 0.78)
-
-[node name="WorldLighting" type="CanvasLayer" parent="." unique_id=372559371]
-script = ExtResource("5_lighting")
-morning_color = Color(0.09, 0.07, 0.12, 0.16)
-day_color = Color(0.18, 0.13, 0.08, 0.12)
-night_color = Color(0.01, 0.03, 0.1, 0.52)
-
-[node name="Overlay" type="ColorRect" parent="WorldLighting" unique_id=292461609]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.09, 0.07, 0.12, 0.16)
-
-[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1963939891]
-
-[node name="ActivityCompletionNotification" parent="CanvasLayer" unique_id=1553991951 instance=ExtResource("6_xqq5b")]
-
-[node name="ShelfHuman" parent="." unique_id=1353709811 instance=ExtResource("4_shelf")]
-position = Vector2(168, 118)
-
-[node name="AssetSprite" parent="ShelfHuman/VisualRoot" parent_id_path=PackedInt32Array(1353709811, 1552276096) index="0" unique_id=1116925469]
-scale = Vector2(0.5, 0.5)
-texture = ExtResource("8_10ru3")
-
-[node name="PlaceholderRect" parent="ShelfHuman/VisualRoot" parent_id_path=PackedInt32Array(1353709811, 1552276096) index="1" unique_id=28098589]
-visible = false
-metadata/_edit_use_anchors_ = true
-
-[node name="CollisionShape2D" parent="ShelfHuman/InteractionArea" parent_id_path=PackedInt32Array(1353709811, 673702384) index="0" unique_id=217399561]
-position = Vector2(0, 24)
-shape = SubResource("RectangleShape2D_dnb1a")
-
-[node name="CollisionShape2D" parent="ShelfHuman/PhysicsBody" parent_id_path=PackedInt32Array(1353709811, 1397039525) index="0" unique_id=1234491431]
-position = Vector2(0, 7.125)
-shape = SubResource("RectangleShape2D_xomv4")
-
-[node name="CollisionShape2D" parent="ShelfHuman/Slots/Slot0" parent_id_path=PackedInt32Array(1353709811, 1041457075) index="0" unique_id=1119126875]
-position = Vector2(11.333298, 29)
-shape = SubResource("RectangleShape2D_31yo3")
-
-[node name="CollisionShape2D" parent="ShelfHuman/Slots/Slot1" parent_id_path=PackedInt32Array(1353709811, 218059822) index="0" unique_id=1811112605]
-position = Vector2(0, 29)
-shape = SubResource("RectangleShape2D_f4x8s")
-
-[node name="CollisionShape2D" parent="ShelfHuman/Slots/Slot2" parent_id_path=PackedInt32Array(1353709811, 887197498) index="0" unique_id=1254801357]
-position = Vector2(-11.333298, 29)
-shape = SubResource("RectangleShape2D_nv8ps")
-
-[node name="CollisionShape2D" parent="ShelfHuman/Slots/Slot3" parent_id_path=PackedInt32Array(1353709811, 708980556) index="0" unique_id=1653582951]
-position = Vector2(11.333298, 13)
-shape = SubResource("RectangleShape2D_oyi2s")
-
-[node name="CollisionShape2D" parent="ShelfHuman/Slots/Slot4" parent_id_path=PackedInt32Array(1353709811, 849157140) index="0" unique_id=123626644]
-position = Vector2(0, 13)
-shape = SubResource("RectangleShape2D_68gkr")
-
-[node name="CollisionShape2D" parent="ShelfHuman/Slots/Slot5" parent_id_path=PackedInt32Array(1353709811, 765638578) index="0" unique_id=614442495]
-position = Vector2(-11.333298, 13)
-shape = SubResource("RectangleShape2D_2am28")
-
-[node name="Slot6" type="Area2D" parent="ShelfHuman/Slots" parent_id_path=PackedInt32Array(1353709811, 815516597) index="6" unique_id=789959516]
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="ShelfHuman/Slots/Slot6" unique_id=1383625466]
-position = Vector2(-10, 9)
-shape = SubResource("RectangleShape2D_ry2rs")
-
-[node name="Slot7" type="Area2D" parent="ShelfHuman/Slots" parent_id_path=PackedInt32Array(1353709811, 815516597) index="7" unique_id=562117297]
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="ShelfHuman/Slots/Slot7" unique_id=1419500686]
-position = Vector2(0, 9)
-shape = SubResource("RectangleShape2D_ry2rs")
-
-[node name="Slot8" type="Area2D" parent="ShelfHuman/Slots" parent_id_path=PackedInt32Array(1353709811, 815516597) index="8" unique_id=557568649]
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="ShelfHuman/Slots/Slot8" unique_id=1881479675]
-position = Vector2(10, 9)
-shape = SubResource("RectangleShape2D_ry2rs")
-
-[node name="ShelfGhost" parent="." unique_id=1533134813 instance=ExtResource("4_shelf")]
-position = Vector2(365, 118)
-shelf_type = 1
-
-[node name="AssetSprite" parent="ShelfGhost/VisualRoot" parent_id_path=PackedInt32Array(1533134813, 1552276096) index="0" unique_id=1116925469]
-scale = Vector2(0.5, 0.5)
-texture = ExtResource("9_ieyae")
-
-[node name="PlaceholderRect" parent="ShelfGhost/VisualRoot" parent_id_path=PackedInt32Array(1533134813, 1552276096) index="1" unique_id=28098589]
-visible = false
-metadata/_edit_use_anchors_ = true
-
-[node name="CollisionShape2D" parent="ShelfGhost/InteractionArea" parent_id_path=PackedInt32Array(1533134813, 673702384) index="0" unique_id=217399561]
-position = Vector2(0, 24.5)
-shape = SubResource("RectangleShape2D_rusou")
-
-[node name="CollisionShape2D" parent="ShelfGhost/PhysicsBody" parent_id_path=PackedInt32Array(1533134813, 1397039525) index="0" unique_id=1234491431]
-position = Vector2(0, 7.5)
-shape = SubResource("RectangleShape2D_g57a8")
-
-[node name="CollisionShape2D" parent="ShelfGhost/Slots/Slot0" parent_id_path=PackedInt32Array(1533134813, 1041457075) index="0" unique_id=1119126875]
-position = Vector2(11.333313, 30)
-shape = SubResource("RectangleShape2D_xlp6v")
-
-[node name="CollisionShape2D" parent="ShelfGhost/Slots/Slot1" parent_id_path=PackedInt32Array(1533134813, 218059822) index="0" unique_id=1811112605]
-position = Vector2(0, 30)
-shape = SubResource("RectangleShape2D_dwqbd")
-
-[node name="CollisionShape2D" parent="ShelfGhost/Slots/Slot2" parent_id_path=PackedInt32Array(1533134813, 887197498) index="0" unique_id=1254801357]
-position = Vector2(-11.333313, 30)
-shape = SubResource("RectangleShape2D_umemk")
-
-[node name="CollisionShape2D" parent="ShelfGhost/Slots/Slot3" parent_id_path=PackedInt32Array(1533134813, 708980556) index="0" unique_id=1653582951]
-position = Vector2(11.333313, 14)
-shape = SubResource("RectangleShape2D_4dciv")
-
-[node name="CollisionShape2D" parent="ShelfGhost/Slots/Slot4" parent_id_path=PackedInt32Array(1533134813, 849157140) index="0" unique_id=123626644]
-position = Vector2(0, 14)
-shape = SubResource("RectangleShape2D_eynth")
-
-[node name="CollisionShape2D" parent="ShelfGhost/Slots/Slot5" parent_id_path=PackedInt32Array(1533134813, 765638578) index="0" unique_id=614442495]
-position = Vector2(-11.333313, 14)
-shape = SubResource("RectangleShape2D_3yt53")
-
-[node name="Slot6" type="Area2D" parent="ShelfGhost/Slots" parent_id_path=PackedInt32Array(1533134813, 815516597) index="6" unique_id=1059571632]
-position = Vector2(21.3333, -12)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="ShelfGhost/Slots/Slot6" unique_id=97074623]
-position = Vector2(-31.333313, 22)
-shape = SubResource("RectangleShape2D_3yt53")
-
-[node name="Slot7" type="Area2D" parent="ShelfGhost/Slots" parent_id_path=PackedInt32Array(1533134813, 815516597) index="7" unique_id=129046259]
-position = Vector2(21.3333, -12)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="ShelfGhost/Slots/Slot7" unique_id=1702251341]
-position = Vector2(-21.333313, 22)
-shape = SubResource("RectangleShape2D_3yt53")
-
-[node name="Slot8" type="Area2D" parent="ShelfGhost/Slots" parent_id_path=PackedInt32Array(1533134813, 815516597) index="8" unique_id=15765835]
-position = Vector2(21.3333, -12)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="ShelfGhost/Slots/Slot8" unique_id=1558064191]
-position = Vector2(-11.333313, 22)
-shape = SubResource("RectangleShape2D_3yt53")
-
-[editable path="Normal"]
-[editable path="Mystery"]
-[editable path="ShelfHuman"]
-[editable path="ShelfGhost"]
+[node name="StorageShelves" parent="." unique_id=504149659 instance=ExtResource("12_shelves")]

@@ -1,0 +1,164 @@
+class_name StorageMysteryFlow
+extends Node
+
+var storage: Node = null
+
+
+func setup(storage_node: Node) -> void:
+	storage = storage_node
+
+
+func set_shelf_install_state(human_installed: bool, ghost_installed: bool) -> void:
+	storage._human_shelf_installed = human_installed
+	storage._ghost_shelf_installed = ghost_installed
+	apply_shelf_install_state()
+
+
+func set_normal_supply_depleted(is_depleted: bool) -> void:
+	storage._normal_supply_depleted = is_depleted
+	apply_normal_box_state()
+
+
+func set_locked_half_unlocked(is_unlocked: bool) -> void:
+	set_mystery_phase_unlocked(is_unlocked)
+
+
+func set_mystery_phase_unlocked(is_unlocked: bool) -> void:
+	storage._mystery_phase_unlocked = is_unlocked
+	apply_mystery_phase_state(true)
+
+
+func set_mystery_discovered(is_discovered: bool) -> void:
+	storage._mystery_discovered = is_discovered
+
+	if storage.mystery_box != null and storage._mystery_discovered and storage.mystery_box.has_method("mark_discovered"):
+		storage.mystery_box.mark_discovered()
+
+
+func set_mystery_supply_depleted(is_depleted: bool) -> void:
+	storage._mystery_supply_depleted = is_depleted
+	apply_mystery_box_item_state()
+
+
+func set_mystery_items_taken(item_ids: Array[String]) -> void:
+	if storage.mystery_box == null:
+		return
+
+	for item_id in item_ids:
+		if storage.mystery_box.has_method("mark_item_taken_without_inventory"):
+			storage.mystery_box.mark_item_taken_without_inventory(item_id)
+
+
+func unlock_locked_half() -> void:
+	set_mystery_phase_unlocked(true)
+
+
+func unlock_mystery_phase() -> void:
+	set_mystery_phase_unlocked(true)
+
+
+func setup_shelves() -> void:
+	for shelf in [storage.shelf_human, storage.shelf_ghost]:
+		if shelf == null:
+			continue
+
+		shelf.remove_from_group("shelves")
+		shelf.set_meta("is_installed_in_store", false)
+		shelf.set_meta("is_carried_storage_object", false)
+		shelf.set_meta("is_carryable_storage_object", true)
+
+	apply_shelf_install_state()
+
+
+func apply_shelf_install_state() -> void:
+	if storage.shelf_human != null and storage._human_shelf_installed:
+		storage.shelf_human.queue_free()
+		storage.shelf_human = null
+
+	if storage.shelf_ghost != null and storage._ghost_shelf_installed:
+		storage.shelf_ghost.queue_free()
+		storage.shelf_ghost = null
+
+
+func apply_normal_box_state() -> void:
+	if storage.normal_box == null:
+		return
+
+	storage.normal_box.visible = true
+	storage._set_node_enabled_recursive(storage.normal_box, true)
+
+	if storage._normal_supply_depleted and storage.normal_box.has_method("mark_all_taken_without_inventory"):
+		storage.normal_box.mark_all_taken_without_inventory()
+
+
+func apply_mystery_phase_state(animated: bool) -> void:
+	var is_open: bool = storage._mystery_phase_unlocked
+
+	if storage.mystery_box != null:
+		storage.mystery_box.visible = is_open
+		storage._set_node_enabled_recursive(storage.mystery_box, is_open)
+
+		if is_open:
+			if storage._mystery_discovered and storage.mystery_box.has_method("mark_discovered"):
+				storage.mystery_box.mark_discovered()
+			else:
+				storage.mystery_box.unlock_mystery()
+
+			apply_mystery_box_item_state()
+
+	if storage.shelf_ghost != null:
+		storage.shelf_ghost.visible = is_open
+		storage._set_node_enabled_recursive(storage.shelf_ghost, is_open)
+		storage.shelf_ghost.set_meta("is_carryable_storage_object", is_open)
+
+		if is_open:
+			storage.shelf_ghost.apply_ghost_glow(true)
+
+	storage._set_node_enabled_recursive(storage.locked_blocker, not is_open)
+
+	if storage.locked_overlay == null:
+		return
+
+	if is_open and animated:
+		storage.locked_overlay.visible = true
+		storage.locked_overlay.modulate.a = 0.78
+
+		var tween := storage.create_tween()
+		tween.tween_property(storage.locked_overlay, "modulate:a", 0.0, 0.45)
+		await tween.finished
+
+		storage.locked_overlay.visible = false
+	elif is_open:
+		storage.locked_overlay.visible = false
+		storage.locked_overlay.modulate.a = 0.0
+	else:
+		storage.locked_overlay.visible = true
+		storage.locked_overlay.modulate.a = 0.78
+
+
+func on_mystery_box_discovered() -> void:
+	storage._mystery_discovered = true
+	storage.mystery_discovered.emit()
+
+
+func on_mystery_box_item_taken(item_id: String) -> void:
+	storage.mystery_item_taken.emit(item_id)
+
+	if storage.mystery_box != null and storage.mystery_box.is_empty():
+		storage._mystery_supply_depleted = true
+		storage.mystery_supply_depleted.emit()
+
+
+func on_ghost_shelf_item_placed(slot_index: int, item_id: String) -> void:
+	storage.ghost_shelf_item_placed.emit(slot_index, item_id)
+
+
+func apply_mystery_box_item_state() -> void:
+	if storage.mystery_box == null:
+		return
+
+	if not storage._mystery_supply_depleted:
+		return
+
+	if storage.mystery_box.has_method("mark_all_taken_without_inventory"):
+		storage.mystery_box.mark_all_taken_without_inventory()
