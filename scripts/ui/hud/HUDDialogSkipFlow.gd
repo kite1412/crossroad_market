@@ -12,6 +12,9 @@ func handle_dialog_skip_input(event: InputEvent) -> void:
 	if not is_dialog_skip_event(event):
 		return
 
+	if hud.has_method("is_dialog_visible") and hud.is_dialog_visible():
+		return
+
 	var skipped := false
 
 	if hud._hint_dialog_flow != null and hud._hint_dialog_flow.is_visible():
@@ -57,7 +60,8 @@ func skip_world_dialogs() -> bool:
 
 func has_interactive_overlay_open() -> bool:
 	return (
-		has_visible_overlay_named("CashierUILayer")
+		(hud.has_method("is_dialog_visible") and hud.is_dialog_visible())
+		or has_visible_overlay_named("CashierUILayer")
 		or has_visible_overlay_named("ActivityBoardLayer")
 		or has_visible_overlay_named("StorageRestockLayer")
 		or has_visible_overlay_named("TaxReportLayer")

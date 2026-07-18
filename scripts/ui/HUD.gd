@@ -2,6 +2,7 @@ extends CanvasLayer
 
 const HUDStatusLabels = preload("res://scripts/ui/hud/HUDStatusLabels.gd")
 const HUDNotificationFlow = preload("res://scripts/ui/hud/HUDNotificationFlow.gd")
+const HUDDialogController = preload("res://scripts/ui/hud/HUDDialogController.gd")
 const HUDDialogSkipFlow = preload("res://scripts/ui/hud/HUDDialogSkipFlow.gd")
 const HUDTaxPanel = preload("res://scripts/ui/hud/HUDTaxPanel.gd")
 const HUDHintDialog = preload("res://scripts/ui/hud/HUDHintDialog.gd")
@@ -18,6 +19,7 @@ signal tax_payment_requested()
 @onready var time_label: Label = $TopCenterHUD/TimeLabel
 @onready var notification_label: Label = $NotificationLabel
 @onready var objective_label: Label = $ObjectiveLabel
+@onready var dialog: Dialog = $Dialog
 
 const NOTIFY_DURATION: float = 2.0
 const MIN_NOTIFY_DURATION: float = 0.9
@@ -60,6 +62,7 @@ var _tax_warning_label: Label = null
 
 var _status_labels: HUDStatusLabels = HUDStatusLabels.new()
 var _notification_flow: HUDNotificationFlow = HUDNotificationFlow.new()
+var _dialog_controller: HUDDialogController = HUDDialogController.new()
 var _dialog_skip_flow: HUDDialogSkipFlow = HUDDialogSkipFlow.new()
 var _tax_panel_flow: HUDTaxPanel = HUDTaxPanel.new()
 var _hint_dialog_flow: HUDHintDialog = HUDHintDialog.new()
@@ -95,6 +98,7 @@ func _setup_hud_controllers() -> void:
 	for controller in [
 		_status_labels,
 		_notification_flow,
+		_dialog_controller,
 		_dialog_skip_flow,
 		_tax_panel_flow,
 		_hint_dialog_flow,
@@ -154,6 +158,14 @@ func show_notification(
 	instant_text: bool = false
 ) -> void:
 	_notification_flow.show_notification(text, duration, blocks_actions, instant_text)
+
+
+func show_dialog_sequence(dialogues: Array[Dictionary]) -> void:
+	await _dialog_controller.show_dialog_sequence(dialogues)
+
+
+func is_dialog_visible() -> bool:
+	return _dialog_controller.is_visible()
 
 
 func show_tax_report(report: Dictionary) -> void:

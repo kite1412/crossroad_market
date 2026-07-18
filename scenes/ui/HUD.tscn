@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/ui/HUD.gd" id="1"]
 [ext_resource type="PackedScene" uid="uid://cnvnuy02s2gg3" path="res://scenes/ui/InventoryUI.tscn" id="2"]
+[ext_resource type="PackedScene" uid="uid://bstxttr3xm7mf" path="res://scenes/ui/Dialog.tscn" id="3_dialog"]
 
 [node name="HUD" type="CanvasLayer" unique_id=162570791 groups=["hud"]]
 layer = 10
@@ -116,3 +117,6 @@ text = "Item name"
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 3
+
+[node name="Dialog" parent="." instance=ExtResource("3_dialog")]
+visible = false

@@ -3,6 +3,7 @@ extends Node
 
 const StoreProgressionController = preload("res://scripts/locations/store/StoreProgressionController.gd")
 const StoreShelfController = preload("res://scripts/locations/store/StoreShelfController.gd")
+const StoreDialogBridge = preload("res://scripts/locations/store/StoreDialogBridge.gd")
 
 const NORMAL_STOCK_REQUIRED: int = 4
 
@@ -23,7 +24,7 @@ func show_morning_intro() -> void:
 		"It's dusty, but it still feels like home.",
 		"Go to the backroom and bring out the human shelf."
 	]
-	await store._show_notification_sequence(messages)
+	await StoreDialogBridge.show_player_sequence(store, messages)
 	show_first_activity_board()
 
 

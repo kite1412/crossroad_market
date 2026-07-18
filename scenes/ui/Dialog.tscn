@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://bstxttr3xm7mf"]
 
 [ext_resource type="Script" uid="uid://cto35boa86hcv" path="res://scripts/ui/Dialog.gd" id="1_dialog"]
+[ext_resource type="PackedScene" path="res://scenes/ui/PortraitAnimation.tscn" id="2_portrait"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_dialog_panel"]
 bg_color = Color(0.98, 0.86, 0.78, 1)
@@ -50,20 +51,8 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_dialog")
 
-[node name="Portrait" type="TextureRect" parent="." unique_id=1533677019]
-texture_filter = 1
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -194.0
-offset_top = 4.0
-offset_right = -4.0
-offset_bottom = 194.0
-grow_horizontal = 0
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
+[node name="Portrait" parent="." instance=ExtResource("2_portrait")]
+layout_mode = 0
 
 [node name="DialogPanel" type="Panel" parent="." unique_id=1243328353]
 layout_mode = 1
