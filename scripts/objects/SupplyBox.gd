@@ -1,6 +1,9 @@
 class_name SupplyBox
 extends Node2D
 
+const SupplyBoxInventoryFlow = preload("res://scripts/objects/supply/SupplyBoxInventoryFlow.gd")
+const SupplyBoxPresentation = preload("res://scripts/objects/supply/SupplyBoxPresentation.gd")
+
 @export var items_to_give: Array[String] = []
 @export var one_time_only: bool = true
 
@@ -9,136 +12,69 @@ signal item_taken(item_id: String)
 
 var _already_collected: bool = false
 var _collected_items: Dictionary = {}
-var _all_items_taken: bool = false  # item_id → how many times collected (for non one-time)
+var _all_items_taken: bool = false
+
+var _inventory_flow: SupplyBoxInventoryFlow = SupplyBoxInventoryFlow.new()
+var _presentation: SupplyBoxPresentation = SupplyBoxPresentation.new()
 
 
 func _ready() -> void:
+	_setup_supply_box_controllers()
 	_setup_cursor_hover()
 
+
+func _setup_supply_box_controllers() -> void:
+	_inventory_flow.setup(self)
+	_presentation.setup(self)
+
+
 func get_available_items() -> Array[String]:
-	if one_time_only and _already_collected:
-		return []
-	var available: Array[String] = []
-	for item_id in items_to_give:
-		if not one_time_only:
-			available.append(item_id)
-		elif not _collected_items.has(item_id):
-			available.append(item_id)
-	return available
+	return _inventory_flow.get_available_items()
+
 
 func collect() -> Array[String]:
-	if one_time_only and _already_collected:
-		return []
+	return _inventory_flow.collect()
 
-	_already_collected = true
-
-	for item_id in items_to_give:
-		Inventory.add_item(item_id)
-
-	items_collected.emit(items_to_give)
-	return items_to_give
 
 func collect_one(item_id: String) -> bool:
-	"""Collect exactly one unit of the specified item."""
-	if item_id not in items_to_give:
-		return false
-
-	if one_time_only and _collected_items.has(item_id):
-		return false
-
-	Inventory.add_item(item_id)
-	_collected_items[item_id] = _collected_items.get(item_id, 0) + 1
-	item_taken.emit(item_id)
-
-	if one_time_only:
-		var all_done := true
-		for it in items_to_give:
-			if not _collected_items.has(it):
-				all_done = false
-				break
-		if all_done:
-			_already_collected = true
-			_all_items_taken = true
-			items_collected.emit(items_to_give)
-
-	return true
+	return _inventory_flow.collect_one(item_id)
 
 
 func mark_item_taken_without_inventory(item_id: String) -> void:
-	if item_id not in items_to_give:
-		return
+	_inventory_flow.mark_item_taken_without_inventory(item_id)
 
-	_collected_items[item_id] = _collected_items.get(item_id, 0) + 1
 
 func is_empty() -> bool:
-	if not one_time_only:
-		return false
-	if one_time_only and _already_collected:
-		return true
-	for item_id in items_to_give:
-		if not _collected_items.has(item_id):
-			return false
-	return true
+	return _inventory_flow.is_empty()
+
 
 func is_all_taken() -> bool:
-	return _all_items_taken
+	return _inventory_flow.is_all_taken()
+
 
 func mark_all_taken_without_inventory() -> void:
-	for item_id in items_to_give:
-		mark_item_taken_without_inventory(item_id)
-
-	if one_time_only:
-		_already_collected = true
-		_all_items_taken = true
+	_inventory_flow.mark_all_taken_without_inventory()
 
 
 func get_hover_display_name() -> String:
-	if is_empty():
-		return "Empty Supply Box"
-
-	if items_to_give.size() == 1:
-		var item := ItemDatabase.get_item(items_to_give[0])
-
-		if item != null and item.display_name != "":
-			return "%s Box" % item.display_name
-
-	return "Supply Box"
+	return _presentation.get_hover_display_name()
 
 
 func _setup_cursor_hover() -> void:
-	var hover_area := get_node_or_null("Area2D") as Area2D
-
-	if hover_area == null:
-		return
-
-	hover_area.input_pickable = true
-	var entered := Callable(self, "_on_cursor_mouse_entered")
-	var exited := Callable(self, "_on_cursor_mouse_exited")
-
-	if not hover_area.mouse_entered.is_connected(entered):
-		hover_area.mouse_entered.connect(entered)
-
-	if not hover_area.mouse_exited.is_connected(exited):
-		hover_area.mouse_exited.connect(exited)
+	_presentation.setup_cursor_hover()
 
 
 func _on_cursor_mouse_entered() -> void:
-	_show_cursor_tooltip(get_hover_display_name())
+	_presentation.on_cursor_mouse_entered()
 
 
 func _on_cursor_mouse_exited() -> void:
-	_hide_cursor_tooltip()
+	_presentation.on_cursor_mouse_exited()
 
 
 func _show_cursor_tooltip(text: String) -> void:
-	var hud := get_tree().get_first_node_in_group("hud")
-
-	if hud != null and hud.has_method("show_cursor_tooltip"):
-		hud.call("show_cursor_tooltip", text)
+	_presentation.show_cursor_tooltip(text)
 
 
 func _hide_cursor_tooltip() -> void:
-	var hud := get_tree().get_first_node_in_group("hud")
-
-	if hud != null and hud.has_method("hide_cursor_tooltip"):
-		hud.call("hide_cursor_tooltip")
+	_presentation.hide_cursor_tooltip()
