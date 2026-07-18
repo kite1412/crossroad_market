@@ -1,7 +1,7 @@
 [gd_scene load_steps=5 format=3]
 
 [ext_resource type="PackedScene" uid="uid://catgco5tfi312" path="res://scenes/objects/SupplyBox.tscn" id="1_supply_box"]
-[ext_resource type="Script" uid="uid://bj1v64tu0xt4a" path="res://scripts/objects/MysterySupplyBox.gd" id="2_mystery_box"]
+[ext_resource type="Script" uid="uid://dyfcg4fpvs7ga" path="res://scripts/objects/MysterySupplyBox.gd" id="2_mystery_box"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_locked_ghost"]
 size = Vector2(160, 270)

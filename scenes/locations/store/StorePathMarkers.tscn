@@ -30,11 +30,29 @@ metadata/store_path_role = "storage_return"
 [node name="StorePathQueueFront" type="Marker2D" parent="." unique_id=2091645285]
 position = Vector2(272, 140)
 metadata/store_path_role = "queue_front"
+metadata/store_queue_index = 0
 
 [node name="StorePathQueueBack1" type="Marker2D" parent="." unique_id=1899601933]
 position = Vector2(272, 160)
 metadata/store_path_role = "queue_back"
+metadata/store_queue_index = 1
 
 [node name="StorePathQueueBack2" type="Marker2D" parent="." unique_id=571526423]
 position = Vector2(272, 180)
 metadata/store_path_role = "queue_back"
+metadata/store_queue_index = 2
+
+[node name="StorePathQueueFrontRight" type="Marker2D" parent="."]
+position = Vector2(308, 140)
+metadata/store_path_role = "queue_front_right"
+metadata/store_queue_index = 0
+
+[node name="StorePathQueueBack1Right" type="Marker2D" parent="."]
+position = Vector2(308, 160)
+metadata/store_path_role = "queue_back_right"
+metadata/store_queue_index = 1
+
+[node name="StorePathQueueBack2Right" type="Marker2D" parent="."]
+position = Vector2(308, 180)
+metadata/store_path_role = "queue_back_right"
+metadata/store_queue_index = 2

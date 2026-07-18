@@ -1,5 +1,9 @@
 extends Node
 
+const TimeRuntime = preload("res://scripts/managers/time/TimeRuntime.gd")
+const TimePhaseFlow = preload("res://scripts/managers/time/TimePhaseFlow.gd")
+const TimeClockFormatter = preload("res://scripts/managers/time/TimeClockFormatter.gd")
+
 enum Phase { MORNING, DAY, NIGHT }
 
 const PHASE_DURATION: float = 240.0
@@ -21,167 +25,96 @@ var time_remaining: float = PHASE_DURATION
 var is_running: bool = false
 var _day_finished: bool = false
 
+var _runtime: TimeRuntime = TimeRuntime.new()
+var _phase_flow: TimePhaseFlow = TimePhaseFlow.new()
+var _clock_formatter: TimeClockFormatter = TimeClockFormatter.new()
+
+
+func _ready() -> void:
+	_setup_time_controllers()
+
+
+func _setup_time_controllers() -> void:
+	_runtime.setup(self)
+	_phase_flow.setup(self)
+	_clock_formatter.setup(self)
+
 
 func _process(delta: float) -> void:
-	if not is_running:
-		return
-
-	time_remaining -= delta
-	time_updated.emit(time_remaining)
-
-	if time_remaining <= 0.0:
-		_advance_phase()
+	_runtime.process(delta)
 
 
 func start_game() -> void:
-	current_day = 1
-	is_running = false
-	_day_finished = false
-	_set_phase(Phase.MORNING)
-	day_started.emit(current_day)
+	_phase_flow.start_game()
 
 
 func start_next_day() -> void:
-	if current_day >= TOTAL_DAYS:
-		is_running = false
-		return
-
-	current_day += 1
-	is_running = false
-	_day_finished = false
-	_set_phase(Phase.MORNING)
-	day_started.emit(current_day)
+	_phase_flow.start_next_day()
 
 
 func start_day_phase() -> void:
-	is_running = true
-	_set_phase(Phase.DAY)
+	_phase_flow.start_day_phase()
 
 
 func start_clock() -> void:
-	if _day_finished:
-		return
-
-	is_running = true
+	_runtime.start_clock()
 
 
 func end_day_sequence() -> void:
-	start_next_day()
+	_phase_flow.end_day_sequence()
 
 
 func pause() -> void:
-	is_running = false
+	_runtime.pause()
 
 
 func resume() -> void:
-	start_clock()
+	_runtime.resume()
 
 
 func can_sleep() -> bool:
-	return _day_finished
+	return _phase_flow.can_sleep()
 
 
 func sleep_until_next_day(force: bool = false) -> bool:
-	if not force and not can_sleep():
-		return false
-
-	start_next_day()
-	return true
+	return _phase_flow.sleep_until_next_day(force)
 
 
 func get_phase_name() -> String:
-	match current_phase:
-		Phase.MORNING:
-			return "Morning"
-		Phase.DAY:
-			return "Day"
-		Phase.NIGHT:
-			return "Night"
-
-	return "Unknown"
+	return _clock_formatter.get_phase_name()
 
 
 func get_time_display() -> String:
-	return get_clock_display()
+	return _clock_formatter.get_time_display()
 
 
 func get_clock_display() -> String:
-	var minutes: int = get_world_minutes()
-	var hour: int = 24 if minutes >= END_START_MINUTES else floori(minutes / 60.0) % 24
-	var minute: int = minutes % 60
-
-	return "%02d:%02d" % [hour, minute]
+	return _clock_formatter.get_clock_display()
 
 
 func get_phase_time_range() -> String:
-	match current_phase:
-		Phase.MORNING:
-			return "06:00-12:00"
-		Phase.DAY:
-			return "12:00-18:00"
-		Phase.NIGHT:
-			return "18:00-24:00"
-
-	return ""
+	return _clock_formatter.get_phase_time_range()
 
 
 func get_world_minutes() -> int:
-	if _day_finished:
-		return END_START_MINUTES
-
-	var phase_start: int = _get_phase_start_minutes(current_phase)
-	var elapsed_ratio: float = clamp((PHASE_DURATION - time_remaining) / PHASE_DURATION, 0.0, 0.999)
-	var phase_minutes: int = int(floor(elapsed_ratio * float(_get_phase_world_duration_minutes(current_phase))))
-	phase_minutes = int(floor(float(phase_minutes) / float(CLOCK_STEP_MINUTES))) * CLOCK_STEP_MINUTES
-
-	return phase_start + phase_minutes
+	return _clock_formatter.get_world_minutes()
 
 
 func get_current_clock_minutes() -> int:
-	return get_world_minutes()
+	return _clock_formatter.get_current_clock_minutes()
 
 
 func _advance_phase() -> void:
-	match current_phase:
-		Phase.MORNING:
-			_set_phase(Phase.DAY)
-		Phase.DAY:
-			_set_phase(Phase.NIGHT)
-		Phase.NIGHT:
-			time_remaining = 0.0
-			is_running = false
-			_day_finished = true
-			time_updated.emit(time_remaining)
-			day_ended.emit(current_day)
+	_phase_flow.advance_phase()
 
 
 func _set_phase(new_phase: Phase) -> void:
-	current_phase = new_phase
-	time_remaining = PHASE_DURATION
-	_day_finished = false
-	phase_changed.emit(current_phase)
-	time_updated.emit(time_remaining)
+	_phase_flow.set_phase(new_phase)
 
 
 func _get_phase_start_minutes(phase: Phase) -> int:
-	match phase:
-		Phase.MORNING:
-			return MORNING_START_MINUTES
-		Phase.DAY:
-			return DAY_START_MINUTES
-		Phase.NIGHT:
-			return NIGHT_START_MINUTES
-
-	return MORNING_START_MINUTES
+	return _clock_formatter.get_phase_start_minutes(phase)
 
 
 func _get_phase_world_duration_minutes(phase: Phase) -> int:
-	match phase:
-		Phase.MORNING:
-			return DAY_START_MINUTES - MORNING_START_MINUTES
-		Phase.DAY:
-			return NIGHT_START_MINUTES - DAY_START_MINUTES
-		Phase.NIGHT:
-			return END_START_MINUTES - NIGHT_START_MINUTES
-
-	return DAY_START_MINUTES - MORNING_START_MINUTES
+	return _clock_formatter.get_phase_world_duration_minutes(phase)

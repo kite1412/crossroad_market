@@ -16,6 +16,8 @@ const ROLE_EXIT: StringName = &"exit"
 const ROLE_CASHIER: StringName = &"cashier"
 const ROLE_QUEUE_FRONT: StringName = &"queue_front"
 const ROLE_QUEUE_BACK: StringName = &"queue_back"
+const ROLE_QUEUE_FRONT_RIGHT: StringName = &"queue_front_right"
+const ROLE_QUEUE_BACK_RIGHT: StringName = &"queue_back_right"
 const CHECKOUT_GOAL_ROLES: Array[StringName] = [ROLE_QUEUE_FRONT, ROLE_CASHIER]
 const STANDING_SHAPE_SIZE := Vector2(21, 9)
 const STANDING_SHAPE_OFFSET := Vector2(0, -8)
@@ -176,21 +178,34 @@ func get_route_to_cashier_from(from_position: Vector2) -> Array[Vector2]:
 
 func get_route_to_queue_target_from(from_position: Vector2, queue_index: int) -> Array[Vector2]:
 	var queue_target := get_queue_target_position(queue_index, from_position)
-	var start := _find_nearest_graph_node(from_position)
-
-	if not bool(start.get("valid", false)):
-		return _dedupe_route_points(_make_orthogonal_route(from_position, queue_target, true))
-
 	var queue_node := _get_queue_target_node_name(queue_index)
-	var path := _find_graph_path(start.get("node", queue_node) as StringName, queue_node)
+	var direct_route := _make_orthogonal_route(from_position, queue_target, true)
 
-	if path.is_empty():
-		return _dedupe_route_points(_make_orthogonal_route(from_position, queue_target, true))
+	if _is_queue_route_clear(from_position, direct_route):
+		return _dedupe_route_points(direct_route)
 
-	var route := start.get("route", []) as Array[Vector2]
-	route.append_array(_build_route_from_graph_path(path))
-	_append_orthogonal_route_to(route, queue_target, true, from_position)
-	return _dedupe_route_points(route)
+	var queue_start := _find_nearest_reachable_graph_node_for_route(from_position, queue_node)
+
+	if bool(queue_start.get("valid", false)):
+		var queue_route := queue_start.get("route", []) as Array[Vector2]
+		var appended_center := queue_route.is_empty() or _append_clear_queue_target_route_to(queue_route, queue_target, true, from_position)
+
+		if appended_center:
+			return _dedupe_route_points(queue_route)
+
+	var approach_node := _get_queue_approach_node_name(queue_index)
+
+	if approach_node != StringName():
+		var approach_start := _find_nearest_reachable_graph_node_for_route(from_position, approach_node)
+
+		if bool(approach_start.get("valid", false)):
+			var approach_route := approach_start.get("route", []) as Array[Vector2]
+			var appended_right := _append_clear_queue_target_route_to(approach_route, queue_target, true, from_position)
+
+			if appended_right:
+				return _dedupe_route_points(approach_route)
+
+	return []
 
 
 func get_route_from_shelf_to_cashier(shelf: Shelf) -> Array[Vector2]:
@@ -211,6 +226,11 @@ func get_route_from_shelf_to_cashier(shelf: Shelf) -> Array[Vector2]:
 
 
 func get_exit_route_from(from_position: Vector2, fallback_exit_position: Vector2) -> Array[Vector2]:
+	var queue_right_route := _build_exit_route_via_queue_right(from_position, fallback_exit_position)
+
+	if not queue_right_route.is_empty():
+		return queue_right_route
+
 	var start := _find_nearest_graph_node(from_position)
 
 	if not bool(start.get("valid", false)):
@@ -990,6 +1010,57 @@ func _find_nearest_graph_node(position: Vector2) -> Dictionary:
 	return best_result
 
 
+func _find_nearest_reachable_graph_node_for_route(position: Vector2, goal_node: StringName) -> Dictionary:
+	var goal_marker := _get_graph_marker(goal_node)
+
+	if goal_marker == null:
+		return {"valid": false}
+
+	var best_result := {"valid": false}
+	var best_score := INF
+
+	for node_name in _get_graph_node_names():
+		var marker := _get_graph_marker(node_name)
+
+		if marker == null:
+			continue
+
+		var entry_route := _make_orthogonal_route(position, marker.global_position, true)
+
+		if not _is_route_clear(position, entry_route):
+			continue
+
+		var graph_path := _find_graph_path(node_name, goal_node)
+
+		if graph_path.is_empty():
+			continue
+
+		var route := entry_route.duplicate()
+		route.append_array(_build_route_from_graph_path(graph_path))
+		route = _dedupe_route_points(route)
+
+		if _is_queue_target_node(goal_node):
+			if not _is_queue_route_clear(position, route):
+				continue
+		elif not _is_route_clear(position, route):
+			continue
+
+		var score := _get_route_distance(position, route)
+
+		if score >= best_score:
+			continue
+
+		best_score = score
+		best_result = {
+			"valid": true,
+			"node": node_name,
+			"route": route,
+			"distance": score
+			}
+
+	return best_result
+
+
 func _find_graph_path(start_node: StringName, goal_node: StringName) -> Array[StringName]:
 	var result: Array[StringName] = []
 
@@ -1111,6 +1182,54 @@ func _append_orthogonal_route_to(
 	route.append_array(_make_orthogonal_route(from_pos, to_pos, horizontal_first))
 
 
+func _append_clear_orthogonal_route_to(
+	route: Array[Vector2],
+	to_pos: Vector2,
+	horizontal_first: bool = true,
+	fallback_from_pos: Vector2 = Vector2.INF
+) -> bool:
+	var from_pos := fallback_from_pos
+
+	if not route.is_empty():
+		from_pos = route[route.size() - 1]
+
+	if not from_pos.is_finite():
+		route.append(to_pos)
+		return true
+
+	var addition := _make_orthogonal_route(from_pos, to_pos, horizontal_first)
+
+	if not _is_route_clear(from_pos, addition):
+		return false
+
+	route.append_array(addition)
+	return true
+
+
+func _append_clear_queue_target_route_to(
+	route: Array[Vector2],
+	to_pos: Vector2,
+	horizontal_first: bool = true,
+	fallback_from_pos: Vector2 = Vector2.INF
+) -> bool:
+	var from_pos := fallback_from_pos
+
+	if not route.is_empty():
+		from_pos = route[route.size() - 1]
+
+	if not from_pos.is_finite():
+		route.append(to_pos)
+		return true
+
+	var addition := _make_orthogonal_route(from_pos, to_pos, horizontal_first)
+
+	if not _is_queue_route_clear(from_pos, addition):
+		return false
+
+	route.append_array(addition)
+	return true
+
+
 func _prepend_orthogonal_route(from_pos: Vector2, route: Array[Vector2], horizontal_first: bool = true) -> Array[Vector2]:
 	if route.is_empty():
 		return []
@@ -1165,6 +1284,43 @@ func _is_route_clear(
 			return false
 
 		current = point
+
+	return true
+
+
+func _is_queue_route_clear(start: Vector2, route: Array[Vector2]) -> bool:
+	var current := start
+
+	for index in range(route.size()):
+		var point := route[index]
+		var allow_blocked_endpoint := index == route.size() - 1
+
+		if allow_blocked_endpoint:
+			if not _is_route_segment_clear_except_endpoint(current, point):
+				return false
+		elif not _is_route_segment_clear(current, point):
+			return false
+
+		current = point
+
+	return true
+
+
+func _is_route_segment_clear_except_endpoint(from_pos: Vector2, to_pos: Vector2) -> bool:
+	if from_pos.distance_to(to_pos) <= ROUTE_CLEARANCE_EPSILON:
+		return true
+
+	if not is_equal_approx(from_pos.x, to_pos.x) and not is_equal_approx(from_pos.y, to_pos.y):
+		return false
+
+	var distance := from_pos.distance_to(to_pos)
+	var steps := maxi(1, int(ceil(distance / ROUTE_SAMPLE_STEP)))
+
+	for index in range(steps):
+		var point := from_pos.lerp(to_pos, float(index) / float(steps))
+
+		if not _is_npc_access_point_clear(point):
+			return false
 
 	return true
 
@@ -1318,6 +1474,19 @@ func _get_queue_target_node_name(queue_index: int) -> StringName:
 	return queue_back_nodes[back_index]
 
 
+func _get_queue_approach_node_name(queue_index: int) -> StringName:
+	if queue_index <= 0:
+		return _get_role_node_name(ROLE_QUEUE_FRONT_RIGHT, StringName())
+
+	var queue_back_right_nodes := _get_queue_back_right_node_names()
+
+	if queue_back_right_nodes.is_empty():
+		return _get_role_node_name(ROLE_QUEUE_FRONT_RIGHT, StringName())
+
+	var back_index := mini(queue_index - 1, queue_back_right_nodes.size() - 1)
+	return queue_back_right_nodes[back_index]
+
+
 func _get_queue_back_node_names() -> Array[StringName]:
 	var queue_back_nodes: Array[StringName] = []
 
@@ -1336,6 +1505,109 @@ func _get_queue_back_node_names() -> Array[StringName]:
 	)
 
 	return queue_back_nodes
+
+
+func _get_queue_back_right_node_names() -> Array[StringName]:
+	var queue_back_right_nodes: Array[StringName] = []
+
+	for node_name in _get_graph_node_names():
+		if _get_marker_role(_get_graph_marker(node_name)) == ROLE_QUEUE_BACK_RIGHT:
+			queue_back_right_nodes.append(node_name)
+
+	queue_back_right_nodes.sort_custom(func(a: StringName, b: StringName) -> bool:
+		return _get_queue_marker_index(a) < _get_queue_marker_index(b)
+	)
+
+	return queue_back_right_nodes
+
+
+func _get_queue_right_node_names() -> Array[StringName]:
+	var queue_right_nodes: Array[StringName] = []
+
+	var queue_front_right := _get_role_node_name(ROLE_QUEUE_FRONT_RIGHT, StringName())
+
+	if queue_front_right != StringName():
+		queue_right_nodes.append(queue_front_right)
+
+	queue_right_nodes.append_array(_get_queue_back_right_node_names())
+	queue_right_nodes.sort_custom(func(a: StringName, b: StringName) -> bool:
+		return _get_queue_marker_index(a) < _get_queue_marker_index(b)
+	)
+	return queue_right_nodes
+
+
+func _get_nearest_queue_right_node_name(position: Vector2) -> StringName:
+	var best_node := StringName()
+	var best_distance := INF
+
+	for node_name in _get_queue_right_node_names():
+		var marker := _get_graph_marker(node_name)
+
+		if marker == null:
+			continue
+
+		var distance := position.distance_to(marker.global_position)
+
+		if distance >= best_distance:
+			continue
+
+		best_node = node_name
+		best_distance = distance
+
+	return best_node
+
+
+func _build_exit_route_via_queue_right(from_position: Vector2, fallback_exit_position: Vector2) -> Array[Vector2]:
+	var queue_right_node := _get_nearest_queue_right_node_name(from_position)
+
+	if queue_right_node == StringName():
+		return []
+
+	var queue_right_marker := _get_graph_marker(queue_right_node)
+
+	if queue_right_marker == null:
+		return []
+
+	var route := _make_orthogonal_route(from_position, queue_right_marker.global_position, true)
+	var route_to_right_clear := _is_route_clear(from_position, route)
+
+	if not route_to_right_clear:
+		return []
+
+	var exit_node := _get_role_node_name(ROLE_EXIT, EXIT)
+
+	if exit_node != StringName():
+		var exit_path := _find_graph_path(queue_right_node, exit_node)
+
+		if not exit_path.is_empty():
+			route.append_array(_build_route_from_graph_path(exit_path))
+			return _dedupe_route_points(route)
+
+	var appended_exit := _append_clear_orthogonal_route_to(route, fallback_exit_position, true, from_position)
+
+	if appended_exit:
+		return _dedupe_route_points(route)
+
+	return []
+
+
+func _get_queue_marker_index(node_name: StringName) -> int:
+	var marker := _get_graph_marker(node_name)
+
+	if marker == null or not marker.has_meta(&"store_queue_index"):
+		return 999
+
+	return int(marker.get_meta(&"store_queue_index"))
+
+
+func _is_queue_target_node(node_name: StringName) -> bool:
+	var role := _get_marker_role(_get_graph_marker(node_name))
+	return (
+		role == ROLE_QUEUE_FRONT
+		or role == ROLE_QUEUE_BACK
+		or role == ROLE_QUEUE_FRONT_RIGHT
+		or role == ROLE_QUEUE_BACK_RIGHT
+	)
 
 
 func _get_role_node_name(role: StringName, fallback_node_name: StringName = StringName()) -> StringName:

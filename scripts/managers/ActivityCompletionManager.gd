@@ -1,11 +1,15 @@
 extends Node
 
+const ActivityCompletionNotifier = preload("res://scripts/managers/activity/ActivityCompletionNotifier.gd")
+
 signal activity_completion(message: String)
+
+var _notifier: ActivityCompletionNotifier = ActivityCompletionNotifier.new()
 
 
 func _ready() -> void:
-	pass # Replace with function body.
+	_notifier.setup(self)
 
 
-func notify(message: String):
-	activity_completion.emit(message)
+func notify(message: String) -> void:
+	_notifier.notify(message)

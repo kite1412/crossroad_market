@@ -1,41 +1,35 @@
 extends Node
 
+const RelationshipTrustStore = preload("res://scripts/managers/relationship/RelationshipTrustStore.gd")
+
 signal trust_changed(npc_id: String, new_trust: int, delta: int)
 
 const MIN_TRUST: int = 0
 const MAX_TRUST: int = 100
 
 var _trust_by_npc: Dictionary[String, int] = {}
+var _trust_store: RelationshipTrustStore = RelationshipTrustStore.new()
+
+
+func _ready() -> void:
+	_trust_store.setup(self)
 
 
 func set_trust(npc_id: String, value: int) -> void:
-	if npc_id == "":
-		return
-
-	var previous := get_trust(npc_id)
-	var next_value := clampi(value, MIN_TRUST, MAX_TRUST)
-
-	if previous == next_value:
-		return
-
-	_trust_by_npc[npc_id] = next_value
-	trust_changed.emit(npc_id, next_value, next_value - previous)
+	_trust_store.set_trust(npc_id, value)
 
 
 func add_trust(npc_id: String, amount: int) -> void:
-	if amount == 0:
-		return
-
-	set_trust(npc_id, get_trust(npc_id) + amount)
+	_trust_store.add_trust(npc_id, amount)
 
 
 func get_trust(npc_id: String) -> int:
-	return int(_trust_by_npc.get(npc_id, 0))
+	return _trust_store.get_trust(npc_id)
 
 
 func get_all_trust() -> Dictionary[String, int]:
-	return _trust_by_npc.duplicate()
+	return _trust_store.get_all_trust()
 
 
 func reset_trust() -> void:
-	_trust_by_npc.clear()
+	_trust_store.reset_trust()

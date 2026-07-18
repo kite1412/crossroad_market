@@ -1,40 +1,33 @@
 [gd_scene format=3 uid="uid://d0k6caqo7l0hn"]
 
-[ext_resource type="PackedScene" path="res://scenes/player/Player.tscn" id="1_player"]
+[ext_resource type="PackedScene" uid="uid://b1wj8f3aim6fb" path="res://scenes/player/Player.tscn" id="1_player"]
 [ext_resource type="PackedScene" path="res://scenes/locations/store/StoreFrontInterior.tscn" id="2_hlkfw"]
-[ext_resource type="Script" path="res://scripts/locations/store/Store.gd" id="2_store"]
+[ext_resource type="Script" uid="uid://qi6icsu0p1dr" path="res://scripts/locations/store/Store.gd" id="2_store"]
 [ext_resource type="PackedScene" path="res://scenes/locations/store/StoreStorageDoor.tscn" id="3_7ootk"]
-[ext_resource type="PackedScene" path="res://scenes/locations/store/structure/Cashier.tscn" id="3_cashier"]
+[ext_resource type="PackedScene" uid="uid://c3jpds51r7i41" path="res://scenes/locations/store/structure/Cashier.tscn" id="3_cashier"]
 [ext_resource type="PackedScene" path="res://scenes/locations/store/StoreYardDoor.tscn" id="4_yn1i0"]
-[ext_resource type="PackedScene" path="res://scenes/ui/HUD.tscn" id="5_hud"]
+[ext_resource type="PackedScene" uid="uid://dauvgwqeqn80k" path="res://scenes/ui/HUD.tscn" id="5_hud"]
 [ext_resource type="PackedScene" path="res://scenes/locations/store/StorePathMarkers.tscn" id="5_vejfy"]
-[ext_resource type="PackedScene" path="res://scenes/locations/store/structure/StoreStructure.tscn" id="6_e2t5y"]
-[ext_resource type="PackedScene" path="res://scenes/locations/store/StorePlacementSurface.tscn" id="6_hqne6"]
-[ext_resource type="Script" path="res://scripts/locations/WorldLighting.gd" id="6_lighting"]
-[ext_resource type="PackedScene" path="res://scenes/ui/ActivityCompletionNotification.tscn" id="7_0h4lu"]
-[ext_resource type="Script" path="res://scripts/objects/ActivityBoard.gd" id="7_activity_board"]
+[ext_resource type="PackedScene" uid="uid://bhpkwnqnn3c67" path="res://scenes/locations/store/structure/StoreStructure.tscn" id="6_e2t5y"]
+[ext_resource type="PackedScene" uid="uid://b3qes3ewvxb0i" path="res://scenes/locations/store/StorePlacementSurface.tscn" id="6_hqne6"]
+[ext_resource type="Script" uid="uid://cftax4a7xovpj" path="res://scripts/locations/WorldLighting.gd" id="6_lighting"]
+[ext_resource type="PackedScene" uid="uid://br1sgb3dkgi8i" path="res://scenes/ui/ActivityCompletionNotification.tscn" id="7_0h4lu"]
 [ext_resource type="PackedScene" path="res://scenes/locations/store/StoreCustomerPathZones.tscn" id="8_3ehvo"]
-[ext_resource type="Script" path="res://scripts/objects/OpenCloseBoard.gd" id="8_open_close_board"]
-[ext_resource type="PackedScene" path="res://scenes/locations/store/structure/NpcFeedbackBoard.tscn" id="8_opsjd"]
-[ext_resource type="Script" path="res://scripts/locations/store/StorePlacementGridDebug.gd" id="9_grid_debug"]
+[ext_resource type="PackedScene" uid="uid://bcn1tcfnwf23b" path="res://scenes/locations/store/structure/NpcFeedbackBoard.tscn" id="8_opsjd"]
 [ext_resource type="PackedScene" path="res://scenes/locations/store/OpenCloseBoard.tscn" id="9_x8823"]
-[ext_resource type="PackedScene" path="res://scenes/locations/store/structure/BoardTax.tscn" id="12_opsjd"]
-[ext_resource type="Script" path="res://scripts/player/Player.gd" id="13_ll7wr"]
-[ext_resource type="Script" path="res://scripts/ui/HUD.gd" id="17_520bo"]
-[ext_resource type="Script" path="res://scripts/ui/ActivityCompletionNotification.gd" id="19_7ny1g"]
+[ext_resource type="PackedScene" uid="uid://0gghjrd4abwo" path="res://scenes/locations/store/structure/BoardTax.tscn" id="12_opsjd"]
 [ext_resource type="PackedScene" path="res://scenes/locations/store/ActivityBoard.tscn" id="20_vfc65"]
-[ext_resource type="Script" path="res://scripts/ui/Cashier.gd" id="23_4p1en"]
-[ext_resource type="Script" path="res://scripts/locations/store/StoreLocationFlow.gd" id="24_location_flow"]
-[ext_resource type="Script" path="res://scripts/locations/store/StoreTaxFlow.gd" id="25_tax_flow"]
-[ext_resource type="Script" path="res://scripts/locations/store/StoreShelfPlacementController.gd" id="26_shelf_placement"]
-[ext_resource type="Script" path="res://scripts/locations/store/StoreProgressionFlow.gd" id="27_progression"]
-[ext_resource type="Script" path="res://scripts/locations/store/StoreNpcRuntime.gd" id="28_npc_runtime"]
-[ext_resource type="Script" path="res://scripts/locations/store/StorePresentation.gd" id="29_presentation"]
-[ext_resource type="Script" path="res://scripts/locations/store/StoreOpenCloseController.gd" id="30_open_close"]
-[ext_resource type="Script" path="res://scripts/locations/store/StoreDayRuntime.gd" id="31_day_runtime"]
-[ext_resource type="Script" path="res://scripts/locations/store/StoreTaskCompletion.gd" id="32_task_completion"]
-[ext_resource type="Script" path="res://scripts/locations/store/StoreNpcRoutes.gd" id="33_npc_routes"]
-[ext_resource type="Script" path="res://scripts/locations/store/StoreWorldStateController.gd" id="34_world_state"]
+[ext_resource type="Script" uid="uid://twq3tpu7ejmy" path="res://scripts/locations/store/StoreLocationFlow.gd" id="24_location_flow"]
+[ext_resource type="Script" uid="uid://dmgjae2cldj8b" path="res://scripts/locations/store/StoreTaxFlow.gd" id="25_tax_flow"]
+[ext_resource type="Script" uid="uid://b4ymbiof2cy6k" path="res://scripts/locations/store/StoreShelfPlacementController.gd" id="26_shelf_placement"]
+[ext_resource type="Script" uid="uid://d0k8k5pgy4rc1" path="res://scripts/locations/store/StoreProgressionFlow.gd" id="27_progression"]
+[ext_resource type="Script" uid="uid://b53cmjqws3fs8" path="res://scripts/locations/store/StoreNpcRuntime.gd" id="28_npc_runtime"]
+[ext_resource type="Script" uid="uid://cr5t12g31aufu" path="res://scripts/locations/store/StorePresentation.gd" id="29_presentation"]
+[ext_resource type="Script" uid="uid://buelulwhe2nld" path="res://scripts/locations/store/StoreOpenCloseController.gd" id="30_open_close"]
+[ext_resource type="Script" uid="uid://graw0neyc5gu" path="res://scripts/locations/store/StoreDayRuntime.gd" id="31_day_runtime"]
+[ext_resource type="Script" uid="uid://b21eo20ciw08h" path="res://scripts/locations/store/StoreTaskCompletion.gd" id="32_task_completion"]
+[ext_resource type="Script" uid="uid://c8yp2nc8o1ilx" path="res://scripts/locations/store/StoreNpcRoutes.gd" id="33_npc_routes"]
+[ext_resource type="Script" uid="uid://d22cxs4dwn38b" path="res://scripts/locations/store/StoreWorldStateController.gd" id="34_world_state"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_horizontal"]
 size = Vector2(480, 48)
@@ -47,37 +40,37 @@ y_sort_enabled = true
 script = ExtResource("2_store")
 shelf_placement_fallback_polygon = PackedVector2Array(48, 86, 458, 86, 458, 236, 48, 236)
 
-[node name="LocationFlow" type="Node" parent="."]
+[node name="LocationFlow" type="Node" parent="." unique_id=2009831862]
 script = ExtResource("24_location_flow")
 
-[node name="TaxFlow" type="Node" parent="."]
+[node name="TaxFlow" type="Node" parent="." unique_id=1185934866]
 script = ExtResource("25_tax_flow")
 
-[node name="ShelfPlacementController" type="Node" parent="."]
+[node name="ShelfPlacementController" type="Node" parent="." unique_id=1990147112]
 script = ExtResource("26_shelf_placement")
 
-[node name="ProgressionFlow" type="Node" parent="."]
+[node name="ProgressionFlow" type="Node" parent="." unique_id=311446122]
 script = ExtResource("27_progression")
 
-[node name="NpcRuntime" type="Node" parent="."]
+[node name="NpcRuntime" type="Node" parent="." unique_id=752812226]
 script = ExtResource("28_npc_runtime")
 
-[node name="Presentation" type="Node" parent="."]
+[node name="Presentation" type="Node" parent="." unique_id=529031950]
 script = ExtResource("29_presentation")
 
-[node name="OpenCloseController" type="Node" parent="."]
+[node name="OpenCloseController" type="Node" parent="." unique_id=1458288348]
 script = ExtResource("30_open_close")
 
-[node name="DayRuntime" type="Node" parent="."]
+[node name="DayRuntime" type="Node" parent="." unique_id=801185795]
 script = ExtResource("31_day_runtime")
 
-[node name="TaskCompletion" type="Node" parent="."]
+[node name="TaskCompletion" type="Node" parent="." unique_id=1883893266]
 script = ExtResource("32_task_completion")
 
-[node name="NpcRoutes" type="Node" parent="."]
+[node name="NpcRoutes" type="Node" parent="." unique_id=1993143645]
 script = ExtResource("33_npc_routes")
 
-[node name="WorldStateController" type="Node" parent="."]
+[node name="WorldStateController" type="Node" parent="." unique_id=1264755954]
 script = ExtResource("34_world_state")
 
 [node name="Background" type="ColorRect" parent="." unique_id=1097879215]
@@ -95,9 +88,7 @@ offset_right = 480.0
 offset_bottom = 270.0
 color = Color(0.31, 0.25, 0.18, 1)
 
-[node name="StoreFrontInterior" type="Node2D" parent="." unique_id=1253652099 instance=ExtResource("2_hlkfw")]
-visible = false
-position = Vector2(0, 292)
+[node name="StoreFrontInterior" parent="." unique_id=1253652099 instance=ExtResource("2_hlkfw")]
 
 [node name="WorldBounds" type="StaticBody2D" parent="." unique_id=2078606323]
 visible = false
@@ -119,23 +110,13 @@ shape = SubResource("RectangleShape2D_wall_vertical")
 position = Vector2(483, 135)
 shape = SubResource("RectangleShape2D_wall_vertical")
 
-[node name="StorageDoor" type="Area2D" parent="." unique_id=1308349279 instance=ExtResource("3_7ootk")]
-z_index = -1
-position = Vector2(383, 30)
+[node name="StorageDoor" parent="." unique_id=1308349279 instance=ExtResource("3_7ootk")]
 
-[node name="YardDoor" type="Area2D" parent="." unique_id=315026411 instance=ExtResource("4_yn1i0")]
-z_index = 1
-position = Vector2(240, 251)
+[node name="YardDoor" parent="." unique_id=315026411 instance=ExtResource("4_yn1i0")]
 
-[node name="StorePathMarkers" type="Node2D" parent="." unique_id=241050301 instance=ExtResource("5_vejfy")]
-position = Vector2(-14, -39)
+[node name="StorePathMarkers" parent="." unique_id=241050301 instance=ExtResource("5_vejfy")]
 
-[node name="StorePlacementSurface" type="Node2D" parent="." unique_id=1099145635 instance=ExtResource("6_hqne6")]
-z_index = 80
-position = Vector2(-23, -37)
-script = ExtResource("9_grid_debug")
-surface_polygon = PackedVector2Array(52, 86, 475, 86, 475, 270, 52, 270)
-anchor_spacing = 12.0
+[node name="StorePlacementSurface" parent="." unique_id=1099145635 instance=ExtResource("6_hqne6")]
 
 [node name="QueueDropZoneVisuals" type="Node2D" parent="." unique_id=715509124]
 visible = false
@@ -149,28 +130,19 @@ offset_right = 256.0
 offset_bottom = 195.0
 color = Color(1, 0.82, 0.18, 0.28)
 
-[node name="CustomerPathZones" type="Node2D" parent="." unique_id=2123535912 instance=ExtResource("8_3ehvo")]
-visible = false
-z_index = -2
+[node name="CustomerPathZones" parent="." unique_id=2123535912 instance=ExtResource("8_3ehvo")]
 
-[node name="OpenCloseBoard" type="StaticBody2D" parent="." unique_id=1655914554 instance=ExtResource("9_x8823")]
-z_index = 2
-position = Vector2(310, 294)
-scale = Vector2(0.5, 0.5)
-script = ExtResource("8_open_close_board")
+[node name="OpenCloseBoard" parent="." unique_id=1655914554 instance=ExtResource("9_x8823")]
 
-[node name="StoreStructure" type="Node2D" parent="." unique_id=1722790553 instance=ExtResource("6_e2t5y")]
+[node name="StoreStructure" parent="." unique_id=1722790553 instance=ExtResource("6_e2t5y")]
 
-[node name="Player" type="CharacterBody2D" parent="." unique_id=1580443777 instance=ExtResource("1_player")]
+[node name="Player" parent="." unique_id=1580443777 instance=ExtResource("1_player")]
 position = Vector2(240, 204)
-collision_layer = 2
-collision_mask = 5
-script = ExtResource("13_ll7wr")
 
 [node name="StoreEntryPos" type="Marker2D" parent="." unique_id=1935776190]
 position = Vector2(240, 204)
 
-[node name="StoreNpcFeedbackBoard" type="Node2D" parent="." unique_id=998557072 instance=ExtResource("8_opsjd")]
+[node name="StoreNpcFeedbackBoard" parent="." unique_id=998557072 instance=ExtResource("8_opsjd")]
 position = Vector2(319, 222)
 
 [node name="WorldLighting" type="CanvasLayer" parent="." unique_id=949113073]
@@ -189,29 +161,15 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.13, 0.09, 0.04, 0.18)
 
-[node name="HUD" type="CanvasLayer" parent="." unique_id=926205373 groups=["hud"] instance=ExtResource("5_hud")]
-layer = 10
-script = ExtResource("17_520bo")
+[node name="HUD" parent="." unique_id=926205373 instance=ExtResource("5_hud")]
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1532187267]
 
-[node name="ActivityCompletionNotification" type="Control" parent="CanvasLayer" unique_id=1553991951 instance=ExtResource("7_0h4lu")]
-visible = false
-layout_mode = 3
-anchor_left = 0.81600004
-anchor_right = 1.0
-anchor_bottom = 0.093
-offset_left = 88.31998
-offset_bottom = -25.11
-grow_horizontal = 0
-script = ExtResource("19_7ny1g")
+[node name="ActivityCompletionNotification" parent="CanvasLayer" unique_id=1553991951 instance=ExtResource("7_0h4lu")]
 
-[node name="ActivityBoard" type="StaticBody2D" parent="." unique_id=1818579295 instance=ExtResource("20_vfc65")]
-position = Vector2(227, 41)
-script = ExtResource("7_activity_board")
+[node name="ActivityBoard" parent="." unique_id=1818579295 instance=ExtResource("20_vfc65")]
 
-[node name="Cashier" type="StaticBody2D" parent="." unique_id=386895166 instance=ExtResource("3_cashier")]
+[node name="Cashier" parent="." unique_id=386895166 instance=ExtResource("3_cashier")]
 position = Vector2(258, 96)
-script = ExtResource("23_4p1en")
 
-[node name="BoardTax" type="Node2D" parent="." unique_id=271375145 instance=ExtResource("12_opsjd")]
+[node name="BoardTax" parent="." unique_id=271375145 instance=ExtResource("12_opsjd")]
