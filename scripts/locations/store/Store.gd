@@ -100,6 +100,7 @@ var _placement_surface_anchor_cache: Array[Vector2] = []
 var _shelf_access_metadata_update_token: int = 0
 var _shelf_access_warmup_token: int = 0
 var _is_transitioning: bool = false
+var _is_store_world_active: bool = true
 var _shown_location_titles: Dictionary = {}
 var _completed_task_notices: Dictionary = {}
 
@@ -837,7 +838,6 @@ func _enter_home() -> void:
 
 	_current_yard = null
 	open_close_board = null
-	_set_store_world_active(false)
 
 	await _fade_from_black()
 	_show_location_title_once("home", "Home")
@@ -2240,6 +2240,11 @@ func _set_human_stock_count(stock_count: int) -> void:
 
 
 func _set_store_world_active(is_active: bool) -> void:
+	if _is_store_world_active == is_active:
+		return
+
+	_is_store_world_active = is_active
+
 	if not is_active:
 		_cancel_restricted_drop_feedback()
 		_close_cashier_runtime_ui()
