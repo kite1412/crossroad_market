@@ -246,6 +246,8 @@ func _find_best_shelf_access(candidate_position: Vector2, shelf_object: Node2D, 
 	var no_route_candidates := 0
 	var no_checkout_candidates := 0
 	var surface_searches := [0]
+	var best_result := {"valid": false}
+	var best_score := INF
 
 	for access_candidate in candidates:
 		checked_candidates += 1
@@ -285,13 +287,28 @@ func _find_best_shelf_access(candidate_position: Vector2, shelf_object: Node2D, 
 			no_checkout_candidates += 1
 			continue
 
-		return {
+		var score := (
+			float(reachable_node.get("distance", 0.0))
+			+ _get_graph_path_cost(graph_path)
+			+ float(access_candidate.get("vertical_distance", 0.0)) * 0.1
+			+ float(access_candidate.get("horizontal_distance", 0.0)) * 0.25
+		)
+
+		if score >= best_score:
+			continue
+
+		best_score = score
+		best_result = {
 			"valid": true,
 			"access_point": access_point,
 			"graph_node": graph_node,
 			"surface_route": reachable_node.get("route", []),
-			"score": float(reachable_node.get("distance", 0.0)) + _get_graph_path_cost(graph_path)
+			"score": score,
+			"access_side": access_candidate.get("access_side", "")
 		}
+
+	if bool(best_result.get("valid", false)):
+		return best_result
 
 	_print_shelf_access_failure(
 		candidate_position,
@@ -893,11 +910,6 @@ func _get_shelf_access_candidates(shelf_position: Vector2) -> Array[Dictionary]:
 
 		var point_a := a.get("access_point", Vector2.INF) as Vector2
 		var point_b := b.get("access_point", Vector2.INF) as Vector2
-		var a_below := point_a.y >= shelf_position.y
-		var b_below := point_b.y >= shelf_position.y
-
-		if a_below != b_below:
-			return a_below
 
 		var horizontal_a := float(a.get("horizontal_distance", INF))
 		var horizontal_b := float(b.get("horizontal_distance", INF))
@@ -929,6 +941,7 @@ func _append_shelf_access_candidate(
 	var horizontal_distance := absf(access_point.x - shelf_position.x)
 	var vertical_distance := absf(access_point.y - shelf_position.y)
 	var direct_distance := access_point.distance_to(shelf_position)
+	var access_side := "below" if access_point.y >= shelf_position.y else "above"
 
 	if direct_distance <= MARKER_ALIGNMENT_EPSILON or direct_distance > MAX_SHELF_ACCESS_DISTANCE:
 		return
@@ -945,6 +958,7 @@ func _append_shelf_access_candidate(
 		"access_point": access_point,
 		"graph_node": graph_node,
 		"vertical_access": vertical_access,
+		"access_side": access_side,
 		"tier": tier,
 		"horizontal_distance": horizontal_distance,
 		"vertical_distance": vertical_distance,

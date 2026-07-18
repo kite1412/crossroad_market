@@ -10,11 +10,13 @@ static func ensure(owner: Node) -> Dictionary:
 	var layer := CanvasLayer.new()
 	layer.name = "StorageRestockLayer"
 	layer.layer = 20
+	layer.visible = false
 	owner.add_child(layer)
 
 	var panel := ColorRect.new()
 	panel.name = "StorageRestockPanel"
 	panel.color = Color(0.1, 0.08, 0.07, 0.94)
+	panel.visible = false
 	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	panel.offset_left = 24.0
 	panel.offset_top = 62.0

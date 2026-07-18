@@ -180,14 +180,25 @@ func _has_visible_overlay_named(node_name: String) -> bool:
 
 func _find_visible_overlay_named(node: Node, node_name: String) -> bool:
 	if node.name == node_name:
-		if node is CanvasLayer and (node as CanvasLayer).visible:
-			return true
+		if node is CanvasLayer:
+			return (node as CanvasLayer).visible and _has_visible_overlay_content(node)
 
 		if node is CanvasItem and (node as CanvasItem).visible:
 			return true
 
 	for child in node.get_children():
 		if _find_visible_overlay_named(child, node_name):
+			return true
+
+	return false
+
+
+func _has_visible_overlay_content(node: Node) -> bool:
+	for child in node.get_children():
+		if child is CanvasItem and (child as CanvasItem).is_visible_in_tree():
+			return true
+
+		if _has_visible_overlay_content(child):
 			return true
 
 	return false
