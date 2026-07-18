@@ -1,6 +1,8 @@
 class_name MysterySupplyDialogFlow
 extends RefCounted
 
+const PLAYER_PORTRAIT: Texture2D = preload("res://assets/characters/player/portrait.png")
+
 var box: MysterySupplyBox = null
 
 
@@ -11,41 +13,46 @@ func setup(box_node: MysterySupplyBox) -> void:
 func show_discovery_dialog() -> void:
 	var hud: Node = get_hud()
 
-	if hud != null and hud.has_method("begin_action_lock"):
-		hud.call("begin_action_lock")
+	if hud == null or not hud.has_method("show_dialog_sequence"):
+		return
 
-	await show_dialog_line("What is this...?", 2.3)
-	await show_dialog_line("This box wasn’t in Grandma’s inventory list.", 2.9)
-	await show_dialog_line("Why is it glowing... and why does it feel ice cold?", 3.3)
+	await hud.call("show_dialog_sequence", _build_player_dialogues([
+		"What is this...?",
+		"This box wasn’t in Grandma’s inventory list.",
+		"Why is it glowing... and why does it feel ice cold?"
+	]))
 
-	if hud != null and hud.has_method("end_action_lock"):
-		hud.call("end_action_lock")
 
-
-func show_dialog_line(text: String, duration: float) -> void:
+func show_dialog_line(text: String, _duration: float = 0.0) -> void:
 	var hud: Node = get_hud()
 
-	if hud == null:
+	if hud == null or not hud.has_method("show_dialog_sequence"):
 		return
 
-	if not hud.has_method("show_notification"):
-		return
-
-	hud.call("show_notification", text, duration)
-
-	if hud.has_method("wait_for_notification_finished"):
-		await hud.call("wait_for_notification_finished")
-	else:
-		await box.get_tree().create_timer(duration + 0.15).timeout
+	await hud.call("show_dialog_sequence", _build_player_dialogues([text]))
 
 
 func get_hud() -> Node:
 	var hud: Node = box.get_tree().get_first_node_in_group("hud")
 
-	if hud != null and hud.has_method("show_notification"):
+	if hud != null and hud.has_method("show_dialog_sequence"):
 		return hud
 
-	return find_node_with_method(box.get_tree().root, "show_notification")
+	return find_node_with_method(box.get_tree().root, "show_dialog_sequence")
+
+
+func _build_player_dialogues(messages: Array[String]) -> Array[Dictionary]:
+	var dialogues: Array[Dictionary] = []
+
+	for message in messages:
+		dialogues.append({
+			"name": "Player",
+			"content": message,
+			"portrait": PLAYER_PORTRAIT,
+			"frame": 0
+		})
+
+	return dialogues
 
 
 func find_node_with_method(node: Node, method_name: String) -> Node:
