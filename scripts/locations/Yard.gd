@@ -1,14 +1,15 @@
+class_name Yard
 extends Node2D
 
 signal return_to_store(door_type: String)
 signal enter_home()
 signal restock_delivery_collected(delivery_id: int)
 
-const RestockPackage = preload("res://scripts/objects/RestockPackage.gd")
-
 @onready var return_door: Area2D = get_node_or_null("ReturnDoor") as Area2D
 @onready var home_door: Area2D = get_node_or_null("PlayerHomeArea/HomeDoor") as Area2D
 @onready var restock_drop_zone: Node2D = get_node_or_null("RestockDropZone") as Node2D
+@onready var scene_flow: Node = get_node_or_null("SceneFlow")
+@onready var restock_flow: Node = get_node_or_null("RestockFlow")
 
 var _restock_deliveries: Array[Dictionary] = []
 
@@ -16,106 +17,50 @@ var _restock_deliveries: Array[Dictionary] = []
 func _ready() -> void:
 	add_to_group("location")
 	add_to_group("yard")
+	_setup_yard_controllers()
+	_configure_doors()
 
-	if return_door == null:
-		push_error("Yard: ReturnDoor is missing.")
-		return
 
-	return_door.set_meta("door_type", "yard_return")
+func _setup_yard_controllers() -> void:
+	for controller in [scene_flow, restock_flow]:
+		if controller != null and controller.has_method("setup"):
+			controller.call("setup", self)
 
-	if home_door == null:
-		push_error("Yard: HomeDoor is missing.")
-	else:
-		home_door.set_meta("door_type", "home")
+
+func _configure_doors() -> void:
+	if scene_flow != null:
+		scene_flow.configure_doors()
 
 
 func request_return_to_store() -> bool:
-	if _is_action_locked():
-		return false
-
-	return_to_store.emit("yard")
-	return true
+	return scene_flow != null and scene_flow.request_return_to_store()
 
 
 func request_enter_home() -> bool:
-	if _is_action_locked():
-		return false
-
-	enter_home.emit()
-	return true
+	return scene_flow != null and scene_flow.request_enter_home()
 
 
 func set_restock_deliveries(deliveries: Array) -> void:
-	_restock_deliveries.clear()
-
-	for delivery in deliveries:
-		if delivery is Dictionary:
-			_restock_deliveries.append((delivery as Dictionary).duplicate())
-
-	_refresh_restock_packages()
+	if restock_flow != null:
+		restock_flow.set_restock_deliveries(deliveries)
 
 
 func _is_action_locked() -> bool:
-	var hud: Node = get_tree().get_first_node_in_group("hud")
-
-	if hud == null or not hud.has_method("is_action_locked"):
-		return false
-
-	return bool(hud.call("is_action_locked"))
+	return scene_flow != null and scene_flow.is_action_locked()
 
 
 func _refresh_restock_packages() -> void:
-	if restock_drop_zone == null:
-		return
-
-	for child in restock_drop_zone.get_children():
-		if child is RestockPackage:
-			child.queue_free()
-
-	if _restock_deliveries.is_empty():
-		return
-
-	var markers := _get_restock_drop_markers()
-	var marker_count := markers.size()
-	var package := RestockPackage.new()
-	package.name = "RestockSupplyBox"
-	restock_drop_zone.add_child(package)
-	package.setup_deliveries(_restock_deliveries)
-
-	if marker_count > 0:
-		package.global_position = markers[0].global_position
-	else:
-		package.position = Vector2(80, 220)
-
-	var collected_callable := Callable(self, "_on_restock_package_collected")
-
-	if not package.collected.is_connected(collected_callable):
-		package.collected.connect(collected_callable)
+	if restock_flow != null:
+		restock_flow.refresh_restock_packages()
 
 
 func _get_restock_drop_markers() -> Array[Marker2D]:
-	var markers: Array[Marker2D] = []
+	if restock_flow != null:
+		return restock_flow.get_restock_drop_markers()
 
-	if restock_drop_zone == null:
-		return markers
-
-	for child in restock_drop_zone.get_children():
-		if child is Marker2D:
-			markers.append(child as Marker2D)
-
-	markers.sort_custom(func(a: Marker2D, b: Marker2D) -> bool:
-		return a.name < b.name
-	)
-	return markers
+	return []
 
 
 func _on_restock_package_collected(delivery_id: int) -> void:
-	if delivery_id < 0:
-		_restock_deliveries.clear()
-	else:
-		for i in range(_restock_deliveries.size() - 1, -1, -1):
-			if int(_restock_deliveries[i].get("id", -1)) == delivery_id:
-				_restock_deliveries.remove_at(i)
-				break
-
-	restock_delivery_collected.emit(delivery_id)
+	if restock_flow != null:
+		restock_flow.on_restock_package_collected(delivery_id)

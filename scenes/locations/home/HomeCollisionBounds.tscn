@@ -1,0 +1,57 @@
+[gd_scene load_steps=6 format=3]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_horizontal"]
+size = Vector2(480, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_vertical"]
+size = Vector2(16, 270)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_back_wall_body"]
+size = Vector2(480, 72)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bed_body"]
+size = Vector2(108, 64)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_table_body"]
+size = Vector2(72, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_shelf_body"]
+size = Vector2(112, 16)
+
+[node name="HomeCollisionBounds" type="Node2D"]
+
+[node name="WorldBounds" type="StaticBody2D" parent="."]
+
+[node name="Top" type="CollisionShape2D" parent="WorldBounds"]
+position = Vector2(240, 8)
+shape = SubResource("RectangleShape2D_wall_horizontal")
+
+[node name="Bottom" type="CollisionShape2D" parent="WorldBounds"]
+position = Vector2(240, 278)
+shape = SubResource("RectangleShape2D_wall_horizontal")
+
+[node name="Left" type="CollisionShape2D" parent="WorldBounds"]
+position = Vector2(-8, 135)
+shape = SubResource("RectangleShape2D_wall_vertical")
+
+[node name="Right" type="CollisionShape2D" parent="WorldBounds"]
+position = Vector2(488, 135)
+shape = SubResource("RectangleShape2D_wall_vertical")
+
+[node name="HomeInteriorBounds" type="StaticBody2D" parent="."]
+
+[node name="BackWallBody" type="CollisionShape2D" parent="HomeInteriorBounds"]
+position = Vector2(240, 36)
+shape = SubResource("RectangleShape2D_back_wall_body")
+
+[node name="BedBody" type="CollisionShape2D" parent="HomeInteriorBounds"]
+position = Vector2(386, 120)
+shape = SubResource("RectangleShape2D_bed_body")
+
+[node name="TableBody" type="CollisionShape2D" parent="HomeInteriorBounds"]
+position = Vector2(108, 116)
+shape = SubResource("RectangleShape2D_table_body")
+
+[node name="ShelfBody" type="CollisionShape2D" parent="HomeInteriorBounds"]
+position = Vector2(128, 50)
+shape = SubResource("RectangleShape2D_shelf_body")

@@ -1,0 +1,27 @@
+[gd_scene load_steps=3 format=3]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_return_door_body"]
+size = Vector2(56, 12)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_return_door_area"]
+size = Vector2(68, 42)
+
+[node name="ReturnDoor" type="Area2D"]
+position = Vector2(240, 256)
+
+[node name="DoorVisual" type="ColorRect" parent="."]
+offset_left = -28.0
+offset_top = -18.0
+offset_right = 28.0
+offset_bottom = 6.0
+color = Color(0.16, 0.09, 0.06, 1)
+
+[node name="DoorBody" type="StaticBody2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DoorBody"]
+position = Vector2(0, -3)
+shape = SubResource("RectangleShape2D_return_door_body")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -18)
+shape = SubResource("RectangleShape2D_return_door_area")

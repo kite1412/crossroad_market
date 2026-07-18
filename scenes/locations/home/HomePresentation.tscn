@@ -1,0 +1,28 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://cftax4a7xovpj" path="res://scripts/locations/WorldLighting.gd" id="1_lighting"]
+
+[node name="FadeLayer" type="CanvasLayer"]
+layer = 100
+
+[node name="FadeOverlay" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0)
+
+[node name="WorldLighting" type="CanvasLayer" parent="."]
+script = ExtResource("1_lighting")
+morning_color = Color(0.12, 0.08, 0.04, 0.12)
+day_color = Color(0.95, 0.78, 0.48, 0.04)
+night_color = Color(0.02, 0.04, 0.12, 0.38)
+
+[node name="Overlay" type="ColorRect" parent="WorldLighting"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.12, 0.08, 0.04, 0.12)

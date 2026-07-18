@@ -1,184 +1,29 @@
-[gd_scene format=3 uid="uid://c74ab2qqqrpp6"]
+[gd_scene load_steps=9 format=3 uid="uid://c74ab2qqqrpp6"]
 
 [ext_resource type="Script" path="res://scripts/locations/Home.gd" id="1_home"]
-[ext_resource type="Script" path="res://scripts/objects/SleepBed.gd" id="2_sleep_bed"]
-[ext_resource type="Script" uid="uid://cftax4a7xovpj" path="res://scripts/locations/WorldLighting.gd" id="3_lighting"]
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_horizontal"]
-size = Vector2(480, 16)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_vertical"]
-size = Vector2(16, 270)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_return_door_body"]
-size = Vector2(56, 12)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_return_door_area"]
-size = Vector2(68, 42)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_back_wall_body"]
-size = Vector2(480, 72)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_bed_body"]
-size = Vector2(108, 64)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_table_body"]
-size = Vector2(72, 40)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_shelf_body"]
-size = Vector2(112, 16)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_sleep_area"]
-size = Vector2(126, 84)
+[ext_resource type="Script" path="res://scripts/locations/home/HomeSceneFlow.gd" id="2_scene_flow"]
+[ext_resource type="PackedScene" path="res://scenes/locations/home/HomeInterior.tscn" id="3_interior"]
+[ext_resource type="PackedScene" path="res://scenes/locations/home/HomeCollisionBounds.tscn" id="4_collision_bounds"]
+[ext_resource type="PackedScene" path="res://scenes/locations/home/HomeSleepArea.tscn" id="5_sleep_area"]
+[ext_resource type="PackedScene" path="res://scenes/locations/home/HomeReturnDoor.tscn" id="6_return_door"]
+[ext_resource type="PackedScene" path="res://scenes/locations/home/HomePlayerSpawn.tscn" id="7_player_spawn"]
+[ext_resource type="PackedScene" path="res://scenes/locations/home/HomePresentation.tscn" id="8_presentation"]
 
 [node name="Home" type="Node2D"]
 y_sort_enabled = true
 script = ExtResource("1_home")
 
-[node name="HomeVisual" type="Node2D" parent="."]
+[node name="SceneFlow" type="Node" parent="."]
+script = ExtResource("2_scene_flow")
 
-[node name="Background" type="ColorRect" parent="HomeVisual"]
-z_index = -100
-offset_right = 480.0
-offset_bottom = 270.0
-color = Color(0.1, 0.08, 0.07, 1)
+[node name="HomeVisual" parent="." instance=ExtResource("3_interior")]
 
-[node name="Floor" type="ColorRect" parent="HomeVisual"]
-z_index = -99
-offset_top = 64.0
-offset_right = 480.0
-offset_bottom = 270.0
-color = Color(0.28, 0.19, 0.13, 1)
+[node name="HomeCollisionBounds" parent="." instance=ExtResource("4_collision_bounds")]
 
-[node name="BackWall" type="ColorRect" parent="HomeVisual"]
-z_index = -98
-offset_right = 480.0
-offset_bottom = 72.0
-color = Color(0.36, 0.23, 0.16, 1)
+[node name="SleepArea" parent="." instance=ExtResource("5_sleep_area")]
 
-[node name="Rug" type="ColorRect" parent="HomeVisual"]
-z_index = -97
-offset_left = 176.0
-offset_top = 132.0
-offset_right = 304.0
-offset_bottom = 204.0
-color = Color(0.36, 0.1, 0.08, 1)
+[node name="ReturnDoor" parent="." instance=ExtResource("6_return_door")]
 
-[node name="Bed" type="ColorRect" parent="HomeVisual"]
-offset_left = 332.0
-offset_top = 88.0
-offset_right = 440.0
-offset_bottom = 152.0
-color = Color(0.25, 0.18, 0.14, 1)
+[node name="PlayerSpawn" parent="." instance=ExtResource("7_player_spawn")]
 
-[node name="Blanket" type="ColorRect" parent="HomeVisual/Bed"]
-offset_left = 8.0
-offset_top = 8.0
-offset_right = 100.0
-offset_bottom = 56.0
-color = Color(0.45, 0.24, 0.18, 1)
-
-[node name="Table" type="ColorRect" parent="HomeVisual"]
-offset_left = 72.0
-offset_top = 96.0
-offset_right = 144.0
-offset_bottom = 136.0
-color = Color(0.32, 0.18, 0.1, 1)
-
-[node name="Shelf" type="ColorRect" parent="HomeVisual"]
-offset_left = 72.0
-offset_top = 42.0
-offset_right = 184.0
-offset_bottom = 58.0
-color = Color(0.22, 0.13, 0.08, 1)
-
-[node name="WorldBounds" type="StaticBody2D" parent="."]
-
-[node name="Top" type="CollisionShape2D" parent="WorldBounds"]
-position = Vector2(240, 8)
-shape = SubResource("RectangleShape2D_wall_horizontal")
-
-[node name="Bottom" type="CollisionShape2D" parent="WorldBounds"]
-position = Vector2(240, 278)
-shape = SubResource("RectangleShape2D_wall_horizontal")
-
-[node name="Left" type="CollisionShape2D" parent="WorldBounds"]
-position = Vector2(-8, 135)
-shape = SubResource("RectangleShape2D_wall_vertical")
-
-[node name="Right" type="CollisionShape2D" parent="WorldBounds"]
-position = Vector2(488, 135)
-shape = SubResource("RectangleShape2D_wall_vertical")
-
-[node name="HomeInteriorBounds" type="StaticBody2D" parent="."]
-
-[node name="BackWallBody" type="CollisionShape2D" parent="HomeInteriorBounds"]
-position = Vector2(240, 36)
-shape = SubResource("RectangleShape2D_back_wall_body")
-
-[node name="BedBody" type="CollisionShape2D" parent="HomeInteriorBounds"]
-position = Vector2(386, 120)
-shape = SubResource("RectangleShape2D_bed_body")
-
-[node name="TableBody" type="CollisionShape2D" parent="HomeInteriorBounds"]
-position = Vector2(108, 116)
-shape = SubResource("RectangleShape2D_table_body")
-
-[node name="ShelfBody" type="CollisionShape2D" parent="HomeInteriorBounds"]
-position = Vector2(128, 50)
-shape = SubResource("RectangleShape2D_shelf_body")
-
-[node name="SleepArea" type="Area2D" parent="."]
-position = Vector2(386, 120)
-script = ExtResource("2_sleep_bed")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="SleepArea"]
-shape = SubResource("RectangleShape2D_sleep_area")
-
-[node name="ReturnDoor" type="Area2D" parent="."]
-position = Vector2(240, 256)
-
-[node name="DoorVisual" type="ColorRect" parent="ReturnDoor"]
-offset_left = -28.0
-offset_top = -18.0
-offset_right = 28.0
-offset_bottom = 6.0
-color = Color(0.16, 0.09, 0.06, 1)
-
-[node name="DoorBody" type="StaticBody2D" parent="ReturnDoor"]
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="ReturnDoor/DoorBody"]
-position = Vector2(0, -3)
-shape = SubResource("RectangleShape2D_return_door_body")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="ReturnDoor"]
-position = Vector2(0, -18)
-shape = SubResource("RectangleShape2D_return_door_area")
-
-[node name="PlayerSpawn" type="Marker2D" parent="."]
-position = Vector2(240, 210)
-
-[node name="FadeLayer" type="CanvasLayer" parent="."]
-layer = 100
-
-[node name="FadeOverlay" type="ColorRect" parent="FadeLayer"]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0, 0, 0, 0)
-
-[node name="WorldLighting" type="CanvasLayer" parent="."]
-script = ExtResource("3_lighting")
-morning_color = Color(0.12, 0.08, 0.04, 0.12)
-day_color = Color(0.95, 0.78, 0.48, 0.04)
-night_color = Color(0.02, 0.04, 0.12, 0.38)
-
-[node name="Overlay" type="ColorRect" parent="WorldLighting"]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.12, 0.08, 0.04, 0.12)
+[node name="FadeLayer" parent="." instance=ExtResource("8_presentation")]

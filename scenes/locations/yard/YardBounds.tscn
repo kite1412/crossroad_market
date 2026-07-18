@@ -1,0 +1,30 @@
+[gd_scene load_steps=4 format=3]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_yard_right_boundary"]
+size = Vector2(16, 520)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall"]
+size = Vector2(1284, 63)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_door_wall"]
+size = Vector2(160, 62)
+
+[node name="YardBounds" type="Node2D"]
+
+[node name="YardBoundary" type="StaticBody2D" parent="."]
+
+[node name="RightBoundary" type="CollisionShape2D" parent="YardBoundary"]
+position = Vector2(1048, 260)
+shape = SubResource("RectangleShape2D_yard_right_boundary")
+
+[node name="Wall" type="StaticBody2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Wall"]
+position = Vector2(401, 32.5)
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="DoorWall" type="StaticBody2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DoorWall"]
+position = Vector2(240, 55)
+shape = SubResource("RectangleShape2D_door_wall")

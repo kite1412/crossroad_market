@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/objects/SleepBed.gd" id="1_sleep_bed"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_sleep_area"]
+size = Vector2(126, 84)
+
+[node name="SleepArea" type="Area2D"]
+position = Vector2(386, 120)
+script = ExtResource("1_sleep_bed")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_sleep_area")
