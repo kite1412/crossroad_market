@@ -1,5 +1,52 @@
 extends "res://scripts/npc/runtime/NPCStateFlow.gd"
 
+const SOLO_CHECKOUT_EXIT_META: StringName = &"solo_checkout_exit"
+const EXIT_ORIGIN_SHELF_META: StringName = &"exit_origin_shelf"
+
+
+func finish_checkout_and_exit() -> void:
+	# Snapshot queue occupancy before process_exit removes this NPC from the
+	# shared queue. This preserves the distinction between a true solo checkout
+	# and a checkout that still has customers waiting behind it.
+	npc.set_meta(
+		SOLO_CHECKOUT_EXIT_META,
+		NPC.current_queue.size() <= 1
+	)
+
+	if npc.has_meta(EXIT_ORIGIN_SHELF_META):
+		npc.remove_meta(EXIT_ORIGIN_SHELF_META)
+
+	super.finish_checkout_and_exit()
+
+
+func process_search_item(delta: float) -> void:
+	var shelf_before_exit := npc._target_shelf as Shelf
+	var previous_state: int = npc.current_state
+
+	super.process_search_item(delta)
+
+	# The base flow clears _target_shelf when the out-of-stock timeout changes
+	# the state to EXIT. Keep a separate reference so route building can use the
+	# shelf-aware egress and avoid being rejected by the shelf's own body.
+	if (
+		previous_state == NPC.State.SEARCH_ITEM
+		and npc.current_state == NPC.State.EXIT
+		and not npc._exit_after_checkout
+		and shelf_before_exit != null
+		and is_instance_valid(shelf_before_exit)
+	):
+		npc.set_meta(EXIT_ORIGIN_SHELF_META, shelf_before_exit)
+		npc.set_meta(SOLO_CHECKOUT_EXIT_META, false)
+
+
+func complete_exit() -> void:
+	if npc.has_meta(SOLO_CHECKOUT_EXIT_META):
+		npc.remove_meta(SOLO_CHECKOUT_EXIT_META)
+	if npc.has_meta(EXIT_ORIGIN_SHELF_META):
+		npc.remove_meta(EXIT_ORIGIN_SHELF_META)
+
+	super.complete_exit()
+
 
 func _find_reachable_stocked_shelf() -> Shelf:
 	var requested_items: Array[String] = npc._get_requested_items()

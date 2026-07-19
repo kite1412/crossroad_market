@@ -8,6 +8,12 @@ const CHECKOUT_RIGHT_ROUTE_MARKERS: Array[StringName] = [
 	&"StorePathQueueBack2Right",
 	&"StorePathQueueExitRight"
 ]
+const SINGLE_CUSTOMER_EXIT_ROUTE_MARKERS: Array[StringName] = [
+	&"StorePathQueueFront",
+	&"StorePathQueueBack2",
+	&"StorePathAisleRight",
+	&"StorePathExit"
+]
 const CHECKOUT_GRAPH_REJOIN_MARKER: StringName = &"StorePathAisleRight"
 const CHECKOUT_ROUTE_RESUME_DISTANCE: float = 18.0
 
@@ -116,10 +122,46 @@ func get_npc_shelf_wait_position(index: int = 0) -> Vector2:
 	return get_store_path_graph().get_shelf_wait_position(index)
 
 
+func get_npc_single_customer_exit_route(
+	from_position: Vector2
+) -> Array[Vector2]:
+	return _build_named_marker_route(
+		from_position,
+		SINGLE_CUSTOMER_EXIT_ROUTE_MARKERS
+	)
+
+
+func get_npc_exit_route_from_shelf(
+	shelf: Shelf,
+	from_position: Vector2
+) -> Array[Vector2]:
+	if shelf == null or not is_instance_valid(shelf):
+		return get_npc_exit_route_from(from_position)
+
+	# Reuse the shelf-aware egress that already excludes the source shelf body,
+	# then join the clear single-customer lane toward the real store exit.
+	var route := get_store_path_graph().get_route_from_shelf_to_cashier(shelf)
+	if route.is_empty():
+		return get_npc_exit_route_from(from_position)
+
+	var route_end: Vector2 = route.back()
+	var exit_route := get_npc_single_customer_exit_route(route_end)
+
+	if exit_route.is_empty():
+		exit_route = get_npc_exit_route_from(route_end)
+
+	for point in exit_route:
+		_append_unique_route_point(route, point)
+
+	return route
+
+
 func get_npc_exit_route_from_cashier(
 	from_position: Vector2
 ) -> Array[Vector2]:
-	var mandatory_markers := _get_checkout_right_markers()
+	var mandatory_markers := _get_named_markers(
+		CHECKOUT_RIGHT_ROUTE_MARKERS
+	)
 
 	if mandatory_markers.size() != CHECKOUT_RIGHT_ROUTE_MARKERS.size():
 		return []
@@ -188,13 +230,38 @@ func get_marker_position_or(
 	return marker.global_position
 
 
-func _get_checkout_right_markers() -> Array[Marker2D]:
+func _build_named_marker_route(
+	from_position: Vector2,
+	marker_names: Array[StringName]
+) -> Array[Vector2]:
+	var markers := _get_named_markers(marker_names)
+	if markers.size() != marker_names.size():
+		return []
+
+	var route: Array[Vector2] = []
+	var start_index := _get_checkout_route_start_index(
+		from_position,
+		markers
+	)
+
+	for index in range(start_index, markers.size()):
+		_append_unique_route_point(
+			route,
+			markers[index].global_position
+		)
+
+	return route
+
+
+func _get_named_markers(
+	marker_names: Array[StringName]
+) -> Array[Marker2D]:
 	var result: Array[Marker2D] = []
 
 	if store == null or store.store_path_markers == null:
 		return result
 
-	for marker_name in CHECKOUT_RIGHT_ROUTE_MARKERS:
+	for marker_name in marker_names:
 		var marker := store.store_path_markers.get_node_or_null(
 			String(marker_name)
 		) as Marker2D
@@ -213,9 +280,8 @@ func _get_checkout_route_start_index(
 ) -> int:
 	var final_marker: Marker2D = markers.back()
 
-	# Once the NPC has reached the bottom of the mandatory right lane, route
-	# rebuilds must continue into the main graph instead of sending it back to
-	# QueueFrontRight.
+	# Route rebuilds must continue forward from the closest completed marker,
+	# rather than sending an NPC back to the beginning of its exit lane.
 	if from_position.y >= final_marker.global_position.y - 4.0:
 		return markers.size()
 
@@ -232,6 +298,13 @@ func _get_checkout_route_start_index(
 			nearest_index = index
 
 	if nearest_distance <= CHECKOUT_ROUTE_RESUME_DISTANCE:
+		var nearest_marker: Marker2D = markers[nearest_index]
+
+		# Being near a marker from above does not mean it has been completed yet.
+		# This keeps QueueFront in the solo checkout route from the cashier.
+		if from_position.y < nearest_marker.global_position.y - 4.0:
+			return nearest_index
+
 		return mini(nearest_index + 1, markers.size())
 
 	return 0

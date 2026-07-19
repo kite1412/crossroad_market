@@ -1,5 +1,58 @@
 extends "res://scripts/npc/runtime/NPCRouteController.gd"
 
+const SOLO_CHECKOUT_EXIT_META: StringName = &"solo_checkout_exit"
+const EXIT_ORIGIN_SHELF_META: StringName = &"exit_origin_shelf"
+
+
+func get_store_route_for_current_state(
+	destination: Vector2
+) -> Array[Vector2]:
+	if npc.current_state == NPC.State.EXIT:
+		var store := get_store_route_provider()
+
+		if store != null:
+			var origin_shelf: Variant = npc.get_meta(
+				EXIT_ORIGIN_SHELF_META,
+				null
+			)
+
+			if (
+				origin_shelf is Shelf
+				and is_instance_valid(origin_shelf)
+				and store.has_method("get_npc_exit_route_from_shelf")
+			):
+				var shelf_exit_route := call_store_route(
+					store,
+					&"get_npc_exit_route_from_shelf",
+					[origin_shelf, npc.global_position]
+				)
+
+				if not shelf_exit_route.is_empty():
+					return shelf_exit_route
+
+			if (
+				npc._exit_after_checkout
+				and bool(
+					npc.get_meta(
+						SOLO_CHECKOUT_EXIT_META,
+						false
+					)
+				)
+				and store.has_method(
+					"get_npc_single_customer_exit_route"
+				)
+			):
+				var solo_exit_route := call_store_route(
+					store,
+					&"get_npc_single_customer_exit_route",
+					[npc.global_position]
+				)
+
+				if not solo_exit_route.is_empty():
+					return solo_exit_route
+
+	return super.get_store_route_for_current_state(destination)
+
 
 func move_to(target: Vector2, arrival_threshold: float = -1.0) -> bool:
 	var threshold: float = (
