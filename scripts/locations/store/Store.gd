@@ -106,6 +106,9 @@ var _tax_restock_close_ready_at_msec: int = 0
 var _tax_restock_retry_token: int = 0
 var _tax_pending: bool = false
 var _tax_paid_today: bool = false
+var _tax_ignored_today: bool = false
+var _tax_notice_active: bool = false
+var _tax_home_warning_shown: bool = false
 var _tax_panel_showing: bool = false
 var _end_day_transition_started: bool = false
 var _latest_daily_report: Dictionary = {}
@@ -323,9 +326,9 @@ func get_npc_shelf_wait_position(index: int = 0) -> Vector2:
 
 
 
-func get_npc_exit_route_from_cashier() -> Array[Vector2]:
+func get_npc_exit_route_from_cashier(from_position: Vector2) -> Array[Vector2]:
 	if npc_routes != null:
-		return npc_routes.get_npc_exit_route_from_cashier()
+		return npc_routes.get_npc_exit_route_from_cashier(from_position)
 
 	return []
 
@@ -373,10 +376,18 @@ func _connect_hud_signals() -> void:
 	if hud == null or not hud.has_signal("tax_payment_requested"):
 		return
 
-	var tax_callable := Callable(self, "_on_tax_payment_requested")
+	hud.connect(
+		"hud_time_completed",
+		Callable(self, "_on_hud_time_completed")
+	)
 
-	if not hud.is_connected("tax_payment_requested", tax_callable):
-		hud.connect("tax_payment_requested", tax_callable)
+	var pay_callable := Callable(self, "_on_tax_payment_requested")
+	if hud.has_signal("tax_payment_requested") and not hud.is_connected("tax_payment_requested", pay_callable):
+		hud.connect("tax_payment_requested", pay_callable)
+
+	var ignore_callable := Callable(self, "_on_tax_ignore_requested")
+	if hud.has_signal("tax_ignore_requested") and not hud.is_connected("tax_ignore_requested", ignore_callable):
+		hud.connect("tax_ignore_requested", ignore_callable)
 
 
 func _connect_scene_signals() -> void:
@@ -455,7 +466,7 @@ func _enter_home() -> void:
 
 func _on_home_return_to_yard(_door_type: String) -> void:
 	if location_flow != null:
-		await location_flow.on_home_return_to_yard(_door_type)
+		location_flow.on_home_return_to_yard(_door_type)
 
 
 func _on_storage_mystery_discovered() -> void:
@@ -561,6 +572,11 @@ func _show_tax_panel(warning: String = "") -> bool:
 func _on_tax_payment_requested() -> void:
 	if tax_flow != null:
 		tax_flow.on_tax_payment_requested()
+
+
+func _on_tax_ignore_requested() -> void:
+	if tax_flow != null:
+		tax_flow.on_tax_ignore_requested()
 
 
 func _start_midnight_to_morning_transition() -> void:

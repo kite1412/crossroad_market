@@ -7,7 +7,7 @@
 script = ExtResource("1")
 day = 1
 session_name = &"human"
-customer_count = 4
+customer_count = 18
 window_start = 360
 window_end = 1080
 min_interval = 20

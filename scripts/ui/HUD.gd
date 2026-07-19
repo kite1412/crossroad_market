@@ -11,6 +11,7 @@ const HUDObjectiveToast = preload("res://scripts/ui/hud/HUDObjectiveToast.gd")
 
 signal notification_finished()
 signal tax_payment_requested()
+signal tax_ignore_requested()
 
 @onready var gold_label: Label = $TopLeftHUD/GoldLabel
 @onready var target_label: Label = $TopLeftHUD/TargetLabel
@@ -59,6 +60,10 @@ var _tax_panel: ColorRect = null
 var _tax_title_label: Label = null
 var _tax_report_label: Label = null
 var _tax_warning_label: Label = null
+
+var _tax_notice_button: Button = null
+var _pending_tax_report: Dictionary = {}
+var _pending_tax_warning: String = ""
 
 var _status_labels: HUDStatusLabels = HUDStatusLabels.new()
 var _notification_flow: HUDNotificationFlow = HUDNotificationFlow.new()
@@ -178,6 +183,14 @@ func show_tax_warning(message: String, report: Dictionary = {}) -> void:
 
 func hide_tax_report() -> void:
 	_tax_panel_flow.hide_tax_report()
+
+
+func show_tax_notice(report: Dictionary, warning: String = "") -> void:
+	_tax_panel_flow.show_tax_notice(report, warning)
+
+
+func hide_tax_notice() -> void:
+	_tax_panel_flow.hide_tax_notice()
 
 
 func show_hint_dialog(key: String, text: String) -> void:

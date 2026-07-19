@@ -372,29 +372,62 @@ func get_route_from_shelf_to_cashier(shelf: Shelf) -> Array[Vector2]:
 	return []
 
 
-func get_exit_route_from(from_position: Vector2, fallback_exit_position: Vector2) -> Array[Vector2]:
-	var queue_right_route := _build_exit_route_via_queue_right(from_position, fallback_exit_position)
+func get_cashier_exit_route(from_position: Vector2, fallback_exit_position: Vector2) -> Array[Vector2]:
+	return _build_cashier_exit_route_via_queue_right(from_position, fallback_exit_position)
 
-	if not queue_right_route.is_empty():
-		return queue_right_route
+func _build_cashier_exit_route_via_queue_right(from_position: Vector2, fallback_exit_position: Vector2) -> Array[Vector2]:
+	var queue_right_nodes := _get_queue_right_node_names()
 
-	var start := _find_nearest_graph_node(from_position)
+	if queue_right_nodes.size() < 3:
+		return []
 
-	if not bool(start.get("valid", false)):
-		var no_start_route := _dedupe_route_points(_make_orthogonal_route(from_position, fallback_exit_position, true))
-		return no_start_route
+	var route: Array[Vector2] = []
+
+	for node_name in queue_right_nodes:
+		var marker := _get_graph_marker(node_name)
+
+		if marker == null:
+			return []
+
+		route.append(marker.global_position)
+
+	if not _is_route_clear_from_current_position(from_position, route):
+		return []
 
 	var exit_node := _get_role_node_name(ROLE_EXIT, EXIT)
-	var path := _find_graph_path(start.get("node", _get_role_node_name(ROLE_ENTRY, ENTRY)) as StringName, exit_node)
 
-	if path.is_empty():
-		var no_path_route := _dedupe_route_points(_make_orthogonal_route(from_position, fallback_exit_position, true))
-		return no_path_route
+	if exit_node != StringName():
+		var last_queue_position: Vector2 = route.back()
+		var graph_rejoin := _find_nearest_reachable_graph_node_for_route(last_queue_position, exit_node)
 
-	var route := start.get("route", []) as Array[Vector2]
-	route.append_array(_build_route_from_graph_path(path))
-	var result := _dedupe_route_points(route)
-	return result
+		if bool(graph_rejoin.get("valid", false)):
+			var graph_route := graph_rejoin.get("route", []) as Array[Vector2]
+
+			route.append_array(graph_route)
+			return _dedupe_route_points(route)
+
+	var last_position: Vector2 = route.back()
+	var fallback_route := _make_orthogonal_route(last_position, fallback_exit_position, true)
+
+	if not _is_route_clear_from_current_position(last_position, fallback_route):
+		return []
+
+	route.append_array(fallback_route)
+	return _dedupe_route_points(route)
+
+func get_exit_route_from(from_position: Vector2, fallback_exit_position: Vector2) -> Array[Vector2]:
+	var exit_node := _get_role_node_name(ROLE_EXIT, EXIT)
+	var start := _find_nearest_reachable_graph_node_for_route(from_position, exit_node)
+
+	if bool(start.get("valid", false)):
+		return _dedupe_route_points(start.get("route", []) as Array[Vector2])
+
+	var fallback := _make_orthogonal_route(from_position, fallback_exit_position, true)
+
+	if _is_route_clear_from_current_position(from_position, fallback):
+		return _dedupe_route_points(fallback)
+
+	return []
 
 
 func has_reachable_shelf_access(object: Node2D, candidate: Vector2) -> bool:

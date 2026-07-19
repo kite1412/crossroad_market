@@ -26,7 +26,12 @@ const DEFAULT_MAX_INTERVAL_MINUTES: int = 180
 const SESSION_NONE: StringName = &"none"
 const SESSION_HUMAN: StringName = &"human"
 const SESSION_NIGHT: StringName = &"night"
-const DAY_ONE_CUSTOMER_COUNT: int = 4
+const DAY_ONE_CUSTOMER_COUNT: int = 18
+
+const BASE_HUMAN_CUSTOMER_COUNT: int = 18
+const DAILY_CUSTOMER_COUNT_INCREASE: int = 1
+const MAX_HUMAN_CUSTOMER_COUNT: int = 23
+
 const DAY_ONE_BREAD_CUSTOMER_GOLD: int = 10
 const DAY_ONE_WATER_CUSTOMER_GOLD: int = 5
 const DAY_ONE_BANDAGE_CUSTOMER_GOLD: int = 15
@@ -133,6 +138,14 @@ func start_night_customer_session() -> void:
 
 func stop_normal_customer_spawning() -> void:
 	_spawn_runtime.stop_normal_customer_spawning()
+
+func get_human_customer_count_for_day(day: int) -> int:
+	return mini(
+		BASE_HUMAN_CUSTOMER_COUNT
+		+ maxi(0, day - 1)
+		* DAILY_CUSTOMER_COUNT_INCREASE,
+		MAX_HUMAN_CUSTOMER_COUNT
+	)
 
 
 func _reset_customer_sessions() -> void:

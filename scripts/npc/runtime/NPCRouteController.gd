@@ -188,9 +188,10 @@ func get_store_route_for_current_state(destination: Vector2) -> Array[Vector2]:
 			pass
 			return fallback_cashier_route
 		NPC.State.EXIT:
-			var exit_route := call_store_route(store, &"get_npc_exit_route_from", [npc.global_position])
-			pass
-			return exit_route
+			if npc._exit_after_checkout and store.has_method("get_npc_exit_route_from_cashier"):
+				return call_store_route(store, &"get_npc_exit_route_from_cashier", [npc.global_position])
+
+			return call_store_route(store, &"get_npc_exit_route_from", [npc.global_position])
 
 	return []
 

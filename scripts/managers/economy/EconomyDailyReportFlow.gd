@@ -9,7 +9,10 @@ func setup(economy_node: Node) -> void:
 
 
 func get_daily_tax() -> int:
-	return economy.BASE_DAILY_TAX + max(0, TimeManager.current_day - 1) * economy.DAILY_TAX_INCREASE
+	return mini(
+		economy.BASE_DAILY_TAX + maxi(0, TimeManager.current_day - 1) * economy.DAILY_TAX_INCREASE,
+		economy.MAX_DAILY_TAX
+	)
 
 
 func get_daily_report() -> Dictionary:
@@ -25,10 +28,11 @@ func get_daily_report() -> Dictionary:
 	}
 
 
-func on_day_started(_day: int) -> void:
+func on_day_started(day: int) -> void:
 	economy.daily_revenue = 0
 	economy.daily_expenses = 0
 	economy._daily_target_reached = false
+	economy.daily_target = economy.get_daily_target_for_day(day)
 
 
 func on_day_ended(_day: int) -> void:

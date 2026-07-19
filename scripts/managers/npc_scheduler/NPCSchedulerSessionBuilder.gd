@@ -32,12 +32,15 @@ func generate_customer_sessions_for_day(day: int) -> void:
 	scheduler._reset_customer_sessions()
 
 	var human_blueprint := get_customer_session_blueprint(day, scheduler.SESSION_HUMAN)
+	human_blueprint["customer_count"] = scheduler.get_human_customer_count_for_day(day)
 	var human_pool := build_customer_session_pool(day, human_blueprint)
+	human_pool = expand_customer_pool(human_pool, int(human_blueprint.get("customer_count", 0)), day)
 	scheduler._customer_sessions[scheduler.SESSION_HUMAN] = make_customer_session(human_blueprint, human_pool)
 
 	var night_blueprint := get_customer_session_blueprint(day, scheduler.SESSION_NIGHT)
 	var night_pool := build_customer_session_pool(day, night_blueprint)
 	scheduler._customer_sessions[scheduler.SESSION_NIGHT] = make_customer_session(night_blueprint, night_pool)
+
 
 
 func get_customer_session_blueprint(day: int, session_name: StringName) -> Dictionary:
@@ -182,3 +185,39 @@ func build_customer_session_slots(blueprint: Dictionary, customer_count: int) ->
 		slots.append(window_start + int(round(average_interval * (float(i) + 0.5))))
 
 	return slots
+
+func expand_customer_pool(source_pool: Array[NPCData], desired_count: int, day: int) -> Array[NPCData]:
+	if source_pool.is_empty() or desired_count <= 0:
+		return []
+
+	var repeatable: Array[NPCData] = []
+	var story_customers: Array[NPCData] = []
+
+	for npc_data in source_pool:
+		if npc_data == null:
+			continue
+
+		if npc_data.npc_category == NPCData.NPCCategory.STORY:
+			story_customers.append(npc_data)
+		else:
+			repeatable.append(npc_data)
+
+	if repeatable.is_empty():
+		return source_pool.slice(0, mini(desired_count, source_pool.size()))
+
+	var result: Array[NPCData] = []
+	var generic_target := maxi(0, desired_count - story_customers.size())
+
+	for index in generic_target:
+		var template := repeatable[index % repeatable.size()]
+		var copy := template.duplicate(true) as NPCData
+		copy.npc_id = "%s_day_%d_visit_%d" % [template.npc_id, day, index]
+		copy.spawn_order = index
+		result.append(copy)
+
+	for story_npc in story_customers:
+		if result.size() >= desired_count:
+			break
+		result.append(story_npc)
+
+	return result

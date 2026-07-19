@@ -82,6 +82,7 @@ var _last_watchdog_position: Vector2 = Vector2.INF
 var _stuck_watchdog_timer: float = 0.0
 var _stuck_watchdog_rebuilds: int = 0
 var _exit_completed: bool = false
+var _exit_after_checkout: bool = false
 var _interaction_pause_timer: float = 0.0
 var _interaction_partner: NPC = null
 var _queue_advance_delay_timer: float = 0.0

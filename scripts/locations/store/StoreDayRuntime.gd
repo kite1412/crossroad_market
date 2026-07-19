@@ -51,7 +51,7 @@ func can_player_sleep() -> Dictionary:
 			"message": "Put down the shelf first."
 		}
 
-	if not store._tax_paid_today:
+	if not store._tax_paid_today and not store._tax_ignored_today:
 		return {
 			"allowed": false,
 			"message": "Pay today's tax first."

@@ -188,8 +188,17 @@ func try_show_tax_panel() -> bool:
 	if not can_show_tax_panel():
 		return false
 
-	if not show_tax_panel():
+	store._tax_pending = true
+	store._tax_notice_active = true
+	store._latest_daily_report = EconomyManager.get_daily_report()
+	store._connect_hud_signals()
+
+	var hud := store.get_tree().get_first_node_in_group("hud")
+
+	if hud == null or not hud.has_method("show_tax_notice"):
 		return false
+
+	hud.call("show_tax_notice", store._latest_daily_report, "")
 
 	store._tax_waiting_for_restock_close = false
 	store._tax_ready_after_restock_close = false
@@ -202,7 +211,7 @@ func can_show_tax_panel() -> bool:
 	if store == null:
 		return false
 
-	if store._tax_panel_showing:
+	if store._tax_notice_active:
 		return false
 
 	if store._restock_panel_open:
@@ -230,40 +239,78 @@ func show_tax_panel(warning: String = "") -> bool:
 	store._connect_hud_signals()
 	var hud := store.get_tree().get_first_node_in_group("hud")
 
-	if hud == null or not hud.has_method("show_tax_report"):
+	if hud == null or not hud.has_method("show_tax_notice"):
 		return false
-
-	store._tax_pending = true
-	store._tax_panel_showing = true
-	store._latest_daily_report = EconomyManager.get_daily_report()
-
-	if warning != "" and hud.has_method("show_tax_warning"):
-		hud.call("show_tax_warning", warning, store._latest_daily_report)
-	else:
-		hud.call("show_tax_report", store._latest_daily_report)
+	
+	if warning != "":
+		hud.call("show_tax_notice", store._latest_daily_report, warning)
 
 	return true
+
+
+func on_tax_ignore_requested() -> void:
+	if store == null:
+		return
+
+	if not store._tax_notice_active:
+		return
+
+	store._tax_ignored_today = true
+	store._tax_notice_active = false
+	store._tax_pending = false
+
+	var hud := store.get_tree().get_first_node_in_group("hud")
+
+	if hud != null and hud.has_method("hide_tax_notice"):
+		hud.call("hide_tax_notice")
+		
+	if hud != null and hud.has_method("hide_tax_report"):
+		hud.call("hide_tax_report")
+
+	store._show_notification("Tax payment ignored.", 1.5)
+
+
+func on_player_entered_home() -> void:
+	if store == null:
+		return
+
+	if store._tax_paid_today:
+		return
+
+	if not store._tax_ignored_today:
+		return
+
+	if store._tax_home_warning_shown:
+		return
+
+	store._tax_home_warning_shown = true
+	store._show_notification("You went to sleep without paying tax. Penalties may apply.", 3.0)
 
 
 func on_tax_payment_requested() -> void:
 	if store == null:
 		return
 
-	if not store._tax_panel_showing:
+	if not store._tax_notice_active:
 		return
 
 	var tax := EconomyManager.get_daily_tax()
 
 	if EconomyManager.gold < tax:
-		show_tax_panel("Not enough gold to pay today's tax.")
+		var hud := store.get_tree().get_first_node_in_group("hud")
+		if hud != null and hud.has_method("show_tax_notice"):
+			hud.call("show_tax_notice", store._latest_daily_report, "Not enough gold to pay today's tax.")
 		return
 
 	if not EconomyManager.pay_tax():
-		show_tax_panel("Not enough gold to pay today's tax.")
+		var hud := store.get_tree().get_first_node_in_group("hud")
+		if hud != null and hud.has_method("show_tax_notice"):
+			hud.call("show_tax_notice", store._latest_daily_report, "Not enough gold to pay today's tax.")
 		return
 
 	store._tax_pending = false
 	store._tax_paid_today = true
+	store._tax_notice_active = false
 	store._tax_panel_showing = false
 	store._tax_waiting_for_restock_close = false
 	store._tax_ready_after_restock_close = false
@@ -272,6 +319,8 @@ func on_tax_payment_requested() -> void:
 
 	var hud := store.get_tree().get_first_node_in_group("hud")
 
+	if hud != null and hud.has_method("hide_tax_notice"):
+		hud.call("hide_tax_notice")
 	if hud != null and hud.has_method("hide_tax_report"):
 		hud.call("hide_tax_report")
 
@@ -316,6 +365,8 @@ func reset_day_state() -> void:
 	store._tax_ready_after_restock_close = false
 	store._tax_restock_close_ready_at_msec = 0
 	store._tax_restock_retry_token += 1
-	store._end_day_transition_started = false
 	store._restock_ordered_today = false
 	store._latest_daily_report.clear()
+	store._tax_ignored_today = false
+	store._tax_notice_active = false
+	store._tax_home_warning_shown = false

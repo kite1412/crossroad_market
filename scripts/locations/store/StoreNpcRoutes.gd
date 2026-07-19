@@ -64,10 +64,9 @@ func get_npc_shelf_wait_position(index: int = 0) -> Vector2:
 	return get_store_path_graph().get_shelf_wait_position(index)
 
 
-func get_npc_exit_route_from_cashier() -> Array[Vector2]:
-	var fallback_position: Vector2 = get_marker_position_or(store.counter_pos, Vector2(96, 160))
-	var from_position: Vector2 = get_marker_position_or(store.npc_queue_marker, fallback_position)
-	return get_npc_exit_route_from(from_position)
+func get_npc_exit_route_from_cashier(from_position: Vector2) -> Array[Vector2]:
+	var exit_position: Vector2 = get_marker_position_or(store.npc_exit_marker, STORE_ENTRY_FALLBACK_POSITION)
+	return get_store_path_graph().get_cashier_exit_route(from_position, exit_position)
 
 
 func get_store_path_graph() -> StorePathGraph:

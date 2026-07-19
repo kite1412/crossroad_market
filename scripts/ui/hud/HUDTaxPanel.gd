@@ -38,6 +38,73 @@ func hide_tax_report() -> void:
 	hud.end_action_lock()
 
 
+func ensure_tax_notice_button() -> void:
+	if (
+		hud._tax_notice_button != null
+		and is_instance_valid(hud._tax_notice_button)
+	):
+		return
+
+	hud._tax_notice_button = Button.new()
+	hud._tax_notice_button.name = "TaxDueButton"
+	hud._tax_notice_button.text = "TAX DUE"
+	hud._tax_notice_button.visible = false
+	hud._tax_notice_button.mouse_filter = (
+		Control.MOUSE_FILTER_STOP
+	)
+
+	hud._tax_notice_button.set_anchors_preset(
+		Control.PRESET_TOP_RIGHT
+	)
+
+	hud._tax_notice_button.offset_left = -116.0
+	hud._tax_notice_button.offset_top = 54.0
+	hud._tax_notice_button.offset_right = -12.0
+	hud._tax_notice_button.offset_bottom = 82.0
+
+	hud.add_child(hud._tax_notice_button)
+
+	hud._tax_notice_button.pressed.connect(
+		func() -> void:
+			show_tax_report(
+				hud._pending_tax_report
+			)
+
+			if (
+				not hud._pending_tax_warning.is_empty()
+				and hud._tax_warning_label != null
+			):
+				hud._tax_warning_label.text = (
+					hud._pending_tax_warning
+				)
+	)
+
+
+func show_tax_notice(report: Dictionary, warning: String = "") -> void:
+	ensure_tax_notice_button()
+
+	hud._pending_tax_report = report.duplicate(true)
+	hud._pending_tax_warning = warning
+
+	var tax := int(
+		report.get(
+			"tax",
+			EconomyManager.get_daily_tax()
+		)
+	)
+
+	hud._tax_notice_button.text = "TAX DUE: %dG" % tax
+	hud._tax_notice_button.visible = true
+
+
+func hide_tax_notice() -> void:
+	if hud._tax_notice_button != null:
+		hud._tax_notice_button.visible = false
+
+	hud._pending_tax_report.clear()
+	hud._pending_tax_warning = ""
+
+
 func ensure_tax_panel() -> void:
 	if hud._tax_layer != null and is_instance_valid(hud._tax_layer):
 		return
@@ -86,13 +153,37 @@ func ensure_tax_panel() -> void:
 	hud._tax_warning_label.add_theme_font_size_override("font_size", 8)
 	root.add_child(hud._tax_warning_label)
 
+	var button_row := HBoxContainer.new()
+	button_row.size_flags_horizontal = (
+		Control.SIZE_EXPAND_FILL
+	)
+	button_row.add_theme_constant_override(
+		"separation",
+		6
+	)
+	root.add_child(button_row)
+	
+	var ignore_button := Button.new()
+	ignore_button.text = "Ignore"
+	ignore_button.size_flags_horizontal = (
+		Control.SIZE_EXPAND_FILL
+	)
+	ignore_button.pressed.connect(
+		func() -> void:
+			hud.tax_ignore_requested.emit()
+	)
+	button_row.add_child(ignore_button)
+	
 	var pay_button := Button.new()
 	pay_button.text = "Pay Tax"
-	pay_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	pay_button.pressed.connect(func() -> void:
-		hud.tax_payment_requested.emit()
+	pay_button.size_flags_horizontal = (
+		Control.SIZE_EXPAND_FILL
 	)
-	root.add_child(pay_button)
+	pay_button.pressed.connect(
+		func() -> void:
+			hud.tax_payment_requested.emit()
+	)
+	button_row.add_child(pay_button)
 
 
 func render_tax_report(report: Dictionary, warning: String) -> void:

@@ -304,6 +304,9 @@ func on_yard_return(_door_type: String) -> void:
 func on_yard_enter_home() -> void:
 	if store._is_transitioning:
 		return
+	
+	if store.tax_flow != null:
+		store.tax_flow.on_player_entered_home()
 
 	enter_home()
 
