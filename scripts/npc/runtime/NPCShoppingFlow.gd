@@ -1,6 +1,8 @@
 class_name NPCShoppingFlow
 extends RefCounted
 
+const DEBUG_SHELF_FLOW: bool = true
+
 var npc = null
 
 
@@ -104,8 +106,10 @@ func find_matching_shelf() -> Shelf:
 func find_reachable_matching_shelf() -> Shelf:
 	for shelf in get_matching_shelf_candidates():
 		var visit_position := get_shelf_visit_position(shelf)
+		print_shelf_candidate_debug(shelf, visit_position)
 
 		if visit_position.is_finite():
+			print_shelf_selected_debug(shelf, visit_position)
 			return shelf
 
 	return null
@@ -151,6 +155,53 @@ func get_shelf_visit_position(shelf: Shelf) -> Vector2:
 			return result as Vector2
 
 	return NPCShoppingBehavior.get_shelf_visit_position(shelf, npc.SHELF_VISIT_OFFSET)
+
+
+func print_shelf_candidate_debug(shelf: Shelf, visit_position: Vector2) -> void:
+	if not DEBUG_SHELF_FLOW:
+		return
+
+	print(
+		"[DEBUG][SHELF_FLOW] stage=candidate npc=%s item=%s shelf=%s shelf_type=%s has_item=%s shelf_pos=%s visit_pos=%s has_metadata=%s access_point=%s access_side=%s graph_node=%s checkout_source=%s selected=false" % [
+			_get_debug_npc_label(),
+			npc.item_to_buy,
+			shelf.name if shelf != null else "<null>",
+			str(shelf.shelf_type if shelf != null else ""),
+			str(shelf.has_item(npc.item_to_buy) if shelf != null else false),
+			str(shelf.global_position if shelf != null else Vector2.INF),
+			str(visit_position),
+			str(shelf.has_meta(&"npc_access_point") if shelf != null else false),
+			str(shelf.get_meta(&"npc_access_point") if shelf != null and shelf.has_meta(&"npc_access_point") else Vector2.INF),
+			str(shelf.get_meta(&"npc_access_side") if shelf != null and shelf.has_meta(&"npc_access_side") else ""),
+			str(shelf.get_meta(&"npc_access_graph_node") if shelf != null and shelf.has_meta(&"npc_access_graph_node") else ""),
+			str(shelf.get_meta(&"npc_access_checkout_source") if shelf != null and shelf.has_meta(&"npc_access_checkout_source") else "")
+		]
+	)
+
+
+func print_shelf_selected_debug(shelf: Shelf, visit_position: Vector2) -> void:
+	if not DEBUG_SHELF_FLOW:
+		return
+
+	print(
+		"[DEBUG][SHELF_FLOW] stage=selected npc=%s item=%s shelf=%s shelf_pos=%s visit_pos=%s access_side=%s graph_node=%s checkout_source=%s" % [
+			_get_debug_npc_label(),
+			npc.item_to_buy,
+			shelf.name if shelf != null else "<null>",
+			str(shelf.global_position if shelf != null else Vector2.INF),
+			str(visit_position),
+			str(shelf.get_meta(&"npc_access_side") if shelf != null and shelf.has_meta(&"npc_access_side") else ""),
+			str(shelf.get_meta(&"npc_access_graph_node") if shelf != null and shelf.has_meta(&"npc_access_graph_node") else ""),
+			str(shelf.get_meta(&"npc_access_checkout_source") if shelf != null and shelf.has_meta(&"npc_access_checkout_source") else "")
+		]
+	)
+
+
+func _get_debug_npc_label() -> String:
+	if npc != null and npc.npc_data != null and npc.npc_data.npc_id != "":
+		return npc.npc_data.npc_id
+
+	return npc.name if npc != null else "<null>"
 
 
 func refresh_shelf_visit_target() -> bool:

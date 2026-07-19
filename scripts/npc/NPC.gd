@@ -24,17 +24,18 @@ enum State {
 const SPEED: float = 80.0
 const ARRIVAL_THRESHOLD: float = 5.0
 const ENTER_PAUSE: float = 0.5
-const DEBUG_ENTER_TIMING: bool = false
 const DIALOG_DURATION: float = 2.5
 const CHECKOUT_PATIENCE: float = 20.0
 const SEARCH_PATIENCE: float = 15.0
 const SHELF_SEARCH_MIN_TIME: float = 1.0
 const SHELF_TAKE_PAUSE_TIME: float = 1.25
 const SHELF_VISIT_OFFSET: Vector2 = Vector2(0, 34)
-const SHELF_ACTION_DISTANCE: float = 12.0
-const SHELF_VISIT_ARRIVAL_DISTANCE: float = 8.0
+const SHELF_ACTION_DISTANCE: float = 6.0
+const SHELF_VISIT_ARRIVAL_DISTANCE: float = 4.0
 const QUEUE_ACTION_DISTANCE: float = 8.0
-const DEBUG_QUEUE_TARGET: bool = false
+const QUEUE_SLOT_ARRIVAL_DISTANCE: float = 3.0
+const QUEUE_ADVANCE_DELAY: float = 1.0
+const QUEUE_ADVANCE_CLEAR_WAIT: float = 1.0
 const STUCK_WATCHDOG_SECONDS: float = 1.5
 const STUCK_MIN_MOVE_DISTANCE: float = 1.0
 const STUCK_WATCHDOG_MAX_REBUILDS: int = 2
@@ -47,6 +48,7 @@ static var store_path_position: Vector2 = Vector2.INF
 
 signal purchase_completed(npc: NPC, item_id: String, price: int)
 signal npc_exited(npc: NPC)
+signal shelf_route_ready(npc: NPC, travel_seconds: float)
 
 var npc_data: NPCData
 var current_state: State = State.ENTER
@@ -71,11 +73,21 @@ var _trust_label: Label = null
 var _movement_route: Array[Vector2] = []
 var _movement_route_destination: Vector2 = Vector2.INF
 var _target_shelf: Shelf = null
+var _queue_entry_shelf: Shelf = null
+var _queue_egress_route_pending: bool = false
 var _last_queue_index: int = -1
 var _last_watchdog_position: Vector2 = Vector2.INF
 var _stuck_watchdog_timer: float = 0.0
 var _stuck_watchdog_rebuilds: int = 0
 var _exit_completed: bool = false
+var _interaction_pause_timer: float = 0.0
+var _interaction_partner: NPC = null
+var _queue_advance_delay_timer: float = 0.0
+var _queue_advance_clear_wait_timer: float = 0.0
+var _queue_advance_waiting_for_clear: bool = false
+var _is_moving_from_queue_to_cashier: bool = false
+var _queue_back_facing_done: bool = false
+var _queue_back_facing_logged: bool = false
 
 var _state_flow = null
 var _route_controller = null
@@ -123,6 +135,9 @@ func setup(data: NPCData) -> void:
 
 func _physics_process(delta: float) -> void:
 	_ensure_npc_controllers()
+
+	if _process_npc_interaction_pause(delta):
+		return
 
 	match current_state:
 		State.ENTER:
@@ -235,6 +250,11 @@ func mark_checkout_ready() -> void:
 	_queue_flow.mark_checkout_ready()
 
 
+func request_npc_interaction(partner: NPC, dialog_text: String, pause_duration: float, face_position: Vector2) -> bool:
+	_ensure_npc_controllers()
+	return _presentation_runtime.request_npc_interaction(partner, dialog_text, pause_duration, face_position)
+
+
 func _apply_name_label() -> void:
 	_presentation_runtime.apply_name_label()
 
@@ -266,10 +286,6 @@ func _on_trust_changed(npc_id: String, _new_trust: int, _delta: int) -> void:
 
 func _process_enter() -> void:
 	_state_flow.process_enter()
-
-
-func _print_enter_timing(choose_duration_usec: int, shelf_duration_usec: int, route_duration_usec: int) -> void:
-	_state_flow.print_enter_timing(choose_duration_usec, shelf_duration_usec, route_duration_usec)
 
 
 func _process_walk_to_shelf() -> void:
@@ -314,6 +330,10 @@ func _set_state(new_state: State) -> void:
 
 func _move_to(target: Vector2) -> bool:
 	return _route_controller.move_to(target)
+
+
+func _move_to_with_arrival_threshold(target: Vector2, arrival_threshold: float) -> bool:
+	return _route_controller.move_to(target, arrival_threshold)
 
 
 func _update_stuck_watchdog(delta: float) -> void:
@@ -464,10 +484,6 @@ func _get_queue_target() -> Vector2:
 	return _queue_flow.get_queue_target()
 
 
-func _print_queue_target_debug(queue_index: int) -> void:
-	_queue_flow.print_queue_target_debug(queue_index)
-
-
 func _apply_scripted_metadata() -> void:
 	_metadata_flow.apply_scripted_metadata()
 
@@ -522,3 +538,8 @@ func _hide_dialog() -> void:
 
 func _set_dialog_mouse_filter() -> void:
 	_presentation_runtime.set_dialog_mouse_filter()
+
+
+func _process_npc_interaction_pause(delta: float) -> bool:
+	_ensure_npc_controllers()
+	return _presentation_runtime.process_npc_interaction_pause(delta)
