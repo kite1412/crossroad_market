@@ -2,6 +2,8 @@ class_name StoreNpcRuntime
 extends Node
 
 const StoreNpcSpawner = preload("res://scripts/locations/store/StoreNpcSpawner.gd")
+const NPCTargetArrivalRouteController = preload("res://scripts/npc/runtime/NPCTargetArrivalRouteController.gd")
+const NPCStableShelfStateFlow = preload("res://scripts/npc/runtime/NPCStableShelfStateFlow.gd")
 const CUSTOMER_INTAKE_CLOSED_META: StringName = &"customer_intake_closed_today"
 
 var store: Node = null
@@ -70,6 +72,8 @@ func on_npc_spawn_requested(npc_data: NPCData) -> void:
 	)
 
 	if npc != null:
+		install_shelf_arrival_controllers(npc)
+
 		var route_ready_callable := Callable(
 			self,
 			"on_npc_shelf_route_ready"
@@ -77,6 +81,18 @@ func on_npc_spawn_requested(npc_data: NPCData) -> void:
 
 		if not npc.shelf_route_ready.is_connected(route_ready_callable):
 			npc.shelf_route_ready.connect(route_ready_callable)
+
+
+func install_shelf_arrival_controllers(npc: NPC) -> void:
+	if npc == null or not is_instance_valid(npc):
+		return
+
+	# Replace only the two controllers involved in arrival and shelf pickup.
+	# The NPC scene and every other shopping/queue controller remain unchanged.
+	npc._route_controller = NPCTargetArrivalRouteController.new()
+	npc._route_controller.setup(npc)
+	npc._state_flow = NPCStableShelfStateFlow.new()
+	npc._state_flow.setup(npc)
 
 
 func get_npc_spawn_marker() -> Marker2D:
