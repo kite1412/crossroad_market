@@ -154,6 +154,10 @@ func get_npc_exit_route_from_cashier(
 	for point in graph_route:
 		_append_unique_route_point(route, point)
 
+	# A graph rebuild may return no additional point from AisleRight even
+	# though the NPC still has to reach the store exit. Keep the real exit as
+	# the final mandatory waypoint so route completion cannot happen at aisle.
+	_append_unique_route_point(route, exit_position)
 	return route
 
 
