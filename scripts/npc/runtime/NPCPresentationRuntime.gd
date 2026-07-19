@@ -95,25 +95,7 @@ func face_target_shelf() -> void:
 	npc.velocity = Vector2.ZERO
 	npc._move_direction = CharacterSprite.Direction.UP if npc.global_position.y >= npc._target_shelf.global_position.y else CharacterSprite.Direction.DOWN
 	update_character_sprite()
-	print_face_target_shelf_debug(previous_direction)
-
-
-func print_face_target_shelf_debug(previous_direction: CharacterSprite.Direction) -> void:
-	if not DEBUG_SHELF_FLOW:
-		return
-
-	print(
-		"[DEBUG][SHELF_FLOW] stage=face_target_shelf npc=%s shelf=%s npc_pos=%s shelf_pos=%s previous_direction=%s new_direction=%s access_side=%s target_pos=%s" % [
-			_get_debug_npc_label(),
-			npc._target_shelf.name if npc._target_shelf != null else "<null>",
-			str(npc.global_position),
-			str(npc._target_shelf.global_position if npc._target_shelf != null else Vector2.INF),
-			str(previous_direction),
-			str(npc._move_direction),
-			str(npc._target_shelf.get_meta(&"npc_access_side") if npc._target_shelf != null and npc._target_shelf.has_meta(&"npc_access_side") else ""),
-			str(npc.target_position)
-		]
-	)
+	pass
 
 
 func show_dialog(text: String) -> void:

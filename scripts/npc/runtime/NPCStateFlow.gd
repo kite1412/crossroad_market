@@ -24,7 +24,7 @@ func process_enter() -> void:
 
 	if target_shelf == null:
 		var fallback_shelf: Shelf = npc._find_matching_shelf()
-		print_shelf_flow_debug("enter_no_reachable_shelf", fallback_shelf, Vector2.INF, {})
+		pass
 		npc._show_dialog("I can't reach that shelf." if fallback_shelf != null else "Nothing I need is on the shelves right now.")
 		npc._dialog_timer = npc.DIALOG_DURATION
 		npc.target_position = npc._get_exit_position()
@@ -32,10 +32,10 @@ func process_enter() -> void:
 		return
 
 	var visit_position: Vector2 = npc._get_shelf_visit_position(target_shelf)
-	print_shelf_flow_debug("enter_visit_position", target_shelf, visit_position, {})
+	pass
 
 	if not visit_position.is_finite():
-		print_shelf_flow_debug("enter_visit_invalid", target_shelf, visit_position, {})
+		pass
 		npc._show_dialog("I can't reach that shelf.")
 		npc._dialog_timer = npc.DIALOG_DURATION
 		npc.target_position = npc._get_exit_position()
@@ -46,7 +46,7 @@ func process_enter() -> void:
 	npc.target_position = visit_position
 	var route_info := get_route_travel_info(visit_position)
 	npc.shelf_route_ready.emit(npc, float(route_info.get("travel_seconds", 0.0)))
-	print_shelf_flow_debug("enter_route_ready", target_shelf, visit_position, route_info)
+	pass
 	_print_perf_shelf_if_slow("npc_enter_route", enter_start_usec, route_info)
 
 	set_state(NPC.State.WALK_TO_SHELF)
@@ -83,8 +83,12 @@ func get_route_travel_info(destination: Vector2) -> Dictionary:
 
 
 func process_walk_to_shelf() -> void:
+	if not npc._is_target_shelf_valid():
+		if _handle_shelf_wait_or_leave("walk_shelf_lost"):
+			return
+
 	if npc.global_position.distance_to(npc.target_position) <= npc.SHELF_VISIT_ARRIVAL_DISTANCE:
-		print_shelf_flow_debug("walk_arrived_threshold", npc._target_shelf, npc.target_position, {})
+		pass
 		npc.velocity = Vector2.ZERO
 		npc.move_and_slide()
 		npc._face_target_shelf()
@@ -92,12 +96,16 @@ func process_walk_to_shelf() -> void:
 		return
 
 	if npc._move_to(npc.target_position):
-		print_shelf_flow_debug("walk_move_to_arrived", npc._target_shelf, npc.target_position, {})
+		pass
 		npc._face_target_shelf()
 		set_state(NPC.State.SEARCH_ITEM)
 
 
 func process_search_item(delta: float) -> void:
+	if not npc._is_target_shelf_valid():
+		if _handle_shelf_wait_or_leave("search_shelf_lost"):
+			return
+
 	npc._search_timer += delta
 
 	if npc._has_any_requested_item_available():
@@ -170,6 +178,10 @@ func process_browse_item(delta: float) -> void:
 
 
 func process_take_item() -> void:
+	if not npc._is_target_shelf_valid() and not npc._has_taken_shelf_item:
+		if _handle_shelf_wait_or_leave("take_shelf_lost"):
+			return
+
 	if npc._has_taken_shelf_item:
 		npc.velocity = Vector2.ZERO
 		npc.move_and_slide()
@@ -188,18 +200,18 @@ func process_take_item() -> void:
 	if npc.global_position.distance_to(npc.target_position) > npc.SHELF_ACTION_DISTANCE and not npc._move_to(npc.target_position):
 		return
 
-	print_shelf_flow_debug("take_before_face", npc._target_shelf, npc.target_position, {})
+	pass
 	npc._face_target_shelf()
 
 	if npc._take_requested_items_from_shelves():
 		npc._has_taken_shelf_item = true
 		npc._take_item_pause_timer = 0.0
 		npc._show_dialog("I'll take this.")
-		print_shelf_flow_debug("take_success", npc._target_shelf, npc.target_position, {})
+		pass
 		return
 
 	npc._show_dialog("Someone must have taken it already.")
-	print_shelf_flow_debug("take_failed_missing_item", npc._target_shelf, npc.target_position, {})
+	pass
 	npc.target_position = npc._get_exit_position()
 	set_state(NPC.State.EXIT)
 
@@ -258,6 +270,47 @@ func finish_checkout_and_exit() -> void:
 	set_state(NPC.State.EXIT)
 
 
+func _handle_shelf_wait_or_leave(debug_stage: String) -> bool:
+	npc.velocity = Vector2.ZERO
+	npc.move_and_slide()
+
+	if not npc._waiting_for_shelf_return:
+		npc._waiting_for_shelf_return = true
+		npc._shelf_wait_timer = 0.0
+		npc._movement_route.clear()
+		npc._movement_route_destination = Vector2.INF
+		pass
+		return true
+
+	npc._shelf_wait_timer += npc.get_process_delta_time()
+
+	var replacement_shelf: Shelf = npc._find_reachable_matching_shelf()
+
+	if replacement_shelf != null:
+		var visit_position: Vector2 = npc._get_shelf_visit_position(replacement_shelf)
+
+		if visit_position.is_finite():
+			npc._target_shelf = replacement_shelf
+			npc.target_position = visit_position
+			npc._waiting_for_shelf_return = false
+			npc._shelf_wait_timer = 0.0
+			pass
+			set_state(NPC.State.WALK_TO_SHELF)
+			return true
+
+	if npc._shelf_wait_timer >= npc.SHELF_WAIT_GRACE_PERIOD:
+		npc._waiting_for_shelf_return = false
+		npc._shelf_wait_timer = 0.0
+		npc._show_dialog("Where'd the shelf go?")
+		npc._dialog_timer = npc.DIALOG_DURATION
+		npc.target_position = npc._get_exit_position()
+		pass
+		set_state(NPC.State.EXIT)
+		return true
+
+	return true
+
+
 func set_state(new_state: int) -> void:
 	if new_state == NPC.State.ENTER:
 		npc._enter_pause_timer = 0.0
@@ -274,8 +327,11 @@ func set_state(new_state: int) -> void:
 		npc._checkout_timer = 0.0
 
 	if new_state == NPC.State.EXIT:
-		npc._leave_queue()
 		npc._target_shelf = null
+
+	if new_state == NPC.State.WALK_TO_SHELF or new_state == NPC.State.SEARCH_ITEM or new_state == NPC.State.TAKE_ITEM:
+		npc._waiting_for_shelf_return = false
+		npc._shelf_wait_timer = 0.0
 
 	npc._movement_route.clear()
 	npc._movement_route_destination = Vector2.INF
@@ -289,57 +345,7 @@ func _print_perf_shelf_if_slow(stage: String, start_usec: int, route_info: Dicti
 	if elapsed_msec < PERF_SHELF_THRESHOLD_MSEC:
 		return
 
-	print(
-		"[DEBUG][PERF_SHELF] stage=%s npc=%s item=%s shelf=%s npc_pos=%s target_pos=%s route_points=%d route_distance=%.2f travel_seconds=%.2f elapsed_ms=%.2f" % [
-			stage,
-			_get_perf_npc_label(),
-			npc.item_to_buy,
-			npc._target_shelf.name if npc._target_shelf != null else "<null>",
-			str(npc.global_position),
-			str(npc.target_position),
-			int(route_info.get("route_points", 0)),
-			float(route_info.get("route_distance", 0.0)),
-			float(route_info.get("travel_seconds", 0.0)),
-			elapsed_msec
-		]
-	)
-
-
-func print_shelf_flow_debug(stage: String, shelf: Shelf, visit_position: Vector2, route_info: Dictionary) -> void:
-	if not DEBUG_SHELF_FLOW:
-		return
-
-	var expected_direction := ""
-
-	if shelf != null and is_instance_valid(shelf):
-		expected_direction = "UP" if npc.global_position.y >= shelf.global_position.y else "DOWN"
-
-	print(
-		"[DEBUG][SHELF_TAKE_POSITION] stage=%s npc=%s item=%s state=%s shelf=%s shelf_pos=%s visit_pos=%s npc_pos=%s target_pos=%s distance_to_target=%s distance_to_shelf=%s shelf_action_distance=%.2f shelf_visit_arrival_distance=%.2f expected_facing=%s actual_facing=%s route_points=%d route_distance=%.2f travel_seconds=%.2f access_point=%s access_side=%s graph_node=%s checkout_source=%s" % [
-			stage,
-			_get_perf_npc_label(),
-			npc.item_to_buy,
-			str(npc.current_state),
-			shelf.name if shelf != null else "<null>",
-			str(shelf.global_position if shelf != null and is_instance_valid(shelf) else Vector2.INF),
-			str(visit_position),
-			str(npc.global_position),
-			str(npc.target_position),
-			str(npc.global_position.distance_to(visit_position) if visit_position.is_finite() else INF),
-			str(npc.global_position.distance_to(shelf.global_position) if shelf != null and is_instance_valid(shelf) else INF),
-			npc.SHELF_ACTION_DISTANCE,
-			npc.SHELF_VISIT_ARRIVAL_DISTANCE,
-			expected_direction,
-			str(npc._move_direction),
-			int(route_info.get("route_points", 0)),
-			float(route_info.get("route_distance", 0.0)),
-			float(route_info.get("travel_seconds", 0.0)),
-			str(shelf.get_meta(&"npc_access_point") if shelf != null and shelf.has_meta(&"npc_access_point") else Vector2.INF),
-			str(shelf.get_meta(&"npc_access_side") if shelf != null and shelf.has_meta(&"npc_access_side") else ""),
-			str(shelf.get_meta(&"npc_access_graph_node") if shelf != null and shelf.has_meta(&"npc_access_graph_node") else ""),
-			str(shelf.get_meta(&"npc_access_checkout_source") if shelf != null and shelf.has_meta(&"npc_access_checkout_source") else "")
-		]
-	)
+	pass
 
 
 func _get_perf_npc_label() -> String:

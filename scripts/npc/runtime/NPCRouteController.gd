@@ -23,7 +23,7 @@ func move_to(target: Vector2, arrival_threshold: float = -1.0) -> bool:
 
 	if npc._movement_route.is_empty():
 		if npc.current_state == NPC.State.WAIT_IN_QUEUE:
-			print_stuck_debug("empty_wait_queue_route", target, threshold, rebuilt_route)
+			pass
 			return false
 
 		return NPCMovement.move_to(npc, target, npc.SPEED, threshold)
@@ -66,16 +66,13 @@ func update_stuck_watchdog(delta: float) -> void:
 		return
 
 	if npc.current_state == NPC.State.WALK_TO_SHELF and npc._refresh_shelf_visit_target():
-		print_stuck_debug("refresh_shelf_target", npc.target_position, npc.ARRIVAL_THRESHOLD, false)
+		pass
 		reset_stuck_watchdog()
 		return
 
 	if npc._stuck_watchdog_rebuilds >= npc.STUCK_WATCHDOG_MAX_REBUILDS:
-		print_stuck_debug("watchdog_give_up", npc.target_position, npc.ARRIVAL_THRESHOLD, false)
-		print(
-			"NPC route watchdog giving up: state=%s pos=%s target=%s route=%s" %
-			[str(npc.current_state), str(npc.global_position), str(npc.target_position), str(npc._movement_route)]
-		)
+		pass
+		pass
 		if npc.current_state == NPC.State.EXIT:
 			# Use direct orthogonal path as last resort for EXIT
 			var fallback := make_orthogonal_route(npc.global_position, NPC.exit_position, true)
@@ -88,11 +85,8 @@ func update_stuck_watchdog(delta: float) -> void:
 		npc._set_state(NPC.State.EXIT)
 		return
 
-	print_stuck_debug("watchdog_rebuild", npc.target_position, npc.ARRIVAL_THRESHOLD, false)
-	print(
-		"NPC route watchdog: state=%s pos=%s target=%s route=%s" %
-		[str(npc.current_state), str(npc.global_position), str(npc.target_position), str(npc._movement_route)]
-	)
+	pass
+	pass
 	npc._movement_route.clear()
 	npc._movement_route_destination = Vector2.INF
 	npc._last_watchdog_position = npc.global_position
@@ -127,18 +121,18 @@ func build_movement_route(destination: Vector2) -> Array[Vector2]:
 
 	if not route.is_empty():
 		var result := append_destination_to_route(route, destination)
-		print_route_build_debug("store", destination, result)
+		pass
 		return result
 
 	if npc.current_state == NPC.State.WAIT_IN_QUEUE:
 		if not route.is_empty():
 			var result := append_destination_to_route(route, destination)
-			print_route_build_debug("store_wait_queue", destination, result)
+			pass
 			return result
 		# Store route empty — fall back to direct orthogonal path so NPC is not stuck
 		var fallback := make_orthogonal_route(npc.global_position, destination, true)
 		fallback = dedupe_route_points(fallback)
-		print_route_build_debug("direct_fallback_wait_queue", destination, fallback)
+		pass
 		return fallback
 
 	route = []
@@ -151,7 +145,7 @@ func build_movement_route(destination: Vector2) -> Array[Vector2]:
 		route.append_array(make_orthogonal_route(npc.global_position, destination, true))
 
 	var fallback_result := dedupe_route_points(route)
-	print_route_build_debug("generic_fallback", destination, fallback_result)
+	pass
 	return fallback_result
 
 
@@ -165,46 +159,46 @@ func get_store_route_for_current_state(destination: Vector2) -> Array[Vector2]:
 		NPC.State.WALK_TO_SHELF:
 			if npc._target_shelf != null and is_instance_valid(npc._target_shelf):
 				var shelf_route := call_store_route(store, &"get_npc_route_to_shelf_access", [npc._target_shelf, npc.global_position, npc])
-				print_store_route_branch_debug("shelf_access", destination, shelf_route)
+				pass
 				return shelf_route
 
 			var entry_route := call_store_route(store, &"get_npc_entry_route_to_shelf", [destination, npc.global_position])
-			print_store_route_branch_debug("entry_to_shelf_position", destination, entry_route)
+			pass
 			return entry_route
 		NPC.State.WAIT_IN_QUEUE:
 			var queue_index := NPC.current_queue.find(npc)
 
 			if npc._is_moving_from_queue_to_cashier:
 				var cashier_route := call_store_route(store, &"get_npc_route_to_cashier_from", [npc.global_position])
-				print_store_route_branch_debug("cashier_route", destination, cashier_route)
+				pass
 				return cashier_route
 
 			if queue_index >= 0 and npc._queue_egress_route_pending and npc._queue_entry_shelf != null and is_instance_valid(npc._queue_entry_shelf):
 				var egress_queue_route := get_shelf_egress_queue_route(store, queue_index, destination)
-				print_shelf_egress_route_debug(destination, egress_queue_route)
+				pass
 
 				if not egress_queue_route.is_empty():
 					npc._queue_egress_route_pending = false
 					npc._queue_entry_shelf = null
-					print_store_route_branch_debug("shelf_egress_to_queue", destination, egress_queue_route)
+					pass
 					return egress_queue_route
 
 			if queue_index >= 0 and store.has_method("get_npc_route_to_queue_target_from"):
 				if queue_index == 0 and NPC.current_queue.size() <= 1:
 					var direct_cashier_route := call_store_route(store, &"get_npc_route_to_cashier_from", [npc.global_position])
-					print_store_route_branch_debug("direct_cashier_solo", destination, direct_cashier_route)
+					pass
 					return direct_cashier_route
 
 				var queue_route := call_store_route(store, &"get_npc_route_to_queue_target_from", [npc.global_position, queue_index])
-				print_store_route_branch_debug("queue_target_route", destination, queue_route)
+				pass
 				return queue_route
 
 			var fallback_cashier_route := call_store_route(store, &"get_npc_route_to_cashier_from", [npc.global_position])
-			print_store_route_branch_debug("cashier_route_no_queue_index", destination, fallback_cashier_route)
+			pass
 			return fallback_cashier_route
 		NPC.State.EXIT:
 			var exit_route := call_store_route(store, &"get_npc_exit_route_from", [npc.global_position])
-			print_store_route_branch_debug("exit_route", destination, exit_route)
+			pass
 			return exit_route
 
 	return []
@@ -311,112 +305,6 @@ func dedupe_route_points(route: Array[Vector2]) -> Array[Vector2]:
 		deduped.append(point)
 
 	return deduped
-
-
-func print_store_route_branch_debug(branch: String, destination: Vector2, route: Array[Vector2]) -> void:
-	if not DEBUG_NPC_ROUTE_BUILD:
-		return
-
-	if not should_print_route_debug("branch:%s" % branch, destination, route):
-		return
-
-	print(
-		"[DEBUG][NPC_ROUTE_BUILD] npc=%s state=%s branch=%s moving_to_cashier=%s pos=%s destination=%s route_points=%d first_point=%s last_point=%s route=%s" % [
-			_get_debug_npc_label(),
-			str(npc.current_state),
-			branch,
-			str(npc._is_moving_from_queue_to_cashier),
-			str(npc.global_position),
-			str(destination),
-			route.size(),
-			str(route[0] if not route.is_empty() else Vector2.INF),
-			str(route[route.size() - 1] if not route.is_empty() else Vector2.INF),
-			str(route)
-		]
-	)
-
-
-func print_route_build_debug(source: String, destination: Vector2, route: Array[Vector2]) -> void:
-	if not DEBUG_NPC_ROUTE_BUILD:
-		return
-
-	if not should_print_route_debug("source:%s" % source, destination, route):
-		return
-
-	print(
-		"[DEBUG][NPC_ROUTE_BUILD] npc=%s state=%s source=%s pos=%s destination=%s movement_destination=%s route_points=%d first_point=%s last_point=%s route=%s" % [
-			_get_debug_npc_label(),
-			str(npc.current_state),
-			source,
-			str(npc.global_position),
-			str(destination),
-			str(npc._movement_route_destination),
-			route.size(),
-			str(route[0] if not route.is_empty() else Vector2.INF),
-			str(route[route.size() - 1] if not route.is_empty() else Vector2.INF),
-			str(route)
-		]
-	)
-
-
-func print_shelf_egress_route_debug(destination: Vector2, route: Array[Vector2]) -> void:
-	if not DEBUG_NPC_ROUTE_BUILD:
-		return
-
-	var shelf: Shelf = npc._queue_entry_shelf
-	print(
-		"[DEBUG][SHELF_EGRESS_ROUTE] npc=%s shelf=%s pos=%s destination=%s access_point=%s access_side=%s pending=%s route_points=%d first_point=%s last_point=%s route=%s" % [
-			_get_debug_npc_label(),
-			shelf.name if shelf != null and is_instance_valid(shelf) else "<null>",
-			str(npc.global_position),
-			str(destination),
-			str(shelf.get_meta(&"npc_access_point") if shelf != null and shelf.has_meta(&"npc_access_point") else Vector2.INF),
-			str(shelf.get_meta(&"npc_access_side") if shelf != null and shelf.has_meta(&"npc_access_side") else ""),
-			str(npc._queue_egress_route_pending),
-			route.size(),
-			str(route[0] if not route.is_empty() else Vector2.INF),
-			str(route[route.size() - 1] if not route.is_empty() else Vector2.INF),
-			str(route)
-		]
-	)
-
-
-func print_stuck_debug(stage: String, destination: Vector2, threshold: float, rebuilt_route: bool) -> void:
-	if not DEBUG_NPC_ROUTE_BUILD:
-		return
-
-	var debug_key := "%s:%s:%s:%d:%d" % [
-		stage,
-		str(npc.current_state),
-		str(roundi(destination.x)),
-		roundi(npc.global_position.x),
-		roundi(npc.global_position.y)
-	]
-
-	if debug_key == _last_stuck_debug_key and stage == "empty_wait_queue_route":
-		return
-
-	_last_stuck_debug_key = debug_key
-	print(
-		"[DEBUG][NPC_STUCK] stage=%s npc=%s state=%s pos=%s target=%s destination=%s movement_destination=%s route_points=%d route=%s rebuilt_route=%s threshold=%.2f watchdog_timer=%.2f watchdog_rebuilds=%d last_watchdog_pos=%s queue_index=%d moving_to_cashier=%s" % [
-			stage,
-			_get_debug_npc_label(),
-			str(npc.current_state),
-			str(npc.global_position),
-			str(npc.target_position),
-			str(destination),
-			str(npc._movement_route_destination),
-			npc._movement_route.size(),
-			str(npc._movement_route),
-			str(rebuilt_route),
-			threshold,
-			npc._stuck_watchdog_timer,
-			npc._stuck_watchdog_rebuilds,
-			str(npc._last_watchdog_position),
-			NPC.current_queue.find(npc),
-			str(npc._is_moving_from_queue_to_cashier)
-		]
-	)
 
 
 func should_print_route_debug(source: String, destination: Vector2, route: Array[Vector2]) -> bool:

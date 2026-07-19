@@ -27,7 +27,7 @@ static func show_dialog(npc: Node, npc_data: NPCData, text: String) -> bool:
 		label = npc.get_node_or_null("DialogLabel") as Label
 
 	if bubble == null or label == null:
-		print("[%s]: %s" % [npc_data.display_name if npc_data else "NPC", text])
+		pass
 		return false
 
 	set_mouse_filter(npc)

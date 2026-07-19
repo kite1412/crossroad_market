@@ -71,7 +71,7 @@ func process_wait_in_queue(delta: float) -> void:
 		return
 
 	if arrived and queue_index == 0:
-		print_queue_state_debug(queue_index, "front_arrived")
+		pass
 		start_queue_to_cashier(queue_index)
 		return
 	elif arrived:
@@ -122,7 +122,7 @@ func is_ready_for_checkout_service() -> bool:
 
 	var cashier_target := get_cashier_target()
 	var ready: bool = npc.global_position.distance_to(cashier_target) <= npc.QUEUE_ACTION_DISTANCE
-	print_queue_state_debug(NPC.current_queue.find(npc), "is_ready_for_checkout_service=%s" % str(ready))
+	pass
 	return ready
 
 
@@ -146,7 +146,7 @@ func start_queue_to_cashier(queue_index: int) -> void:
 	npc.target_position = get_cashier_target()
 	npc._movement_route.clear()
 	npc._movement_route_destination = Vector2.INF
-	print_queue_to_cashier_debug(queue_index, false, "start")
+	pass
 
 
 func process_queue_to_cashier(queue_index: int) -> void:
@@ -163,7 +163,7 @@ func process_queue_to_cashier(queue_index: int) -> void:
 		npc.move_and_slide()
 		face_queue_forward(queue_index, "arrived_cashier")
 		npc._is_moving_from_queue_to_cashier = false
-		print_queue_to_cashier_debug(queue_index, true, "checkout")
+		pass
 		npc._set_state(NPC.State.CHECKOUT)
 
 
@@ -217,7 +217,7 @@ func face_queue_forward(queue_index: int, reason: String) -> void:
 		face_target = npc.target_position + Vector2(0.0, -24.0)
 
 	var direction: Vector2 = face_target - npc.global_position
-	print_cashier_facing_debug(queue_index, reason, standing_target, face_target, direction, false)
+	pass
 
 	if direction.length() <= 0.1:
 		return
@@ -225,80 +225,7 @@ func face_queue_forward(queue_index: int, reason: String) -> void:
 	var previous_direction: CharacterSprite.Direction = npc._move_direction
 	npc._move_direction = npc._get_direction(direction)
 	npc._update_character_sprite()
-	print_cashier_facing_debug(queue_index, "%s_applied" % reason, standing_target, face_target, direction, previous_direction != npc._move_direction)
-
-
-func print_cashier_facing_debug(
-	queue_index: int,
-	reason: String,
-	standing_target: Vector2,
-	face_target: Vector2,
-	direction: Vector2,
-	changed: bool
-) -> void:
-	if not DEBUG_QUEUE_TO_CASHIER:
-		return
-
-	var proposed_face_target: Vector2 = standing_target + Vector2(0.0, -24.0)
-	var proposed_direction: Vector2 = proposed_face_target - npc.global_position
-	print(
-		"[DEBUG][CASHIER_FACING] npc=%s reason=%s queue_index=%d npc_pos=%s standing_target=%s current_face_target=%s current_direction=%s current_direction_len=%.2f proposed_face_target=%s proposed_direction=%s proposed_direction_len=%.2f move_direction=%s changed=%s" % [
-			npc.name if npc != null else "<null>",
-			reason,
-			queue_index,
-			str(npc.global_position if npc != null else Vector2.INF),
-			str(standing_target),
-			str(face_target),
-			str(direction),
-			direction.length(),
-			str(proposed_face_target),
-			str(proposed_direction),
-			proposed_direction.length(),
-			str(npc._move_direction if npc != null else -1),
-			str(changed)
-		]
-	)
-
-
-func print_queue_to_cashier_debug(queue_index: int, arrived_cashier: bool, state_transition: String) -> void:
-	if not DEBUG_QUEUE_TO_CASHIER:
-		return
-
-	print(
-		"[DEBUG][QUEUE_TO_CASHIER] npc=%s queue_index=%d from_position=%s cashier_target=%s arrived_cashier=%s state_transition=%s route=%s" % [
-			npc.name if npc != null else "<null>",
-			queue_index,
-			str(npc.global_position if npc != null else Vector2.INF),
-			str(get_cashier_target()),
-			str(arrived_cashier),
-			state_transition,
-			str(npc._movement_route if npc != null else [])
-		]
-	)
-
-
-func print_queue_state_debug(queue_index: int, stage: String) -> void:
-	if not DEBUG_QUEUE_TO_CASHIER:
-		return
-
-	var queue_target := get_queue_target()
-	var cashier_target := get_cashier_target()
-	print(
-		"[DEBUG][QUEUE_TO_CASHIER] stage=%s npc=%s state=%s queue_index=%d last_queue_index=%d moving_to_cashier=%s npc_pos=%s queue_target=%s cashier_target=%s distance_to_queue=%.2f distance_to_cashier=%.2f route=%s" % [
-			stage,
-			npc.name if npc != null else "<null>",
-			str(npc.current_state),
-			queue_index,
-			npc._last_queue_index,
-			str(npc._is_moving_from_queue_to_cashier),
-			str(npc.global_position),
-			str(queue_target),
-			str(cashier_target),
-			npc.global_position.distance_to(queue_target),
-			npc.global_position.distance_to(cashier_target),
-			str(npc._movement_route)
-		]
-	)
+	pass
 
 
 func is_queue_advance_path_clear(queue_index: int) -> bool:

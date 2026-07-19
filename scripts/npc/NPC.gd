@@ -36,6 +36,7 @@ const QUEUE_ACTION_DISTANCE: float = 8.0
 const QUEUE_SLOT_ARRIVAL_DISTANCE: float = 3.0
 const QUEUE_ADVANCE_DELAY: float = 1.0
 const QUEUE_ADVANCE_CLEAR_WAIT: float = 1.0
+const SHELF_WAIT_GRACE_PERIOD: float = 5.0
 const STUCK_WATCHDOG_SECONDS: float = 1.5
 const STUCK_MIN_MOVE_DISTANCE: float = 1.0
 const STUCK_WATCHDOG_MAX_REBUILDS: int = 2
@@ -88,6 +89,8 @@ var _queue_advance_waiting_for_clear: bool = false
 var _is_moving_from_queue_to_cashier: bool = false
 var _queue_back_facing_done: bool = false
 var _queue_back_facing_logged: bool = false
+var _waiting_for_shelf_return: bool = false
+var _shelf_wait_timer: float = 0.0
 
 var _state_flow = null
 var _route_controller = null
@@ -238,6 +241,19 @@ func cancel_checkout_and_leave() -> void:
 
 func queue_done() -> void:
 	queue_free()
+
+
+func _is_target_shelf_valid() -> bool:
+	if _target_shelf == null or not is_instance_valid(_target_shelf):
+		return false
+
+	if not _target_shelf.is_in_group("shelves"):
+		return false
+
+	if _target_shelf.has_meta("is_carried_storage_object") and bool(_target_shelf.get_meta("is_carried_storage_object")):
+		return false
+
+	return true
 
 
 func is_ready_for_checkout_service() -> bool:

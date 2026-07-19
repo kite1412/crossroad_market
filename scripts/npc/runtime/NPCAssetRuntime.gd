@@ -19,12 +19,12 @@ func load_character_assets() -> void:
 	if move_sprite == null:
 		move_sprite = npc.get_node_or_null("VisualRoot/SpriteMove") as CharacterSprite
 	if idle_sprite == null or move_sprite == null:
-		push_error("NPC '%s' cannot load character assets because SpriteIdle or SpriteMove is missing." % npc.npc_data.npc_id)
+		pass
 		return
 
 	var textures := load_directional_textures(npc.npc_data.assets_path)
 	if textures.size() < 4:
-		push_warning("NPC '%s' is missing one or more directional textures at '%s'." % [npc.npc_data.npc_id, npc.npc_data.assets_path])
+		pass
 		return
 
 	idle_sprite.direction_config = create_character_sprite_config(textures, 0, 6, 5)
@@ -122,7 +122,7 @@ func configure_character_direction(config: AnimatedCharacterSpriteConfig, direct
 
 func validate_character_sprite(label: String, sprite: CharacterSprite, expected_frames: int) -> void:
 	if sprite == null or sprite.direction_config == null:
-		push_error("NPC '%s' %s sprite has no AnimatedCharacterSpriteConfig." % [npc.npc_data.npc_id, label])
+		pass
 		return
 
 	for direction in [CharacterSprite.Direction.DOWN, CharacterSprite.Direction.LEFT, CharacterSprite.Direction.RIGHT, CharacterSprite.Direction.UP]:
@@ -131,7 +131,7 @@ func validate_character_sprite(label: String, sprite: CharacterSprite, expected_
 		var animation_name := get_character_animation_name(direction)
 		var frame_count := sprite.sprite_frames.get_frame_count(animation_name) if sprite.sprite_frames != null and sprite.sprite_frames.has_animation(animation_name) else 0
 		if texture == null or frame_count != expected_frames:
-			push_error("NPC '%s' %s sprite failed for %s: texture=%s frames=%d expected=%d" % [npc.npc_data.npc_id, label, animation_name, texture != null, frame_count, expected_frames])
+			pass
 
 
 func get_character_animation_name(direction: CharacterSprite.Direction) -> StringName:
