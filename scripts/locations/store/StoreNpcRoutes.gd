@@ -298,6 +298,13 @@ func _get_checkout_route_start_index(
 			nearest_index = index
 
 	if nearest_distance <= CHECKOUT_ROUTE_RESUME_DISTANCE:
+		var nearest_marker: Marker2D = markers[nearest_index]
+
+		# Being near a marker from above does not mean it has been completed yet.
+		# This keeps QueueFront in the solo checkout route from the cashier.
+		if from_position.y < nearest_marker.global_position.y - 4.0:
+			return nearest_index
+
 		return mini(nearest_index + 1, markers.size())
 
 	return 0
