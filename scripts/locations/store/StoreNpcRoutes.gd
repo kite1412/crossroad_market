@@ -8,6 +8,7 @@ const CHECKOUT_RIGHT_ROUTE_MARKERS: Array[StringName] = [
 	&"StorePathQueueBack2Right",
 	&"StorePathQueueExitRight"
 ]
+const CHECKOUT_GRAPH_REJOIN_MARKER: StringName = &"StorePathAisleRight"
 const CHECKOUT_ROUTE_RESUME_DISTANCE: float = 18.0
 
 var store: Node = null
@@ -123,6 +124,13 @@ func get_npc_exit_route_from_cashier(
 	if mandatory_markers.size() != CHECKOUT_RIGHT_ROUTE_MARKERS.size():
 		return []
 
+	var rejoin_marker := store.store_path_markers.get_node_or_null(
+		String(CHECKOUT_GRAPH_REJOIN_MARKER)
+	) as Marker2D
+
+	if rejoin_marker == null:
+		return []
+
 	var route: Array[Vector2] = []
 	var start_index := _get_checkout_route_start_index(
 		from_position,
@@ -132,13 +140,14 @@ func get_npc_exit_route_from_cashier(
 	for index in range(start_index, mandatory_markers.size()):
 		route.append(mandatory_markers[index].global_position)
 
+	_append_unique_route_point(route, rejoin_marker.global_position)
+
 	var exit_position := get_marker_position_or(
 		store.npc_exit_marker,
 		STORE_ENTRY_FALLBACK_POSITION
 	)
-	var graph_start := mandatory_markers.back().global_position
 	var graph_route := get_store_path_graph().get_exit_route_from(
-		graph_start,
+		rejoin_marker.global_position,
 		exit_position
 	)
 
@@ -198,6 +207,14 @@ func _get_checkout_route_start_index(
 	from_position: Vector2,
 	markers: Array[Marker2D]
 ) -> int:
+	var final_marker := markers.back()
+
+	# Once the NPC has reached the bottom of the mandatory right lane, route
+	# rebuilds must continue into the main graph instead of sending it back to
+	# QueueFrontRight.
+	if from_position.y >= final_marker.global_position.y - 4.0:
+		return markers.size()
+
 	var nearest_index := -1
 	var nearest_distance := INF
 
