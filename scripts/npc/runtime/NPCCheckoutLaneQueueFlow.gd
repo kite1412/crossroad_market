@@ -32,6 +32,8 @@ func _capture_checkout_lane() -> void:
 			continue
 		if queued_npc.is_queued_for_deletion():
 			continue
+		if queued_npc.current_state != NPC.State.WAIT_IN_QUEUE:
+			continue
 
 		has_waiting_customer = true
 		break
