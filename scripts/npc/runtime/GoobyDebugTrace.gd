@@ -69,10 +69,10 @@ static func npc_snapshot(npc: NPC) -> Dictionary:
 	if not is_gooby(npc):
 		return {"valid": false}
 
-	var target_shelf_name := "<none>"
-	var target_shelf_path := "<none>"
+	var target_shelf_name: String = "<none>"
+	var target_shelf_path: String = "<none>"
 	if npc._target_shelf != null and is_instance_valid(npc._target_shelf):
-		target_shelf_name = npc._target_shelf.name
+		target_shelf_name = str(npc._target_shelf.name)
 		target_shelf_path = str(npc._target_shelf.get_path())
 
 	return {
@@ -113,35 +113,26 @@ static func shelf_snapshot(npc: NPC) -> Dictionary:
 		for item_id in requested_items:
 			requested_stock[item_id] = shelf.has_item(item_id)
 
-		var visit_position: Vector2 = npc._get_shelf_visit_position(shelf)
 		shelves.append({
-			"name": shelf.name,
+			"name": str(shelf.name),
 			"path": str(shelf.get_path()),
 			"shelf_type": int(shelf.shelf_type),
 			"path_meta_present": shelf.has_meta("npc_path_ready"),
 			"path_ready": bool(
 				shelf.get_meta("npc_path_ready", false)
 			),
-			"requested_stock": requested_stock,
-			"visit_position": vector(visit_position),
-			"visit_position_finite": visit_position.is_finite()
+			"requested_stock": requested_stock
 		})
 
 	var matching_candidates: Array[String] = []
 	for candidate in npc._get_matching_shelf_candidates():
 		if candidate != null and is_instance_valid(candidate):
-			matching_candidates.append(candidate.name)
+			matching_candidates.append(str(candidate.name))
 
-	var reachable := npc._find_reachable_matching_shelf()
 	return {
 		"valid": true,
 		"requested_items": _string_values(requested_items),
 		"matching_candidates": matching_candidates,
-		"reachable_candidate": (
-			reachable.name
-			if reachable != null and is_instance_valid(reachable)
-			else "<none>"
-		),
 		"shelves": shelves
 	}
 
@@ -184,7 +175,10 @@ static func state_name(state: int) -> String:
 
 
 static func _string_values(values: Array[String]) -> Array[String]:
-	return values.duplicate()
+	var result: Array[String] = []
+	for value in values:
+		result.append(str(value))
+	return result
 
 
 static func _variant_string_values(value: Variant) -> Array[String]:
