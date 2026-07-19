@@ -5,8 +5,6 @@ const StoreNpcSpawner = preload("res://scripts/locations/store/StoreNpcSpawner.g
 const NPCResolvedExitRouteController = preload("res://scripts/npc/runtime/NPCResolvedExitRouteController.gd")
 const NPCLiveQueueStateFlow = preload("res://scripts/npc/runtime/NPCLiveQueueStateFlow.gd")
 const NPCCheckoutLaneQueueFlow = preload("res://scripts/npc/runtime/NPCCheckoutLaneQueueFlow.gd")
-const NPCDebugPresentationRuntime = preload("res://scripts/npc/runtime/NPCDebugPresentationRuntime.gd")
-const NPCStoreDebugTraceScript = preload("res://scripts/npc/runtime/NPCStoreDebugTrace.gd")
 const CUSTOMER_INTAKE_CLOSED_META: StringName = &"customer_intake_closed_today"
 
 var store: Node = null
@@ -90,59 +88,13 @@ func install_shelf_arrival_controllers(npc: NPC) -> void:
 	if npc == null or not is_instance_valid(npc):
 		return
 
-	var previous_controllers := {
-		"state": NPCStoreDebugTraceScript.controller_path(
-			npc._state_flow
-		),
-		"route": NPCStoreDebugTraceScript.controller_path(
-			npc._route_controller
-		),
-		"queue": NPCStoreDebugTraceScript.controller_path(
-			npc._queue_flow
-		),
-		"presentation": NPCStoreDebugTraceScript.controller_path(
-			npc._presentation_runtime
-		)
-	}
-
-	# Keep the diagnostic wrappers active while routing specialized checkout
-	# and shelf-exit methods through the StoreNpcRoutes child provider.
+	# Install the store-specific movement, shelf-exit, and live queue behavior.
 	npc._route_controller = NPCResolvedExitRouteController.new()
 	npc._route_controller.setup(npc)
 	npc._state_flow = NPCLiveQueueStateFlow.new()
 	npc._state_flow.setup(npc)
 	npc._queue_flow = NPCCheckoutLaneQueueFlow.new()
 	npc._queue_flow.setup(npc)
-	npc._presentation_runtime = NPCDebugPresentationRuntime.new()
-	npc._presentation_runtime.setup(npc)
-
-	NPCStoreDebugTraceScript.emit(
-		npc,
-		"controllers_installed",
-		{
-			"previous": previous_controllers,
-			"active": {
-				"state": NPCStoreDebugTraceScript.controller_path(
-					npc._state_flow
-				),
-				"route": NPCStoreDebugTraceScript.controller_path(
-					npc._route_controller
-				),
-				"queue": NPCStoreDebugTraceScript.controller_path(
-					npc._queue_flow
-				),
-				"presentation": NPCStoreDebugTraceScript.controller_path(
-					npc._presentation_runtime
-				)
-			},
-			"state": NPCStoreDebugTraceScript.state_name(
-				int(npc.current_state)
-			),
-			"position": NPCStoreDebugTraceScript.vector(
-				npc.global_position
-			)
-		}
-	)
 
 
 func get_npc_spawn_marker() -> Marker2D:
