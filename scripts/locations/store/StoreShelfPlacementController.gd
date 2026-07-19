@@ -26,7 +26,7 @@ const SHELF_DROP_FALLBACK_DISTANCE: float = 44.0
 const QUEUE_MARKER_DROP_BLOCK_SIZE := Vector2(56, 18)
 const PENDING_ACCESS_UPDATE_META: StringName = &"pending_shelf_access_update_token"
 const SHELF_ACCESS_WARMUP_DELAY: float = 1.0
-const DEBUG_SHELF_ACCESS_WARMUP: bool = false
+const PERF_SHELF_THRESHOLD_MSEC: float = 16.0
 
 var store: Node = null
 
@@ -124,11 +124,14 @@ func get_carried_object_from_player() -> Node2D:
 
 
 func request_drop_carried_shelf() -> bool:
+	var request_start_usec := Time.get_ticks_usec()
 	var carried_object := get_carried_object_from_player()
 
 	if carried_object == null:
+		print_shelf_drop_flow("request_drop_no_object", request_start_usec, null, Vector2.INF, {})
 		return false
 
+	print_shelf_drop_flow("request_drop", request_start_usec, carried_object, carried_object.global_position, {})
 	drop_carried_shelf_in_store(carried_object)
 	return true
 
@@ -160,8 +163,12 @@ func drop_carried_shelf_in_store(object: Node2D) -> void:
 	if store.player == null:
 		return
 
+	var stage_start_usec := Time.get_ticks_usec()
 	var primary_drop_position := get_primary_shelf_drop_position()
+	print_shelf_drop_flow("primary_drop_position", stage_start_usec, object, primary_drop_position, get_drop_debug_context(object, 0))
+	stage_start_usec = Time.get_ticks_usec()
 	var primary_restriction := evaluate_shelf_drop_restriction(object, primary_drop_position)
+	print_shelf_drop_flow("evaluate_primary_restriction", stage_start_usec, object, primary_drop_position, get_drop_debug_context(object, 0, primary_restriction))
 
 	if primary_restriction.get("type", DROP_REJECTION_NONE) == DROP_REJECTION_CASHIER_FLOW:
 		show_drop_restriction_feedback(primary_restriction)
@@ -171,8 +178,12 @@ func drop_carried_shelf_in_store(object: Node2D) -> void:
 	var drop_position := primary_drop_position
 
 	if bool(primary_restriction.get("blocked", false)):
+		stage_start_usec = Time.get_ticks_usec()
 		drop_candidates = get_drop_candidates()
+		print_shelf_drop_flow("get_drop_candidates", stage_start_usec, object, primary_drop_position, get_drop_debug_context(object, drop_candidates.size(), primary_restriction))
+		stage_start_usec = Time.get_ticks_usec()
 		drop_position = find_safe_drop_position(object, drop_candidates)
+		print_shelf_drop_flow("find_safe_drop_position", stage_start_usec, object, drop_position, get_drop_debug_context(object, drop_candidates.size(), primary_restriction))
 
 	if drop_position == Vector2.INF:
 		if not bool(primary_restriction.get("blocked", false)):
@@ -191,14 +202,25 @@ func drop_carried_shelf_in_store(object: Node2D) -> void:
 		show_drop_restriction_feedback(primary_restriction)
 		return
 
+	stage_start_usec = Time.get_ticks_usec()
 	object.reparent(store, true)
 	object.global_position = drop_position
 	object.z_index = 0
+	print_shelf_drop_flow("reparent", stage_start_usec, object, drop_position, get_drop_debug_context(object, drop_candidates.size()))
+
+	stage_start_usec = Time.get_ticks_usec()
 	set_shelf_carried_state(object, false)
+	print_shelf_drop_flow("set_carried_state", stage_start_usec, object, drop_position, get_drop_debug_context(object, drop_candidates.size()))
 	if not object.is_in_group("shelves"):
 		object.add_to_group("shelves")
+
+	stage_start_usec = Time.get_ticks_usec()
 	store._show_passive_notification("Shelf placed in the store.", 2.0, true)
+	print_shelf_drop_flow("show_notification", stage_start_usec, object, drop_position, get_drop_debug_context(object, drop_candidates.size()))
+
+	stage_start_usec = Time.get_ticks_usec()
 	schedule_post_shelf_drop_update(object, drop_position)
+	print_shelf_drop_flow("schedule_post_update", stage_start_usec, object, drop_position, get_drop_debug_context(object, drop_candidates.size()))
 	set_customer_path_visual_visible(false)
 
 
@@ -461,37 +483,8 @@ func is_drop_position_clear(object: Node2D, candidate: Vector2) -> bool:
 
 
 func evaluate_shelf_drop_restriction(object: Node2D, candidate: Vector2) -> Dictionary:
-	var object_rect: Rect2 = get_object_body_rect_at(object, candidate)
-
-	var cashier_rect: Rect2 = get_cashier_drop_restricted_rect(object_rect)
-	if rect_has_area(cashier_rect):
-		return make_drop_restriction(
-			true,
-			DROP_REJECTION_CASHIER_FLOW,
-			"Keep the cashier area clear.",
-			cashier_rect,
-			true
-		)
-
-	var queue_marker_rect: Rect2 = get_queue_marker_drop_restricted_rect(object_rect)
-	if rect_has_area(queue_marker_rect):
-		return make_drop_restriction(
-			true,
-			DROP_REJECTION_CASHIER_FLOW,
-			"Keep the checkout queue clear.",
-			queue_marker_rect,
-			true
-		)
-
-	if not is_drop_position_clear(object, candidate):
-		return make_drop_restriction(
-			true,
-			DROP_REJECTION_COLLISION,
-			"I can't place the shelf here.",
-			object_rect,
-			false
-		)
-
+	# All restrictions removed — shelf can be placed anywhere.
+	# NPC vertical flow handles access point validity; player places freely.
 	return make_drop_restriction()
 
 
@@ -648,8 +641,12 @@ func set_shelf_carried_state(object: Node2D, is_carried: bool) -> void:
 
 
 func store_shelf_access_metadata(object: Node2D, drop_position: Vector2) -> void:
+	var metadata_start_usec := Time.get_ticks_usec()
+	print_shelf_drop_flow("metadata_start", metadata_start_usec, object, drop_position, get_drop_debug_context(object))
 	var graph: StorePathGraph = store._get_store_path_graph()
 	graph.store_shelf_access_metadata(object, drop_position)
+	print_shelf_drop_flow("metadata_done", metadata_start_usec, object, drop_position, get_drop_debug_context(object))
+	print_perf_shelf_if_slow("drop_metadata", metadata_start_usec, object, drop_position)
 
 
 func schedule_post_shelf_drop_update(object: Node2D, drop_position: Vector2) -> void:
@@ -663,6 +660,7 @@ func schedule_post_shelf_drop_update(object: Node2D, drop_position: Vector2) -> 
 
 
 func defer_post_shelf_drop_update(object: Node2D, drop_position: Vector2, update_token: int) -> void:
+	var post_update_start_usec := Time.get_ticks_usec()
 	await store.get_tree().process_frame
 	await store.get_tree().physics_frame
 
@@ -688,7 +686,11 @@ func defer_post_shelf_drop_update(object: Node2D, drop_position: Vector2, update
 	if object.has_meta("is_carried_storage_object") and bool(object.get_meta("is_carried_storage_object")):
 		return
 
+	print_shelf_drop_flow("post_update_resume", post_update_start_usec, object, drop_position, get_drop_debug_context(object))
+	var register_start_usec := Time.get_ticks_usec()
+	store_shelf_access_metadata(object, drop_position)
 	store._register_installed_shelf(object)
+	print_shelf_drop_flow("register_installed_shelf", register_start_usec, object, drop_position, get_drop_debug_context(object))
 
 
 func schedule_shelf_access_warmup(delay: float = SHELF_ACCESS_WARMUP_DELAY) -> void:
@@ -724,12 +726,7 @@ func defer_shelf_access_warmup(warmup_token: int, delay: float) -> void:
 		if graph.has_cached_shelf_access_metadata(shelf):
 			continue
 
-		var warmup_start := Time.get_ticks_usec()
 		graph.store_shelf_access_metadata(shelf, shelf.global_position)
-
-		if DEBUG_SHELF_ACCESS_WARMUP:
-			var duration_ms := float(Time.get_ticks_usec() - warmup_start) / 1000.0
-			print("Shelf access warmup [%s]: %.2fms" % [shelf.name, duration_ms])
 
 		await store.get_tree().process_frame
 
@@ -750,6 +747,92 @@ func clear_shelf_access_metadata(object: Node2D) -> void:
 
 	if object != null and object.has_meta(PENDING_ACCESS_UPDATE_META):
 		object.remove_meta(PENDING_ACCESS_UPDATE_META)
+
+
+func print_perf_shelf_if_slow(stage: String, start_usec: int, object: Node2D, position: Vector2) -> void:
+	var elapsed_msec := float(Time.get_ticks_usec() - start_usec) / 1000.0
+
+	if elapsed_msec < PERF_SHELF_THRESHOLD_MSEC:
+		return
+
+	print(
+		"[DEBUG][PERF_SHELF] stage=%s shelf=%s position=%s elapsed_ms=%.2f" % [
+			stage,
+			object.name if object != null else "<null>",
+			str(position),
+			elapsed_msec
+		]
+	)
+
+
+func get_drop_debug_context(
+	object: Node2D,
+	candidate_count: int = 0,
+	restriction: Dictionary = {}
+) -> Dictionary:
+	var player_pos := Vector2.INF
+	var facing := Vector2.ZERO
+
+	if store != null and store.player != null:
+		player_pos = store.player.global_position
+		facing = get_player_facing_direction()
+
+	return {
+		"player_pos": player_pos,
+		"facing": facing,
+		"candidate_count": candidate_count,
+		"restriction_blocked": bool(restriction.get("blocked", false)),
+		"restriction_type": str(restriction.get("type", DROP_REJECTION_NONE)),
+		"restriction_message": str(restriction.get("message", "")),
+		"npc_access_point": _get_object_meta_value(object, "npc_access_point", Vector2.INF),
+		"npc_access_side": str(_get_object_meta_value(object, "npc_access_side", "")),
+		"npc_access_graph_node": str(_get_object_meta_value(object, "npc_access_graph_node", "")),
+		"npc_access_checkout_source": str(_get_object_meta_value(object, "npc_access_checkout_source", ""))
+	}
+
+
+func _get_object_meta_value(object: Node2D, key: StringName, fallback: Variant) -> Variant:
+	if object == null:
+		return fallback
+
+	if not object.has_meta(key):
+		return fallback
+
+	return object.get_meta(key)
+
+
+func print_shelf_drop_flow(
+	stage: String,
+	start_usec: int,
+	object: Node2D,
+	position: Vector2,
+	context: Dictionary = {}
+) -> void:
+	var elapsed_msec := float(Time.get_ticks_usec() - start_usec) / 1000.0
+	var shelf_name: String = object.name if object != null else "<null>"
+	var is_human_shelf: bool = shelf_name == "ShelfHuman"
+
+	if not is_human_shelf and elapsed_msec < PERF_SHELF_THRESHOLD_MSEC:
+		return
+
+	print(
+		"[DEBUG][SHELF_DROP_FLOW] stage=%s shelf=%s position=%s elapsed_ms=%.2f player_pos=%s facing=%s candidate_count=%d restriction_blocked=%s restriction_type=%s restriction_message=%s npc_access_point=%s npc_access_side=%s npc_access_graph_node=%s npc_access_checkout_source=%s" % [
+			stage,
+			shelf_name,
+			str(position),
+			elapsed_msec,
+			str(context.get("player_pos", Vector2.INF)),
+			str(context.get("facing", Vector2.ZERO)),
+			int(context.get("candidate_count", 0)),
+			str(context.get("restriction_blocked", false)),
+			str(context.get("restriction_type", "")),
+			str(context.get("restriction_message", "")),
+			str(context.get("npc_access_point", Vector2.INF)),
+			str(context.get("npc_access_side", "")),
+			str(context.get("npc_access_graph_node", "")),
+			str(context.get("npc_access_checkout_source", ""))
+		]
+	)
 
 
 func show_drop_restriction_feedback(restriction: Dictionary) -> void:

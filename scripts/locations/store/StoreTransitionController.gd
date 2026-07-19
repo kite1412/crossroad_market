@@ -19,6 +19,20 @@ static func prepare_player_for_location(
 	player.set_process_unhandled_input(true)
 	player.z_index = z_index_value
 	player.global_position = spawn_position
+	_reset_player_camera(player)
+
+
+static func _reset_player_camera(player: Node2D) -> void:
+	var camera := player.get_node_or_null("Camera2D") as Camera2D
+
+	if camera == null:
+		return
+
+	if camera.has_method("reset_smoothing"):
+		camera.call("reset_smoothing")
+
+	if camera.has_method("force_update_scroll"):
+		camera.call("force_update_scroll")
 
 
 static func create_fade_layer(owner: Node) -> Dictionary:

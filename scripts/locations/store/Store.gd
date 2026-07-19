@@ -48,6 +48,7 @@ var home_scene: PackedScene = preload("res://scenes/locations/Home.tscn")
 @onready var task_completion: Node = get_node_or_null("TaskCompletion")
 @onready var npc_routes: Node = get_node_or_null("NpcRoutes")
 @onready var world_state_controller: Node = get_node_or_null("WorldStateController")
+@onready var npc_interaction_runtime: Node = get_node_or_null("NpcInteractionRuntime")
 
 var _current_storage: Node2D = null
 var _current_yard: Node2D = null
@@ -152,7 +153,8 @@ func _setup_store_controllers() -> void:
 		day_runtime,
 		task_completion,
 		npc_routes,
-		world_state_controller
+		world_state_controller,
+		npc_interaction_runtime
 	]:
 		if controller != null and controller.has_method("setup"):
 			controller.call("setup", self)
@@ -163,6 +165,9 @@ func _process(_delta: float) -> void:
 
 	if world_state_controller != null:
 		world_state_controller.process_store_world(_delta)
+
+	if npc_interaction_runtime != null:
+		npc_interaction_runtime.process_npc_interactions(_delta)
 
 
 func request_enter_storage(_door_type: String = "storage") -> void:
@@ -262,9 +267,9 @@ func has_npc_shelf_access_metadata(shelf: Shelf) -> bool:
 	return npc_routes != null and npc_routes.has_npc_shelf_access_metadata(shelf)
 
 
-func get_npc_route_to_shelf_access(shelf: Shelf) -> Array[Vector2]:
+func get_npc_route_to_shelf_access(shelf: Shelf, from_position: Vector2 = Vector2.INF, npc_node: Node = null) -> Array[Vector2]:
 	if npc_routes != null:
-		return npc_routes.get_npc_route_to_shelf_access(shelf)
+		return npc_routes.get_npc_route_to_shelf_access(shelf, from_position, npc_node)
 
 	return []
 
@@ -286,6 +291,13 @@ func get_npc_route_to_queue_target_from(from_position: Vector2, queue_index: int
 func get_npc_queue_target(queue_index: int, fallback_position: Vector2) -> Vector2:
 	if npc_routes != null:
 		return npc_routes.get_npc_queue_target(queue_index, fallback_position)
+
+	return fallback_position
+
+
+func get_npc_cashier_target(fallback_position: Vector2) -> Vector2:
+	if npc_routes != null:
+		return npc_routes.get_npc_cashier_target(fallback_position)
 
 	return fallback_position
 

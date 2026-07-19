@@ -126,8 +126,13 @@ func enter_storage() -> void:
 
 	connect_storage_signals()
 
-	var spawn_marker := store._current_storage.get_node_or_null("PlayerSpawn") as Node2D
-	var spawn_position: Vector2 = spawn_marker.global_position if spawn_marker != null else Vector2(42, 68)
+	var spawn_position := Vector2(42, 68)
+
+	if store._current_storage.has_method("get_player_spawn_position"):
+		spawn_position = store._current_storage.get_player_spawn_position()
+	else:
+		var spawn_marker := store._current_storage.get_node_or_null("StorageMarkers/PlayerSpawn") as Node2D
+		spawn_position = spawn_marker.global_position if spawn_marker != null else spawn_position
 
 	store._set_store_world_active(false)
 	StoreTransitionController.prepare_player_for_location(store.player, store._current_storage, spawn_position)

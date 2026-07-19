@@ -45,7 +45,7 @@ func on_npc_spawn_requested(npc_data: NPCData) -> void:
 	if store._current_home != null:
 		return
 
-	StoreNpcSpawner.spawn_npc(
+	var npc := StoreNpcSpawner.spawn_npc(
 		store,
 		store.npc_scene,
 		get_npc_spawn_marker(),
@@ -53,6 +53,12 @@ func on_npc_spawn_requested(npc_data: NPCData) -> void:
 		Callable(self, "on_npc_purchase"),
 		Callable(self, "on_npc_exited")
 	)
+
+	if npc != null:
+		var route_ready_callable := Callable(self, "on_npc_shelf_route_ready")
+
+		if not npc.shelf_route_ready.is_connected(route_ready_callable):
+			npc.shelf_route_ready.connect(route_ready_callable)
 
 
 func get_npc_spawn_marker() -> Marker2D:
@@ -84,3 +90,7 @@ func on_npc_purchase(_npc: NPC, _item_id: String, price: int) -> void:
 func on_npc_exited(_npc: NPC) -> void:
 	if store != null:
 		store._update_end_day_tax_flow()
+
+
+func on_npc_shelf_route_ready(npc: NPC, travel_seconds: float) -> void:
+	NPCScheduler.notify_npc_shelf_route_ready(npc, travel_seconds)
