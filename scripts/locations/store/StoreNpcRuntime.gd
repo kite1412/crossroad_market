@@ -5,6 +5,8 @@ const StoreNpcSpawner = preload("res://scripts/locations/store/StoreNpcSpawner.g
 const NPCTargetArrivalRouteController = preload("res://scripts/npc/runtime/NPCTargetArrivalRouteController.gd")
 const NPCStableShelfStateFlow = preload("res://scripts/npc/runtime/NPCStableShelfStateFlow.gd")
 const NPCCheckoutLaneQueueFlow = preload("res://scripts/npc/runtime/NPCCheckoutLaneQueueFlow.gd")
+const NPCDebugPresentationRuntime = preload("res://scripts/npc/runtime/NPCDebugPresentationRuntime.gd")
+const NPCStoreDebugTraceScript = preload("res://scripts/npc/runtime/NPCStoreDebugTrace.gd")
 const CUSTOMER_INTAKE_CLOSED_META: StringName = &"customer_intake_closed_today"
 
 var store: Node = null
@@ -88,14 +90,59 @@ func install_shelf_arrival_controllers(npc: NPC) -> void:
 	if npc == null or not is_instance_valid(npc):
 		return
 
-	# Replace only the runtime controllers involved in store movement, shelf
-	# pickup, and checkout-lane selection. The NPC scene remains unchanged.
+	var previous_controllers := {
+		"state": NPCStoreDebugTraceScript.controller_path(
+			npc._state_flow
+		),
+		"route": NPCStoreDebugTraceScript.controller_path(
+			npc._route_controller
+		),
+		"queue": NPCStoreDebugTraceScript.controller_path(
+			npc._queue_flow
+		),
+		"presentation": NPCStoreDebugTraceScript.controller_path(
+			npc._presentation_runtime
+		)
+	}
+
+	# Debug branch: keep the same behavior controllers and add a presentation
+	# wrapper that only measures dialog display time.
 	npc._route_controller = NPCTargetArrivalRouteController.new()
 	npc._route_controller.setup(npc)
 	npc._state_flow = NPCStableShelfStateFlow.new()
 	npc._state_flow.setup(npc)
 	npc._queue_flow = NPCCheckoutLaneQueueFlow.new()
 	npc._queue_flow.setup(npc)
+	npc._presentation_runtime = NPCDebugPresentationRuntime.new()
+	npc._presentation_runtime.setup(npc)
+
+	NPCStoreDebugTraceScript.emit(
+		npc,
+		"controllers_installed",
+		{
+			"previous": previous_controllers,
+			"active": {
+				"state": NPCStoreDebugTraceScript.controller_path(
+					npc._state_flow
+				),
+				"route": NPCStoreDebugTraceScript.controller_path(
+					npc._route_controller
+				),
+				"queue": NPCStoreDebugTraceScript.controller_path(
+					npc._queue_flow
+				),
+				"presentation": NPCStoreDebugTraceScript.controller_path(
+					npc._presentation_runtime
+				)
+			},
+			"state": NPCStoreDebugTraceScript.state_name(
+				int(npc.current_state)
+			),
+			"position": NPCStoreDebugTraceScript.vector(
+				npc.global_position
+			)
+		}
+	)
 
 
 func get_npc_spawn_marker() -> Marker2D:

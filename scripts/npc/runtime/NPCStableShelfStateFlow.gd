@@ -1,7 +1,14 @@
 extends "res://scripts/npc/runtime/NPCStateFlow.gd"
 
+const NPCStoreDebugTraceScript = preload(
+	"res://scripts/npc/runtime/NPCStoreDebugTrace.gd"
+)
 const SOLO_CHECKOUT_EXIT_META: StringName = &"solo_checkout_exit"
 const EXIT_ORIGIN_SHELF_META: StringName = &"exit_origin_shelf"
+const SLOW_SEARCH_FRAME_MSEC: float = 4.0
+const SLOW_SEARCH_LOG_INTERVAL_MSEC: int = 500
+
+var _last_slow_search_log_msec: int = -SLOW_SEARCH_LOG_INTERVAL_MSEC
 
 
 func finish_checkout_and_exit() -> void:
@@ -14,12 +21,34 @@ func finish_checkout_and_exit() -> void:
 	if npc.has_meta(EXIT_ORIGIN_SHELF_META):
 		npc.remove_meta(EXIT_ORIGIN_SHELF_META)
 
+	NPCStoreDebugTraceScript.emit(
+		npc,
+		"checkout_finish_exit",
+		{
+			"solo_meta_present": npc.has_meta(
+				SOLO_CHECKOUT_EXIT_META
+			),
+			"solo": (
+				bool(npc.get_meta(SOLO_CHECKOUT_EXIT_META))
+				if npc.has_meta(SOLO_CHECKOUT_EXIT_META)
+				else false
+			),
+			"queue": NPCStoreDebugTraceScript.queue_snapshot(
+				NPC.current_queue
+			)
+		}
+	)
+
 	super.finish_checkout_and_exit()
 
 
 func process_search_item(delta: float) -> void:
+	var started_usec := Time.get_ticks_usec()
 	var shelf_before_exit := npc._target_shelf as Shelf
 	var previous_state: int = npc.current_state
+	var search_timer_before: float = npc._search_timer
+	var announced_before: bool = npc._search_announced
+	var shelf_valid_before: bool = npc._is_target_shelf_valid()
 
 	super.process_search_item(delta)
 
@@ -35,9 +64,115 @@ func process_search_item(delta: float) -> void:
 	):
 		npc.set_meta(EXIT_ORIGIN_SHELF_META, shelf_before_exit)
 		npc.set_meta(SOLO_CHECKOUT_EXIT_META, false)
+		NPCStoreDebugTraceScript.emit(
+			npc,
+			"out_of_stock_origin_captured",
+			{
+				"shelf": shelf_before_exit.name,
+				"shelf_instance_id": shelf_before_exit.get_instance_id(),
+				"position": NPCStoreDebugTraceScript.vector(
+					npc.global_position
+				)
+			}
+		)
+
+	var elapsed_msec := float(
+		Time.get_ticks_usec() - started_usec
+	) / 1000.0
+
+	if not announced_before and npc._search_announced:
+		NPCStoreDebugTraceScript.emit(
+			npc,
+			"out_of_stock_warning_transition",
+			{
+				"timer_before": search_timer_before,
+				"timer_after": npc._search_timer,
+				"elapsed_msec": elapsed_msec,
+				"shelf_valid_before": shelf_valid_before
+			}
+		)
+
+	if previous_state != NPC.State.EXIT and npc.current_state == NPC.State.EXIT:
+		NPCStoreDebugTraceScript.emit(
+			npc,
+			"out_of_stock_exit_transition",
+			{
+				"timer_before": search_timer_before,
+				"timer_after": npc._search_timer,
+				"elapsed_msec": elapsed_msec,
+				"origin_meta_present": npc.has_meta(
+					EXIT_ORIGIN_SHELF_META
+				),
+				"target": NPCStoreDebugTraceScript.vector(
+					npc.target_position
+				)
+			}
+		)
+
+	var now_msec := Time.get_ticks_msec()
+	if (
+		elapsed_msec >= SLOW_SEARCH_FRAME_MSEC
+		and now_msec - _last_slow_search_log_msec
+		>= SLOW_SEARCH_LOG_INTERVAL_MSEC
+	):
+		_last_slow_search_log_msec = now_msec
+		NPCStoreDebugTraceScript.emit(
+			npc,
+			"search_frame_slow",
+			{
+				"elapsed_msec": elapsed_msec,
+				"search_timer": npc._search_timer,
+				"state": NPCStoreDebugTraceScript.state_name(
+					int(npc.current_state)
+				),
+				"shelf_valid_before": shelf_valid_before
+			}
+		)
+
+
+func set_state(new_state: int) -> void:
+	var previous_state: int = npc.current_state
+	super.set_state(new_state)
+
+	if previous_state == new_state:
+		return
+
+	NPCStoreDebugTraceScript.emit(
+		npc,
+		"state_transition",
+		{
+			"from": NPCStoreDebugTraceScript.state_name(
+				previous_state
+			),
+			"to": NPCStoreDebugTraceScript.state_name(new_state),
+			"position": NPCStoreDebugTraceScript.vector(
+				npc.global_position
+			),
+			"target": NPCStoreDebugTraceScript.vector(
+				npc.target_position
+			),
+			"exit_after_checkout": npc._exit_after_checkout
+		}
+	)
 
 
 func complete_exit() -> void:
+	NPCStoreDebugTraceScript.emit(
+		npc,
+		"exit_complete",
+		{
+			"position": NPCStoreDebugTraceScript.vector(
+				npc.global_position
+			),
+			"solo_meta_present": npc.has_meta(
+				SOLO_CHECKOUT_EXIT_META
+			),
+			"origin_meta_present": npc.has_meta(
+				EXIT_ORIGIN_SHELF_META
+			)
+		}
+	)
+
 	if npc.has_meta(SOLO_CHECKOUT_EXIT_META):
 		npc.remove_meta(SOLO_CHECKOUT_EXIT_META)
 	if npc.has_meta(EXIT_ORIGIN_SHELF_META):
@@ -47,6 +182,7 @@ func complete_exit() -> void:
 
 
 func _capture_solo_checkout_fallback() -> void:
+	var started_usec := Time.get_ticks_usec()
 	NPCQueueSystem.prune_invalid(NPC.current_queue)
 	var has_waiting_customer := false
 
@@ -67,9 +203,20 @@ func _capture_solo_checkout_fallback() -> void:
 		has_waiting_customer = true
 		break
 
-	npc.set_meta(
-		SOLO_CHECKOUT_EXIT_META,
-		not has_waiting_customer
+	var solo := not has_waiting_customer
+	npc.set_meta(SOLO_CHECKOUT_EXIT_META, solo)
+	NPCStoreDebugTraceScript.emit(
+		npc,
+		"checkout_lane_fallback_capture",
+		{
+			"solo": solo,
+			"queue": NPCStoreDebugTraceScript.queue_snapshot(
+				NPC.current_queue
+			),
+			"elapsed_msec": float(
+				Time.get_ticks_usec() - started_usec
+			) / 1000.0
+		}
 	)
 
 
