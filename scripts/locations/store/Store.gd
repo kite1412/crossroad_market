@@ -315,6 +315,13 @@ func get_npc_exit_route_from(from_position: Vector2) -> Array[Vector2]:
 
 	return []
 
+func get_npc_shelf_wait_position(index: int = 0) -> Vector2:
+	if npc_routes != null:
+		return npc_routes.get_npc_shelf_wait_position(index)
+
+	return Vector2.INF
+
+
 
 func get_npc_exit_route_from_cashier() -> Array[Vector2]:
 	if npc_routes != null:

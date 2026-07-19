@@ -24,11 +24,10 @@ func process_enter() -> void:
 
 	if target_shelf == null:
 		var fallback_shelf: Shelf = npc._find_matching_shelf()
-		pass
-		npc._show_dialog("I can't reach that shelf." if fallback_shelf != null else "Nothing I need is on the shelves right now.")
-		npc._dialog_timer = npc.DIALOG_DURATION
-		npc.target_position = npc._get_exit_position()
-		set_state(NPC.State.EXIT)
+		if fallback_shelf != null:
+			_begin_wait_for_shelf("enter_no_shelf_fallback")
+		else:
+			_begin_wait_for_shelf("enter_no_shelf")
 		return
 
 	var visit_position: Vector2 = npc._get_shelf_visit_position(target_shelf)
@@ -262,6 +261,43 @@ func complete_exit() -> void:
 		npc._leave_queue()
 	npc.queue_done()
 
+func _begin_wait_for_shelf(reason: String) -> void:
+	npc._waiting_for_shelf_return = true
+	npc._shelf_wait_timer = 0.0
+	npc.target_position = _get_store_provider().get_npc_shelf_wait_position(npc.get_instance_id() % 2)
+	set_state(NPC.State.WAIT_FOR_SHELF)
+
+func process_wait_for_shelf(delta: float) -> void:
+	if npc.global_position.distance_to(npc.target_position) > npc.ARRIVAL_THRESHOLD:
+		npc._move_to(npc.target_position)
+	else:
+		npc.velocity = Vector2.ZERO
+		npc.move_and_slide()
+
+	npc._shelf_wait_timer += delta
+
+	var replacement_shelf: Shelf = npc._find_reachable_matching_shelf()
+	if replacement_shelf != null:
+		var visit_position: Vector2 = npc._get_shelf_visit_position(replacement_shelf)
+		if visit_position.is_finite():
+			npc._target_shelf = replacement_shelf
+			npc.target_position = visit_position
+			npc._waiting_for_shelf_return = false
+			npc._shelf_wait_timer = 0.0
+			set_state(NPC.State.WALK_TO_SHELF)
+			return
+
+	if npc._shelf_wait_timer >= npc.SHELF_WAIT_GRACE_PERIOD:
+		npc._waiting_for_shelf_return = false
+		npc._shelf_wait_timer = 0.0
+		npc._show_dialog("Where'd the shelf go?")
+		npc._dialog_timer = npc.DIALOG_DURATION
+		npc.target_position = npc._get_exit_position()
+		set_state(NPC.State.EXIT)
+
+func _get_store_provider() -> Node:
+	return npc._get_store_route_provider()
+
 
 func finish_checkout_and_exit() -> void:
 	npc._dialog_timer = npc.DIALOG_DURATION
@@ -271,43 +307,7 @@ func finish_checkout_and_exit() -> void:
 
 
 func _handle_shelf_wait_or_leave(debug_stage: String) -> bool:
-	npc.velocity = Vector2.ZERO
-	npc.move_and_slide()
-
-	if not npc._waiting_for_shelf_return:
-		npc._waiting_for_shelf_return = true
-		npc._shelf_wait_timer = 0.0
-		npc._movement_route.clear()
-		npc._movement_route_destination = Vector2.INF
-		pass
-		return true
-
-	npc._shelf_wait_timer += npc.get_process_delta_time()
-
-	var replacement_shelf: Shelf = npc._find_reachable_matching_shelf()
-
-	if replacement_shelf != null:
-		var visit_position: Vector2 = npc._get_shelf_visit_position(replacement_shelf)
-
-		if visit_position.is_finite():
-			npc._target_shelf = replacement_shelf
-			npc.target_position = visit_position
-			npc._waiting_for_shelf_return = false
-			npc._shelf_wait_timer = 0.0
-			pass
-			set_state(NPC.State.WALK_TO_SHELF)
-			return true
-
-	if npc._shelf_wait_timer >= npc.SHELF_WAIT_GRACE_PERIOD:
-		npc._waiting_for_shelf_return = false
-		npc._shelf_wait_timer = 0.0
-		npc._show_dialog("Where'd the shelf go?")
-		npc._dialog_timer = npc.DIALOG_DURATION
-		npc.target_position = npc._get_exit_position()
-		pass
-		set_state(NPC.State.EXIT)
-		return true
-
+	_begin_wait_for_shelf(debug_stage)
 	return true
 
 

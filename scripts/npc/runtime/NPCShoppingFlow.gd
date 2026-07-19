@@ -132,6 +132,9 @@ func get_matching_shelf_candidates() -> Array[Shelf]:
 		if shelf.shelf_type != item.shelf_type:
 			continue
 
+		if not shelf.has_meta("npc_path_ready") or not bool(shelf.get_meta("npc_path_ready")):
+			continue
+
 		if shelf.has_item(npc.item_to_buy):
 			stocked_shelves.append(shelf)
 		else:
@@ -194,7 +197,7 @@ func take_requested_items_from_shelves() -> bool:
 	npc._cart_items.clear()
 
 	for requested_item_id in get_requested_items():
-		var shelf := find_shelf_with_item(requested_item_id)
+		var shelf: Shelf = npc._target_shelf if npc._target_shelf is Shelf else null
 
 		if shelf != null and shelf.take_item_for_npc(requested_item_id):
 			npc._cart_items.append(requested_item_id)

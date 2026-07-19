@@ -214,6 +214,25 @@ func get_route_to_cashier_from(from_position: Vector2) -> Array[Vector2]:
 	var direct_routes: Array = []
 
 	if cashier_marker != null:
+		var direct_diagonal_route := _make_direct_route(
+			from_position,
+			cashier_marker.global_position
+		)
+
+		if (
+			direct_diagonal_route.is_empty()
+			or _is_any_direction_segment_clear(
+				from_position,
+				cashier_marker.global_position,
+				null,
+				Vector2.INF,
+				null,
+				true,
+				true
+			)
+		):
+			return _dedupe_route_points(direct_diagonal_route)
+
 		for order in [
 			{"horizontal_first": true, "label": "horizontal"},
 			{"horizontal_first": false, "label": "vertical"}
@@ -239,6 +258,23 @@ func get_route_to_cashier_from(from_position: Vector2) -> Array[Vector2]:
 	pass
 	return result
 
+
+func get_shelf_wait_position(index: int = 0) -> Vector2:
+	var role_name := "shelf_wait"
+	var all_markers: Array[Marker2D] = _get_markers_by_role(role_name)
+	if all_markers.is_empty():
+		return Vector2.INF
+
+	var selected_marker: Marker2D = null
+	for marker in all_markers:
+		if marker.get_meta("store_wait_index", 0) == index:
+			selected_marker = marker
+			break
+
+	if selected_marker == null:
+		selected_marker = all_markers[index % all_markers.size()]
+
+	return selected_marker.global_position
 
 func get_route_to_queue_target_from(from_position: Vector2, queue_index: int) -> Array[Vector2]:
 	var queue_target := get_queue_target_position(queue_index, from_position)
@@ -588,6 +624,8 @@ func clear_shelf_access_metadata(object: Node2D) -> void:
 	if object.has_meta(ACCESS_CHECKOUT_SOURCE_META):
 		object.remove_meta(ACCESS_CHECKOUT_SOURCE_META)
 
+	object.set_meta("npc_path_ready", false)
+
 
 func _store_access_metadata_from_result(object: Node2D, result: Dictionary) -> void:
 	if object == null:
@@ -601,6 +639,7 @@ func _store_access_metadata_from_result(object: Node2D, result: Dictionary) -> v
 	object.set_meta(ACCESS_ROUTE_META, result.get("surface_route", []))
 	object.set_meta(ACCESS_SIDE_META, result.get("access_side", ""))
 	object.set_meta(ACCESS_CHECKOUT_SOURCE_META, result.get("checkout_source", ""))
+	object.set_meta("npc_path_ready", true)
 
 
 func get_shelf_access_graph_node(shelf: Shelf) -> StringName:
@@ -2596,6 +2635,21 @@ func _get_graph_marker(node_name: StringName) -> Marker2D:
 		return null
 
 	return _markers.get_node_or_null(String(node_name)) as Marker2D
+
+
+func _get_markers_by_role(role: StringName) -> Array[Marker2D]:
+	var results: Array[Marker2D] = []
+	if _markers == null or not is_instance_valid(_markers):
+		return results
+
+	for child in _markers.get_children():
+		var marker := child as Marker2D
+		if marker != null and marker.has_meta("store_path_role"):
+			var marker_role = marker.get_meta("store_path_role")
+			if str(marker_role) == str(role):
+				results.append(marker)
+
+	return results
 
 
 func _get_graph_node_names() -> Array[StringName]:

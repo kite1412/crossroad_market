@@ -120,33 +120,24 @@ func build_movement_route(destination: Vector2) -> Array[Vector2]:
 	var route := get_store_route_for_current_state(destination)
 
 	if not route.is_empty():
-		var result := append_destination_to_route(route, destination)
-		pass
-		return result
+		return dedupe_route_points(route)
 
 	if npc.current_state == NPC.State.WAIT_IN_QUEUE:
 		if not route.is_empty():
-			var result := append_destination_to_route(route, destination)
-			pass
-			return result
-		# Store route empty — fall back to direct orthogonal path so NPC is not stuck
-		var fallback := make_orthogonal_route(npc.global_position, destination, true)
-		fallback = dedupe_route_points(fallback)
-		pass
-		return fallback
+			return dedupe_route_points(route)
+		# Store route empty — fall back to direct fallback path so NPC is not stuck
+		return build_direct_fallback(destination)
 
-	route = []
-	var path_position := get_store_path_position()
+	return build_direct_fallback(destination)
 
-	if should_use_store_path(destination, path_position):
-		route.append_array(make_orthogonal_route(npc.global_position, path_position, true))
-		route.append_array(make_orthogonal_route(path_position, destination, true))
-	else:
-		route.append_array(make_orthogonal_route(npc.global_position, destination, true))
+func build_direct_fallback(destination: Vector2) -> Array[Vector2]:
+	if not destination.is_finite():
+		return []
 
-	var fallback_result := dedupe_route_points(route)
-	pass
-	return fallback_result
+	if npc.global_position.distance_to(destination) <= npc.ARRIVAL_THRESHOLD:
+		return []
+
+	return [destination]
 
 
 func get_store_route_for_current_state(destination: Vector2) -> Array[Vector2]:
@@ -264,15 +255,21 @@ func call_store_route(store: Node, method_name: StringName, args: Array) -> Arra
 
 
 func append_destination_to_route(route: Array[Vector2], destination: Vector2) -> Array[Vector2]:
-	if route.is_empty():
-		return make_orthogonal_route(npc.global_position, destination, true)
+	var result := route.duplicate()
 
-	var last_point := route[route.size() - 1]
+	if not destination.is_finite():
+		return dedupe_route_points(result)
+
+	if result.is_empty():
+		result.append(destination)
+		return result
+
+	var last_point: Vector2 = result[result.size() - 1]
 
 	if last_point.distance_to(destination) > npc.ARRIVAL_THRESHOLD:
-		route.append_array(make_orthogonal_route(last_point, destination, true))
+		result.append(destination)
 
-	return dedupe_route_points(route)
+	return dedupe_route_points(result)
 
 
 func make_orthogonal_route(from_pos: Vector2, to_pos: Vector2, horizontal_first: bool = true) -> Array[Vector2]:

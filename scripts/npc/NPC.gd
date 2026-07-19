@@ -18,7 +18,8 @@ enum State {
 	TAKE_ITEM,
 	WAIT_IN_QUEUE,
 	CHECKOUT,
-	EXIT
+	EXIT,
+	WAIT_FOR_SHELF
 }
 
 const SPEED: float = 80.0
@@ -159,6 +160,8 @@ func _physics_process(delta: float) -> void:
 			_process_checkout(delta)
 		State.EXIT:
 			_process_exit()
+		State.WAIT_FOR_SHELF:
+			_process_wait_for_shelf(delta)
 
 	if is_queued_for_deletion():
 		return
@@ -253,6 +256,9 @@ func _is_target_shelf_valid() -> bool:
 	if _target_shelf.has_meta("is_carried_storage_object") and bool(_target_shelf.get_meta("is_carried_storage_object")):
 		return false
 
+	if not _target_shelf.has_meta("npc_path_ready") or not bool(_target_shelf.get_meta("npc_path_ready")):
+		return false
+
 	return true
 
 
@@ -330,6 +336,10 @@ func _process_checkout(delta: float) -> void:
 
 func _process_exit() -> void:
 	_state_flow.process_exit()
+
+
+func _process_wait_for_shelf(delta: float) -> void:
+	_state_flow.process_wait_for_shelf(delta)
 
 
 func _complete_exit() -> void:

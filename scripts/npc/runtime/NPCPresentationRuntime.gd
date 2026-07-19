@@ -4,6 +4,9 @@ extends RefCounted
 const DEBUG_SHELF_FLOW: bool = true
 
 var npc = null
+var _interaction_status: String = ""
+var _pending_dialog_text: String = ""
+var _interaction_target_position: Vector2 = Vector2.INF
 
 
 func setup(npc_node) -> void:
@@ -138,17 +141,29 @@ func request_npc_interaction(partner: NPC, dialog_text: String, pause_duration: 
 
 	npc._interaction_partner = partner
 	npc._interaction_pause_timer = maxf(0.1, pause_duration)
+	_pending_dialog_text = dialog_text
+	_interaction_target_position = target_face_position
+	_interaction_status = "approaching"
 	npc.velocity = Vector2.ZERO
 	npc._movement_route.clear()
 	npc._movement_route_destination = Vector2.INF
-	apply_face_position(target_face_position)
-	show_dialog(dialog_text)
 	return true
 
 
 func process_npc_interaction_pause(delta: float) -> bool:
-	if npc._interaction_pause_timer <= 0.0:
+	if _interaction_status == "" and npc._interaction_pause_timer <= 0.0:
 		return false
+
+	if _interaction_status == "approaching":
+		var arrived = NPCMovement.move_to(npc, _interaction_target_position, npc.SPEED, npc.ARRIVAL_THRESHOLD)
+		update_character_sprite()
+		if arrived:
+			_interaction_status = "talking"
+			npc.velocity = Vector2.ZERO
+			show_dialog(_pending_dialog_text)
+			if npc._interaction_partner != null and is_instance_valid(npc._interaction_partner):
+				apply_face_position(npc._interaction_partner.global_position)
+		return true
 
 	npc.velocity = Vector2.ZERO
 	npc.move_and_slide()
@@ -162,6 +177,7 @@ func process_npc_interaction_pause(delta: float) -> bool:
 
 	if npc._interaction_pause_timer <= 0.0:
 		npc._interaction_partner = null
+		_interaction_status = ""
 
 	return true
 

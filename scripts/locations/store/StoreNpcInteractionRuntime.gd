@@ -122,37 +122,39 @@ func _find_interaction_pair(npcs: Array[NPC], blueprint: Resource) -> Array[NPC]
 func _start_interaction(npc_a: NPC, npc_b: NPC, blueprint: Resource) -> bool:
 	var positions := _get_facing_positions(npc_a, npc_b, float(blueprint.get("face_distance")))
 
-	if _are_face_positions_clear(positions):
-		npc_a.global_position = positions[0]
-		npc_b.global_position = positions[1]
-		npc_a._movement_route.clear()
-		npc_b._movement_route.clear()
-
 	var lines: Array = blueprint.get("dialog_lines")
 	var line_a := str(lines[0]) if lines.size() > 0 else "Nice weather for shopping."
 	var line_b := str(lines[1]) if lines.size() > 1 else line_a
 
 	var pause_duration := float(blueprint.get("pause_duration"))
-	var started_a := npc_a.request_npc_interaction(npc_b, line_a, pause_duration, npc_b.global_position)
-	var started_b := npc_b.request_npc_interaction(npc_a, line_b, pause_duration, npc_a.global_position)
+	var started_a := npc_a.request_npc_interaction(npc_b, line_a, pause_duration, positions[0])
+	var started_b := npc_b.request_npc_interaction(npc_a, line_b, pause_duration, positions[1])
 
 	return started_a and started_b
 
 
 func _get_facing_positions(npc_a: NPC, npc_b: NPC, face_distance: float) -> Array[Vector2]:
-	var midpoint := (npc_a.global_position + npc_b.global_position) * 0.5
-	var delta := npc_b.global_position - npc_a.global_position
-	var half_distance := maxf(4.0, face_distance * 0.5)
+	var midpoint := (
+		npc_a.global_position
+		+ npc_b.global_position
+	) * 0.5
 
-	if absf(delta.x) >= absf(delta.y):
-		return [
-			midpoint + Vector2(-half_distance, 0.0),
-			midpoint + Vector2(half_distance, 0.0)
-		]
+	var direction := (
+		npc_b.global_position
+		- npc_a.global_position
+	).normalized()
+
+	if direction.is_zero_approx():
+		direction = Vector2.RIGHT
+
+	var half_distance := maxf(
+		4.0,
+		face_distance * 0.5
+	)
 
 	return [
-		midpoint + Vector2(0.0, -half_distance),
-		midpoint + Vector2(0.0, half_distance)
+		midpoint - direction * half_distance,
+		midpoint + direction * half_distance
 	]
 
 
