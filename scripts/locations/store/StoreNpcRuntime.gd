@@ -2,7 +2,7 @@ class_name StoreNpcRuntime
 extends Node
 
 const StoreNpcSpawner = preload("res://scripts/locations/store/StoreNpcSpawner.gd")
-const NPCTargetArrivalRouteController = preload("res://scripts/npc/runtime/NPCTargetArrivalRouteController.gd")
+const NPCResolvedExitRouteController = preload("res://scripts/npc/runtime/NPCResolvedExitRouteController.gd")
 const NPCStableShelfStateFlow = preload("res://scripts/npc/runtime/NPCStableShelfStateFlow.gd")
 const NPCCheckoutLaneQueueFlow = preload("res://scripts/npc/runtime/NPCCheckoutLaneQueueFlow.gd")
 const NPCDebugPresentationRuntime = preload("res://scripts/npc/runtime/NPCDebugPresentationRuntime.gd")
@@ -105,9 +105,9 @@ func install_shelf_arrival_controllers(npc: NPC) -> void:
 		)
 	}
 
-	# Debug branch: keep the same behavior controllers and add a presentation
-	# wrapper that only measures dialog display time.
-	npc._route_controller = NPCTargetArrivalRouteController.new()
+	# Keep the diagnostic wrappers active while routing specialized checkout
+	# and shelf-exit methods through the StoreNpcRoutes child provider.
+	npc._route_controller = NPCResolvedExitRouteController.new()
 	npc._route_controller.setup(npc)
 	npc._state_flow = NPCStableShelfStateFlow.new()
 	npc._state_flow.setup(npc)
