@@ -376,11 +376,6 @@ func _connect_hud_signals() -> void:
 	if hud == null or not hud.has_signal("tax_payment_requested"):
 		return
 
-	hud.connect(
-		"hud_time_completed",
-		Callable(self, "_on_hud_time_completed")
-	)
-
 	var pay_callable := Callable(self, "_on_tax_payment_requested")
 	if hud.has_signal("tax_payment_requested") and not hud.is_connected("tax_payment_requested", pay_callable):
 		hud.connect("tax_payment_requested", pay_callable)
