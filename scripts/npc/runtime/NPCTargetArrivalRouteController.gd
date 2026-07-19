@@ -11,10 +11,9 @@ func get_store_route_for_current_state(
 		var store := get_store_route_provider()
 
 		if store != null:
-			var origin_shelf: Variant = npc.get_meta(
-				EXIT_ORIGIN_SHELF_META,
-				null
-			)
+			var origin_shelf: Variant = null
+			if npc.has_meta(EXIT_ORIGIN_SHELF_META):
+				origin_shelf = npc.get_meta(EXIT_ORIGIN_SHELF_META)
 
 			if (
 				origin_shelf is Shelf
@@ -30,14 +29,14 @@ func get_store_route_for_current_state(
 				if not shelf_exit_route.is_empty():
 					return shelf_exit_route
 
-			if (
+			var use_solo_checkout_exit := (
 				npc._exit_after_checkout
-				and bool(
-					npc.get_meta(
-						SOLO_CHECKOUT_EXIT_META,
-						false
-					)
-				)
+				and npc.has_meta(SOLO_CHECKOUT_EXIT_META)
+				and bool(npc.get_meta(SOLO_CHECKOUT_EXIT_META))
+			)
+
+			if (
+				use_solo_checkout_exit
 				and store.has_method(
 					"get_npc_single_customer_exit_route"
 				)

@@ -5,13 +5,11 @@ const EXIT_ORIGIN_SHELF_META: StringName = &"exit_origin_shelf"
 
 
 func finish_checkout_and_exit() -> void:
-	# Snapshot queue occupancy before process_exit removes this NPC from the
-	# shared queue. This preserves the distinction between a true solo checkout
-	# and a checkout that still has customers waiting behind it.
-	npc.set_meta(
-		SOLO_CHECKOUT_EXIT_META,
-		NPC.current_queue.size() <= 1
-	)
+	# NPCCheckoutLaneQueueFlow normally captures this when cashier movement
+	# starts. Keep a safe fallback for checkout paths that bypass that flow, but
+	# never overwrite the earlier snapshot with customers who joined later.
+	if not npc.has_meta(SOLO_CHECKOUT_EXIT_META):
+		_capture_solo_checkout_fallback()
 
 	if npc.has_meta(EXIT_ORIGIN_SHELF_META):
 		npc.remove_meta(EXIT_ORIGIN_SHELF_META)
@@ -46,6 +44,33 @@ func complete_exit() -> void:
 		npc.remove_meta(EXIT_ORIGIN_SHELF_META)
 
 	super.complete_exit()
+
+
+func _capture_solo_checkout_fallback() -> void:
+	NPCQueueSystem.prune_invalid(NPC.current_queue)
+	var has_waiting_customer := false
+
+	for queued_variant in NPC.current_queue:
+		if not (queued_variant is NPC):
+			continue
+
+		var queued_npc := queued_variant as NPC
+		if queued_npc == npc:
+			continue
+		if not is_instance_valid(queued_npc):
+			continue
+		if queued_npc.is_queued_for_deletion():
+			continue
+		if queued_npc.current_state != NPC.State.WAIT_IN_QUEUE:
+			continue
+
+		has_waiting_customer = true
+		break
+
+	npc.set_meta(
+		SOLO_CHECKOUT_EXIT_META,
+		not has_waiting_customer
+	)
 
 
 func _find_reachable_stocked_shelf() -> Shelf:
