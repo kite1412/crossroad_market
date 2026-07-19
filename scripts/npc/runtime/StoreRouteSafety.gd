@@ -6,9 +6,11 @@ const STANDING_SHAPE_OFFSET := Vector2(0, -8)
 const ROUTE_SAMPLE_STEP: float = 6.0
 const START_CLEARANCE: float = 16.0
 const ENDPOINT_CLEARANCE: float = 8.0
+const START_OBSTACLE_RELEASE_DISTANCE: float = 28.0
 const MARKER_CORRIDOR_RADIUS: float = 7.0
 const POINT_EPSILON: float = 2.0
 const ALL_PHYSICS_LAYERS: int = 0x7FFFFFFF
+const EXIT_ORIGIN_SHELF_META: StringName = &"exit_origin_shelf"
 
 var npc: CharacterBody2D = null
 
@@ -34,15 +36,17 @@ func sanitize_store_route(route: Array[Vector2]) -> Array[Vector2]:
 	)
 
 	# StorePathGraph already treats the selected shelf as the allowed endpoint
-	# obstacle. Preserve that behavior here: only the final segment may ignore
-	# the target shelf body, while every earlier segment still treats it as a
-	# blocking PhysicsBody2D.
+	# obstacle. Preserve that behavior here: only the final approach may ignore
+	# the target shelf body. An out-of-stock exit uses the source shelf as a
+	# temporary start obstacle until the NPC has moved clear of it.
+	var start_obstacle := _get_start_obstacle()
 	var endpoint_obstacle := _get_endpoint_obstacle()
 
 	if not _is_route_clear(
 		npc.global_position,
 		clean_route,
 		store,
+		start_obstacle,
 		endpoint_obstacle
 	):
 		return []
@@ -134,26 +138,47 @@ func _is_route_clear(
 	start_position: Vector2,
 	route: Array[Vector2],
 	store: Node2D,
+	start_obstacle: Node = null,
 	endpoint_obstacle: Node = null
 ) -> bool:
 	var current := start_position
+	var start_obstacle_active := (
+		start_obstacle != null
+		and is_instance_valid(start_obstacle)
+	)
 
 	for index in range(route.size()):
 		var target := route[index]
 		var start_clearance := START_CLEARANCE if index == 0 else ENDPOINT_CLEARANCE
-		var segment_endpoint_obstacle: Node = null
+		var allowed_obstacles: Array[Node] = []
 
-		if index == route.size() - 1:
-			segment_endpoint_obstacle = endpoint_obstacle
+		if start_obstacle_active:
+			allowed_obstacles.append(start_obstacle)
+
+		if (
+			index == route.size() - 1
+			and endpoint_obstacle != null
+			and is_instance_valid(endpoint_obstacle)
+			and endpoint_obstacle not in allowed_obstacles
+		):
+			allowed_obstacles.append(endpoint_obstacle)
 
 		if not _is_segment_clear(
 			current,
 			target,
 			store,
 			start_clearance,
-			segment_endpoint_obstacle
+			allowed_obstacles
 		):
 			return false
+
+		if (
+			start_obstacle_active
+			and target.distance_to(start_position)
+			>= START_OBSTACLE_RELEASE_DISTANCE
+		):
+			start_obstacle_active = false
+
 		current = target
 
 	return true
@@ -164,7 +189,7 @@ func _is_segment_clear(
 	to_position: Vector2,
 	store: Node2D,
 	start_clearance: float,
-	endpoint_obstacle: Node = null
+	allowed_obstacles: Array[Node] = []
 ) -> bool:
 	var distance := from_position.distance_to(to_position)
 	if distance <= start_clearance + ENDPOINT_CLEARANCE:
@@ -177,7 +202,10 @@ func _is_segment_clear(
 	var steps := maxi(1, int(ceil(sample_distance / ROUTE_SAMPLE_STEP)))
 	var shape := RectangleShape2D.new()
 	shape.size = STANDING_SHAPE_SIZE
-	var exclusions := _get_collision_exclusion_rids(store, endpoint_obstacle)
+	var exclusions := _get_collision_exclusion_rids(
+		store,
+		allowed_obstacles
+	)
 	var space_state := store.get_world_2d().direct_space_state
 
 	for index in range(steps + 1):
@@ -202,12 +230,14 @@ func _is_segment_clear(
 
 func _get_collision_exclusion_rids(
 	store: Node2D,
-	endpoint_obstacle: Node = null
+	allowed_obstacles: Array[Node] = []
 ) -> Array[RID]:
 	var result := _get_dynamic_actor_rids(store)
 
-	if endpoint_obstacle != null and is_instance_valid(endpoint_obstacle):
-		_append_collision_object_rids(endpoint_obstacle, result)
+	for obstacle in allowed_obstacles:
+		if obstacle == null or not is_instance_valid(obstacle):
+			continue
+		_append_collision_object_rids(obstacle, result)
 
 	return result
 
@@ -233,6 +263,20 @@ func _get_dynamic_actor_rids(store: Node2D) -> Array[RID]:
 			result.append(rid)
 
 	return result
+
+
+func _get_start_obstacle() -> Node:
+	if npc == null or not npc.has_meta(EXIT_ORIGIN_SHELF_META):
+		return null
+
+	var origin_variant: Variant = npc.get_meta(
+		EXIT_ORIGIN_SHELF_META,
+		null
+	)
+	if origin_variant is Node and is_instance_valid(origin_variant):
+		return origin_variant as Node
+
+	return null
 
 
 func _get_endpoint_obstacle() -> Node:
