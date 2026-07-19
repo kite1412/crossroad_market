@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://jriw7c35rm3y"]
 
-[ext_resource type="Script" uid="uid://bfmgmf0l73tde" path="res://scripts/npc/NPC.gd" id="1"]
-[ext_resource type="Script" uid="uid://bjatr3pcan06m" path="res://scripts/components/characters/CharacterSprite.gd" id="2"]
-[ext_resource type="Script" uid="uid://pjbhurno0vka" path="res://scripts/components/characters/AnimatedCharacterSpriteConfig.gd" id="3_config"]
+[ext_resource type="Script" uid="uid://bfhbydvnuhv0v" path="res://scripts/npc/NPC.gd" id="1"]
+[ext_resource type="Script" uid="uid://d4loq3mtp16wy" path="res://scripts/components/characters/CharacterSprite.gd" id="2"]
+[ext_resource type="Script" uid="uid://b5ph47kd021yl" path="res://scripts/components/characters/AnimatedCharacterSpriteConfig.gd" id="3_config"]
 [ext_resource type="Texture2D" uid="uid://ck8busevq3r5o" path="res://assets/characters/npcs/humans/human1/front-npc-human-1.png" id="4_human_front"]
 [ext_resource type="Texture2D" uid="uid://se00a1gbf5g0" path="res://assets/characters/npcs/humans/human1/side-left-npc-human-1.png" id="5_human_left"]
 [ext_resource type="Texture2D" uid="uid://dqw1asolojlw7" path="res://assets/characters/npcs/humans/human1/side-right-npc-human-1.png" id="6_human_right"]
@@ -419,7 +419,7 @@ position = Vector2(0, -21)
 [node name="SpriteMove" type="AnimatedSprite2D" parent="VisualRoot" unique_id=978034633]
 sprite_frames = SubResource("SpriteFrames_uuxmv")
 animation = &"down"
-frame_progress = 0.55038166
+frame_progress = 0.11773153
 script = ExtResource("2")
 animation_fps = 5.0
 animate_idle = true
@@ -428,7 +428,7 @@ direction_config = SubResource("AnimatedCharacterSpriteConfig_move")
 [node name="SpriteIdle" type="AnimatedSprite2D" parent="VisualRoot" unique_id=271152184]
 sprite_frames = SubResource("SpriteFrames_benak")
 animation = &"down"
-frame_progress = 0.55038166
+frame_progress = 0.11773153
 script = ExtResource("2")
 animation_fps = 5.0
 animate_idle = true

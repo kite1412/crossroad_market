@@ -14,8 +14,10 @@ const PlayerNotificationBridge = preload("res://scripts/player/PlayerNotificatio
 
 @onready var interaction_area: Area2D = $InteractionArea
 @onready var sprite_move: AnimatedSprite2D = $VisualRoot/SpriteMove
+@onready var sprite_sprint: AnimatedSprite2D = $VisualRoot/SpriteSprint
 @onready var sprite_idle: AnimatedSprite2D = $VisualRoot/SpriteIdle
 @onready var sprite_action: AnimatedSprite2D = $VisualRoot/SpriteAction
+@onready var sprite_action_sprint: AnimatedSprite2D = $VisualRoot/SpriteActionSprint
 
 var facing_direction: Vector2 = Vector2.DOWN
 var _supply_box_cursor: int = 0
@@ -23,6 +25,7 @@ var _wrong_shelf_attempts: Dictionary = {}
 var _seen_item_ids: Dictionary = {}
 var _seen_guidance_keys: Dictionary = {}
 var _move_direction: CharacterSprite.Direction = CharacterSprite.Direction.DOWN
+var is_sprinting: bool = false
 
 var _movement_controller: PlayerMovementController
 var _visual_controller: PlayerVisualController

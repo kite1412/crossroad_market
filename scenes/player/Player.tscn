@@ -179,6 +179,41 @@ up_start_row = 1
 up_end_row = 1
 up_end_column = 3
 
+[sub_resource type="Resource" id="AnimatedCharacterSpriteConfig_sprint"]
+script = ExtResource("6_config")
+down_texture = ExtResource("2_4kuee")
+down_rows = 6
+down_columns = 6
+down_frames_per_row = 4
+down_start_row = 2
+down_start_column = 0
+down_end_row = 2
+down_end_column = 3
+left_texture = ExtResource("3_524rm")
+left_rows = 6
+left_columns = 6
+left_frames_per_row = 4
+left_start_row = 2
+left_start_column = 0
+left_end_row = 2
+left_end_column = 3
+right_texture = ExtResource("4_c3xxp")
+right_rows = 6
+right_columns = 6
+right_frames_per_row = 4
+right_start_row = 2
+right_start_column = 0
+right_end_row = 2
+right_end_column = 3
+up_texture = ExtResource("5_npwbq")
+up_rows = 6
+up_columns = 6
+up_frames_per_row = 4
+up_start_row = 2
+up_start_column = 0
+up_end_row = 2
+up_end_column = 3
+
 [sub_resource type="AtlasTexture" id="AtlasTexture_8nn5r"]
 atlas = ExtResource("2_4kuee")
 region = Rect2(0, 0, 32, 48)
@@ -705,6 +740,41 @@ up_start_row = 4
 up_end_row = 4
 up_end_column = 3
 
+[sub_resource type="Resource" id="AnimatedCharacterSpriteConfig_action_sprint"]
+script = ExtResource("6_config")
+down_texture = ExtResource("2_4kuee")
+down_rows = 6
+down_columns = 6
+down_frames_per_row = 4
+down_start_row = 5
+down_start_column = 0
+down_end_row = 5
+down_end_column = 3
+left_texture = ExtResource("3_524rm")
+left_rows = 6
+left_columns = 6
+left_frames_per_row = 4
+left_start_row = 5
+left_start_column = 0
+left_end_row = 5
+left_end_column = 3
+right_texture = ExtResource("4_c3xxp")
+right_rows = 6
+right_columns = 6
+right_frames_per_row = 4
+right_start_row = 5
+right_start_column = 0
+right_end_row = 5
+right_end_column = 3
+up_texture = ExtResource("5_npwbq")
+up_rows = 6
+up_columns = 6
+up_frames_per_row = 4
+up_start_row = 5
+up_start_column = 0
+up_end_row = 5
+up_end_column = 3
+
 [sub_resource type="Resource" id="AnimatedCharacterSpriteConfig_action"]
 script = ExtResource("6_config")
 down_texture = ExtResource("2_4kuee")
@@ -759,6 +829,13 @@ animation_fps = 5.0
 animate_idle = true
 direction_config = SubResource("AnimatedCharacterSpriteConfig_move")
 
+[node name="SpriteSprint" type="AnimatedSprite2D" parent="VisualRoot"]
+visible = false
+script = ExtResource("2")
+animation_fps = 5.0
+animate_idle = true
+direction_config = SubResource("AnimatedCharacterSpriteConfig_sprint")
+
 [node name="SpriteIdle" type="AnimatedSprite2D" parent="VisualRoot" unique_id=643144298]
 sprite_frames = SubResource("SpriteFrames_q4eru")
 animation = &"down"
@@ -778,6 +855,13 @@ animation_fps = 5.0
 animate_idle = true
 direction_config = SubResource("AnimatedCharacterSpriteConfig_action_move")
 idle_direction_config = SubResource("AnimatedCharacterSpriteConfig_action")
+
+[node name="SpriteActionSprint" type="AnimatedSprite2D" parent="VisualRoot"]
+visible = false
+script = ExtResource("2")
+animation_fps = 5.0
+animate_idle = true
+direction_config = SubResource("AnimatedCharacterSpriteConfig_action_sprint")
 
 [node name="PlaceholderRect" type="ColorRect" parent="VisualRoot" unique_id=119610974]
 visible = false

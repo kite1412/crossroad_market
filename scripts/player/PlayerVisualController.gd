@@ -24,8 +24,12 @@ func initialize() -> void:
 
 	if player.sprite_move != null:
 		player.sprite_move.visible = false
+	if player.sprite_sprint != null:
+		player.sprite_sprint.visible = false
 	if player.sprite_action != null:
 		player.sprite_action.visible = false
+	if player.sprite_action_sprint != null:
+		player.sprite_action_sprint.visible = false
 
 
 func update_character_sprite(motion: Vector2) -> void:
@@ -54,13 +58,18 @@ func update_character_sprite(motion: Vector2) -> void:
 
 func get_active_character_sprite(is_carrying_shelf_value: bool, is_moving: bool) -> AnimatedSprite2D:
 	if is_carrying_shelf_value:
+		if is_moving and player.is_sprinting:
+			return player.sprite_action_sprint
 		return player.sprite_action
+
+	if is_moving and player.is_sprinting:
+		return player.sprite_sprint
 
 	return player.sprite_move if is_moving else player.sprite_idle
 
 
 func set_character_sprite_visibility(active_sprite: AnimatedSprite2D) -> void:
-	for sprite in [player.sprite_move, player.sprite_idle, player.sprite_action]:
+	for sprite in [player.sprite_move, player.sprite_sprint, player.sprite_idle, player.sprite_action, player.sprite_action_sprint]:
 		if sprite == null:
 			continue
 
@@ -121,10 +130,13 @@ func apply_sprite_base_z_indexes() -> void:
 		player.sprite_idle.z_index = SPRITE_NORMAL_Z
 	if player.sprite_action != null:
 		player.sprite_action.z_index = SPRITE_ACTION_FRONT_Z
+	if player.sprite_action_sprint != null:
+		player.sprite_action_sprint.z_index = SPRITE_ACTION_FRONT_Z
 
 
 func apply_carry_sprite_z_index() -> void:
-	if player.sprite_action == null:
-		return
-
-	player.sprite_action.z_index = SPRITE_ACTION_BACK_Z if player._move_direction == CharacterSprite.Direction.UP else SPRITE_ACTION_FRONT_Z
+	var action_z_index := SPRITE_ACTION_BACK_Z if player._move_direction == CharacterSprite.Direction.UP else SPRITE_ACTION_FRONT_Z
+	if player.sprite_action != null:
+		player.sprite_action.z_index = action_z_index
+	if player.sprite_action_sprint != null:
+		player.sprite_action_sprint.z_index = action_z_index
