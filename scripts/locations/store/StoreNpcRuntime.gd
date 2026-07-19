@@ -3,7 +3,7 @@ extends Node
 
 const StoreNpcSpawner = preload("res://scripts/locations/store/StoreNpcSpawner.gd")
 const NPCResolvedExitRouteController = preload("res://scripts/npc/runtime/NPCResolvedExitRouteController.gd")
-const NPCStableShelfStateFlow = preload("res://scripts/npc/runtime/NPCStableShelfStateFlow.gd")
+const NPCLiveQueueStateFlow = preload("res://scripts/npc/runtime/NPCLiveQueueStateFlow.gd")
 const NPCCheckoutLaneQueueFlow = preload("res://scripts/npc/runtime/NPCCheckoutLaneQueueFlow.gd")
 const NPCDebugPresentationRuntime = preload("res://scripts/npc/runtime/NPCDebugPresentationRuntime.gd")
 const NPCStoreDebugTraceScript = preload("res://scripts/npc/runtime/NPCStoreDebugTrace.gd")
@@ -109,7 +109,7 @@ func install_shelf_arrival_controllers(npc: NPC) -> void:
 	# and shelf-exit methods through the StoreNpcRoutes child provider.
 	npc._route_controller = NPCResolvedExitRouteController.new()
 	npc._route_controller.setup(npc)
-	npc._state_flow = NPCStableShelfStateFlow.new()
+	npc._state_flow = NPCLiveQueueStateFlow.new()
 	npc._state_flow.setup(npc)
 	npc._queue_flow = NPCCheckoutLaneQueueFlow.new()
 	npc._queue_flow.setup(npc)
