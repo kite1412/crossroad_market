@@ -21,7 +21,7 @@ func setup(hud_node: CanvasLayer) -> void:
 	dialog = hud.get_node_or_null("Dialog") as Dialog
 
 	if dialog == null:
-		push_error("HUDDialogController: HUD is missing its Dialog instance.")
+		pass
 		return
 
 	var next_callable := Callable(self, "_on_next_requested")

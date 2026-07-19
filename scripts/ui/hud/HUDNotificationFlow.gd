@@ -57,19 +57,7 @@ func show_notification(
 	if blocks_actions:
 		hud._action_lock_timer = hud._notify_duration
 
-	print(
-		"[DEBUG][HUD_NOTIFY_FLOW] text=%s duration=%.2f readable_duration=%.2f blocks_actions=%s instant_text=%s action_lock_before=%.2f action_lock_after=%.2f action_lock_sessions=%d notify_timer=%.2f" % [
-			text,
-			duration,
-			readable_duration,
-			str(blocks_actions),
-			str(instant_text),
-			action_lock_before,
-			hud._action_lock_timer,
-			hud._action_lock_sessions,
-			hud._notify_timer
-		]
-	)
+	pass
 
 
 func get_readable_notification_duration(text: String, requested_duration: float) -> float:

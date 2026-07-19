@@ -24,7 +24,7 @@ func process_scan(npc: NPC) -> void:
 			item_label = item_data.display_name
 
 	if price <= 0:
-		push_error("Cashier: item '%s' not found" % item_id)
+		pass
 		return
 	cashier._scanned_npc = npc
 	cashier._scanned_item_id = item_id
