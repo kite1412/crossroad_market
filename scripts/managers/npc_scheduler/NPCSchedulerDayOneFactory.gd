@@ -55,7 +55,7 @@ func spawn_day_one_night_monster_customer() -> void:
 	var monster_data := scheduler._npc_database.get("monster_1") as NPCData
 
 	if monster_data == null:
-		push_warning("NPCScheduler: monster_1 not found in database")
+		pass
 		return
 
 	var slime := monster_data.duplicate() as NPCData

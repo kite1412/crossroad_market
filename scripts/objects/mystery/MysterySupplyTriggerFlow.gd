@@ -12,7 +12,7 @@ func setup_trigger() -> void:
 	box.add_to_group("mystery_supply_boxes")
 
 	if box.trigger_area == null:
-		push_error("MysterySupplyBox: Area2D trigger tidak ditemukan.")
+		pass
 		return
 
 	box.trigger_area.monitoring = true

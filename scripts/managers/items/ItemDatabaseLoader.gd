@@ -11,7 +11,7 @@ func setup(database_node: Node) -> void:
 func load_items() -> void:
 	var dir := DirAccess.open("res://data/items")
 	if dir == null:
-		push_error("ItemDatabase: folder data/items/ not found")
+		pass
 		return
 
 	dir.list_dir_begin()
@@ -24,7 +24,7 @@ func load_items() -> void:
 			if item and item.item_id != "":
 				database._items[item.item_id] = item
 			else:
-				push_warning("ItemDatabase: skip file %s (empty item_id or not ItemData)" % file_name)
+				pass
 		file_name = dir.get_next()
 
 

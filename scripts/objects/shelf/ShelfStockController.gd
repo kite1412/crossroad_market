@@ -16,7 +16,7 @@ func initialize_slots() -> void:
 func place_item(item_id: String) -> int:
 	var item: ItemData = ItemDatabase.get_item(item_id)
 	if item == null:
-		push_warning("Shelf: item '%s' not found in database" % item_id)
+		pass
 		return -1
 
 	if item.shelf_type != shelf.shelf_type:
@@ -38,7 +38,7 @@ func place_item(item_id: String) -> int:
 func stock_item_direct(item_id: String) -> int:
 	var item: ItemData = ItemDatabase.get_item(item_id)
 	if item == null:
-		push_warning("Shelf: item '%s' not found in database" % item_id)
+		pass
 		return -1
 
 	if item.shelf_type != shelf.shelf_type:
