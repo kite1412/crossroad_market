@@ -1,6 +1,15 @@
 class_name StoreTransitionController
 extends RefCounted
 
+const META_VISIBLE: StringName = &"_world_active_was_visible"
+const META_MONITORING: StringName = &"_world_active_was_monitoring"
+const META_MONITORABLE: StringName = &"_world_active_was_monitorable"
+const META_COLLISION_DISABLED: StringName = &"_world_active_was_disabled"
+const META_PROCESS: StringName = &"_world_active_was_processing"
+const META_PHYSICS_PROCESS: StringName = &"_world_active_was_physics_processing"
+const META_INPUT_PROCESS: StringName = &"_world_active_was_input_processing"
+const META_UNHANDLED_INPUT_PROCESS: StringName = &"_world_active_was_unhandled_input_processing"
+
 
 static func prepare_player_for_location(
 	player: Node2D,
@@ -68,59 +77,97 @@ static func set_node_active_recursive(node: Node, is_active: bool) -> void:
 	if node == null:
 		return
 
-	if node is CanvasItem:
-		var canvas_item := node as CanvasItem
-
-		if is_active:
-			# Only restore CanvasItems that were actually suspended. A node may be
-			# created while the Store world is inactive, and forcing that node visible
-			# would reveal intentionally hidden controls such as NPC placeholders and
-			# dialog bubbles.
-			if canvas_item.has_meta("_world_active_was_visible"):
-				canvas_item.visible = bool(canvas_item.get_meta("_world_active_was_visible"))
-				canvas_item.remove_meta("_world_active_was_visible")
-		else:
-			canvas_item.set_meta("_world_active_was_visible", canvas_item.visible)
-			canvas_item.visible = false
-
-	if node is Area2D:
-		var area := node as Area2D
-		area.monitoring = is_active
-		area.monitorable = is_active
-
-	if node is CollisionShape2D:
-		var collision_shape := node as CollisionShape2D
-
-		if is_active:
-			if collision_shape.has_meta("_world_active_was_disabled"):
-				collision_shape.disabled = bool(collision_shape.get_meta("_world_active_was_disabled"))
-				collision_shape.remove_meta("_world_active_was_disabled")
-			else:
-				collision_shape.disabled = false
-		else:
-			collision_shape.set_meta("_world_active_was_disabled", collision_shape.disabled)
-			collision_shape.disabled = true
-
-	if node is CollisionPolygon2D:
-		var collision_polygon := node as CollisionPolygon2D
-
-		if is_active:
-			if collision_polygon.has_meta("_world_active_was_disabled"):
-				collision_polygon.disabled = bool(collision_polygon.get_meta("_world_active_was_disabled"))
-				collision_polygon.remove_meta("_world_active_was_disabled")
-			else:
-				collision_polygon.disabled = false
-		else:
-			collision_polygon.set_meta("_world_active_was_disabled", collision_polygon.disabled)
-			collision_polygon.disabled = true
-
-	node.set_process(is_active)
-	node.set_physics_process(is_active)
-	node.set_process_input(is_active)
-	node.set_process_unhandled_input(is_active)
+	_restore_or_suspend_canvas_item(node, is_active)
+	_restore_or_suspend_area(node, is_active)
+	_restore_or_suspend_collision(node, is_active)
+	_restore_or_suspend_processing(node, is_active)
 
 	for child in node.get_children():
 		set_node_active_recursive(child, is_active)
+
+
+static func _restore_or_suspend_canvas_item(node: Node, is_active: bool) -> void:
+	if not node is CanvasItem:
+		return
+
+	var canvas_item := node as CanvasItem
+	if is_active:
+		if canvas_item.has_meta(META_VISIBLE):
+			canvas_item.visible = bool(canvas_item.get_meta(META_VISIBLE))
+			canvas_item.remove_meta(META_VISIBLE)
+		return
+
+	canvas_item.set_meta(META_VISIBLE, canvas_item.visible)
+	canvas_item.visible = false
+
+
+static func _restore_or_suspend_area(node: Node, is_active: bool) -> void:
+	if not node is Area2D:
+		return
+
+	var area := node as Area2D
+	if is_active:
+		if area.has_meta(META_MONITORING):
+			area.monitoring = bool(area.get_meta(META_MONITORING))
+			area.remove_meta(META_MONITORING)
+		if area.has_meta(META_MONITORABLE):
+			area.monitorable = bool(area.get_meta(META_MONITORABLE))
+			area.remove_meta(META_MONITORABLE)
+		return
+
+	area.set_meta(META_MONITORING, area.monitoring)
+	area.set_meta(META_MONITORABLE, area.monitorable)
+	area.monitoring = false
+	area.monitorable = false
+
+
+static func _restore_or_suspend_collision(node: Node, is_active: bool) -> void:
+	if node is CollisionShape2D:
+		var collision_shape := node as CollisionShape2D
+		if is_active:
+			if collision_shape.has_meta(META_COLLISION_DISABLED):
+				collision_shape.disabled = bool(collision_shape.get_meta(META_COLLISION_DISABLED))
+				collision_shape.remove_meta(META_COLLISION_DISABLED)
+		else:
+			collision_shape.set_meta(META_COLLISION_DISABLED, collision_shape.disabled)
+			collision_shape.disabled = true
+		return
+
+	if node is CollisionPolygon2D:
+		var collision_polygon := node as CollisionPolygon2D
+		if is_active:
+			if collision_polygon.has_meta(META_COLLISION_DISABLED):
+				collision_polygon.disabled = bool(collision_polygon.get_meta(META_COLLISION_DISABLED))
+				collision_polygon.remove_meta(META_COLLISION_DISABLED)
+		else:
+			collision_polygon.set_meta(META_COLLISION_DISABLED, collision_polygon.disabled)
+			collision_polygon.disabled = true
+
+
+static func _restore_or_suspend_processing(node: Node, is_active: bool) -> void:
+	if is_active:
+		if node.has_meta(META_PROCESS):
+			node.set_process(bool(node.get_meta(META_PROCESS)))
+			node.remove_meta(META_PROCESS)
+		if node.has_meta(META_PHYSICS_PROCESS):
+			node.set_physics_process(bool(node.get_meta(META_PHYSICS_PROCESS)))
+			node.remove_meta(META_PHYSICS_PROCESS)
+		if node.has_meta(META_INPUT_PROCESS):
+			node.set_process_input(bool(node.get_meta(META_INPUT_PROCESS)))
+			node.remove_meta(META_INPUT_PROCESS)
+		if node.has_meta(META_UNHANDLED_INPUT_PROCESS):
+			node.set_process_unhandled_input(bool(node.get_meta(META_UNHANDLED_INPUT_PROCESS)))
+			node.remove_meta(META_UNHANDLED_INPUT_PROCESS)
+		return
+
+	node.set_meta(META_PROCESS, node.is_processing())
+	node.set_meta(META_PHYSICS_PROCESS, node.is_physics_processing())
+	node.set_meta(META_INPUT_PROCESS, node.is_processing_input())
+	node.set_meta(META_UNHANDLED_INPUT_PROCESS, node.is_processing_unhandled_input())
+	node.set_process(false)
+	node.set_physics_process(false)
+	node.set_process_input(false)
+	node.set_process_unhandled_input(false)
 
 
 static func set_node_enabled_recursive(node: Node, enabled: bool) -> void:
