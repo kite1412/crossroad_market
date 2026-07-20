@@ -23,6 +23,22 @@ static func ensure(owner: Node) -> Dictionary:
 	cashier_panel.clip_contents = true
 	cashier_layer.add_child(cashier_panel)
 
+	# Patience progress bar positioned above the cashier panel
+	var patience_bar := ProgressBar.new()
+	patience_bar.name = "PatienceBar"
+	patience_bar.custom_minimum_size = Vector2(0, 6)
+	patience_bar.min_value = 0.0
+	patience_bar.max_value = 1.0
+	patience_bar.value = 1.0
+	patience_bar.show_percentage = false
+	patience_bar.visible = false
+	patience_bar.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	patience_bar.offset_left = 24.0
+	patience_bar.offset_top = 53.0
+	patience_bar.offset_right = -24.0
+	patience_bar.offset_bottom = 59.0
+	cashier_layer.add_child(patience_bar)
+
 	var root := VBoxContainer.new()
 	root.name = "Content"
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -157,18 +173,6 @@ static func ensure(owner: Node) -> Dictionary:
 	action_row.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	action_row.add_theme_constant_override("separation", 2)
 	detail_column.add_child(action_row)
-
-	# Patience progress bar (hidden by default)
-	var patience_bar := ProgressBar.new()
-	patience_bar.name = "PatienceBar"
-	patience_bar.custom_minimum_size = Vector2(0, 8)
-	patience_bar.min_value = 0.0
-	patience_bar.max_value = 1.0
-	patience_bar.value = 1.0
-	patience_bar.show_percentage = false
-	patience_bar.visible = false
-	patience_bar.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	detail_column.add_child(patience_bar)
 
 	return {
 		"layer": cashier_layer,
