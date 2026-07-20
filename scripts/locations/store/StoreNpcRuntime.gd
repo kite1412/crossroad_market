@@ -1,6 +1,7 @@
 class_name StoreNpcRuntime
 extends Node
 
+const DebugStoreNpcRoutesScript = preload("res://scripts/debug/StoreNpcRoutesDebug.gd")
 const NPCResolvedExitRouteController = preload("res://scripts/debug/NPCQueueDebugRouteController.gd")
 const NPCLiveQueueStateFlow = preload("res://scripts/debug/NPCEntryDebugStateFlow.gd")
 const NPCReachableShelfShoppingFlow = preload("res://scripts/debug/NPCEntryDebugShoppingFlow.gd")
@@ -14,6 +15,25 @@ var store: Node = null
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(store_node: Node) -> void:
 	store = store_node
+	_install_debug_route_provider()
+
+
+func _install_debug_route_provider() -> void:
+	if store == null:
+		return
+
+	var route_provider_variant: Variant = store.get("npc_routes")
+	if not is_instance_valid(route_provider_variant):
+		return
+	if not (route_provider_variant is Node):
+		return
+
+	var route_provider := route_provider_variant as Node
+	if route_provider.get_script() != DebugStoreNpcRoutesScript:
+		route_provider.set_script(DebugStoreNpcRoutesScript)
+
+	if route_provider.has_method("setup"):
+		route_provider.call("setup", store)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
