@@ -47,6 +47,12 @@ func on_npc_spawn_requested(npc_data: NPCData) -> void:
 	if store == null:
 		return
 
+	# Scheduler signals remain connected while the Store scene is suspended.
+	# Never instantiate a customer behind Storage, Yard, Home, or a fade
+	# transition because that NPC would not receive a valid visibility snapshot.
+	if not is_store_world_available_for_customer_spawn():
+		return
+
 	# Protect against scheduler requests emitted on the same frame the board
 	# is closed, and against reopening the board after the day's customer
 	# intake has already been finalized.
@@ -59,9 +65,6 @@ func on_npc_spawn_requested(npc_data: NPCData) -> void:
 			)
 		)
 	):
-		return
-
-	if store._current_home != null:
 		return
 
 	var npc := StoreNpcSpawner.spawn_npc(
@@ -83,6 +86,16 @@ func on_npc_spawn_requested(npc_data: NPCData) -> void:
 
 		if not npc.shelf_route_ready.is_connected(route_ready_callable):
 			npc.shelf_route_ready.connect(route_ready_callable)
+
+
+func is_store_world_available_for_customer_spawn() -> bool:
+	return (
+		bool(store._is_store_world_active)
+		and not bool(store._is_transitioning)
+		and store._current_storage == null
+		and store._current_yard == null
+		and store._current_home == null
+	)
 
 
 func install_shelf_arrival_controllers(npc: NPC) -> void:

@@ -41,6 +41,7 @@ func set_store_world_active(is_active: bool) -> void:
 	if not is_active:
 		store._cancel_restricted_drop_feedback()
 		close_cashier_runtime_ui()
+		suspend_store_npc_presentations()
 
 	for child in store.get_children():
 		if (
@@ -58,6 +59,54 @@ func set_store_world_active(is_active: bool) -> void:
 			continue
 
 		set_node_active_recursive(child, is_active)
+
+	if is_active:
+		resume_store_npc_presentations()
+
+
+func suspend_store_npc_presentations() -> void:
+	for npc in get_store_npcs():
+		npc._ensure_npc_controllers()
+		if (
+			npc._presentation_runtime != null
+			and npc._presentation_runtime.has_method("suspend_world_presentation")
+		):
+			npc._presentation_runtime.suspend_world_presentation()
+
+
+func resume_store_npc_presentations() -> void:
+	for npc in get_store_npcs():
+		npc._ensure_npc_controllers()
+		if (
+			npc._presentation_runtime != null
+			and npc._presentation_runtime.has_method("resume_world_presentation")
+		):
+			npc._presentation_runtime.resume_world_presentation()
+
+
+func get_store_npcs() -> Array[NPC]:
+	var result: Array[NPC] = []
+	if store == null or store.get_tree() == null:
+		return result
+
+	for node in store.get_tree().get_nodes_in_group("npcs"):
+		var npc := node as NPC
+		if npc == null or not is_instance_valid(npc):
+			continue
+		if not is_descendant_of_store(npc):
+			continue
+		result.append(npc)
+
+	return result
+
+
+func is_descendant_of_store(node: Node) -> bool:
+	var current := node
+	while current != null:
+		if current == store:
+			return true
+		current = current.get_parent()
+	return false
 
 
 func set_node_active_recursive(node: Node, is_active: bool) -> void:
