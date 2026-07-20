@@ -4,12 +4,12 @@
 
 [resource]
 script = ExtResource("1_script")
-item_id = "dewdrop_honey"
-display_name = "Dewdrop Honey"
-description = "Sweet honey gathered from dew-covered flowers. A rare treat for strange customers."
-buy_cost = 10
-sell_price = 12
+item_id = "clean_water_bottle"
+display_name = "Clean Water Bottle"
+description = "Purified water in a sealed bottle. Even supernatural beings appreciate clean hydration."
+buy_cost = 6
+sell_price = 10
 shelf_type = 1
 icon_tileset_path = "res://assets/items/night-items/ghost-monster-items.png"
-icon_tile = Vector2i(4, 1)
+icon_tile = Vector2i(3, 3)
 icon_tile_size = Vector2i(16, 16)
