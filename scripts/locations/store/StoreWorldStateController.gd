@@ -3,6 +3,7 @@ extends Node
 
 const PUT_ACTION: StringName = &"put"
 const STORED_IN_STORAGE_META: StringName = &"stored_in_storage"
+const STORAGE_REGISTRY_META: StringName = &"is_storage_shelf_registry"
 
 var store: Node = null
 
@@ -62,10 +63,12 @@ func set_store_world_active(is_active: bool) -> void:
 		if child.name == "HUD":
 			continue
 
-		# Shelves returned to Storage are parked under Store only so they survive
-		# destruction of the temporary Storage scene. Keep them disabled only while
-		# they are actually stored away. The same shelf may later be installed in
-		# Store again while retaining its persistence identity metadata.
+		if bool(child.get_meta(STORAGE_REGISTRY_META, false)):
+			set_node_enabled_recursive(child, false)
+			if child is CanvasItem:
+				(child as CanvasItem).visible = false
+			continue
+
 		var is_stored_shelf := (
 			bool(child.get_meta(STORED_IN_STORAGE_META, false))
 			and not bool(child.get_meta("is_installed_in_store", false))
