@@ -35,27 +35,41 @@ func apply_visual_tint(color: Color) -> void:
 		visual.modulate = color
 
 
-func refresh_slot_visual(slot_index: int, item_id: String) -> void:
-	var slot := shelf.get_node_or_null("Slots/Slot%d" % slot_index) as Node2D
+func refresh_slot_visual(_slot_index: int, _item_id: String) -> void:
+	refresh_all_slot_visuals()
 
-	if slot == null:
-		return
 
+func refresh_all_slot_visuals() -> void:
+	var shown_item_ids: Dictionary = {}
+
+	for current_slot_index in shelf.max_slots:
+		var slot := shelf.get_node_or_null("Slots/Slot%d" % current_slot_index) as Node2D
+		if slot == null:
+			continue
+
+		var slot_item_id := shelf.get_slot_content(current_slot_index)
+		var item_sprite := _get_or_create_item_sprite(slot)
+		var item: ItemData = ItemDatabase.get_item(slot_item_id) if slot_item_id != "" else null
+		var icon := item.get_icon() if item != null else null
+		var is_first_visible_copy := icon != null and not shown_item_ids.has(slot_item_id)
+
+		item_sprite.texture = icon
+		item_sprite.visible = is_first_visible_copy
+
+		if is_first_visible_copy:
+			shown_item_ids[slot_item_id] = true
+
+
+func _get_or_create_item_sprite(slot: Node2D) -> Sprite2D:
 	var item_sprite := slot.get_node_or_null("ItemSprite") as Sprite2D
+	if item_sprite != null:
+		return item_sprite
 
-	if item_sprite == null:
-		item_sprite = Sprite2D.new()
-		item_sprite.scale = Vector2(0.5, 0.5)
-		item_sprite.name = "ItemSprite"
-		item_sprite.z_index = 1
-		var collision_shape := slot.get_node_or_null("CollisionShape2D") as CollisionShape2D
-		item_sprite.position = collision_shape.position if collision_shape != null else Vector2.ZERO
-		slot.add_child(item_sprite)
-
-	var item: ItemData = null
-
-	if item_id != "":
-		item = ItemDatabase.get_item(item_id)
-
-	item_sprite.texture = item.icon if item != null else null
-	item_sprite.visible = item != null and item.icon != null
+	item_sprite = Sprite2D.new()
+	item_sprite.scale = Vector2(0.5, 0.5)
+	item_sprite.name = "ItemSprite"
+	item_sprite.z_index = 1
+	var collision_shape := slot.get_node_or_null("CollisionShape2D") as CollisionShape2D
+	item_sprite.position = collision_shape.position if collision_shape != null else Vector2.ZERO
+	slot.add_child(item_sprite)
+	return item_sprite
