@@ -17,7 +17,7 @@ func get_graph_marker(node_name: StringName) -> Marker2D:
 
 
 func get_marker_position(node_name: StringName) -> Vector2:
-	var graph_marker := get_graph_marker(node_name)
+	var graph_marker = get_graph_marker(node_name)
 	if graph_marker == null:
 		return Vector2.INF
 	return graph_marker.global_position
@@ -33,7 +33,7 @@ func get_markers_by_role(role: StringName) -> Array[Marker2D]:
 		return result
 
 	for child in _graph._markers.get_children():
-		var role_marker := child as Marker2D
+		var role_marker = child as Marker2D
 		if role_marker == null:
 			continue
 		if get_marker_role(role_marker) == role:
@@ -47,7 +47,7 @@ func get_graph_node_names() -> Array[StringName]:
 	if _graph == null or _graph._markers == null:
 		return node_names
 
-	var child_count := _graph._markers.get_child_count()
+	var child_count = _graph._markers.get_child_count()
 	if _graph._cached_graph_node_count == child_count:
 		return _graph._cached_graph_node_names.duplicate()
 
@@ -80,7 +80,7 @@ func is_shelf_access_marker(access_marker: Marker2D) -> bool:
 	if access_marker == null:
 		return false
 
-	var marker_role := get_marker_role(access_marker)
+	var marker_role = get_marker_role(access_marker)
 	if (
 		marker_role == _graph.ROLE_QUEUE_FRONT
 		or marker_role == _graph.ROLE_QUEUE_BACK
@@ -102,7 +102,7 @@ func get_role_node_name(
 	fallback_node_name: StringName = StringName()
 ) -> StringName:
 	for node_name in get_graph_node_names():
-		var role_marker := get_graph_marker(node_name)
+		var role_marker = get_graph_marker(node_name)
 		if get_marker_role(role_marker) == role:
 			return node_name
 
@@ -120,7 +120,7 @@ func get_checkout_goal_node_names() -> Array[StringName]:
 
 	for checkout_role in _graph.CHECKOUT_GOAL_ROLES:
 		for node_name in get_graph_node_names():
-			var goal_marker := get_graph_marker(node_name)
+			var goal_marker = get_graph_marker(node_name)
 			if (
 				get_marker_role(goal_marker) == checkout_role
 				and node_name not in goals
@@ -146,14 +146,14 @@ func get_queue_target_node_name(queue_index: int) -> StringName:
 			_graph.QUEUE_FRONT
 		)
 
-	var queue_back_nodes := get_queue_back_node_names()
+	var queue_back_nodes = get_queue_back_node_names()
 	if queue_back_nodes.is_empty():
 		return get_role_node_name(
 			_graph.ROLE_QUEUE_FRONT,
 			_graph.QUEUE_FRONT
 		)
 
-	var back_index := mini(queue_index - 1, queue_back_nodes.size() - 1)
+	var back_index = mini(queue_index - 1, queue_back_nodes.size() - 1)
 	return queue_back_nodes[back_index]
 
 
@@ -164,14 +164,14 @@ func get_queue_approach_node_name(queue_index: int) -> StringName:
 			StringName()
 		)
 
-	var right_nodes := get_queue_back_right_node_names()
+	var right_nodes = get_queue_back_right_node_names()
 	if right_nodes.is_empty():
 		return get_role_node_name(
 			_graph.ROLE_QUEUE_FRONT_RIGHT,
 			StringName()
 		)
 
-	var back_index := mini(queue_index - 1, right_nodes.size() - 1)
+	var back_index = mini(queue_index - 1, right_nodes.size() - 1)
 	return right_nodes[back_index]
 
 
@@ -204,7 +204,7 @@ func get_queue_back_right_node_names() -> Array[StringName]:
 
 func get_queue_right_node_names() -> Array[StringName]:
 	var result: Array[StringName] = []
-	var front_right_node := get_role_node_name(
+	var front_right_node = get_role_node_name(
 		_graph.ROLE_QUEUE_FRONT_RIGHT,
 		StringName()
 	)
@@ -219,15 +219,15 @@ func get_queue_right_node_names() -> Array[StringName]:
 
 
 func get_nearest_queue_right_node_name(position: Vector2) -> StringName:
-	var best_node := StringName()
-	var best_distance := INF
+	var best_node = StringName()
+	var best_distance = INF
 
 	for node_name in get_queue_right_node_names():
-		var right_marker := get_graph_marker(node_name)
+		var right_marker = get_graph_marker(node_name)
 		if right_marker == null:
 			continue
 
-		var marker_distance := position.distance_to(right_marker.global_position)
+		var marker_distance = position.distance_to(right_marker.global_position)
 		if marker_distance >= best_distance:
 			continue
 
@@ -238,14 +238,14 @@ func get_nearest_queue_right_node_name(position: Vector2) -> StringName:
 
 
 func get_queue_marker_index(node_name: StringName) -> int:
-	var queue_marker := get_graph_marker(node_name)
+	var queue_marker = get_graph_marker(node_name)
 	if queue_marker == null or not queue_marker.has_meta(&"store_queue_index"):
 		return 999
 	return int(queue_marker.get_meta(&"store_queue_index"))
 
 
 func is_queue_target_node(node_name: StringName) -> bool:
-	var marker_role := get_marker_role(get_graph_marker(node_name))
+	var marker_role = get_marker_role(get_graph_marker(node_name))
 	return (
 		marker_role == _graph.ROLE_QUEUE_FRONT
 		or marker_role == _graph.ROLE_QUEUE_BACK
@@ -264,7 +264,7 @@ func find_graph_path(
 	if get_graph_marker(start_node) == null or get_graph_marker(goal_node) == null:
 		return result
 
-	var goal_position := get_marker_position(goal_node)
+	var goal_position = get_marker_position(goal_node)
 	var frontier: Array[StringName] = [start_node]
 	var g_score: Dictionary = {start_node: 0.0}
 	var f_score: Dictionary = {
@@ -274,7 +274,7 @@ func find_graph_path(
 	var visited: Dictionary = {}
 
 	while not frontier.is_empty():
-		var current_node := _pop_lowest_cost_node(frontier, f_score)
+		var current_node = _pop_lowest_cost_node(frontier, f_score)
 		if visited.has(current_node):
 			continue
 
@@ -291,14 +291,14 @@ func find_graph_path(
 			):
 				continue
 
-			var edge_cost := get_graph_edge_cost(
+			var edge_cost = get_graph_edge_cost(
 				current_node,
 				neighbor_node
 			)
 			if edge_cost >= INF:
 				continue
 
-			var tentative_cost := float(g_score[current_node]) + edge_cost
+			var tentative_cost = float(g_score[current_node]) + edge_cost
 			if (
 				not g_score.has(neighbor_node)
 				or tentative_cost < float(g_score[neighbor_node])
@@ -315,7 +315,7 @@ func find_graph_path(
 	if not g_score.has(goal_node):
 		return result
 
-	var cursor := goal_node
+	var cursor = goal_node
 	while cursor != start_node:
 		result.push_front(cursor)
 		cursor = previous.get(cursor, StringName()) as StringName
@@ -336,14 +336,14 @@ func find_best_graph_path(
 	goal_nodes: Array[StringName]
 ) -> Array[StringName]:
 	var best_path: Array[StringName] = []
-	var best_cost := INF
+	var best_cost = INF
 
 	for goal_node in goal_nodes:
-		var candidate_path := find_graph_path(start_node, goal_node)
+		var candidate_path = find_graph_path(start_node, goal_node)
 		if candidate_path.is_empty():
 			continue
 
-		var candidate_cost := get_graph_path_cost(candidate_path)
+		var candidate_cost = get_graph_path_cost(candidate_path)
 		if candidate_cost < best_cost:
 			best_cost = candidate_cost
 			best_path = candidate_path
@@ -353,14 +353,14 @@ func find_best_graph_path(
 
 func find_nearest_graph_node(position: Vector2) -> Dictionary:
 	var best_result: Dictionary = {"valid": false}
-	var best_distance := INF
+	var best_distance = INF
 
 	for node_name in get_graph_node_names():
-		var graph_marker := get_graph_marker(node_name)
+		var graph_marker = get_graph_marker(node_name)
 		if graph_marker == null:
 			continue
 
-		var marker_distance := position.distance_to(graph_marker.global_position)
+		var marker_distance = position.distance_to(graph_marker.global_position)
 		if marker_distance >= best_distance:
 			continue
 
@@ -387,19 +387,19 @@ func find_nearest_reachable_graph_node_for_route(
 		return {"valid": false}
 
 	var best_result: Dictionary = {"valid": false}
-	var best_route_distance := INF
+	var best_route_distance = INF
 
 	for start_node in get_graph_node_names():
-		var start_marker := get_graph_marker(start_node)
+		var start_marker = get_graph_marker(start_node)
 		if start_marker == null:
 			continue
 
-		var graph_path := find_graph_path(start_node, goal_node)
+		var graph_path = find_graph_path(start_node, goal_node)
 		if graph_path.is_empty():
 			continue
 
 		for horizontal_first in [true, false]:
-			var entry_route := _graph._routes.make_orthogonal_route(
+			var entry_route = _graph._routes.make_orthogonal_route(
 				position,
 				start_marker.global_position,
 				horizontal_first
@@ -410,13 +410,13 @@ func find_nearest_reachable_graph_node_for_route(
 			):
 				continue
 
-			var complete_route := entry_route.duplicate()
+			var complete_route = entry_route.duplicate()
 			complete_route.append_array(
 				_graph._routes.build_route_from_graph_path(graph_path)
 			)
 			complete_route = _graph._routes.dedupe_route_points(complete_route)
 
-			var route_is_clear := false
+			var route_is_clear = false
 			if is_queue_target_node(goal_node):
 				route_is_clear = _graph._clearance.is_queue_route_clear_from_current_position(
 					position,
@@ -431,7 +431,7 @@ func find_nearest_reachable_graph_node_for_route(
 			if not route_is_clear:
 				continue
 
-			var route_distance := _graph._routes.get_route_distance(
+			var route_distance = _graph._routes.get_route_distance(
 				position,
 				complete_route
 			)
@@ -450,7 +450,7 @@ func find_nearest_reachable_graph_node_for_route(
 
 
 func get_graph_neighbors(node_name: StringName) -> Array[StringName]:
-	var source_marker := get_graph_marker(node_name)
+	var source_marker = get_graph_marker(node_name)
 	if source_marker == null:
 		return []
 
@@ -508,8 +508,8 @@ func _append_axis_neighbor(
 	horizontal: bool,
 	direction: float
 ) -> void:
-	var best_name := StringName()
-	var best_distance := INF
+	var best_name = StringName()
+	var best_distance = INF
 
 	for candidate_name in get_graph_node_names():
 		if candidate_name == source_name:
@@ -517,13 +517,13 @@ func _append_axis_neighbor(
 		if is_queue_target_node(candidate_name) or is_queue_target_node(source_name):
 			continue
 
-		var candidate_marker := get_graph_marker(candidate_name)
+		var candidate_marker = get_graph_marker(candidate_name)
 		if candidate_marker == null:
 			continue
 
-		var candidate_position := candidate_marker.global_position
-		var aligned := false
-		var offset := 0.0
+		var candidate_position = candidate_marker.global_position
+		var aligned = false
+		var offset = 0.0
 		if horizontal:
 			aligned = (
 				absf(candidate_position.y - source_position.y)
@@ -540,14 +540,14 @@ func _append_axis_neighbor(
 		if not aligned or signf(offset) != signf(direction):
 			continue
 
-		var candidate_distance := absf(offset)
+		var candidate_distance = absf(offset)
 		if (
 			candidate_distance <= _graph.MARKER_ALIGNMENT_EPSILON
 			or candidate_distance >= best_distance
 		):
 			continue
 
-		var segment_route := _graph._routes.make_orthogonal_route(
+		var segment_route = _graph._routes.make_orthogonal_route(
 			source_position,
 			candidate_position,
 			horizontal
@@ -572,8 +572,8 @@ func _append_diagonal_neighbor(
 	direction_x: float,
 	direction_y: float
 ) -> void:
-	var best_name := StringName()
-	var best_distance := INF
+	var best_name = StringName()
+	var best_distance = INF
 
 	for candidate_name in get_graph_node_names():
 		if candidate_name == source_name:
@@ -581,13 +581,13 @@ func _append_diagonal_neighbor(
 		if is_queue_target_node(candidate_name) or is_queue_target_node(source_name):
 			continue
 
-		var candidate_marker := get_graph_marker(candidate_name)
+		var candidate_marker = get_graph_marker(candidate_name)
 		if candidate_marker == null:
 			continue
 
-		var candidate_position := candidate_marker.global_position
-		var delta_x := candidate_position.x - source_position.x
-		var delta_y := candidate_position.y - source_position.y
+		var candidate_position = candidate_marker.global_position
+		var delta_x = candidate_position.x - source_position.x
+		var delta_y = candidate_position.y - source_position.y
 		if (
 			absf(delta_x) <= _graph.MARKER_ALIGNMENT_EPSILON
 			or absf(delta_y) <= _graph.MARKER_ALIGNMENT_EPSILON
@@ -598,7 +598,7 @@ func _append_diagonal_neighbor(
 		if signf(delta_y) != signf(direction_y):
 			continue
 
-		var candidate_distance := source_position.distance_to(candidate_position)
+		var candidate_distance = source_position.distance_to(candidate_position)
 		if (
 			candidate_distance <= _graph.MARKER_ALIGNMENT_EPSILON
 			or candidate_distance >= best_distance
@@ -621,15 +621,15 @@ func get_graph_edge_cost(
 	from_node: StringName,
 	to_node: StringName
 ) -> float:
-	var from_marker := get_graph_marker(from_node)
-	var to_marker := get_graph_marker(to_node)
+	var from_marker = get_graph_marker(from_node)
+	var to_marker = get_graph_marker(to_node)
 	if from_marker == null or to_marker == null:
 		return INF
 	return from_marker.global_position.distance_to(to_marker.global_position)
 
 
 func get_graph_path_cost(path: Array[StringName]) -> float:
-	var total_cost := 0.0
+	var total_cost = 0.0
 	for index in range(1, path.size()):
 		total_cost += get_graph_edge_cost(path[index - 1], path[index])
 	return total_cost
@@ -639,12 +639,12 @@ func _pop_lowest_cost_node(
 	frontier: Array[StringName],
 	distances: Dictionary
 ) -> StringName:
-	var best_index := 0
-	var best_cost := INF
+	var best_index = 0
+	var best_cost = INF
 
 	for index in range(frontier.size()):
-		var candidate_node := frontier[index]
-		var candidate_cost := float(distances.get(candidate_node, INF))
+		var candidate_node = frontier[index]
+		var candidate_cost = float(distances.get(candidate_node, INF))
 		if candidate_cost < best_cost:
 			best_cost = candidate_cost
 			best_index = index
