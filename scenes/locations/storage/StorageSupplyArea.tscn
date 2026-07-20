@@ -10,7 +10,7 @@ size = Vector2(160, 270)
 
 [node name="Normal" parent="." instance=ExtResource("1_supply_box")]
 position = Vector2(170, 218)
-items_to_give = Array[String](["bread", "water", "painkiller", "bandage", "energy_drink", "work_gloves", "bread", "bandage", "painkiller"])
+items_to_give = Array[String](["hum_047", "hum_041", "hum_099", "hum_098", "energy_drink", "hum_102", "hum_047", "hum_098", "hum_099"])
 
 [node name="PlaceholderRect" parent="Normal/VisualRoot" index="1"]
 color = Color(0.46, 0.31, 0.16, 1)

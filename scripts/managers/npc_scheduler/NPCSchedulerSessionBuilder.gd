@@ -106,10 +106,10 @@ func build_customer_session_pool(day: int, blueprint: Dictionary) -> Array[NPCDa
 
 	if pool_name == "day_one_human":
 		return [
-			scheduler._make_day_one_customer("day1_bread_customer", "Customer", ["bread"], scheduler.DAY_ONE_BREAD_CUSTOMER_GOLD, NPCData.VisitPhase.DAY, NPCData.NPCCategory.GENERIC, "paid", NPCData.PatienceType.PATIENT, "npcs/humans/human1"),
-			scheduler._make_day_one_customer("day1_water_customer", "Customer", ["water"], scheduler.DAY_ONE_WATER_CUSTOMER_GOLD, NPCData.VisitPhase.DAY, NPCData.NPCCategory.GENERIC, "paid", NPCData.PatienceType.PATIENT, "npcs/humans/human2"),
-			scheduler._make_day_one_customer("day1_bandage_customer", "Customer", ["bandage"], scheduler.DAY_ONE_BANDAGE_CUSTOMER_GOLD, NPCData.VisitPhase.DAY, NPCData.NPCCategory.GENERIC, "paid", NPCData.PatienceType.PATIENT, "npcs/humans/human3"),
-			scheduler._make_day_one_customer("irene", "Irene", ["painkiller"], scheduler.DAY_ONE_IRENE_CUSTOMER_GOLD, NPCData.VisitPhase.DAY, NPCData.NPCCategory.STORY, "paid", NPCData.PatienceType.PATIENT, "irene")
+			scheduler._make_day_one_customer("day1_bread_customer", "Customer", ["hum_047"], scheduler.DAY_ONE_BREAD_CUSTOMER_GOLD, NPCData.VisitPhase.DAY, NPCData.NPCCategory.GENERIC, "paid", NPCData.PatienceType.PATIENT, "npcs/humans/human1"),
+			scheduler._make_day_one_customer("day1_water_customer", "Customer", ["hum_041"], scheduler.DAY_ONE_WATER_CUSTOMER_GOLD, NPCData.VisitPhase.DAY, NPCData.NPCCategory.GENERIC, "paid", NPCData.PatienceType.PATIENT, "npcs/humans/human2"),
+			scheduler._make_day_one_customer("day1_bandage_customer", "Customer", ["hum_098"], scheduler.DAY_ONE_BANDAGE_CUSTOMER_GOLD, NPCData.VisitPhase.DAY, NPCData.NPCCategory.GENERIC, "paid", NPCData.PatienceType.PATIENT, "npcs/humans/human3"),
+			scheduler._make_day_one_customer("irene", "Irene", ["hum_099"], scheduler.DAY_ONE_IRENE_CUSTOMER_GOLD, NPCData.VisitPhase.DAY, NPCData.NPCCategory.STORY, "paid", NPCData.PatienceType.PATIENT, "irene")
 		]
 
 	var visit_phase := NPCData.VisitPhase.NIGHT if pool_name == String(scheduler.SESSION_NIGHT) else NPCData.VisitPhase.DAY
