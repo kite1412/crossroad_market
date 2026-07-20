@@ -42,22 +42,39 @@ func refresh_slot_visual(_slot_index: int, _item_id: String) -> void:
 func refresh_all_slot_visuals() -> void:
 	var shown_item_ids: Dictionary = {}
 
+	# Clear the previous compacted layout first. A visible icon is allowed to
+	# move when an earlier stocked item is removed or when a duplicate is added.
 	for current_slot_index in shelf.max_slots:
 		var slot := shelf.get_node_or_null("Slots/Slot%d" % current_slot_index) as Node2D
 		if slot == null:
 			continue
 
+		var item_sprite := slot.get_node_or_null("ItemSprite") as Sprite2D
+		if item_sprite != null:
+			item_sprite.texture = null
+			item_sprite.visible = false
+
+	var display_slot_index := 0
+
+	for current_slot_index in shelf.max_slots:
 		var slot_item_id := shelf.get_slot_content(current_slot_index)
-		var item_sprite := _get_or_create_item_sprite(slot)
-		var item: ItemData = ItemDatabase.get_item(slot_item_id) if slot_item_id != "" else null
+		if slot_item_id == "" or shown_item_ids.has(slot_item_id):
+			continue
+
+		var item: ItemData = ItemDatabase.get_item(slot_item_id)
 		var icon := item.get_icon() if item != null else null
-		var is_first_visible_copy := icon != null and not shown_item_ids.has(slot_item_id)
+		if icon == null or display_slot_index >= shelf.max_slots:
+			continue
 
+		var display_slot := shelf.get_node_or_null("Slots/Slot%d" % display_slot_index) as Node2D
+		if display_slot == null:
+			continue
+
+		var item_sprite := _get_or_create_item_sprite(display_slot)
 		item_sprite.texture = icon
-		item_sprite.visible = is_first_visible_copy
-
-		if is_first_visible_copy:
-			shown_item_ids[slot_item_id] = true
+		item_sprite.visible = true
+		shown_item_ids[slot_item_id] = true
+		display_slot_index += 1
 
 
 func _get_or_create_item_sprite(slot: Node2D) -> Sprite2D:
