@@ -1,6 +1,9 @@
 class_name StoreNpcRoutes
 extends Node
 
+const OptimizedStorePathGraphScript = preload(
+	"res://scripts/locations/store/OptimizedStorePathGraph.gd"
+)
 const STORE_ENTRY_FALLBACK_POSITION := Vector2(240, 204)
 const CHECKOUT_RIGHT_ROUTE_MARKERS: Array[StringName] = [
 	&"StorePathQueueFrontRight",
@@ -196,8 +199,13 @@ func get_npc_exit_route_from_cashier(
 
 
 func get_store_path_graph() -> StorePathGraph:
-	if store._store_path_graph == null:
-		store._store_path_graph = StorePathGraph.new(
+	var needs_optimized_graph := (
+		store._store_path_graph == null
+		or store._store_path_graph.get_script() != OptimizedStorePathGraphScript
+	)
+
+	if needs_optimized_graph:
+		store._store_path_graph = OptimizedStorePathGraphScript.new(
 			store,
 			store.store_path_markers
 		)
