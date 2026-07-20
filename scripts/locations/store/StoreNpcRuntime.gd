@@ -1,11 +1,13 @@
 class_name StoreNpcRuntime
 extends Node
 
-const NPCResolvedExitRouteController = preload("res://scripts/npc/runtime/NPCResolvedExitRouteController.gd")
-const NPCLiveQueueStateFlow = preload("res://scripts/npc/runtime/NPCLiveQueueStateFlow.gd")
-const NPCReachableShelfShoppingFlow = preload("res://scripts/npc/runtime/NPCReachableShelfShoppingFlow.gd")
+const DebugStoreNpcRoutesScript = preload("res://scripts/debug/StoreNpcRoutesDebug.gd")
+const NPCResolvedExitRouteController = preload("res://scripts/debug/NPCQueueDebugRouteController.gd")
+const NPCLiveQueueStateFlow = preload("res://scripts/debug/NPCEntryDebugStateFlow.gd")
+const NPCReachableShelfShoppingFlow = preload("res://scripts/debug/NPCEntryDebugShoppingFlow.gd")
 const NPCCheckoutLaneQueueFlow = preload("res://scripts/npc/runtime/NPCCheckoutLaneQueueFlow.gd")
 const CUSTOMER_INTAKE_CLOSED_META: StringName = &"customer_intake_closed_today"
+const DEBUG_NPC_SPAWN_PROFILE: bool = true
 
 var store: Node = null
 
@@ -13,6 +15,25 @@ var store: Node = null
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(store_node: Node) -> void:
 	store = store_node
+	_install_debug_route_provider()
+
+
+func _install_debug_route_provider() -> void:
+	if store == null:
+		return
+
+	var route_provider_variant: Variant = store.get("npc_routes")
+	if not is_instance_valid(route_provider_variant):
+		return
+	if not (route_provider_variant is Node):
+		return
+
+	var route_provider := route_provider_variant as Node
+	if route_provider.get_script() != DebugStoreNpcRoutesScript:
+		route_provider.set_script(DebugStoreNpcRoutesScript)
+
+	if route_provider.has_method("setup"):
+		route_provider.call("setup", store)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -69,6 +90,8 @@ func on_npc_spawn_requested(npc_data: NPCData) -> void:
 	):
 		return
 
+	var total_started_usec := Time.get_ticks_usec()
+	var spawn_started_usec := total_started_usec
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var npc := StoreNpcSpawner.spawn_npc(
 		store,
@@ -78,9 +101,17 @@ func on_npc_spawn_requested(npc_data: NPCData) -> void:
 		Callable(self, "on_npc_purchase"),
 		Callable(self, "on_npc_exited")
 	)
+	var spawn_elapsed_msec := float(
+		Time.get_ticks_usec() - spawn_started_usec
+	) / 1000.0
+	var install_elapsed_msec := 0.0
 
 	if npc != null:
+		var install_started_usec := Time.get_ticks_usec()
 		install_shelf_arrival_controllers(npc)
+		install_elapsed_msec = float(
+			Time.get_ticks_usec() - install_started_usec
+		) / 1000.0
 
 		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var route_ready_callable := Callable(
@@ -90,6 +121,20 @@ func on_npc_spawn_requested(npc_data: NPCData) -> void:
 
 		if not npc.shelf_route_ready.is_connected(route_ready_callable):
 			npc.shelf_route_ready.connect(route_ready_callable)
+
+	if DEBUG_NPC_SPAWN_PROFILE:
+		var total_elapsed_msec := float(
+			Time.get_ticks_usec() - total_started_usec
+		) / 1000.0
+		print(
+			"[NPC_SPAWN_PROFILE] npc=%s spawn_ms=%.3f install_ms=%.3f total_ms=%.3f"
+			% [
+				_get_npc_data_label(npc_data),
+				spawn_elapsed_msec,
+				install_elapsed_msec,
+				total_elapsed_msec
+			]
+		)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -108,8 +153,8 @@ func install_shelf_arrival_controllers(npc: NPC) -> void:
 	if npc == null or not is_instance_valid(npc):
 		return
 
-	# Install the store-specific movement, shelf-exit, live queue, and lazy
-	# shelf-access refresh behavior for every store customer.
+	# Install debug wrappers around the same production implementations. The
+	# wrappers only measure and print; state and route results come from super.
 	npc._route_controller = NPCResolvedExitRouteController.new()
 	npc._route_controller.setup(npc)
 	npc._state_flow = NPCLiveQueueStateFlow.new()
@@ -170,3 +215,11 @@ func on_npc_shelf_route_ready(
 		npc,
 		travel_seconds
 	)
+
+
+func _get_npc_data_label(npc_data: NPCData) -> String:
+	if npc_data == null:
+		return "<null>"
+	if npc_data.npc_id != "":
+		return npc_data.npc_id
+	return str(npc_data.resource_path)
