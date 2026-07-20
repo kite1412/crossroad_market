@@ -51,5 +51,11 @@ func request_return_to_store() -> bool:
 	if storage._is_action_locked():
 		return false
 
+	# Storage is instantiated temporarily and is queue_freed after returning to
+	# the Store. Move any shelf returned from the Store to its persistent Store
+	# owner before the temporary scene emits its return signal.
+	if storage.has_method("prepare_for_scene_exit"):
+		storage.call("prepare_for_scene_exit")
+
 	storage.return_to_store.emit(storage._entry_door)
 	return true
