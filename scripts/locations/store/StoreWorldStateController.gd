@@ -63,9 +63,15 @@ func set_store_world_active(is_active: bool) -> void:
 			continue
 
 		# Shelves returned to Storage are parked under Store only so they survive
-		# destruction of the temporary Storage scene. They must remain hidden and
-		# collision-disabled when the Store world is reactivated.
-		if bool(child.get_meta(STORED_IN_STORAGE_META, false)):
+		# destruction of the temporary Storage scene. Keep them disabled only while
+		# they are actually stored away. The same shelf may later be installed in
+		# Store again while retaining its persistence identity metadata.
+		var is_stored_shelf := (
+			bool(child.get_meta(STORED_IN_STORAGE_META, false))
+			and not bool(child.get_meta("is_installed_in_store", false))
+			and not bool(child.get_meta("is_carried_storage_object", false))
+		)
+		if is_stored_shelf:
 			set_node_enabled_recursive(child, false)
 			if child is CanvasItem:
 				(child as CanvasItem).visible = false
