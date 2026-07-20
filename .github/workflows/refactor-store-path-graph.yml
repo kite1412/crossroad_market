@@ -9,10 +9,14 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: refactor-store-path-graph
+  cancel-in-progress: true
+
 jobs:
   split-store-path-graph:
     if: github.actor != 'github-actions[bot]'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Check out branch
         uses: actions/checkout@v4
