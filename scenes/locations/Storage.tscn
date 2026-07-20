@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bdnwm42gkma72"]
 
-[ext_resource type="Script" uid="uid://dq8v7xm2y3pkl" path="res://scripts/locations/Storage.gd" id="1_storage"]
+[ext_resource type="Script" path="res://scripts/locations/PersistentStorage.gd" id="1_storage"]
 [ext_resource type="Script" uid="uid://bupclgt7huro5" path="res://scripts/locations/storage/StorageSceneFlow.gd" id="2_scene_flow"]
 [ext_resource type="Script" uid="uid://bmarggnkig3p6" path="res://scripts/locations/storage/StorageRestockFlow.gd" id="3_restock_flow"]
 [ext_resource type="Script" uid="uid://rs4gtlkx3i1u" path="res://scripts/locations/storage/StorageShelfCarryController.gd" id="4_shelf_carry"]
