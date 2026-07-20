@@ -1,6 +1,9 @@
 class_name StoreNpcRoutes
 extends Node
 
+const StoreDynamicRoutePlannerScript = preload(
+	"res://scripts/locations/store/StoreDynamicRoutePlanner.gd"
+)
 const STORE_ENTRY_FALLBACK_POSITION := Vector2(240, 204)
 const CHECKOUT_RIGHT_ROUTE_MARKERS: Array[StringName] = [
 	&"StorePathQueueFrontRight",
@@ -18,14 +21,16 @@ const CHECKOUT_GRAPH_REJOIN_MARKER: StringName = &"StorePathAisleRight"
 const CHECKOUT_ROUTE_RESUME_DISTANCE: float = 18.0
 
 var store: Node = null
+var _dynamic_route_planner: StoreDynamicRoutePlanner = null
 
 
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(store_node: Node) -> void:
 	store = store_node
+	if _dynamic_route_planner == null:
+		_dynamic_route_planner = StoreDynamicRoutePlannerScript.new()
+	_dynamic_route_planner.setup(store)
 
 
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_npc_entry_route_to_shelf(
 	shelf_position: Vector2,
 	from_position: Vector2 = Vector2.INF
@@ -36,12 +41,10 @@ func get_npc_entry_route_to_shelf(
 	)
 
 
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_npc_shelf_access_position(shelf: Shelf) -> Vector2:
 	return get_store_path_graph().get_shelf_access_position(shelf)
 
 
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_npc_shelf_visit_position(
 	shelf: Shelf,
 	_npc: Node = null
@@ -52,12 +55,10 @@ func get_npc_shelf_visit_position(
 	return get_npc_shelf_access_position(shelf)
 
 
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func has_npc_shelf_access_metadata(shelf: Shelf) -> bool:
 	return get_store_path_graph().has_cached_shelf_access_metadata(shelf)
 
 
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_npc_route_to_shelf_access(
 	shelf: Shelf,
 	from_position: Vector2 = Vector2.INF,
@@ -66,21 +67,37 @@ func get_npc_route_to_shelf_access(
 	if not has_npc_shelf_access_metadata(shelf):
 		return []
 
-	return get_store_path_graph().get_route_to_shelf_access(
+	var graph := get_store_path_graph()
+	var dynamic_route := _dynamic_route_planner.get_route_to_shelf_access(
+		graph,
+		shelf,
+		from_position,
+		npc_node
+	)
+	if not dynamic_route.is_empty():
+		return dynamic_route
+
+	return graph.get_route_to_shelf_access(
 		shelf,
 		from_position,
 		npc_node
 	)
 
 
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_npc_route_to_cashier_from(
 	from_position: Vector2
 ) -> Array[Vector2]:
-	return get_store_path_graph().get_route_to_cashier_from(from_position)
+	var graph := get_store_path_graph()
+	var shortest_route := _dynamic_route_planner.get_shortest_checkout_route(
+		graph,
+		from_position
+	)
+	if not shortest_route.is_empty():
+		return shortest_route
+
+	return graph.get_route_to_cashier_from(from_position)
 
 
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_npc_route_to_queue_target_from(
 	from_position: Vector2,
 	queue_index: int
@@ -91,7 +108,6 @@ func get_npc_route_to_queue_target_from(
 	)
 
 
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_npc_queue_target(
 	queue_index: int,
 	fallback_position: Vector2
@@ -102,25 +118,34 @@ func get_npc_queue_target(
 	)
 
 
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_npc_cashier_target(fallback_position: Vector2) -> Vector2:
 	return get_store_path_graph().get_cashier_target_position(
 		fallback_position
 	)
 
 
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_npc_route_from_shelf_to_cashier(
 	shelf: Shelf
 ) -> Array[Vector2]:
-	return get_store_path_graph().get_route_from_shelf_to_cashier(shelf)
+	if shelf == null or not is_instance_valid(shelf):
+		return []
+
+	var graph := get_store_path_graph()
+	var access_position := graph.get_shelf_access_position(shelf)
+	var shortest_route := _dynamic_route_planner.get_shortest_checkout_route(
+		graph,
+		access_position,
+		shelf
+	)
+	if not shortest_route.is_empty():
+		return shortest_route
+
+	return graph.get_route_from_shelf_to_cashier(shelf)
 
 
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_npc_exit_route_from(
 	from_position: Vector2
 ) -> Array[Vector2]:
-	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var exit_position := get_marker_position_or(
 		store.npc_exit_marker,
 		STORE_ENTRY_FALLBACK_POSITION
@@ -131,12 +156,10 @@ func get_npc_exit_route_from(
 	)
 
 
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_npc_shelf_wait_position(index: int = 0) -> Vector2:
 	return get_store_path_graph().get_shelf_wait_position(index)
 
 
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_npc_single_customer_exit_route(
 	from_position: Vector2
 ) -> Array[Vector2]:
@@ -146,7 +169,6 @@ func get_npc_single_customer_exit_route(
 	)
 
 
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_npc_exit_route_from_shelf(
 	shelf: Shelf,
 	from_position: Vector2
@@ -154,16 +176,13 @@ func get_npc_exit_route_from_shelf(
 	if shelf == null or not is_instance_valid(shelf):
 		return get_npc_exit_route_from(from_position)
 
-	# Reuse the shelf-aware egress that already excludes the source shelf body,
-	# then join the clear single-customer lane toward the real store exit.
-	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-	var route := get_store_path_graph().get_route_from_shelf_to_cashier(shelf)
+	# Reuse the shelf-aware route so the source shelf is allowed only while the
+	# NPC moves away from its access point, then join the normal exit lane.
+	var route := get_npc_route_from_shelf_to_cashier(shelf)
 	if route.is_empty():
 		return get_npc_exit_route_from(from_position)
 
-	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var route_end: Vector2 = route.back()
-	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var exit_route := get_npc_single_customer_exit_route(route_end)
 
 	if exit_route.is_empty():
@@ -175,11 +194,9 @@ func get_npc_exit_route_from_shelf(
 	return route
 
 
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_npc_exit_route_from_cashier(
 	from_position: Vector2
 ) -> Array[Vector2]:
-	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var mandatory_markers := _get_named_markers(
 		CHECKOUT_RIGHT_ROUTE_MARKERS
 	)
@@ -187,7 +204,6 @@ func get_npc_exit_route_from_cashier(
 	if mandatory_markers.size() != CHECKOUT_RIGHT_ROUTE_MARKERS.size():
 		return []
 
-	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var rejoin_marker := store.store_path_markers.get_node_or_null(
 		String(CHECKOUT_GRAPH_REJOIN_MARKER)
 	) as Marker2D
@@ -195,9 +211,7 @@ func get_npc_exit_route_from_cashier(
 	if rejoin_marker == null:
 		return []
 
-	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var route: Array[Vector2] = []
-	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var start_index := _get_checkout_route_start_index(
 		from_position,
 		mandatory_markers
@@ -207,13 +221,10 @@ func get_npc_exit_route_from_cashier(
 		route.append(mandatory_markers[index].global_position)
 
 	_append_unique_route_point(route, rejoin_marker.global_position)
-
-	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var exit_position := get_marker_position_or(
 		store.npc_exit_marker,
 		STORE_ENTRY_FALLBACK_POSITION
 	)
-	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var graph_route := get_store_path_graph().get_exit_route_from(
 		rejoin_marker.global_position,
 		exit_position
@@ -222,14 +233,12 @@ func get_npc_exit_route_from_cashier(
 	for point in graph_route:
 		_append_unique_route_point(route, point)
 
-	# A graph rebuild may return no additional point from AisleRight even
-	# though the NPC still has to reach the store exit. Keep the real exit as
-	# the final mandatory waypoint so route completion cannot happen at aisle.
+	# A graph rebuild can already be at AisleRight. Keep the real exit as the
+	# final waypoint so completion cannot occur before the NPC leaves the store.
 	_append_unique_route_point(route, exit_position)
 	return route
 
 
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_store_path_graph() -> StorePathGraph:
 	if store._store_path_graph == null:
 		store._store_path_graph = StorePathGraph.new(
@@ -248,90 +257,76 @@ func get_store_path_graph() -> StorePathGraph:
 	return store._store_path_graph
 
 
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_marker_position_or(
-	marker: Marker2D,
+	marker_node: Marker2D,
 	fallback: Vector2
 ) -> Vector2:
-	if marker == null:
+	if marker_node == null:
 		return fallback
-	return marker.global_position
+	return marker_node.global_position
 
 
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _build_named_marker_route(
 	from_position: Vector2,
 	marker_names: Array[StringName]
 ) -> Array[Vector2]:
-	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-	var markers := _get_named_markers(marker_names)
-	if markers.size() != marker_names.size():
+	var route_markers := _get_named_markers(marker_names)
+	if route_markers.size() != marker_names.size():
 		return []
 
-	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var route: Array[Vector2] = []
-	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var start_index := _get_checkout_route_start_index(
 		from_position,
-		markers
+		route_markers
 	)
 
-	for index in range(start_index, markers.size()):
+	for index in range(start_index, route_markers.size()):
 		_append_unique_route_point(
 			route,
-			markers[index].global_position
+			route_markers[index].global_position
 		)
 
 	return route
 
 
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_named_markers(
 	marker_names: Array[StringName]
 ) -> Array[Marker2D]:
-	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var result: Array[Marker2D] = []
 
 	if store == null or store.store_path_markers == null:
 		return result
 
 	for marker_name in marker_names:
-		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-		@warning_ignore("shadowed_variable", "shadowed_variable_base_class")
-		var marker := store.store_path_markers.get_node_or_null(
+		var route_marker := store.store_path_markers.get_node_or_null(
 			String(marker_name)
 		) as Marker2D
 
-		if marker == null:
+		if route_marker == null:
 			return []
 
-		result.append(marker)
+		result.append(route_marker)
 
 	return result
 
 
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_checkout_route_start_index(
 	from_position: Vector2,
-	markers: Array[Marker2D]
+	route_markers: Array[Marker2D]
 ) -> int:
-	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-	var final_marker: Marker2D = markers.back()
+	var final_marker: Marker2D = route_markers.back()
 
-	# Route rebuilds must continue forward from the closest completed marker,
-	# rather than sending an NPC back to the beginning of its exit lane.
+	# Route rebuilds continue forward from the closest completed marker rather
+	# than sending an NPC back to the beginning of its exit lane.
 	if from_position.y >= final_marker.global_position.y - 4.0:
-		return markers.size()
+		return route_markers.size()
 
-	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var nearest_index := -1
-	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var nearest_distance := INF
 
-	for index in range(markers.size()):
-		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
+	for index in range(route_markers.size()):
 		var distance := from_position.distance_to(
-			markers[index].global_position
+			route_markers[index].global_position
 		)
 
 		if distance < nearest_distance:
@@ -339,20 +334,17 @@ func _get_checkout_route_start_index(
 			nearest_index = index
 
 	if nearest_distance <= CHECKOUT_ROUTE_RESUME_DISTANCE:
-		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-		var nearest_marker: Marker2D = markers[nearest_index]
+		var nearest_marker: Marker2D = route_markers[nearest_index]
 
 		# Being near a marker from above does not mean it has been completed yet.
-		# This keeps QueueFront in the solo checkout route from the cashier.
 		if from_position.y < nearest_marker.global_position.y - 4.0:
 			return nearest_index
 
-		return mini(nearest_index + 1, markers.size())
+		return mini(nearest_index + 1, route_markers.size())
 
 	return 0
 
 
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _append_unique_route_point(
 	route: Array[Vector2],
 	point: Vector2
