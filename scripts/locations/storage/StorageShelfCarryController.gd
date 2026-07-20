@@ -66,12 +66,14 @@ func get_nearest_carryable_shelf() -> Node2D:
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var nearest_distance: float = storage.pickup_distance
 
-	for shelf in [storage.shelf_human, storage.shelf_ghost]:
-		if not shelf is Node2D:
+	for shelf_variant in [storage.shelf_human, storage.shelf_ghost]:
+		if not is_instance_valid(shelf_variant):
+			continue
+		if not (shelf_variant is Node2D):
 			continue
 
 		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-		var object := shelf as Node2D
+		var object := shelf_variant as Node2D
 
 		if not object.visible:
 			continue
@@ -94,7 +96,7 @@ func get_nearest_carryable_shelf() -> Node2D:
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func pickup_object(object: Node2D) -> void:
-	if storage._player == null:
+	if storage._player == null or not is_instance_valid(object):
 		return
 
 	storage._carried_object = object
@@ -105,6 +107,10 @@ func pickup_object(object: Node2D) -> void:
 	object.set_meta("is_carried_storage_object", true)
 	object.set_meta("is_installed_in_store", false)
 	set_node_enabled_recursive(object, false)
+
+	if object is Shelf and storage.has_method("register_shelf_picked_up_from_storage"):
+		storage.call("register_shelf_picked_up_from_storage", object as Shelf)
+
 	if storage._player.has_method("update_carried_object_visual"):
 		storage._player.call("update_carried_object_visual", object)
 
@@ -119,7 +125,13 @@ func request_pickup_shelf(shelf: Shelf) -> bool:
 	if storage._carried_object != null:
 		return false
 
-	if shelf == null or not (shelf in [storage.shelf_human, storage.shelf_ghost]):
+	if not is_instance_valid(shelf):
+		return false
+
+	if storage.has_method("is_managed_storage_shelf"):
+		if not bool(storage.call("is_managed_storage_shelf", shelf)):
+			return false
+	elif not (shelf in [storage.shelf_human, storage.shelf_ghost]):
 		return false
 
 	if not shelf.visible:
@@ -151,6 +163,9 @@ func request_drop_carried_object() -> bool:
 func drop_carried_object() -> void:
 	if storage._player == null or storage._carried_object == null:
 		return
+	if not is_instance_valid(storage._carried_object):
+		storage._carried_object = null
+		return
 
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var drop_position := find_safe_drop_position(storage._carried_object)
@@ -168,6 +183,9 @@ func drop_carried_object() -> void:
 	object.set_meta("is_installed_in_store", false)
 	set_node_enabled_recursive(object, true)
 
+	if object is Shelf and storage.has_method("register_shelf_dropped_in_storage"):
+		storage.call("register_shelf_dropped_in_storage", object as Shelf)
+
 	storage._carried_object = null
 
 
@@ -175,6 +193,9 @@ func drop_carried_object() -> void:
 func update_carried_object_position() -> void:
 	if storage._player == null:
 		return
+
+	if storage._carried_object != null and not is_instance_valid(storage._carried_object):
+		storage._carried_object = null
 
 	if storage._carried_object == null:
 		storage._carried_object = get_carried_object_from_player()
