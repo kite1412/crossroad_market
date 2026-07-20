@@ -122,6 +122,35 @@ func hide_dialog() -> void:
 	NPCDialogController.hide_dialog(npc)
 
 
+func suspend_world_presentation() -> void:
+	# Dialog bubbles and placeholder controls belong only to the Store world.
+	# Clear transient state before visibility snapshots are captured so it cannot
+	# leak into Storage/Yard/Home or reappear after returning.
+	npc._dialog_timer = 0.0
+	npc._interaction_pause_timer = 0.0
+	npc._interaction_partner = null
+	_interaction_status = ""
+	_pending_dialog_text = ""
+	_interaction_target_position = Vector2.INF
+	hide_dialog()
+	_set_placeholder_visible(false)
+
+
+func resume_world_presentation() -> void:
+	# Rebuild presentation from gameplay state instead of trusting a stale
+	# transient control state restored by the location transition.
+	hide_dialog()
+	_set_placeholder_visible(false)
+	update_character_sprite()
+	update_trust_display()
+
+
+func _set_placeholder_visible(is_visible: bool) -> void:
+	var placeholder := npc.get_node_or_null("VisualRoot/PlaceholderRect") as CanvasItem
+	if placeholder != null:
+		placeholder.visible = is_visible
+
+
 func set_dialog_mouse_filter() -> void:
 	NPCDialogController.set_mouse_filter(npc)
 
