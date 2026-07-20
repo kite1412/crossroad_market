@@ -4,10 +4,8 @@ extends Node
 const StoreNpcSpawner = preload("res://scripts/locations/store/StoreNpcSpawner.gd")
 const NPCResolvedExitRouteController = preload("res://scripts/npc/runtime/NPCResolvedExitRouteController.gd")
 const NPCLiveQueueStateFlow = preload("res://scripts/npc/runtime/NPCLiveQueueStateFlow.gd")
+const NPCReachableShelfShoppingFlow = preload("res://scripts/npc/runtime/NPCReachableShelfShoppingFlow.gd")
 const NPCCheckoutLaneQueueFlow = preload("res://scripts/npc/runtime/NPCCheckoutLaneQueueFlow.gd")
-const GoobyDebugTraceScript = preload("res://scripts/npc/runtime/GoobyDebugTrace.gd")
-const GoobyDebugStateFlow = preload("res://scripts/npc/runtime/GoobyDebugStateFlow.gd")
-const GoobyDebugRouteController = preload("res://scripts/npc/runtime/GoobyDebugRouteController.gd")
 const CUSTOMER_INTAKE_CLOSED_META: StringName = &"customer_intake_closed_today"
 
 var store: Node = null
@@ -46,66 +44,24 @@ func setup_static_data() -> void:
 
 
 func on_npc_spawn_requested(npc_data: NPCData) -> void:
-	var is_gooby_request := GoobyDebugTraceScript.is_gooby_data(npc_data)
-
 	if store == null:
-		if is_gooby_request:
-			GoobyDebugTraceScript.emit_data(
-				"spawn_request_blocked",
-				{
-					"reason": "store_null",
-					"npc_data": GoobyDebugTraceScript.data_snapshot(
-						npc_data
-					)
-				}
-			)
 		return
-
-	var intake_closed := bool(
-		store.get_meta(CUSTOMER_INTAKE_CLOSED_META, false)
-	)
-
-	if is_gooby_request:
-		GoobyDebugTraceScript.emit_data(
-			"spawn_request_received",
-			{
-				"npc_data": GoobyDebugTraceScript.data_snapshot(npc_data),
-				"store_open": store._store_open,
-				"customer_intake_closed": intake_closed,
-				"current_home_present": store._current_home != null,
-				"spawn_marker": (
-					GoobyDebugTraceScript.vector(
-						get_npc_spawn_marker().global_position
-					)
-					if get_npc_spawn_marker() != null
-					else "<none>"
-				)
-			}
-		)
 
 	# Protect against scheduler requests emitted on the same frame the board
 	# is closed, and against reopening the board after the day's customer
 	# intake has already been finalized.
-	if not store._store_open or intake_closed:
-		if is_gooby_request:
-			GoobyDebugTraceScript.emit_data(
-				"spawn_request_blocked",
-				{
-					"reason": (
-						"store_closed"
-						if not store._store_open
-						else "customer_intake_closed"
-					)
-				}
+	if (
+		not store._store_open
+		or bool(
+			store.get_meta(
+				CUSTOMER_INTAKE_CLOSED_META,
+				false
 			)
+		)
+	):
 		return
 
 	if store._current_home != null:
-		if is_gooby_request:
-			GoobyDebugTraceScript.emit_data(
-				"spawn_request_blocked",
-				{"reason": "player_in_home"}
-			)
 		return
 
 	var npc := StoreNpcSpawner.spawn_npc(
@@ -117,68 +73,32 @@ func on_npc_spawn_requested(npc_data: NPCData) -> void:
 		Callable(self, "on_npc_exited")
 	)
 
-	if npc == null:
-		if is_gooby_request:
-			GoobyDebugTraceScript.emit_data(
-				"spawn_failed",
-				{"npc_data": GoobyDebugTraceScript.data_snapshot(npc_data)}
-			)
-		return
+	if npc != null:
+		install_shelf_arrival_controllers(npc)
 
-	install_shelf_arrival_controllers(npc)
+		var route_ready_callable := Callable(
+			self,
+			"on_npc_shelf_route_ready"
+		)
 
-	var route_ready_callable := Callable(
-		self,
-		"on_npc_shelf_route_ready"
-	)
-
-	if not npc.shelf_route_ready.is_connected(route_ready_callable):
-		npc.shelf_route_ready.connect(route_ready_callable)
+		if not npc.shelf_route_ready.is_connected(route_ready_callable):
+			npc.shelf_route_ready.connect(route_ready_callable)
 
 
 func install_shelf_arrival_controllers(npc: NPC) -> void:
 	if npc == null or not is_instance_valid(npc):
 		return
 
-	var is_gooby := GoobyDebugTraceScript.is_gooby(npc)
-
-	# Install the store-specific movement, shelf-exit, and live queue behavior.
-	if is_gooby:
-		npc._route_controller = GoobyDebugRouteController.new()
-		npc._state_flow = GoobyDebugStateFlow.new()
-	else:
-		npc._route_controller = NPCResolvedExitRouteController.new()
-		npc._state_flow = NPCLiveQueueStateFlow.new()
-
+	# Install the store-specific movement, shelf-exit, live queue, and lazy
+	# shelf-access refresh behavior for every store customer.
+	npc._route_controller = NPCResolvedExitRouteController.new()
 	npc._route_controller.setup(npc)
+	npc._state_flow = NPCLiveQueueStateFlow.new()
 	npc._state_flow.setup(npc)
+	npc._shopping_flow = NPCReachableShelfShoppingFlow.new()
+	npc._shopping_flow.setup(npc)
 	npc._queue_flow = NPCCheckoutLaneQueueFlow.new()
 	npc._queue_flow.setup(npc)
-
-	if not is_gooby:
-		return
-
-	var tree_exiting_callable := Callable(
-		self,
-		"_on_gooby_tree_exiting"
-	).bind(npc)
-	if not npc.tree_exiting.is_connected(tree_exiting_callable):
-		npc.tree_exiting.connect(
-			tree_exiting_callable,
-			CONNECT_ONE_SHOT
-		)
-
-	GoobyDebugTraceScript.emit_npc(
-		npc,
-		"spawn_setup_complete",
-		{
-			"npc_data": GoobyDebugTraceScript.data_snapshot(npc.npc_data),
-			"npc": GoobyDebugTraceScript.npc_snapshot(npc),
-			"shelves": GoobyDebugTraceScript.shelf_snapshot(npc),
-			"state_controller": "GoobyDebugStateFlow",
-			"route_controller": "GoobyDebugRouteController"
-		}
-	)
 
 
 func get_npc_spawn_marker() -> Marker2D:
@@ -198,21 +118,10 @@ func get_npc_spawn_marker() -> Marker2D:
 
 
 func on_npc_purchase(
-	npc: NPC,
-	item_id: String,
+	_npc: NPC,
+	_item_id: String,
 	price: int
 ) -> void:
-	if GoobyDebugTraceScript.is_gooby(npc):
-		GoobyDebugTraceScript.emit_npc(
-			npc,
-			"purchase_completed_signal",
-			{
-				"item_id": item_id,
-				"price": price,
-				"npc": GoobyDebugTraceScript.npc_snapshot(npc)
-			}
-		)
-
 	if store == null:
 		return
 
@@ -225,14 +134,7 @@ func on_npc_purchase(
 		)
 
 
-func on_npc_exited(npc: NPC) -> void:
-	if GoobyDebugTraceScript.is_gooby(npc):
-		GoobyDebugTraceScript.emit_npc(
-			npc,
-			"npc_exited_signal",
-			{"npc": GoobyDebugTraceScript.npc_snapshot(npc)}
-		)
-
+func on_npc_exited(_npc: NPC) -> void:
 	if store != null:
 		store._update_end_day_tax_flow()
 
@@ -241,25 +143,7 @@ func on_npc_shelf_route_ready(
 	npc: NPC,
 	travel_seconds: float
 ) -> void:
-	if GoobyDebugTraceScript.is_gooby(npc):
-		GoobyDebugTraceScript.emit_npc(
-			npc,
-			"shelf_route_ready_signal",
-			{
-				"travel_seconds": travel_seconds,
-				"npc": GoobyDebugTraceScript.npc_snapshot(npc)
-			}
-		)
-
 	NPCScheduler.notify_npc_shelf_route_ready(
 		npc,
 		travel_seconds
-	)
-
-
-func _on_gooby_tree_exiting(npc: NPC) -> void:
-	GoobyDebugTraceScript.emit_npc(
-		npc,
-		"tree_exiting",
-		{"npc": GoobyDebugTraceScript.npc_snapshot(npc)}
 	)
