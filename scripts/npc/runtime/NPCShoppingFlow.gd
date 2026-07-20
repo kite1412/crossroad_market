@@ -236,6 +236,9 @@ func take_requested_items_from_shelves() -> bool:
 
 	if not npc._cart_items.is_empty():
 		npc.item_to_buy = npc._cart_items[0]
+		# The checkout order is created at the exact successful shelf pickup,
+		# before the take-item pause or route-to-queue travel can reorder NPCs.
+		NPCQueueSystem.mark_item_taken(npc)
 		return true
 
 	return false
