@@ -45,6 +45,10 @@ var _action_row: Container = null
 var _cashier_lock_active: bool = false
 var _seen_panel_guidance: Dictionary = {}
 var _active_store_os_app: StringName = STORE_OS_APP_POS
+var _patience_bar: ProgressBar = null
+var _patience_timer: float = 0.0
+var _patience_duration: float = 0.0
+var _patience_active: bool = false
 
 var _customer_detector: CashierCustomerDetector = CashierCustomerDetector.new()
 var _checkout_flow: CashierCheckoutFlow = CashierCheckoutFlow.new()
@@ -57,6 +61,57 @@ var _hud_bridge: CashierHudBridge = CashierHudBridge.new()
 func _ready() -> void:
 	_setup_cashier_controllers()
 	_setup_cursor_hover()
+
+
+func _process(delta: float) -> void:
+	_update_patience_timer(delta)
+
+
+func _update_patience_timer(delta: float) -> void:
+	if not _patience_active:
+		return
+	if _patience_timer <= 0.0:
+		return
+
+	_patience_timer -= delta
+
+	if _patience_bar != null:
+		_patience_bar.value = clampf(_patience_timer / _patience_duration, 0.0, 1.0)
+		# Color shift: green -> yellow -> red
+		var ratio: float = _patience_bar.value
+		if ratio > 0.5:
+			_patience_bar.modulate = Color(1.0 - (ratio - 0.5) * 2.0, 1.0, 0.3)
+		else:
+			_patience_bar.modulate = Color(1.0, ratio * 2.0, 0.3)
+
+	if _patience_timer <= 0.0:
+		_on_patience_expired()
+
+
+func _start_patience_timer() -> void:
+	_patience_duration = SettingsManager.get_patience_duration()
+	_patience_timer = _patience_duration
+	_patience_active = true
+	if _patience_bar != null:
+		_patience_bar.visible = true
+		_patience_bar.value = 1.0
+		_patience_bar.modulate = Color(0.3, 1.0, 0.3)
+
+
+func _stop_patience_timer() -> void:
+	_patience_active = false
+	_patience_timer = 0.0
+	if _patience_bar != null:
+		_patience_bar.visible = false
+
+
+func _on_patience_expired() -> void:
+	_stop_patience_timer()
+	if _has_scanned_customer() and _scanned_npc.has_method("cancel_checkout_and_leave"):
+		_scanned_npc.cancel_checkout_and_leave()
+	_add_history(_scanned_npc, _scanned_item_label, 0, "LEFT")
+	_show_notification("Customer left — waited too long.", 1.6)
+	_clear_scan()
 
 
 func _exit_tree() -> void:

@@ -79,6 +79,15 @@ offset_right = -10.0
 offset_bottom = 20.0
 grow_horizontal = 0
 
+[node name="SettingsButton" type="Button" parent="TopRightHUD"]
+layout_mode = 0
+offset_left = 90.0
+offset_top = 0.0
+offset_right = 120.0
+offset_bottom = 15.0
+theme_override_font_sizes/font_size = 8
+text = "⚙"
+
 [node name="InventoryUI" parent="." unique_id=1582218282 instance=ExtResource("2")]
 layout_mode = 3
 

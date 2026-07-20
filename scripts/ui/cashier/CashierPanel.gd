@@ -158,6 +158,18 @@ static func ensure(owner: Node) -> Dictionary:
 	action_row.add_theme_constant_override("separation", 2)
 	detail_column.add_child(action_row)
 
+	# Patience progress bar (hidden by default)
+	var patience_bar := ProgressBar.new()
+	patience_bar.name = "PatienceBar"
+	patience_bar.custom_minimum_size = Vector2(0, 8)
+	patience_bar.min_value = 0.0
+	patience_bar.max_value = 1.0
+	patience_bar.value = 1.0
+	patience_bar.show_percentage = false
+	patience_bar.visible = false
+	patience_bar.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	detail_column.add_child(patience_bar)
+
 	return {
 		"layer": cashier_layer,
 		"panel": cashier_panel,
@@ -169,7 +181,8 @@ static func ensure(owner: Node) -> Dictionary:
 		"guide_label": guide_label,
 		"action_row": action_row,
 		"item_list": item_list,
-		"item_scroll": scroll
+		"item_scroll": scroll,
+		"patience_bar": patience_bar
 	}
 
 

@@ -28,6 +28,7 @@ EconomyManager="*res://scripts/managers/EconomyManager.gd"
 RelationshipManager="*res://scripts/managers/RelationshipManager.gd"
 BlueprintManager="*res://scripts/managers/BlueprintManager.gd"
 ActivityCompletionManager="*res://scripts/managers/ActivityCompletionManager.gd"
+SettingsManager="*res://scripts/managers/SettingsManager.gd"
 
 [display]
 

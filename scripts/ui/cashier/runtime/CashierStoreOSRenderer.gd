@@ -375,6 +375,7 @@ func ensure_cashier_panel() -> void:
 	cashier._action_row = panel_nodes["action_row"] as Container
 	cashier._item_list = panel_nodes["item_list"] as VBoxContainer
 	cashier._item_scroll = panel_nodes["item_scroll"] as ScrollContainer
+	cashier._patience_bar = panel_nodes["patience_bar"] as ProgressBar
 
 
 func set_panel_guidance_once(key: String, text: String) -> void:
