@@ -7,6 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://cn7h2ykf6p8bv" path="res://assets/characters/player/side-right-player.png" id="4_c3xxp"]
 [ext_resource type="Texture2D" uid="uid://didmc23ew5fef" path="res://assets/characters/player/back-player.png" id="5_npwbq"]
 [ext_resource type="Script" uid="uid://b5ph47kd021yl" path="res://scripts/components/characters/AnimatedCharacterSpriteConfig.gd" id="6_config"]
+[ext_resource type="Script" path="res://scripts/player/PlayerCameraClamp.gd" id="7_camera_clamp"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_npwbq"]
 atlas = ExtResource("2_4kuee")
@@ -1156,6 +1157,7 @@ shape = SubResource("RectangleShape2D_p0vlq")
 [node name="Camera2D" type="Camera2D" parent="." unique_id=1554819470]
 zoom = Vector2(1.5, 1.5)
 position_smoothing_enabled = true
+script = ExtResource("7_camera_clamp")
 
 [node name="InteractionArea" type="Area2D" parent="." unique_id=235852167]
 
