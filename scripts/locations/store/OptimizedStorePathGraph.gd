@@ -4,9 +4,9 @@ extends StorePathGraph
 ## StorePathGraph variant used by the Store runtime.
 ##
 ## The original route goals remain intact: direct, orthogonal, marker A*, and
-## surface-grid routes are still available. The expensive shelf-placement
-## metadata pass is bounded so placing a shelf cannot evaluate every access
-## point against every marker in one frame.
+## surface-grid routes are still available. Only the expensive metadata pass
+## immediately after shelf placement is bounded; live NPC route selection keeps
+## the complete StorePathGraph behavior.
 
 const PLACEMENT_ACCESS_CANDIDATE_LIMIT: int = 8
 const PLACEMENT_GRAPH_NODE_LIMIT: int = 8
@@ -40,22 +40,6 @@ func store_shelf_access_metadata(
 		return
 
 	_store_access_metadata_from_result(object, access_result)
-
-
-func _get_nearest_graph_node_names_for_access(
-	access_position: Vector2,
-	preferred_node: StringName,
-	limit: int
-) -> Array[StringName]:
-	# Runtime route building still compares several graph alternatives, but an
-	# exhaustive 64-goal search causes nested A* work. Eight nearest practical
-	# connectors retain rerouting around shelves while keeping each rebuild
-	# bounded.
-	return super._get_nearest_graph_node_names_for_access(
-		access_position,
-		preferred_node,
-		mini(limit, PLACEMENT_GRAPH_NODE_LIMIT)
-	)
 
 
 func _find_bounded_vertical_shelf_access(
@@ -156,7 +140,9 @@ func _find_bounded_access_connection(
 	shelf_object: Node2D,
 	shelf_position: Vector2
 ) -> Dictionary:
-	var node_names := _get_nearest_graph_node_names_for_access(
+	# Call the parent selector directly with a placement-only limit. Live route
+	# methods continue using the normal MAX_ACCESS_GRAPH_NODE_CANDIDATES value.
+	var node_names := super._get_nearest_graph_node_names_for_access(
 		access_position,
 		preferred_node,
 		PLACEMENT_GRAPH_NODE_LIMIT
@@ -169,12 +155,13 @@ func _find_bounded_access_connection(
 		if graph_marker == null:
 			continue
 
-		var route_variants: Array[Array] = []
-		var diagonal_route := _routes.make_direct_route(
-			graph_marker.global_position,
-			access_position
+		var route_variants: Array = []
+		route_variants.append(
+			_routes.make_direct_route(
+				graph_marker.global_position,
+				access_position
+			)
 		)
-		route_variants.append(diagonal_route)
 		route_variants.append(
 			_routes.make_orthogonal_route(
 				graph_marker.global_position,
@@ -191,6 +178,9 @@ func _find_bounded_access_connection(
 		)
 
 		for route_variant in route_variants:
+			if not (route_variant is Array):
+				continue
+
 			var route: Array[Vector2] = []
 			for point_variant in route_variant:
 				if point_variant is Vector2:
