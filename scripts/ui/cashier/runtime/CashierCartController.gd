@@ -103,31 +103,33 @@ func get_item_display_label(item_id: String) -> String:
 func get_store_items() -> Array[ItemData]:
 	var items: Array[ItemData] = ItemDatabase.get_all_items()
 
-	if not items.is_empty():
-		return items
+	if items.is_empty():
+		var fallback_items: Array[ItemData] = []
+		var dir := DirAccess.open("res://data/items")
 
-	var fallback_items: Array[ItemData] = []
-	var dir := DirAccess.open("res://data/items")
+		if dir == null:
+			return fallback_items
 
-	if dir == null:
-		return fallback_items
+		dir.list_dir_begin()
+		var file_name := dir.get_next()
 
-	dir.list_dir_begin()
-	var file_name := dir.get_next()
+		while file_name != "":
+			if file_name.ends_with(".tres"):
+				var item := load("res://data/items/" + file_name) as ItemData
 
-	while file_name != "":
-		if file_name.ends_with(".tres"):
-			var item := load("res://data/items/" + file_name) as ItemData
+				if item != null and item.item_id != "":
+					fallback_items.append(item)
 
-			if item != null and item.item_id != "":
-				fallback_items.append(item)
+			file_name = dir.get_next()
 
-		file_name = dir.get_next()
+		items = fallback_items
 
-	fallback_items.sort_custom(func(a: ItemData, b: ItemData) -> bool:
+	items.sort_custom(func(a: ItemData, b: ItemData) -> bool:
+		if a.shelf_type != b.shelf_type:
+			return a.shelf_type < b.shelf_type
 		return a.display_name < b.display_name
 	)
-	return fallback_items
+	return items
 
 
 func get_item_shelf_color(item: ItemData) -> Color:

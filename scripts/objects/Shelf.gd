@@ -12,6 +12,7 @@ signal item_placed(slot_index: int, item_id: String)
 signal item_removed(slot_index: int, item_id: String)
 
 var _slots: Array = []
+var _slot_quantities: Array[int] = []
 var _is_shelf_hovered: bool = false
 
 var _stock_controller: ShelfStockController = ShelfStockController.new()

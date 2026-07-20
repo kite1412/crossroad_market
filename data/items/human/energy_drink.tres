@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://data/items/ItemData.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+item_id = "energy_drink"
+display_name = "Energy Drink"
+description = "A fizzy boost to power through the day."
+buy_cost = 8
+sell_price = 15
+shelf_type = 0
+icon_tileset_path = "res://assets/items/human-items/human_items_1.png"
+icon_tile = Vector2i(1, 0)
+icon_tile_size = Vector2i(16, 16)

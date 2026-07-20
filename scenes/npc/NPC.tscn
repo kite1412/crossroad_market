@@ -419,7 +419,7 @@ position = Vector2(0, -21)
 [node name="SpriteMove" type="AnimatedSprite2D" parent="VisualRoot" unique_id=978034633]
 sprite_frames = SubResource("SpriteFrames_uuxmv")
 animation = &"down"
-frame_progress = 0.11773153
+frame_progress = 0.5347019
 script = ExtResource("2")
 animation_fps = 5.0
 animate_idle = true
@@ -428,7 +428,7 @@ direction_config = SubResource("AnimatedCharacterSpriteConfig_move")
 [node name="SpriteIdle" type="AnimatedSprite2D" parent="VisualRoot" unique_id=271152184]
 sprite_frames = SubResource("SpriteFrames_benak")
 animation = &"down"
-frame_progress = 0.11773153
+frame_progress = 0.5347019
 script = ExtResource("2")
 animation_fps = 5.0
 animate_idle = true

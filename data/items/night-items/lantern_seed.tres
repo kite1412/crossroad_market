@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://data/items/ItemData.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+item_id = "lantern_seed"
+display_name = "Lantern Seed"
+description = "A magical seed that grows into a glowing lantern plant. Provides eerie but useful illumination."
+buy_cost = 10
+sell_price = 14
+shelf_type = 1
+icon_tileset_path = "res://assets/items/night-items/ghost-monster-items.png"
+icon_tile = Vector2i(2, 3)
+icon_tile_size = Vector2i(16, 16)

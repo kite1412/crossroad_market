@@ -9,7 +9,11 @@ func setup(database_node: Node) -> void:
 
 
 func load_items() -> void:
-	var dir := DirAccess.open("res://data/items")
+	_load_items_from_directory("res://data/items")
+
+
+func _load_items_from_directory(directory_path: String) -> void:
+	var dir := DirAccess.open(directory_path)
 	if dir == null:
 		pass
 		return
@@ -18,14 +22,20 @@ func load_items() -> void:
 	var file_name := dir.get_next()
 
 	while file_name != "":
-		if file_name.ends_with(".tres"):
-			var path := "res://data/items/" + file_name
+		var path := directory_path.path_join(file_name)
+
+		if dir.current_is_dir():
+			if not file_name.begins_with("."):
+				_load_items_from_directory(path)
+		elif file_name.ends_with(".tres"):
 			var item := load(path) as ItemData
 			if item and item.item_id != "":
 				database._items[item.item_id] = item
 			else:
 				pass
 		file_name = dir.get_next()
+
+	dir.list_dir_end()
 
 
 func get_item(item_id: String) -> ItemData:

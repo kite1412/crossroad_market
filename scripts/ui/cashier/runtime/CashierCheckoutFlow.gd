@@ -37,6 +37,7 @@ func process_scan(npc: NPC) -> void:
 
 	show_customer_request_bubble()
 	cashier._show_scan_panel()
+	cashier._start_patience_timer()
 
 
 func process_paid() -> void:
@@ -132,6 +133,7 @@ func has_scanned_customer() -> bool:
 
 
 func clear_scan() -> void:
+	cashier._stop_patience_timer()
 	cashier._scanned_npc = null
 	cashier._scanned_item_id = ""
 	cashier._scanned_item_label = ""

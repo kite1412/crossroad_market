@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://data/items/ItemData.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+item_id = "hum_071"
+display_name = "Salt"
+description = "White crystal seasoning that adds natural saltiness."
+buy_cost = 2
+sell_price = 4
+shelf_type = 0
+icon_tileset_path = "res://assets/items/human-items/human_items_1.png"
+icon_tile = Vector2i(0, 5)
+icon_tile_size = Vector2i(16, 16)
+

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://data/items/ItemData.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+item_id = "hum_103"
+display_name = "Iron Nails Box"
+description = "A box filled with iron nails."
+buy_cost = 8
+sell_price = 14
+shelf_type = 0
+icon_tileset_path = "res://assets/items/human-items/human_items_2.png"
+icon_tile = Vector2i(3, 1)
+icon_tile_size = Vector2i(16, 16)
+

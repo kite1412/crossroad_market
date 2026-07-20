@@ -11,6 +11,8 @@ func setup(shelf_node: Shelf) -> void:
 func initialize_slots() -> void:
 	shelf._slots.resize(shelf.max_slots)
 	shelf._slots.fill(null)
+	shelf._slot_quantities.resize(shelf.max_slots)
+	shelf._slot_quantities.fill(0)
 
 
 func place_item(item_id: String) -> int:
@@ -22,14 +24,18 @@ func place_item(item_id: String) -> int:
 	if item.shelf_type != shelf.shelf_type:
 		return -1
 
-	var slot := get_empty_slot()
-	if slot == -1:
-		return -1
-
 	if not Inventory.remove_item(item_id):
 		return -1
 
+	var slot := find_item_slot(item_id)
+	if slot == -1:
+		slot = get_empty_slot()
+		if slot == -1:
+			Inventory.add_item(item_id)
+			return -1
+
 	shelf._slots[slot] = item_id
+	shelf._slot_quantities[slot] += 1
 	shelf._refresh_slot_visual(slot, item_id)
 	shelf.item_placed.emit(slot, item_id)
 	return slot
@@ -44,11 +50,14 @@ func stock_item_direct(item_id: String) -> int:
 	if item.shelf_type != shelf.shelf_type:
 		return -1
 
-	var slot := get_empty_slot()
+	var slot := find_item_slot(item_id)
 	if slot == -1:
-		return -1
+		slot = get_empty_slot()
+		if slot == -1:
+			return -1
 
 	shelf._slots[slot] = item_id
+	shelf._slot_quantities[slot] += 1
 	shelf._refresh_slot_visual(slot, item_id)
 	shelf.item_placed.emit(slot, item_id)
 	return slot
@@ -62,7 +71,10 @@ func remove_item(slot_index: int) -> String:
 	if item_id == null:
 		return ""
 
-	shelf._slots[slot_index] = null
+	shelf._slot_quantities[slot_index] -= 1
+	if shelf._slot_quantities[slot_index] <= 0:
+		shelf._slot_quantities[slot_index] = 0
+		shelf._slots[slot_index] = null
 	shelf._refresh_slot_visual(slot_index, "")
 	Inventory.add_item(item_id)
 	shelf.item_removed.emit(slot_index, item_id)
@@ -80,7 +92,10 @@ func remove_first_item() -> String:
 func take_item_for_npc(item_id: String) -> bool:
 	for i in shelf._slots.size():
 		if shelf._slots[i] == item_id:
-			shelf._slots[i] = null
+			shelf._slot_quantities[i] -= 1
+			if shelf._slot_quantities[i] <= 0:
+				shelf._slot_quantities[i] = 0
+				shelf._slots[i] = null
 			shelf._refresh_slot_visual(i, "")
 			shelf.item_removed.emit(i, item_id)
 			return true
@@ -118,4 +133,12 @@ func get_empty_slot() -> int:
 	for i in shelf._slots.size():
 		if shelf._slots[i] == null:
 			return i
+	return -1
+
+
+func find_item_slot(item_id: String) -> int:
+	for i in shelf._slots.size():
+		if shelf._slots[i] == item_id:
+			return i
+
 	return -1

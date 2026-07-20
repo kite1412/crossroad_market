@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://data/items/ItemData.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+item_id = "soul_candle"
+display_name = "Soul Candle"
+description = "A candle that burns with an otherworldly flame, lighting the way for wandering spirits."
+buy_cost = 10
+sell_price = 12
+shelf_type = 1
+icon_tileset_path = "res://assets/items/night-items/ghost-monster-items.png"
+icon_tile = Vector2i(1, 0)
+icon_tile_size = Vector2i(16, 16)

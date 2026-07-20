@@ -21,6 +21,7 @@ signal tax_ignore_requested()
 @onready var notification_label: Label = $NotificationLabel
 @onready var objective_label: Label = $ObjectiveLabel
 @onready var dialog: Dialog = $Dialog
+@onready var settings_button: Button = $TopRightHUD/SettingsButton
 
 const NOTIFY_DURATION: float = 2.0
 const MIN_NOTIFY_DURATION: float = 0.9
@@ -34,6 +35,8 @@ const CURSOR_TOOLTIP_PADDING := Vector2(12, 8)
 const CURSOR_HOVER_QUERY_LIMIT: int = 32
 const OBJECTIVE_TOAST_DURATION: float = 5.0
 const OBJECTIVE_ANIM_DURATION: float = 0.22
+
+var _settings_menu: SettingsMenu = null
 
 var _notify_timer: float = 0.0
 var _notify_duration: float = NOTIFY_DURATION
@@ -91,6 +94,8 @@ func _ready() -> void:
 	TimeManager.time_updated.connect(_on_time_updated)
 	TimeManager.phase_changed.connect(_on_phase_changed)
 	TimeManager.day_started.connect(_on_day_started)
+
+	settings_button.pressed.connect(_on_settings_pressed)
 
 	_update_all()
 
@@ -327,3 +332,18 @@ func _on_day_started(day: int) -> void:
 
 func _update_target_label() -> void:
 	_status_labels.update_target_label()
+
+
+func _on_settings_pressed() -> void:
+	if _settings_menu != null and is_instance_valid(_settings_menu):
+		_settings_menu.queue_free()
+		_settings_menu = null
+		return
+
+	_settings_menu = SettingsMenu.new()
+	_settings_menu.closed.connect(_on_settings_menu_closed)
+	add_child(_settings_menu)
+
+
+func _on_settings_menu_closed() -> void:
+	_settings_menu = null

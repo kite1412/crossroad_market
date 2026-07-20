@@ -9,7 +9,7 @@ const PlayerShelfFlow = preload("res://scripts/player/PlayerShelfFlow.gd")
 const PlayerSupplyFlow = preload("res://scripts/player/PlayerSupplyFlow.gd")
 const PlayerNotificationBridge = preload("res://scripts/player/PlayerNotificationBridge.gd")
 
-@export var speed: float = 150.0
+@export var speed: float = 120.0
 @export var interaction_distance: float = 20.0
 
 @onready var interaction_area: Area2D = $InteractionArea

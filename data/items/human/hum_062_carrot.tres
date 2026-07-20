@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://data/items/ItemData.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+item_id = "hum_062"
+display_name = "Carrot"
+description = "Fresh orange vegetables that support eye health."
+buy_cost = 3
+sell_price = 5
+shelf_type = 0
+icon_tileset_path = "res://assets/items/human-items/human_items_1.png"
+icon_tile = Vector2i(3, 3)
+icon_tile_size = Vector2i(16, 16)
+
