@@ -15,35 +15,42 @@ var _trust_by_npc: Dictionary[String, int] = {}
 var _trust_store: RelationshipTrustStore = RelationshipTrustStore.new()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _ready() -> void:
 	_trust_store.setup(self)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func is_main_npc(npc_id: String) -> bool:
 	return npc_id in MAIN_NPC_IDS
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_trust(npc_id: String, value: int) -> void:
 	if not is_main_npc(npc_id):
 		return
 	_trust_store.set_trust(npc_id, value)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func add_trust(npc_id: String, amount: int) -> void:
 	if not is_main_npc(npc_id):
 		return
 	_trust_store.add_trust(npc_id, amount)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_trust(npc_id: String) -> int:
 	if not is_main_npc(npc_id):
 		return 0
 	return _trust_store.get_trust(npc_id)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_all_trust() -> Dictionary[String, int]:
 	return _trust_store.get_all_trust()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func reset_trust() -> void:
 	_trust_store.reset_trust()

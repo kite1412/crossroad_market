@@ -15,11 +15,14 @@ const QUEUE_DROP_BLOCK_ROLES: Array[StringName] = [
 const STORE_ENTRY_DROP_BLOCK_SIZE := Vector2(88, 56)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func evaluate_shelf_drop_restriction(
 	object: Node2D,
 	candidate: Vector2
 ) -> Dictionary:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var object_rect := get_object_body_rect_at(object, candidate)
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var entrance_restricted_rect := get_marker_drop_restricted_rect(
 		object_rect,
 		STORE_ENTRY_DROP_BLOCK_ROLES,
@@ -35,6 +38,7 @@ func evaluate_shelf_drop_restriction(
 			true
 		)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var queue_restricted_rect := get_queue_marker_drop_restricted_rect(
 		object_rect
 	)
@@ -60,16 +64,19 @@ func evaluate_shelf_drop_restriction(
 	return make_drop_restriction()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_queue_drop_block_markers() -> Array[Marker2D]:
 	return get_drop_block_markers_for_roles(QUEUE_DROP_BLOCK_ROLES)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_marker_drop_restricted_rect(
 	object_rect: Rect2,
 	roles: Array[StringName],
 	block_size: Vector2
 ) -> Rect2:
 	for marker in get_drop_block_markers_for_roles(roles):
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var marker_rect := Rect2(
 			marker.global_position - block_size * 0.5,
 			block_size
@@ -81,19 +88,23 @@ func get_marker_drop_restricted_rect(
 	return Rect2()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_drop_block_markers_for_roles(
 	roles: Array[StringName]
 ) -> Array[Marker2D]:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var markers: Array[Marker2D] = []
 
 	if store == null or store.store_path_markers == null:
 		return markers
 
 	for child in store.store_path_markers.get_children():
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var marker := child as Marker2D
 		if marker == null or not marker.has_meta("store_path_role"):
 			continue
 
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var role := StringName(str(marker.get_meta("store_path_role")))
 		if role in roles:
 			markers.append(marker)

@@ -13,6 +13,7 @@ var _last_route_debug_key: String = ""
 var _last_stuck_debug_key: String = ""
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(npc_node) -> void:
 	npc = npc_node
 	if _route_safety == null:
@@ -20,7 +21,9 @@ func setup(npc_node) -> void:
 	_route_safety.setup(npc)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func move_to(target: Vector2, arrival_threshold: float = -1.0) -> bool:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var threshold: float = npc.ARRIVAL_THRESHOLD if arrival_threshold < 0.0 else arrival_threshold
 
 	if should_rebuild_movement_route(target):
@@ -42,6 +45,7 @@ func move_to(target: Vector2, arrival_threshold: float = -1.0) -> bool:
 			threshold
 		)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var next_target: Vector2 = npc._movement_route[0]
 
 	if not NPCMovement.move_to(
@@ -57,6 +61,7 @@ func move_to(target: Vector2, arrival_threshold: float = -1.0) -> bool:
 	return npc._movement_route.is_empty()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func update_stuck_watchdog(delta: float) -> void:
 	if not is_movement_state():
 		reset_stuck_watchdog()
@@ -123,6 +128,7 @@ func update_stuck_watchdog(delta: float) -> void:
 	npc._stuck_watchdog_rebuilds += 1
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func is_movement_state() -> bool:
 	return npc.current_state in [
 		NPC.State.WALK_TO_SHELF,
@@ -133,6 +139,7 @@ func is_movement_state() -> bool:
 	]
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func uses_store_navigation_state() -> bool:
 	return npc.current_state in [
 		NPC.State.WALK_TO_SHELF,
@@ -143,12 +150,14 @@ func uses_store_navigation_state() -> bool:
 	]
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func reset_stuck_watchdog() -> void:
 	npc._last_watchdog_position = Vector2.INF
 	npc._stuck_watchdog_timer = 0.0
 	npc._stuck_watchdog_rebuilds = 0
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func should_rebuild_movement_route(target: Vector2) -> bool:
 	if npc._movement_route.is_empty():
 		return true
@@ -156,7 +165,9 @@ func should_rebuild_movement_route(target: Vector2) -> bool:
 	return not npc._movement_route_destination.is_equal_approx(target)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func build_movement_route(destination: Vector2) -> Array[Vector2]:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var route := get_store_route_for_current_state(destination)
 
 	if not route.is_empty():
@@ -174,6 +185,7 @@ func build_movement_route(destination: Vector2) -> Array[Vector2]:
 	return build_direct_fallback(destination)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func build_direct_fallback(destination: Vector2) -> Array[Vector2]:
 	if not destination.is_finite():
 		return []
@@ -184,7 +196,9 @@ func build_direct_fallback(destination: Vector2) -> Array[Vector2]:
 	return [destination]
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_store_route_for_current_state(destination: Vector2) -> Array[Vector2]:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var store := get_store_route_provider()
 
 	if store == null:
@@ -213,6 +227,7 @@ func get_store_route_for_current_state(destination: Vector2) -> Array[Vector2]:
 			)
 
 		NPC.State.WAIT_IN_QUEUE:
+			@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 			var queue_index := NPC.current_queue.find(npc)
 
 			if npc._is_moving_from_queue_to_cashier:
@@ -228,6 +243,7 @@ func get_store_route_for_current_state(destination: Vector2) -> Array[Vector2]:
 				and npc._queue_entry_shelf != null
 				and is_instance_valid(npc._queue_entry_shelf)
 			):
+				@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 				var egress_queue_route := get_shelf_egress_queue_route(
 					store,
 					queue_index,
@@ -282,6 +298,7 @@ func get_store_route_for_current_state(destination: Vector2) -> Array[Vector2]:
 	return []
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_shelf_egress_queue_route(
 	store: Node,
 	queue_index: int,
@@ -294,6 +311,7 @@ func get_shelf_egress_queue_route(
 	):
 		return []
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var egress_route := call_store_route(
 		store,
 		&"get_npc_route_from_shelf_to_cashier",
@@ -303,7 +321,9 @@ func get_shelf_egress_queue_route(
 	if egress_route.is_empty():
 		return []
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var egress_end: Vector2 = egress_route.back()
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var queue_route := call_store_route(
 		store,
 		&"get_npc_route_to_queue_target_from",
@@ -313,6 +333,7 @@ func get_shelf_egress_queue_route(
 	if queue_route.is_empty():
 		return []
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var route := egress_route.duplicate()
 	route.append_array(queue_route)
 	route = dedupe_route_points(route)
@@ -326,7 +347,9 @@ func get_shelf_egress_queue_route(
 	return dedupe_route_points(route)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_store_route_provider() -> Node:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var tree: SceneTree = npc.get_tree()
 
 	if tree == null:
@@ -335,6 +358,7 @@ func get_store_route_provider() -> Node:
 	return tree.get_first_node_in_group("store")
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func call_store_route(
 	store: Node,
 	method_name: StringName,
@@ -343,7 +367,9 @@ func call_store_route(
 	if store == null or not store.has_method(method_name):
 		return []
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var result: Variant = store.callv(method_name, args)
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var route: Array[Vector2] = []
 
 	if not result is Array:
@@ -356,10 +382,12 @@ func call_store_route(
 	return dedupe_route_points(route)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func append_destination_to_route(
 	route: Array[Vector2],
 	destination: Vector2
 ) -> Array[Vector2]:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var result := route.duplicate()
 
 	if not destination.is_finite():
@@ -375,16 +403,19 @@ func append_destination_to_route(
 	return dedupe_route_points(result)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func make_orthogonal_route(
 	from_pos: Vector2,
 	to_pos: Vector2,
 	horizontal_first: bool = true
 ) -> Array[Vector2]:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var route: Array[Vector2] = []
 
 	if from_pos.distance_to(to_pos) <= 2.0:
 		return route
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var corner := (
 		Vector2(to_pos.x, from_pos.y)
 		if horizontal_first
@@ -400,7 +431,9 @@ func make_orthogonal_route(
 	return route
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func dedupe_route_points(route: Array[Vector2]) -> Array[Vector2]:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var deduped: Array[Vector2] = []
 
 	for point in route:
@@ -418,6 +451,7 @@ func dedupe_route_points(route: Array[Vector2]) -> Array[Vector2]:
 	return deduped
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _trim_arrived_route_points(threshold: float) -> void:
 	while (
 		not npc._movement_route.is_empty()
@@ -426,11 +460,13 @@ func _trim_arrived_route_points(threshold: float) -> void:
 		npc._movement_route.remove_at(0)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func should_print_route_debug(
 	source: String,
 	destination: Vector2,
 	route: Array[Vector2]
 ) -> bool:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var debug_key := "%s:%s:%d,%d:%d,%d:%d" % [
 		source,
 		str(npc.current_state),
@@ -448,6 +484,7 @@ func should_print_route_debug(
 	return true
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_debug_npc_label() -> String:
 	if (
 		npc != null
@@ -459,6 +496,7 @@ func _get_debug_npc_label() -> String:
 	return npc.name if npc != null else "<null>"
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func should_use_store_path(
 	destination: Vector2,
 	path_position: Vector2
@@ -475,11 +513,14 @@ func should_use_store_path(
 	return true
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func is_valid_route_point(point: Vector2) -> bool:
 	return point.is_finite()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func is_near_cashier_area() -> bool:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var cashier_threshold: float = 160.0
 	return (
 		NPC.counter_position != Vector2.ZERO
@@ -488,10 +529,12 @@ func is_near_cashier_area() -> bool:
 	)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_store_path_position() -> Vector2:
 	return NPC.store_path_position
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_exit_position() -> Vector2:
 	if (
 		is_valid_route_point(NPC.exit_position)

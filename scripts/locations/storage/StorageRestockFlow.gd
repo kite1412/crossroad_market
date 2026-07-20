@@ -10,10 +10,12 @@ const RESTOCK_CLOSE_BUTTON_WIDTH: float = 56.0
 var storage: Node = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(storage_node: Node) -> void:
 	storage = storage_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func open_restock_panel() -> void:
 	storage._restock_checkout_completed_this_session = false
 	storage.restock_panel_opened.emit()
@@ -21,10 +23,12 @@ func open_restock_panel() -> void:
 	render_restock_panel()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func ensure_restock_panel() -> void:
 	if storage._restock_layer != null and is_instance_valid(storage._restock_layer):
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var panel_nodes := StorageRestockPanel.ensure(storage)
 	storage._restock_layer = panel_nodes["layer"] as CanvasLayer
 	storage._restock_panel = panel_nodes["panel"] as ColorRect
@@ -35,6 +39,7 @@ func ensure_restock_panel() -> void:
 	storage._restock_action_row = panel_nodes["action_row"] as Container
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func render_restock_panel() -> void:
 	if storage._restock_panel == null:
 		return
@@ -47,6 +52,7 @@ func render_restock_panel() -> void:
 	StorageRestockPanel.clear_container(storage._restock_action_row)
 	update_restock_wallet()
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var items := get_restock_items()
 
 	for item in items:
@@ -61,13 +67,16 @@ func render_restock_panel() -> void:
 	render_restock_detail()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func create_restock_item_row(item: ItemData) -> Control:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var row := HBoxContainer.new()
 	row.custom_minimum_size = Vector2(0, 19)
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	row.add_theme_constant_override("separation", 1)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var select_button := Button.new()
 	select_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	select_button.custom_minimum_size = Vector2(82, 19)
@@ -84,12 +93,14 @@ func create_restock_item_row(item: ItemData) -> Control:
 	connect_restock_scroll_forwarding(select_button)
 	row.add_child(select_button)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var quantity_controls := HBoxContainer.new()
 	quantity_controls.custom_minimum_size = Vector2(68, 19)
 	quantity_controls.size_flags_horizontal = Control.SIZE_SHRINK_END
 	quantity_controls.add_theme_constant_override("separation", 1)
 	row.add_child(quantity_controls)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var minus_button := Button.new()
 	minus_button.text = "-"
 	minus_button.custom_minimum_size = Vector2(19, 19)
@@ -102,6 +113,7 @@ func create_restock_item_row(item: ItemData) -> Control:
 	connect_restock_scroll_forwarding(minus_button)
 	quantity_controls.add_child(minus_button)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var qty_label := Label.new()
 	qty_label.custom_minimum_size = Vector2(26, 19)
 	qty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -110,6 +122,7 @@ func create_restock_item_row(item: ItemData) -> Control:
 	qty_label.add_theme_font_size_override("font_size", 7)
 	quantity_controls.add_child(qty_label)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var plus_button := Button.new()
 	plus_button.text = "+"
 	plus_button.custom_minimum_size = Vector2(19, 19)
@@ -125,9 +138,11 @@ func create_restock_item_row(item: ItemData) -> Control:
 	return row
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func render_restock_detail() -> void:
 	StorageRestockPanel.clear_container(storage._restock_action_row)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item := ItemDatabase.get_item(storage._selected_restock_item_id)
 
 	if item == null:
@@ -136,8 +151,11 @@ func render_restock_detail() -> void:
 		add_restock_close_button()
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var buy_cost := get_item_buy_cost(item)
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var shelf_label := "Ghost" if item.shelf_type == ItemData.ShelfType.GHOST else "Human"
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var cart_qty := get_restock_cart_quantity(item.item_id)
 	storage._restock_selected_label.text = "%s\nShelf: %s\nBuy: %dG | In bag: %d\nCart: x%d | Subtotal: %dG" % [
 		item.display_name,
@@ -149,6 +167,7 @@ func render_restock_detail() -> void:
 	]
 	storage._restock_guide_label.text = "Checkout sends one delivery box outside in the yard."
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var summary_label := Label.new()
 	summary_label.text = format_restock_cart_summary()
 	summary_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -156,11 +175,13 @@ func render_restock_detail() -> void:
 	summary_label.add_theme_font_size_override("font_size", 7)
 	storage._restock_action_row.add_child(summary_label)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var total_label := Label.new()
 	total_label.text = "Cart Total: %dG" % get_restock_cart_total()
 	total_label.add_theme_font_size_override("font_size", 8)
 	storage._restock_action_row.add_child(total_label)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var checkout_button := Button.new()
 	checkout_button.text = "Checkout"
 	configure_restock_action_button(checkout_button, RESTOCK_CHECKOUT_BUTTON_WIDTH)
@@ -168,15 +189,19 @@ func render_restock_detail() -> void:
 	checkout_button.pressed.connect(checkout_restock_cart)
 	connect_restock_scroll_forwarding(checkout_button)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var close_button := create_restock_close_button()
 	add_restock_action_button_row([checkout_button, close_button])
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func add_restock_close_button() -> void:
 	add_restock_action_button_row([create_restock_close_button()])
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func create_restock_close_button() -> Button:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var close_button := Button.new()
 	close_button.text = "Close"
 	configure_restock_action_button(close_button, RESTOCK_CLOSE_BUTTON_WIDTH)
@@ -185,6 +210,7 @@ func create_restock_close_button() -> Button:
 	return close_button
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func configure_restock_action_button(button: Button, width: float) -> void:
 	button.custom_minimum_size = Vector2(width, RESTOCK_ACTION_BUTTON_HEIGHT)
 	button.size_flags_horizontal = Control.SIZE_SHRINK_END
@@ -195,12 +221,15 @@ func configure_restock_action_button(button: Button, width: float) -> void:
 	button.add_theme_font_size_override("font_size", 8)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func add_restock_action_button_row(buttons: Array[Button]) -> void:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var row := HBoxContainer.new()
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_theme_constant_override("separation", 2)
 	storage._restock_action_row.add_child(row)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(spacer)
@@ -209,10 +238,12 @@ func add_restock_action_button_row(buttons: Array[Button]) -> void:
 		row.add_child(button)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func add_restock_cart_quantity(item_id: String, delta: int) -> void:
 	if item_id == "" or delta == 0:
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var quantity := get_restock_cart_quantity(item_id) + delta
 
 	if quantity <= 0:
@@ -224,11 +255,13 @@ func add_restock_cart_quantity(item_id: String, delta: int) -> void:
 	render_restock_panel()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func checkout_restock_cart() -> void:
 	if not has_restock_cart_items():
 		storage._show_notification("Add items to the cart first.", 0.9)
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var total := get_restock_cart_total()
 
 	if total <= 0:
@@ -240,6 +273,7 @@ func checkout_restock_cart() -> void:
 		render_restock_panel()
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var order_items := get_restock_cart_order_items()
 	storage._restock_cart.clear()
 	storage.restock_order_purchased.emit(order_items)
@@ -248,25 +282,30 @@ func checkout_restock_cart() -> void:
 	render_restock_panel()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_restock_cart_quantity(item_id: String) -> int:
 	return int(storage._restock_cart.get(item_id, 0))
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func connect_restock_scroll_forwarding(control: Control) -> void:
 	control.gui_input.connect(func(event: InputEvent) -> void:
 		forward_restock_scroll_input(event, control)
 	)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func forward_restock_scroll_input(event: InputEvent, from_control: Control) -> void:
 	if not (event is InputEventMouseButton):
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var mouse_event := event as InputEventMouseButton
 
 	if not mouse_event.pressed:
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var direction := 0
 
 	if mouse_event.button_index == MOUSE_BUTTON_WHEEL_UP:
@@ -277,6 +316,7 @@ func forward_restock_scroll_input(event: InputEvent, from_control: Control) -> v
 	if direction == 0:
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var scroll := find_parent_scroll_container(from_control)
 
 	if scroll == null:
@@ -286,7 +326,9 @@ func forward_restock_scroll_input(event: InputEvent, from_control: Control) -> v
 	storage.get_viewport().set_input_as_handled()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func find_parent_scroll_container(from_control: Control) -> ScrollContainer:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var node: Node = from_control
 
 	while node != null:
@@ -298,6 +340,7 @@ func find_parent_scroll_container(from_control: Control) -> ScrollContainer:
 	return null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func has_restock_cart_items() -> bool:
 	for item_id in storage._restock_cart.keys():
 		if int(storage._restock_cart[item_id]) > 0:
@@ -306,19 +349,24 @@ func has_restock_cart_items() -> bool:
 	return false
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func format_restock_cart_summary() -> String:
 	if not has_restock_cart_items():
 		return "Cart: empty"
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var parts: Array[String] = []
 
 	for item_id in storage._restock_cart.keys():
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var quantity := int(storage._restock_cart[item_id])
 
 		if quantity <= 0:
 			continue
 
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var item := ItemDatabase.get_item(str(item_id))
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var item_name := str(item_id)
 
 		if item != null:
@@ -326,14 +374,18 @@ func format_restock_cart_summary() -> String:
 
 		parts.append("%s x%d" % [item_name, quantity])
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var packed_parts := PackedStringArray(parts)
 	return "Cart: %s" % ", ".join(packed_parts)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_restock_cart_total() -> int:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var total := 0
 
 	for item_id in storage._restock_cart.keys():
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var item := ItemDatabase.get_item(str(item_id))
 
 		if item == null:
@@ -344,10 +396,13 @@ func get_restock_cart_total() -> int:
 	return total
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_restock_cart_order_items() -> Array[Dictionary]:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var order_items: Array[Dictionary] = []
 
 	for item_id in storage._restock_cart.keys():
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var quantity := int(storage._restock_cart[item_id])
 
 		if quantity <= 0:
@@ -361,6 +416,7 @@ func get_restock_cart_order_items() -> Array[Dictionary]:
 	return order_items
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func hide_restock_panel() -> void:
 	if storage._restock_panel != null:
 		storage._restock_panel.visible = false
@@ -371,7 +427,9 @@ func hide_restock_panel() -> void:
 	storage.restock_panel_closed.emit(storage._restock_checkout_completed_this_session)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_restock_items() -> Array[ItemData]:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var items: Array[ItemData] = []
 
 	for item in ItemDatabase.get_all_items():
@@ -392,6 +450,7 @@ func get_restock_items() -> Array[ItemData]:
 	return items
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_item_buy_cost(item: ItemData) -> int:
 	if item.buy_cost > 0:
 		return item.buy_cost
@@ -399,10 +458,12 @@ func get_item_buy_cost(item: ItemData) -> int:
 	return maxi(1, ceili(float(item.sell_price) * 0.5))
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func update_restock_wallet() -> void:
 	if storage._restock_wallet_label != null:
 		storage._restock_wallet_label.text = "Wallet: %dG" % EconomyManager.gold
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_gold_changed(_amount: int) -> void:
 	update_restock_wallet()

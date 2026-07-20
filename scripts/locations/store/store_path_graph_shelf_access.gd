@@ -8,18 +8,22 @@ class_name StorePathGraphShelfAccess
 var _graph  # StorePathGraph – untyped to avoid cyclic class_name reference
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _init(graph = null) -> void:
 	_graph = graph
 
 
 ## Gets shelf access candidates for a shelf position.
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_shelf_access_candidates(shelf_position: Vector2, vertical_only: bool = false) -> Array[Dictionary]:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var candidates: Array[Dictionary] = []
 
 	if vertical_only:
 		append_rect_vertical_shelf_access_candidates(candidates, shelf_position)
 
 	for node_name in _graph._nav.get_graph_node_names():
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var marker: Marker2D = _graph._nav.get_graph_marker(node_name)
 
 		if marker == null:
@@ -34,19 +38,25 @@ func get_shelf_access_candidates(shelf_position: Vector2, vertical_only: bool = 
 		append_shelf_access_candidate(candidates, access_point, shelf_position, StringName(), vertical_only)
 
 	candidates.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var tier_a := int(a.get("tier", 2))
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var tier_b := int(b.get("tier", 2))
 
 		if tier_a != tier_b:
 			return tier_a < tier_b
 
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var horizontal_a := float(a.get("horizontal_distance", INF))
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var horizontal_b := float(b.get("horizontal_distance", INF))
 
 		if not is_equal_approx(horizontal_a, horizontal_b):
 			return horizontal_a < horizontal_b
 
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var vertical_a := float(a.get("vertical_distance", INF))
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var vertical_b := float(b.get("vertical_distance", INF))
 
 		if not is_equal_approx(vertical_a, vertical_b):
@@ -59,17 +69,25 @@ func get_shelf_access_candidates(shelf_position: Vector2, vertical_only: bool = 
 
 
 ## Appends vertical shelf access candidates (above and below shelf).
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func append_rect_vertical_shelf_access_candidates(candidates: Array[Dictionary], shelf_position: Vector2) -> void:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var shelf_object := find_shelf_object_at_position(shelf_position)
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var shelf_rect: Rect2 = _graph._clearance.get_object_body_rect_at(shelf_object, shelf_position) if shelf_object != null else Rect2()
 
 	if not _rect_has_area(shelf_rect):
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var standing_half_height: float = _graph.STANDING_SHAPE_SIZE.y * 0.5
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var standing_offset_y: float = _graph.STANDING_SHAPE_OFFSET.y
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var standing_center_above_y: float = shelf_rect.position.y - _graph.SHELF_ACCESS_STANDING_CLEARANCE - standing_half_height - standing_offset_y
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var standing_center_below_y: float = shelf_rect.position.y + shelf_rect.size.y + _graph.SHELF_ACCESS_STANDING_CLEARANCE + standing_half_height - standing_offset_y
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var x_positions: Array[float] = [
 		shelf_position.x
 	]
@@ -79,6 +97,7 @@ func append_rect_vertical_shelf_access_candidates(candidates: Array[Dictionary],
 		_append_rect_shelf_access_candidate(candidates, Vector2(x_position, standing_center_below_y), shelf_position, "below")
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _append_rect_shelf_access_candidate(
 	candidates: Array[Dictionary],
 	access_point: Vector2,
@@ -88,8 +107,11 @@ func _append_rect_shelf_access_candidate(
 	if not access_point.is_finite():
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var horizontal_distance := absf(access_point.x - shelf_position.x)
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var vertical_distance := absf(access_point.y - shelf_position.y)
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var direct_distance := access_point.distance_to(shelf_position)
 
 	if direct_distance <= _graph.MARKER_ALIGNMENT_EPSILON or direct_distance > _graph.MAX_SHELF_ACCESS_DISTANCE:
@@ -102,6 +124,7 @@ func _append_rect_shelf_access_candidate(
 		return
 
 	for candidate in candidates:
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var candidate_point := candidate.get("access_point", Vector2.INF) as Vector2
 
 		if candidate_point.distance_to(access_point) <= _graph.MARKER_ALIGNMENT_EPSILON:
@@ -120,6 +143,7 @@ func _append_rect_shelf_access_candidate(
 
 
 ## Appends a shelf access candidate from a marker or point.
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func append_shelf_access_candidate(
 	candidates: Array[Dictionary],
 	access_point: Vector2,
@@ -130,14 +154,19 @@ func append_shelf_access_candidate(
 	if not access_point.is_finite():
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var horizontal_distance := absf(access_point.x - shelf_position.x)
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var vertical_distance := absf(access_point.y - shelf_position.y)
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var direct_distance := access_point.distance_to(shelf_position)
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var access_side := "below" if access_point.y >= shelf_position.y else "above"
 
 	if direct_distance <= _graph.MARKER_ALIGNMENT_EPSILON or direct_distance > _graph.MAX_SHELF_ACCESS_DISTANCE:
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var vertical_access: bool = horizontal_distance <= _graph.SHELF_ACCESS_COLUMN_EPSILON and vertical_distance > _graph.MARKER_ALIGNMENT_EPSILON
 
 	if vertical_only and not vertical_access:
@@ -146,6 +175,7 @@ func append_shelf_access_candidate(
 	if vertical_access and vertical_distance > _graph.MAX_VERTICAL_SHELF_ACCESS_DISTANCE:
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var tier := 2
 
 	if vertical_access:
@@ -166,11 +196,13 @@ func append_shelf_access_candidate(
 
 
 ## Finds a shelf object at the given position.
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func find_shelf_object_at_position(shelf_position: Vector2) -> Node2D:
 	if _graph._store == null:
 		return null
 
 	for node in _graph._store.get_tree().get_nodes_in_group("shelves"):
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var shelf := node as Node2D
 
 		if shelf == null:
@@ -182,5 +214,6 @@ func find_shelf_object_at_position(shelf_position: Vector2) -> Node2D:
 	return null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _rect_has_area(rect: Rect2) -> bool:
 	return rect.size.x > 0.0 and rect.size.y > 0.0

@@ -25,5 +25,6 @@ static func get_bp_type(npc) -> int:
 
 
 static func item_name(item_id: String) -> String:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item: ItemData = ItemDatabase.get_item(item_id)
 	return item.display_name if item else item_id

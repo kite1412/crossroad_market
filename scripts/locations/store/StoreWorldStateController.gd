@@ -6,10 +6,12 @@ const PUT_ACTION: StringName = &"put"
 var store: Node = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(store_node: Node) -> void:
 	store = store_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func process_store_world(_delta: float) -> void:
 	if store._current_storage != null or store._current_yard != null or store._current_home != null or store._is_transitioning:
 		store._set_carry_shelf_blocker_enabled(false)
@@ -25,12 +27,14 @@ func process_store_world(_delta: float) -> void:
 		return
 
 	if is_put_pressed():
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var carried_object: Node2D = store._get_carried_object_from_player()
 
 		if carried_object != null:
 			store._drop_carried_shelf_in_store(carried_object)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_store_world_active(is_active: bool) -> void:
 	if store._is_store_world_active == is_active:
 		return
@@ -63,6 +67,7 @@ func set_store_world_active(is_active: bool) -> void:
 		resume_store_npc_presentations()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func suspend_store_npc_presentations() -> void:
 	for npc in get_store_npcs():
 		npc._ensure_npc_controllers()
@@ -73,6 +78,7 @@ func suspend_store_npc_presentations() -> void:
 			npc._presentation_runtime.suspend_world_presentation()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func resume_store_npc_presentations() -> void:
 	for npc in get_store_npcs():
 		npc._ensure_npc_controllers()
@@ -83,12 +89,15 @@ func resume_store_npc_presentations() -> void:
 			npc._presentation_runtime.resume_world_presentation()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_store_npcs() -> Array[NPC]:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var result: Array[NPC] = []
 	if store == null or store.get_tree() == null:
 		return result
 
 	for node in store.get_tree().get_nodes_in_group("npcs"):
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var npc := node as NPC
 		if npc == null or not is_instance_valid(npc):
 			continue
@@ -99,7 +108,9 @@ func get_store_npcs() -> Array[NPC]:
 	return result
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func is_descendant_of_store(node: Node) -> bool:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var current := node
 	while current != null:
 		if current == store:
@@ -108,19 +119,24 @@ func is_descendant_of_store(node: Node) -> bool:
 	return false
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_node_active_recursive(node: Node, is_active: bool) -> void:
 	StoreTransitionController.set_node_active_recursive(node, is_active)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_node_enabled_recursive(node: Node, enabled: bool) -> void:
 	StoreTransitionController.set_node_enabled_recursive(node, enabled)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func is_put_pressed() -> bool:
 	return InputMap.has_action(PUT_ACTION) and Input.is_action_just_pressed(PUT_ACTION)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func is_action_locked() -> bool:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var hud: Node = store.get_tree().get_first_node_in_group("hud")
 
 	if hud == null or not hud.has_method("is_action_locked"):
@@ -129,6 +145,7 @@ func is_action_locked() -> bool:
 	return bool(hud.call("is_action_locked"))
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func close_cashier_runtime_ui() -> void:
 	if store.cashier == null:
 		store.cashier = store.get_node_or_null("Cashier") as Node2D

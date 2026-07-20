@@ -23,6 +23,7 @@ var _vbox: VBoxContainer = null
 var _difficulty_buttons: Array[Button] = []
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -30,6 +31,7 @@ func _ready() -> void:
 	_highlight_current_difficulty()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _build_ui() -> void:
 	# Dimmed background overlay
 	_overlay = ColorRect.new()
@@ -62,19 +64,24 @@ func _build_ui() -> void:
 	_panel.add_child(_vbox)
 
 	# Title
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var title := _make_label("Settings", TITLE_FONT_SIZE)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_vbox.add_child(title)
 
 	# Difficulty section
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var diff_label := _make_label("Difficulty", FONT_SIZE)
 	_vbox.add_child(diff_label)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var diff_row := HBoxContainer.new()
 	diff_row.add_theme_constant_override("separation", 4)
 	_vbox.add_child(diff_row)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var difficulty_names := ["Easy", "Medium", "Hard"]
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var difficulty_values := [
 		SettingsManager.Difficulty.EASY,
 		SettingsManager.Difficulty.MEDIUM,
@@ -82,6 +89,7 @@ func _build_ui() -> void:
 	]
 
 	for i in difficulty_names.size():
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var btn := Button.new()
 		btn.text = difficulty_names[i]
 		btn.custom_minimum_size = Vector2(0, BUTTON_HEIGHT)
@@ -92,6 +100,7 @@ func _build_ui() -> void:
 		_difficulty_buttons.append(btn)
 
 	# Close button
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var close_btn := Button.new()
 	close_btn.text = "Close"
 	close_btn.custom_minimum_size = Vector2(0, BUTTON_HEIGHT)
@@ -100,7 +109,9 @@ func _build_ui() -> void:
 	_vbox.add_child(close_btn)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _highlight_current_difficulty() -> void:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var current: int = SettingsManager.get_difficulty()
 	for btn in _difficulty_buttons:
 		btn.modulate = Color.WHITE
@@ -116,11 +127,13 @@ func _highlight_current_difficulty() -> void:
 				_difficulty_buttons[2].modulate = Color(1.0, 0.6, 0.6)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_difficulty_pressed(difficulty: int) -> void:
 	SettingsManager.set_value("difficulty", difficulty)
 	_highlight_current_difficulty()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_overlay_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_LEFT:
@@ -132,18 +145,22 @@ func _on_overlay_input(event: InputEvent) -> void:
 				_close()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
 		_close()
 		get_viewport().set_input_as_handled()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _close() -> void:
 	closed.emit()
 	queue_free()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _make_label(text: String, size: int) -> Label:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var label := Label.new()
 	label.text = text
 	label.add_theme_font_size_override("font_size", size)

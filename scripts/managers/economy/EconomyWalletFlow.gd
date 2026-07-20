@@ -4,10 +4,12 @@ extends RefCounted
 var economy: Node = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(economy_node: Node) -> void:
 	economy = economy_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func add_gold(amount: int) -> void:
 	economy.gold += amount
 	economy.daily_revenue += amount
@@ -18,6 +20,7 @@ func add_gold(amount: int) -> void:
 		economy.daily_target_reached.emit()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func spend_gold(amount: int) -> bool:
 	if economy.gold < amount:
 		return false
@@ -27,7 +30,9 @@ func spend_gold(amount: int) -> bool:
 	return true
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func pay_tax() -> bool:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var tax: int = economy.get_daily_tax()
 	if economy.gold < tax:
 		return false

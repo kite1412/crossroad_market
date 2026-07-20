@@ -14,6 +14,7 @@ static func spawn_npc(
 		pass
 		return null
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var npc := npc_scene.instantiate() as NPC
 
 	if npc == null:

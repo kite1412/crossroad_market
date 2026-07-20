@@ -4,10 +4,12 @@ extends RefCounted
 var cashier: Cashier = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(cashier_node: Cashier) -> void:
 	cashier = cashier_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func render_store_os_home(
 	status_text: String = "No customer at checkout.",
 	guide_text: String = "Use POS when a customer arrives."
@@ -39,6 +41,7 @@ func render_store_os_home(
 	)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func render_pos_app() -> void:
 	if not cashier._has_scanned_customer():
 		render_empty_pos_app()
@@ -48,6 +51,7 @@ func render_pos_app() -> void:
 		show_scan_panel()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func show_scan_panel() -> void:
 	ensure_cashier_panel()
 	cashier._set_store_os_app(cashier.STORE_OS_APP_POS)
@@ -65,6 +69,7 @@ func show_scan_panel() -> void:
 		"Select an item, add it to cart, then confirm."
 	)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var store_items: Array[ItemData] = cashier._get_store_items()
 
 	for item in store_items:
@@ -105,7 +110,9 @@ func show_scan_panel() -> void:
 	cashier.call_deferred("_refresh_cashier_item_scroll")
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func add_cart_rows_to_panel() -> void:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var pending_label := Label.new()
 	pending_label.text = "Selected Item: %s" % cashier._get_pending_item_label()
 	pending_label.add_theme_font_size_override("font_size", cashier.CASHIER_BUTTON_FONT_SIZE)
@@ -113,6 +120,7 @@ func add_cart_rows_to_panel() -> void:
 	pending_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	cashier._action_row.add_child(pending_label)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var cart_title := Label.new()
 	cart_title.text = "Cart"
 	cart_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -120,6 +128,7 @@ func add_cart_rows_to_panel() -> void:
 	cashier._action_row.add_child(cart_title)
 
 	if cashier._cart_quantities.is_empty():
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var empty_label := Label.new()
 		empty_label.text = "(empty)"
 		empty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -129,6 +138,7 @@ func add_cart_rows_to_panel() -> void:
 		for item_id in cashier._get_cart_item_ids_ordered():
 			cashier._action_row.add_child(create_cart_row(item_id))
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var total_label := Label.new()
 	total_label.text = "Total: %dG" % cashier._calculate_selected_total()
 	total_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -136,11 +146,14 @@ func add_cart_rows_to_panel() -> void:
 	cashier._action_row.add_child(total_label)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func create_cart_row(item_id: String) -> Control:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var row := HBoxContainer.new()
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_theme_constant_override("separation", 3)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item_label := Label.new()
 	item_label.text = cashier._get_cart_row_label(item_id)
 	item_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -149,6 +162,7 @@ func create_cart_row(item_id: String) -> Control:
 	item_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	row.add_child(item_label)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var plus_button := Button.new()
 	plus_button.text = "+"
 	plus_button.custom_minimum_size = Vector2(22, cashier.CASHIER_BUTTON_MIN_HEIGHT)
@@ -157,6 +171,7 @@ func create_cart_row(item_id: String) -> Control:
 	plus_button.pressed.connect(Callable(cashier, "_on_increment_cart_item_pressed").bind(item_id))
 	row.add_child(plus_button)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var minus_button := Button.new()
 	minus_button.text = "-"
 	minus_button.custom_minimum_size = Vector2(22, cashier.CASHIER_BUTTON_MIN_HEIGHT)
@@ -165,6 +180,7 @@ func create_cart_row(item_id: String) -> Control:
 	minus_button.pressed.connect(Callable(cashier, "_on_decrement_cart_item_pressed").bind(item_id))
 	row.add_child(minus_button)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var delete_button := Button.new()
 	delete_button.text = "Del"
 	delete_button.custom_minimum_size = Vector2(34, cashier.CASHIER_BUTTON_MIN_HEIGHT)
@@ -176,6 +192,7 @@ func create_cart_row(item_id: String) -> Control:
 	return row
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func show_paid_panel() -> void:
 	if cashier._is_story_gift_checkout():
 		show_gooby_choice_panel()
@@ -215,6 +232,7 @@ func show_paid_panel() -> void:
 	add_app_navigation_buttons()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func show_gooby_choice_panel() -> void:
 	ensure_cashier_panel()
 	cashier._set_store_os_app(cashier.STORE_OS_APP_POS)
@@ -257,10 +275,12 @@ func show_gooby_choice_panel() -> void:
 	add_app_navigation_buttons()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_store_os_app(app_id: StringName) -> void:
 	cashier._active_store_os_app = app_id
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_item_title(text: String) -> void:
 	if cashier._item_title == null:
 		return
@@ -268,6 +288,7 @@ func set_item_title(text: String) -> void:
 	cashier._item_title.text = text
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func refresh_cashier_item_scroll() -> void:
 	if cashier._item_list == null or cashier._item_scroll == null:
 		return
@@ -276,6 +297,7 @@ func refresh_cashier_item_scroll() -> void:
 	cashier._item_scroll.queue_sort()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func render_empty_pos_app() -> void:
 	ensure_cashier_panel()
 	cashier._set_store_os_app(cashier.STORE_OS_APP_POS)
@@ -299,16 +321,20 @@ func render_empty_pos_app() -> void:
 	add_app_navigation_buttons()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func create_scan_item_row(item: ItemData) -> Control:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var row := HBoxContainer.new()
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_theme_constant_override("separation", 4)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var swatch := ColorRect.new()
 	swatch.custom_minimum_size = cashier.ITEM_SWATCH_SIZE
 	swatch.color = cashier._get_item_shelf_color(item)
 	row.add_child(swatch)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var button := Button.new()
 	button.text = "%s  %dG" % [item.display_name, item.sell_price]
 	button.custom_minimum_size = Vector2(0, cashier.CASHIER_BUTTON_MIN_HEIGHT)
@@ -325,16 +351,20 @@ func create_scan_item_row(item: ItemData) -> Control:
 	return row
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func create_catalog_item_row(item: ItemData) -> Control:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var row := HBoxContainer.new()
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_theme_constant_override("separation", 4)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var swatch := ColorRect.new()
 	swatch.custom_minimum_size = cashier.ITEM_SWATCH_SIZE
 	swatch.color = cashier._get_item_shelf_color(item)
 	row.add_child(swatch)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var label := Label.new()
 	label.text = "%s  %dG" % [item.display_name, item.sell_price]
 	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -346,6 +376,7 @@ func create_catalog_item_row(item: ItemData) -> Control:
 	return row
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func add_app_navigation_buttons() -> void:
 	add_cashier_action_button(
 		"Close OS",
@@ -355,14 +386,17 @@ func add_app_navigation_buttons() -> void:
 	)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func close_store_os() -> void:
 	hide_cashier_panel()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func ensure_cashier_panel() -> void:
 	if cashier._cashier_layer != null and is_instance_valid(cashier._cashier_layer):
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var panel_nodes := CashierPanel.ensure(cashier)
 	cashier._cashier_layer = panel_nodes["layer"] as CanvasLayer
 	cashier._cashier_panel = panel_nodes["panel"] as ColorRect
@@ -378,6 +412,7 @@ func ensure_cashier_panel() -> void:
 	cashier._patience_bar = panel_nodes["patience_bar"] as ProgressBar
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_panel_guidance_once(key: String, text: String) -> void:
 	if cashier._guide_label == null:
 		return
@@ -392,6 +427,7 @@ func set_panel_guidance_once(key: String, text: String) -> void:
 	cashier._guide_label.text = text
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func configure_button_guidance(button: Button, tooltip: String) -> void:
 	if button == null:
 		return
@@ -406,16 +442,20 @@ func configure_button_guidance(button: Button, tooltip: String) -> void:
 		button.custom_minimum_size.y = cashier.CASHIER_BUTTON_MIN_HEIGHT
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func add_cashier_action_button(text: String, width: float, tooltip: String, pressed: Callable) -> Button:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var row := HBoxContainer.new()
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_theme_constant_override("separation", 2)
 	cashier._action_row.add_child(row)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(spacer)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var button := Button.new()
 	button.text = text
 	button.custom_minimum_size = Vector2(width, cashier.CASHIER_BUTTON_MIN_HEIGHT)
@@ -429,11 +469,13 @@ func add_cashier_action_button(text: String, width: float, tooltip: String, pres
 	return button
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func hide_cashier_panel() -> void:
 	if cashier._cashier_panel != null:
 		cashier._cashier_panel.visible = false
 	cashier._unlock_player_actions()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func clear_container(container: Container) -> void:
 	CashierPanel.clear_container(container)

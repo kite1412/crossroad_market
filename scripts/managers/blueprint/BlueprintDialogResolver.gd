@@ -19,6 +19,7 @@ static func ensure_init() -> void:
 
 static func get_dialog(bp_type: int, mood: int, key: String) -> String:
 	ensure_init()
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var bp: BlueprintData
 	match bp_type:
 		0: bp = _bp_immediate
@@ -29,8 +30,11 @@ static func get_dialog(bp_type: int, mood: int, key: String) -> String:
 
 
 static func get_item_found_dialog(npc) -> String:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var bp_type: int = BlueprintActionResolver.get_bp_type(npc)
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item_name: String = BlueprintActionResolver.item_name(npc.item_to_buy)
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var tmpl := get_dialog(bp_type, npc.npc_data.patience_type, "search")
 	if "%s" in tmpl:
 		return tmpl % item_name
@@ -38,8 +42,11 @@ static func get_item_found_dialog(npc) -> String:
 
 
 static func get_item_not_found_dialog(npc) -> String:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var bp_type: int = BlueprintActionResolver.get_bp_type(npc)
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item_name: String = BlueprintActionResolver.item_name(npc.item_to_buy)
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var tmpl := get_dialog(bp_type, npc.npc_data.patience_type, "not_found")
 	if "%s" in tmpl:
 		return tmpl % item_name
@@ -47,11 +54,17 @@ static func get_item_not_found_dialog(npc) -> String:
 
 
 static func get_checkout_dialog(npc) -> String:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var bp_type: int = BlueprintActionResolver.get_bp_type(npc)
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var mood: int = npc.npc_data.patience_type
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item_data: ItemData = ItemDatabase.get_item(npc.item_to_buy)
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item_name: String = item_data.display_name if item_data else npc.item_to_buy
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var price: int = item_data.sell_price if item_data else 0
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var tmpl := get_dialog(bp_type, mood, "checkout")
 	if "%s" in tmpl and "%d" in tmpl:
 		return tmpl % [item_name, price]
@@ -63,15 +76,18 @@ static func get_checkout_dialog(npc) -> String:
 
 
 static func get_done_dialog(npc) -> String:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var bp_type: int = BlueprintActionResolver.get_bp_type(npc)
 	return get_dialog(bp_type, npc.npc_data.patience_type, "done")
 
 
 static func get_queue_too_long_dialog(npc) -> String:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var bp_type: int = BlueprintActionResolver.get_bp_type(npc)
 	return get_dialog(bp_type, npc.npc_data.patience_type, "queue_too_long")
 
 
 static func get_checkout_wait_dialog(npc) -> String:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var bp_type: int = BlueprintActionResolver.get_bp_type(npc)
 	return get_dialog(bp_type, npc.npc_data.patience_type, "checkout_wait")

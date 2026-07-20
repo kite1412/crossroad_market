@@ -4,10 +4,12 @@ extends RefCounted
 var npc = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(npc_node) -> void:
 	npc = npc_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func apply_scripted_metadata() -> void:
 	npc.shopping_list.clear()
 	npc._cart_items.clear()

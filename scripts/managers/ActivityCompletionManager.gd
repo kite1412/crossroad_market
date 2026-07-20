@@ -8,9 +8,11 @@ signal activity_completion(message: String)
 var _notifier: ActivityCompletionNotifier = ActivityCompletionNotifier.new()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _ready() -> void:
 	_notifier.setup(self)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func notify(message: String) -> void:
 	_notifier.notify(message)

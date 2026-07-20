@@ -4,10 +4,12 @@ extends RefCounted
 var box: MysterySupplyBox = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(box_node: MysterySupplyBox) -> void:
 	box = box_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup_trigger() -> void:
 	box.add_to_group("mystery_supply_boxes")
 
@@ -34,6 +36,7 @@ func setup_trigger() -> void:
 	box.call_deferred("_try_trigger_discovery")
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func process() -> void:
 	if box._discovered:
 		return
@@ -50,11 +53,13 @@ func process() -> void:
 		try_trigger_discovery()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func unlock_mystery() -> void:
 	box._unlocked = true
 	try_trigger_discovery()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func mark_discovered() -> void:
 	box._unlocked = true
 	box._discovered = true
@@ -62,46 +67,55 @@ func mark_discovered() -> void:
 	box._apply_glow(true)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_normal_item_taken() -> void:
 	box._items_taken += 1
 	try_trigger_discovery()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_human_item_placed() -> void:
 	box._items_placed += 1
 	try_trigger_discovery()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func is_unlocked() -> bool:
 	return box._unlocked or (box._items_taken >= box.REQUIRED and box._items_placed >= box.REQUIRED)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_trigger_body_entered(body: Node) -> void:
 	if is_player_node(body):
 		box._player_inside_trigger = true
 		try_trigger_discovery()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_trigger_body_exited(body: Node) -> void:
 	if is_player_node(body):
 		box.call_deferred("_refresh_player_inside_trigger")
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_trigger_area_entered(area: Area2D) -> void:
 	if is_player_area(area):
 		box._player_inside_trigger = true
 		try_trigger_discovery()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_trigger_area_exited(area: Area2D) -> void:
 	if is_player_area(area):
 		box.call_deferred("_refresh_player_inside_trigger")
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func is_player_node(node: Node) -> bool:
 	return node != null and node.is_in_group("player")
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func is_player_area(area: Area2D) -> bool:
 	if area == null:
 		return false
@@ -109,6 +123,7 @@ func is_player_area(area: Area2D) -> bool:
 	if area.is_in_group("player"):
 		return true
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var parent: Node = area.get_parent()
 
 	if parent != null and parent.is_in_group("player"):
@@ -117,6 +132,7 @@ func is_player_area(area: Area2D) -> bool:
 	return false
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func refresh_player_inside_trigger() -> void:
 	box._player_inside_trigger = false
 
@@ -137,6 +153,7 @@ func refresh_player_inside_trigger() -> void:
 			return
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func try_trigger_discovery() -> void:
 	if box._discovered:
 		return
@@ -155,6 +172,7 @@ func try_trigger_discovery() -> void:
 	trigger_discovery()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func trigger_discovery() -> void:
 	box._discovery_running = true
 	box._discovered = true

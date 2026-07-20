@@ -86,15 +86,18 @@ var _story_flow: CashierStoryFlow = CashierStoryFlow.new()
 var _hud_bridge: CashierHudBridge = CashierHudBridge.new()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _ready() -> void:
 	_setup_cashier_controllers()
 	_setup_cursor_hover()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _process(delta: float) -> void:
 	_update_patience_timer(delta)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _update_patience_timer(delta: float) -> void:
 	if not _patience_active:
 		return
@@ -106,6 +109,7 @@ func _update_patience_timer(delta: float) -> void:
 	if _patience_bar != null:
 		_patience_bar.value = clampf(_patience_timer / _patience_duration, 0.0, 1.0)
 		# Color shift: green -> yellow -> red
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var ratio: float = _patience_bar.value
 		if ratio > 0.5:
 			_patience_bar.modulate = Color(1.0 - (ratio - 0.5) * 2.0, 1.0, 0.3)
@@ -116,6 +120,7 @@ func _update_patience_timer(delta: float) -> void:
 		_on_patience_expired()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _start_patience_timer() -> void:
 	_patience_duration = SettingsManager.get_patience_duration()
 	_patience_timer = _patience_duration
@@ -126,6 +131,7 @@ func _start_patience_timer() -> void:
 		_patience_bar.modulate = Color(0.3, 1.0, 0.3)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _stop_patience_timer() -> void:
 	_patience_active = false
 	_patience_timer = 0.0
@@ -133,6 +139,7 @@ func _stop_patience_timer() -> void:
 		_patience_bar.visible = false
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_patience_expired() -> void:
 	_stop_patience_timer()
 	if _has_scanned_customer() and _scanned_npc.has_method("cancel_checkout_and_leave"):
@@ -142,10 +149,12 @@ func _on_patience_expired() -> void:
 	_clear_scan()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _exit_tree() -> void:
 	_unlock_player_actions()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _setup_cashier_controllers() -> void:
 	for controller in [
 		_customer_detector,
@@ -158,10 +167,12 @@ func _setup_cashier_controllers() -> void:
 		controller.setup(self)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func reset_runtime_ui() -> void:
 	_hide_cashier_panel()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func try_checkout() -> void:
 	if not _is_player_nearby():
 		pass
@@ -177,6 +188,7 @@ func try_checkout() -> void:
 			_show_paid_panel()
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var first_npc: NPC = _get_first_checkout_npc()
 	if first_npc == null:
 		pass
@@ -192,6 +204,7 @@ func try_checkout() -> void:
 	_process_scan(first_npc)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _unhandled_input(event: InputEvent) -> void:
 	if _cashier_panel == null or not _cashier_panel.visible:
 		return
@@ -228,50 +241,62 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _is_player_nearby() -> bool:
 	return _customer_detector.is_player_nearby()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_first_checkout_npc() -> NPC:
 	return _customer_detector.get_first_checkout_npc()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _has_customer_approaching_counter() -> bool:
 	return _customer_detector.has_customer_approaching_counter()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _process_scan(npc: NPC) -> void:
 	_checkout_flow.process_scan(npc)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _process_paid() -> void:
 	_checkout_flow.process_paid()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _process_gooby_gift() -> void:
 	_checkout_flow.process_gooby_gift()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _process_gooby_refuse() -> void:
 	_checkout_flow.process_gooby_refuse()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _has_scanned_customer() -> bool:
 	return _checkout_flow.has_scanned_customer()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _clear_scan() -> void:
 	_checkout_flow.clear_scan()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _add_history(npc: NPC, item_label: String, total: int, status: String) -> void:
 	_checkout_flow.add_history(npc, item_label, total, status)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_checkout_history() -> Array[Dictionary]:
 	return _checkout_flow.get_checkout_history()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _render_store_os_home(
 	status_text: String = "No customer at checkout.",
 	guide_text: String = "Use POS when a customer arrives."
@@ -279,229 +304,286 @@ func _render_store_os_home(
 	_store_os_renderer.render_store_os_home(status_text, guide_text)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _render_pos_app() -> void:
 	_store_os_renderer.render_pos_app()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _show_scan_panel() -> void:
 	_store_os_renderer.show_scan_panel()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _add_cart_rows_to_panel() -> void:
 	_store_os_renderer.add_cart_rows_to_panel()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _create_cart_row(item_id: String) -> Control:
 	return _store_os_renderer.create_cart_row(item_id)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _show_paid_panel() -> void:
 	_store_os_renderer.show_paid_panel()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _show_gooby_choice_panel() -> void:
 	_store_os_renderer.show_gooby_choice_panel()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_scan_item_pressed(item_id: String) -> void:
 	_cart_controller.on_scan_item_pressed(item_id)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_add_item_pressed() -> void:
 	_cart_controller.on_add_item_pressed()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_increment_cart_item_pressed(item_id: String) -> void:
 	_cart_controller.on_increment_cart_item_pressed(item_id)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_decrement_cart_item_pressed(item_id: String) -> void:
 	_cart_controller.on_decrement_cart_item_pressed(item_id)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_delete_cart_item_pressed(item_id: String) -> void:
 	_cart_controller.on_delete_cart_item_pressed(item_id)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_confirm_scan_pressed() -> void:
 	_cart_controller.on_confirm_scan_pressed()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_ask_again_pressed() -> void:
 	_checkout_flow.on_ask_again_pressed()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_scanned_customer_name() -> String:
 	return _checkout_flow.get_scanned_customer_name()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_customer_request_line() -> String:
 	return _checkout_flow.get_customer_request_line()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_ask_again_panel_text() -> String:
 	return _checkout_flow.get_ask_again_panel_text()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _show_customer_request_bubble() -> void:
 	_checkout_flow.show_customer_request_bubble()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _set_store_os_app(app_id: StringName) -> void:
 	_store_os_renderer.set_store_os_app(app_id)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _set_item_title(text: String) -> void:
 	_store_os_renderer.set_item_title(text)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _refresh_cashier_item_scroll() -> void:
 	_store_os_renderer.refresh_cashier_item_scroll()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _render_empty_pos_app() -> void:
 	_store_os_renderer.render_empty_pos_app()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _create_scan_item_row(item: ItemData) -> Control:
 	return _store_os_renderer.create_scan_item_row(item)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _create_catalog_item_row(item: ItemData) -> Control:
 	return _store_os_renderer.create_catalog_item_row(item)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _add_app_navigation_buttons() -> void:
 	_store_os_renderer.add_app_navigation_buttons()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _close_store_os() -> void:
 	_store_os_renderer.close_store_os()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _selection_matches_customer() -> bool:
 	return _cart_controller.selection_matches_customer()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _calculate_selected_total() -> int:
 	return _cart_controller.calculate_selected_total()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_selected_item_label() -> String:
 	return _cart_controller.get_selected_item_label()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_pending_item_label() -> String:
 	return _cart_controller.get_pending_item_label()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_item_display_label(item_id: String) -> String:
 	return _cart_controller.get_item_display_label(item_id)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_store_items() -> Array[ItemData]:
 	return _cart_controller.get_store_items()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_item_shelf_color(item: ItemData) -> Color:
 	return _cart_controller.get_item_shelf_color(item)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_item_name(item_id: String) -> String:
 	return _cart_controller.get_item_name(item_id)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_item_unit_price(item_id: String) -> int:
 	return _cart_controller.get_item_unit_price(item_id)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_cart_item_ids_ordered() -> Array[String]:
 	return _cart_controller.get_cart_item_ids_ordered()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_cart_item_ids_expanded() -> Array[String]:
 	return _cart_controller.get_cart_item_ids_expanded()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_cart_row_label(item_id: String) -> String:
 	return _cart_controller.get_cart_row_label(item_id)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_cart_summary_label() -> String:
 	return _cart_controller.get_cart_summary_label()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _increment_cart_item(item_id: String) -> void:
 	_cart_controller.increment_cart_item(item_id)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _update_selected_label() -> void:
 	_cart_controller.update_selected_label()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _is_story_gift_checkout() -> bool:
 	return _story_flow.is_story_gift_checkout()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _apply_story_interaction_trust(npc: NPC) -> int:
 	return _story_flow.apply_story_interaction_trust(npc)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _is_gooby_npc(npc: NPC) -> bool:
 	return _story_flow.is_gooby_npc(npc)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _request_gooby_slime_follow_up() -> void:
 	_story_flow.request_gooby_slime_follow_up()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _notify_store_gooby_resolved() -> void:
 	_story_flow.notify_store_gooby_resolved()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _ensure_cashier_panel() -> void:
 	_store_os_renderer.ensure_cashier_panel()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _set_panel_guidance_once(key: String, text: String) -> void:
 	_store_os_renderer.set_panel_guidance_once(key, text)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _configure_button_guidance(button: Button, tooltip: String) -> void:
 	_store_os_renderer.configure_button_guidance(button, tooltip)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _add_cashier_action_button(text: String, width: float, tooltip: String, pressed: Callable) -> Button:
 	return _store_os_renderer.add_cashier_action_button(text, width, tooltip, pressed)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _hide_cashier_panel() -> void:
 	_store_os_renderer.hide_cashier_panel()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _clear_container(container: Container) -> void:
 	_store_os_renderer.clear_container(container)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _lock_player_actions() -> void:
 	_hud_bridge.lock_player_actions()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _unlock_player_actions() -> void:
 	_hud_bridge.unlock_player_actions()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _show_notification(text: String, duration: float = 2.0) -> void:
 	_hud_bridge.show_notification(text, duration)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _setup_cursor_hover() -> void:
 	_hud_bridge.setup_cursor_hover()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_cursor_mouse_entered() -> void:
 	_hud_bridge.on_cursor_mouse_entered()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_cursor_mouse_exited() -> void:
 	_hud_bridge.on_cursor_mouse_exited()

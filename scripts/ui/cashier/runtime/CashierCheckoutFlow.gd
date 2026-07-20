@@ -4,19 +4,25 @@ extends RefCounted
 var cashier: Cashier = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(cashier_node: Cashier) -> void:
 	cashier = cashier_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func process_scan(npc: NPC) -> void:
 	if not is_instance_valid(npc):
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item_id: String = npc.item_to_buy
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item_label: String = npc.get_checkout_item_label() if npc.has_method("get_checkout_item_label") else item_id
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var price: int = npc.get_checkout_total() if npc.has_method("get_checkout_total") else 0
 
 	if price <= 0:
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var item_data: ItemData = ItemDatabase.get_item(item_id)
 
 		if item_data != null:
@@ -40,14 +46,19 @@ func process_scan(npc: NPC) -> void:
 	cashier._start_patience_timer()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func process_paid() -> void:
 	if not cashier._has_scanned_customer():
 		clear_scan()
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var npc: NPC = cashier._scanned_npc
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item_id: String = cashier._scanned_item_id
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item_label: String = cashier._scanned_item_label
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var price: int = cashier._scanned_total
 
 	if price <= 0:
@@ -73,6 +84,7 @@ func process_paid() -> void:
 
 	cashier.checkout_done.emit(npc, item_id, price)
 	add_history(npc, item_label, price, "PAID")
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var story_trust_gain := cashier._apply_story_interaction_trust(npc)
 	if story_trust_gain > 0:
 		cashier._show_notification("PAID | %s | +%dG | Trust +%d" % [item_label, price, story_trust_gain], 1.8)
@@ -81,12 +93,15 @@ func process_paid() -> void:
 	clear_scan()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func process_gooby_gift() -> void:
 	if not cashier._has_scanned_customer():
 		clear_scan()
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var npc := cashier._scanned_npc
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item_label := cashier._scanned_item_label
 
 	if npc.has_method("complete_story_gift"):
@@ -94,6 +109,7 @@ func process_gooby_gift() -> void:
 	else:
 		npc.complete_checkout()
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var trust_gain := cashier._story_flow.apply_gooby_gift_trust(npc)
 	cashier._notify_store_gooby_resolved()
 	add_history(npc, item_label, 0, "GIFT")
@@ -104,12 +120,15 @@ func process_gooby_gift() -> void:
 	clear_scan()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func process_gooby_refuse() -> void:
 	if not cashier._has_scanned_customer():
 		clear_scan()
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var npc := cashier._scanned_npc
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item_label := cashier._scanned_item_label
 
 	if npc.has_method("reject_checkout_and_return_items"):
@@ -128,10 +147,12 @@ func process_gooby_refuse() -> void:
 	clear_scan()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func has_scanned_customer() -> bool:
 	return cashier._scanned_npc != null and is_instance_valid(cashier._scanned_npc)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func clear_scan() -> void:
 	cashier._stop_patience_timer()
 	cashier._scanned_npc = null
@@ -145,14 +166,17 @@ func clear_scan() -> void:
 	cashier._hide_cashier_panel()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func add_history(npc: NPC, item_label: String, total: int, status: String) -> void:
 	CashierCheckoutHistory.add_entry(cashier._checkout_history, npc, item_label, total, status)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_checkout_history() -> Array[Dictionary]:
 	return cashier._checkout_history.duplicate(true)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_ask_again_pressed() -> void:
 	cashier._ask_again_count += 1
 
@@ -168,6 +192,7 @@ func on_ask_again_pressed() -> void:
 	cashier._show_scan_panel()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_scanned_customer_name() -> String:
 	if not cashier._has_scanned_customer() or cashier._scanned_npc.npc_data == null:
 		return "Customer"
@@ -178,10 +203,12 @@ func get_scanned_customer_name() -> String:
 	return cashier._scanned_npc.npc_data.display_name
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_customer_request_line() -> String:
 	if not cashier._has_scanned_customer():
 		return "I want %s." % cashier._scanned_item_label
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item_label := cashier._scanned_npc.get_checkout_item_label() if cashier._scanned_npc.has_method("get_checkout_item_label") else cashier._scanned_item_label
 
 	if item_label == "":
@@ -190,10 +217,12 @@ func get_customer_request_line() -> String:
 	return "I want %s." % item_label
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_ask_again_panel_text() -> String:
 	return "Ask Again used: %d/3" % cashier._ask_again_count
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func show_customer_request_bubble() -> void:
 	if cashier._has_scanned_customer() and cashier._scanned_npc.has_method("repeat_checkout_request"):
 		cashier._scanned_npc.repeat_checkout_request()

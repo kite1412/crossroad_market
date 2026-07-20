@@ -20,6 +20,7 @@ var _active: bool = false
 var _advance_requested: bool = false
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(hud_node: CanvasLayer) -> void:
 	hud = hud_node
 	dialog = hud.get_node_or_null("Dialog") as Dialog
@@ -28,6 +29,7 @@ func setup(hud_node: CanvasLayer) -> void:
 		pass
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var next_callable := Callable(self, "_on_next_requested")
 	if not dialog.next_requested.is_connected(next_callable):
 		dialog.next_requested.connect(next_callable)
@@ -35,6 +37,7 @@ func setup(hud_node: CanvasLayer) -> void:
 	dialog.visible = false
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func show_dialog_sequence(dialogues: Array[Dictionary]) -> void:
 	if dialog == null or dialogues.is_empty():
 		return
@@ -46,7 +49,9 @@ func show_dialog_sequence(dialogues: Array[Dictionary]) -> void:
 	_begin_action_lock()
 
 	for index in dialogues.size():
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var line: Dictionary = dialogues[index]
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var is_last_line := index == dialogues.size() - 1
 
 		dialog.next_text = "Close" if is_last_line else "Next..."
@@ -66,10 +71,12 @@ func show_dialog_sequence(dialogues: Array[Dictionary]) -> void:
 	sequence_finished.emit()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func is_visible() -> bool:
 	return _active and dialog != null and dialog.visible
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _wait_for_next() -> void:
 	if _advance_requested:
 		_advance_requested = false
@@ -79,6 +86,7 @@ func _wait_for_next() -> void:
 	_advance_requested = false
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_next_requested() -> void:
 	if not _active:
 		return
@@ -87,11 +95,13 @@ func _on_next_requested() -> void:
 	_next_line_requested.emit()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _begin_action_lock() -> void:
 	if hud != null and hud.has_method("begin_action_lock"):
 		hud.call("begin_action_lock")
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _end_action_lock() -> void:
 	if hud != null and hud.has_method("end_action_lock"):
 		hud.call("end_action_lock")

@@ -4,14 +4,17 @@ extends Node
 var storage: Node = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(storage_node: Node) -> void:
 	storage = storage_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_entry_door(door_type: String) -> void:
 	storage._entry_door = door_type
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_player_spawn_position() -> Vector2:
 	if storage.player_spawn != null:
 		return storage.player_spawn.global_position
@@ -19,6 +22,7 @@ func get_player_spawn_position() -> Vector2:
 	return Vector2(42, 68)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func connect_signals() -> void:
 	if storage.return_door == null:
 		pass
@@ -42,6 +46,7 @@ func connect_signals() -> void:
 		EconomyManager.gold_changed.connect(storage._on_gold_changed)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func request_return_to_store() -> bool:
 	if storage._is_action_locked():
 		return false

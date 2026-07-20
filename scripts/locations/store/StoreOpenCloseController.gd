@@ -7,10 +7,12 @@ const CUSTOMER_INTAKE_CLOSED_META: StringName = &"customer_intake_closed_today"
 var store: Node = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(store_node: Node) -> void:
 	store = store_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func request_toggle_store_open() -> void:
 	if store._store_open:
 		close_store()
@@ -35,6 +37,7 @@ func request_toggle_store_open() -> void:
 	open_store()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func is_day_setup_complete() -> bool:
 	return (
 		store._human_shelf_installed
@@ -42,6 +45,7 @@ func is_day_setup_complete() -> bool:
 	)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func open_store() -> void:
 	if is_customer_intake_closed_today():
 		store._show_notification(
@@ -65,6 +69,7 @@ func open_store() -> void:
 	store._update_end_day_tax_flow()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func close_store() -> void:
 	store._store_open = false
 
@@ -80,6 +85,7 @@ func close_store() -> void:
 	store._update_end_day_tax_flow()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func is_customer_intake_closed_today() -> bool:
 	if store == null:
 		return false
@@ -92,6 +98,7 @@ func is_customer_intake_closed_today() -> bool:
 	)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func update_store_status_board(animated: bool = true) -> void:
 	store.open_close_board = get_open_close_board()
 
@@ -106,10 +113,12 @@ func update_store_status_board(animated: bool = true) -> void:
 		)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_open_close_board() -> Node:
 	if store.open_close_board != null and is_instance_valid(store.open_close_board):
 		return store.open_close_board
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var yard_board: Node = null
 
 	if store._current_yard != null and is_instance_valid(store._current_yard):
@@ -118,6 +127,7 @@ func get_open_close_board() -> Node:
 	if yard_board != null:
 		return yard_board
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var group_board := store.get_tree().get_first_node_in_group(
 		"open_close_board"
 	)

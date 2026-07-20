@@ -4,11 +4,14 @@ extends RefCounted
 var player = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(player_node) -> void:
 	player = player_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func interact_with_supply_box(box: SupplyBox) -> void:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var available: Array = box.get_available_items()
 
 	if available.is_empty():
@@ -21,9 +24,11 @@ func interact_with_supply_box(box: SupplyBox) -> void:
 
 	player._supply_box_cursor = player._supply_box_cursor % available.size()
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item_id: String = str(available[player._supply_box_cursor])
 
 	if box.collect_one(item_id):
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var item: ItemData = ItemDatabase.get_item(item_id)
 
 		show_pickup_notification(item_id, item)
@@ -31,6 +36,7 @@ func interact_with_supply_box(box: SupplyBox) -> void:
 		if not (box is MysterySupplyBox):
 			notify_mystery_taken()
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var updated_available: Array = box.get_available_items()
 
 	if updated_available.size() > 0:
@@ -39,15 +45,19 @@ func interact_with_supply_box(box: SupplyBox) -> void:
 		player._supply_box_cursor = 0
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func is_supply_box_shelf_ready(available_items: Array) -> bool:
 	return PlayerShelfInteraction.is_supply_box_shelf_ready(player.get_tree(), available_items)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func has_installed_shelf_type(shelf_type: int) -> bool:
 	return PlayerShelfInteraction.has_installed_shelf_type(player.get_tree(), shelf_type)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func notify_mystery_taken() -> void:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var world: Node = player.get_tree().get_first_node_in_group("store")
 
 	if world == null:
@@ -57,7 +67,9 @@ func notify_mystery_taken() -> void:
 		world.on_normal_item_taken()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func show_pickup_notification(item_id: String, item: ItemData) -> void:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item_name := item.display_name if item != null else item_id
 
 	if player._seen_item_ids.has(item_id):

@@ -4,10 +4,12 @@ extends RefCounted
 var scheduler: Node = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(scheduler_node: Node) -> void:
 	scheduler = scheduler_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_day_started(day: int) -> void:
 	scheduler._day_one_night_monster_spawned = false
 	scheduler._day_one_night_monster_follow_up_requested = false
@@ -18,6 +20,7 @@ func on_day_started(day: int) -> void:
 	scheduler._start_customer_session(scheduler.SESSION_HUMAN)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_phase_changed(phase) -> void:
 	if phase == TimeManager.Phase.MORNING:
 		if TimeManager.current_day > 1 and scheduler._normal_spawning_unlocked:
@@ -36,6 +39,7 @@ func on_phase_changed(phase) -> void:
 		scheduler._stop_spawning()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func lock_spawning_until_ready() -> void:
 	scheduler._spawning_unlocked = false
 	scheduler._normal_spawning_unlocked = false
@@ -44,7 +48,9 @@ func lock_spawning_until_ready() -> void:
 	scheduler._stop_spawning()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func unlock_spawning_now(start_day_one_customers_now: bool = false) -> void:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var was_unlocked: bool = scheduler._spawning_unlocked
 	if not scheduler._spawning_unlocked:
 		scheduler._spawning_unlocked = true
@@ -58,9 +64,11 @@ func unlock_spawning_now(start_day_one_customers_now: bool = false) -> void:
 		scheduler._on_phase_changed(TimeManager.current_phase)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func unlock_normal_day_spawning_now() -> void:
 	scheduler._normal_spawning_unlocked = true
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_store_open(is_open: bool) -> void:
 	scheduler._store_open = is_open

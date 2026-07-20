@@ -110,6 +110,7 @@ var _cursor_tooltip_flow: HUDCursorTooltip = HUDCursorTooltip.new()
 var _objective_toast_flow: HUDObjectiveToast = HUDObjectiveToast.new()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _ready() -> void:
 	add_to_group("hud")
 	_setup_hud_controllers()
@@ -136,6 +137,7 @@ func _ready() -> void:
 	notification_label.visible_characters = 0
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _setup_hud_controllers() -> void:
 	for controller in [
 		_status_labels,
@@ -150,6 +152,7 @@ func _setup_hud_controllers() -> void:
 		controller.setup(self)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _process(delta: float) -> void:
 	_objective_toast_flow.update_objective_toast(delta)
 	_cursor_tooltip_flow.update_cursor_hover_tooltip()
@@ -157,42 +160,52 @@ func _process(delta: float) -> void:
 	_notification_flow.process(delta)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _input(event: InputEvent) -> void:
 	_handle_dialog_skip_input(event)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _unhandled_input(event: InputEvent) -> void:
 	_handle_dialog_skip_input(event)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _handle_dialog_skip_input(event: InputEvent) -> void:
 	_dialog_skip_flow.handle_dialog_skip_input(event)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _is_dialog_skip_event(event: InputEvent) -> bool:
 	return _dialog_skip_flow.is_dialog_skip_event(event)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _skip_world_dialogs() -> bool:
 	return _dialog_skip_flow.skip_world_dialogs()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _has_interactive_overlay_open() -> bool:
 	return _dialog_skip_flow.has_interactive_overlay_open()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _has_visible_overlay_named(node_name: String) -> bool:
 	return _dialog_skip_flow.has_visible_overlay_named(node_name)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _find_visible_overlay_named(node: Node, node_name: String) -> bool:
 	return _dialog_skip_flow.find_visible_overlay_named(node, node_name)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _has_visible_overlay_content(node: Node) -> bool:
 	return _dialog_skip_flow.has_visible_overlay_content(node)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func show_notification(
 	text: String,
 	duration: float = NOTIFY_DURATION,
@@ -202,170 +215,212 @@ func show_notification(
 	_notification_flow.show_notification(text, duration, blocks_actions, instant_text)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func show_dialog_sequence(dialogues: Array[Dictionary]) -> void:
 	await _dialog_controller.show_dialog_sequence(dialogues)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func is_dialog_visible() -> bool:
 	return _dialog_controller.is_visible()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func show_tax_report(report: Dictionary) -> void:
 	_tax_panel_flow.show_tax_report(report)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func show_tax_warning(message: String, report: Dictionary = {}) -> void:
 	_tax_panel_flow.show_tax_warning(message, report)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func hide_tax_report() -> void:
 	_tax_panel_flow.hide_tax_report()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func show_tax_notice(report: Dictionary, warning: String = "") -> void:
 	_tax_panel_flow.show_tax_notice(report, warning)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func hide_tax_notice() -> void:
 	_tax_panel_flow.hide_tax_notice()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func show_hint_dialog(key: String, text: String) -> void:
 	_hint_dialog_flow.show_hint_dialog(key, text)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func show_cursor_tooltip(text: String) -> void:
 	_cursor_tooltip_flow.show_cursor_tooltip(text)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func hide_cursor_tooltip() -> void:
 	_cursor_tooltip_flow.hide_cursor_tooltip()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _update_cursor_hover_tooltip() -> void:
 	_cursor_tooltip_flow.update_cursor_hover_tooltip()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_cursor_world_hover_text() -> String:
 	return _cursor_tooltip_flow.get_cursor_world_hover_text()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_hover_candidate_from_area(area: Area2D) -> Dictionary:
 	return _cursor_tooltip_flow.get_hover_candidate_from_area(area)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_shelf_slot_hover_candidate(area: Area2D) -> Dictionary:
 	return _cursor_tooltip_flow.get_shelf_slot_hover_candidate(area)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_door_hover_text(area: Area2D) -> String:
 	return _cursor_tooltip_flow.get_door_hover_text(area)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_hover_target_priority(target: Node) -> int:
 	return _cursor_tooltip_flow.get_hover_target_priority(target)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_objective(text: String) -> void:
 	_objective_toast_flow.set_objective(text)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _update_objective_toast(delta: float) -> void:
 	_objective_toast_flow.update_objective_toast(delta)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _hide_objective_toast(animated: bool) -> void:
 	_objective_toast_flow.hide_objective_toast(animated)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_readable_notification_duration(text: String, requested_duration: float) -> float:
 	return _notification_flow.get_readable_notification_duration(text, requested_duration)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func wait_for_notification_finished() -> void:
 	await _notification_flow.wait_for_notification_finished()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func begin_action_lock() -> void:
 	_notification_flow.begin_action_lock()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func end_action_lock() -> void:
 	_notification_flow.end_action_lock()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func is_action_locked() -> bool:
 	return _notification_flow.is_action_locked()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func has_interactive_overlay_open() -> bool:
 	return _has_interactive_overlay_open()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _finish_notification() -> void:
 	_notification_flow.finish_notification()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _create_hint_dialog() -> void:
 	_hint_dialog_flow.create_hint_dialog()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _create_cursor_tooltip() -> void:
 	_cursor_tooltip_flow.create_cursor_tooltip()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _ensure_tax_panel() -> void:
 	_tax_panel_flow.ensure_tax_panel()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _render_tax_report(report: Dictionary, warning: String) -> void:
 	_tax_panel_flow.render_tax_report(report, warning)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _update_cursor_tooltip_position() -> void:
 	_cursor_tooltip_flow.update_cursor_tooltip_position()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_hint_dialog_base_position() -> Vector2:
 	return _hint_dialog_flow.get_hint_dialog_base_position()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _update_hint_dialog_timer(delta: float) -> void:
 	_hint_dialog_flow.update_hint_dialog_timer(delta)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _hide_hint_dialog(animated: bool = true) -> void:
 	_hint_dialog_flow.hide_hint_dialog(animated)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _update_all() -> void:
 	_status_labels.update_all()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_gold_changed(amount: int) -> void:
 	_status_labels.on_gold_changed(amount)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_target_reached() -> void:
 	_status_labels.on_target_reached()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_time_updated(seconds: float) -> void:
 	_status_labels.on_time_updated(seconds)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_phase_changed(phase) -> void:
 	_status_labels.on_phase_changed(phase)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_day_started(day: int) -> void:
 	_status_labels.on_day_started(day)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _update_target_label() -> void:
 	_status_labels.update_target_label()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_settings_pressed() -> void:
 	if _settings_menu != null and is_instance_valid(_settings_menu):
 		_settings_menu.queue_free()
@@ -377,5 +432,6 @@ func _on_settings_pressed() -> void:
 	add_child(_settings_menu)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_settings_menu_closed() -> void:
 	_settings_menu = null

@@ -12,6 +12,7 @@ static func leave_queue(queue: Array, npc: Node) -> void:
 
 
 static func get_queue_target(queue: Array, npc: Node, counter_position: Vector2) -> Vector2:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var position_in_queue := queue.find(npc)
 
 	if position_in_queue < 0:

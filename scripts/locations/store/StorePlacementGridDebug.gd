@@ -38,6 +38,7 @@ extends Node2D
 var _sampler := StorePlacementGrid.new()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _ready() -> void:
 	if not Engine.is_editor_hint() and not visible_in_game:
 		visible = false
@@ -45,19 +46,23 @@ func _ready() -> void:
 	queue_redraw()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _process(_delta: float) -> void:
 	queue_redraw()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_anchor_positions() -> Array[Vector2]:
 	_sampler.setup(_get_global_polygon(), anchor_spacing)
 	return _sampler.get_positions()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_surface_polygon_global() -> PackedVector2Array:
 	return _get_global_polygon()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _draw() -> void:
 	if surface_polygon.size() < 3:
 		return
@@ -69,7 +74,9 @@ func _draw() -> void:
 		draw_circle(anchor, point_radius, point_color)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_global_polygon() -> PackedVector2Array:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var global_polygon := PackedVector2Array()
 
 	for point in surface_polygon:
@@ -78,7 +85,9 @@ func _get_global_polygon() -> PackedVector2Array:
 	return global_polygon
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_closed_local_polygon() -> PackedVector2Array:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var closed_polygon := surface_polygon.duplicate()
 
 	if closed_polygon.size() > 0:
@@ -87,7 +96,9 @@ func _get_closed_local_polygon() -> PackedVector2Array:
 	return closed_polygon
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_local_anchor_positions() -> Array[Vector2]:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var anchors: Array[Vector2] = []
 
 	for global_anchor in get_anchor_positions():

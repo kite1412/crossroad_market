@@ -4,10 +4,12 @@ extends RefCounted
 var hud: CanvasLayer = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(hud_node: CanvasLayer) -> void:
 	hud = hud_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_objective(text: String) -> void:
 	if hud.objective_label == null:
 		return
@@ -31,6 +33,7 @@ func set_objective(text: String) -> void:
 	hud._objective_tween.tween_property(hud.objective_label, "position", hud._objective_base_position, hud.OBJECTIVE_ANIM_DURATION)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func update_objective_toast(delta: float) -> void:
 	if hud.objective_label == null or not hud.objective_label.visible:
 		return
@@ -44,6 +47,7 @@ func update_objective_toast(delta: float) -> void:
 		hide_objective_toast(true)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func hide_objective_toast(animated: bool) -> void:
 	hud._objective_timer = 0.0
 

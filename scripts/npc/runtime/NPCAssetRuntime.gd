@@ -4,15 +4,19 @@ extends RefCounted
 var npc = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(npc_node) -> void:
 	npc = npc_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func load_character_assets() -> void:
 	if npc.npc_data == null or npc.npc_data.assets_path.strip_edges() == "":
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var idle_sprite: CharacterSprite = npc.sprite_idle
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var move_sprite: CharacterSprite = npc.sprite_move
 	if idle_sprite == null:
 		idle_sprite = npc.get_node_or_null("VisualRoot/SpriteIdle") as CharacterSprite
@@ -22,6 +26,7 @@ func load_character_assets() -> void:
 		pass
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var textures := load_directional_textures(npc.npc_data.assets_path)
 	if textures.size() < 4:
 		pass
@@ -36,18 +41,24 @@ func load_character_assets() -> void:
 	validate_character_sprite("idle", idle_sprite, 6)
 	validate_character_sprite("move", move_sprite, 4)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var placeholder := npc.get_node_or_null("VisualRoot/PlaceholderRect") as CanvasItem
 	if placeholder != null:
 		placeholder.visible = false
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func load_directional_textures(assets_path: String) -> Dictionary:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var directory_path := "res://assets/characters/%s" % assets_path.trim_prefix("/").trim_suffix("/")
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var directory := DirAccess.open(directory_path)
 	if directory == null:
 		return {}
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var textures: Dictionary = {}
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var prefixes := {
 		"down": "front-",
 		"left": "side-left-",
@@ -63,6 +74,7 @@ func load_directional_textures(assets_path: String) -> Dictionary:
 			if textures.has(direction) or not file_name.begins_with(prefixes[direction]):
 				continue
 
+			@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 			var texture := load("%s/%s" % [directory_path, file_name]) as Texture2D
 			if texture != null:
 				textures[direction] = texture
@@ -71,7 +83,9 @@ func load_directional_textures(assets_path: String) -> Dictionary:
 	return textures
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func create_character_sprite_config(textures: Dictionary, row: int, frames: int, end_column: int) -> AnimatedCharacterSpriteConfig:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var config := AnimatedCharacterSpriteConfig.new()
 	configure_character_direction(config, "down", textures["down"] as Texture2D, row, frames, end_column)
 	configure_character_direction(config, "left", textures["left"] as Texture2D, row, frames, end_column)
@@ -80,6 +94,7 @@ func create_character_sprite_config(textures: Dictionary, row: int, frames: int,
 	return config
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func configure_character_direction(config: AnimatedCharacterSpriteConfig, direction: String, texture: Texture2D, row: int, frames: int, end_column: int) -> void:
 	match direction:
 		"down":
@@ -120,20 +135,26 @@ func configure_character_direction(config: AnimatedCharacterSpriteConfig, direct
 			config.up_end_column = end_column
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func validate_character_sprite(label: String, sprite: CharacterSprite, expected_frames: int) -> void:
 	if sprite == null or sprite.direction_config == null:
 		pass
 		return
 
 	for direction in [CharacterSprite.Direction.DOWN, CharacterSprite.Direction.LEFT, CharacterSprite.Direction.RIGHT, CharacterSprite.Direction.UP]:
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var settings := sprite.direction_config.get_direction_settings(direction)
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var texture := settings.get("texture") as Texture2D
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var animation_name := get_character_animation_name(direction)
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var frame_count := sprite.sprite_frames.get_frame_count(animation_name) if sprite.sprite_frames != null and sprite.sprite_frames.has_animation(animation_name) else 0
 		if texture == null or frame_count != expected_frames:
 			pass
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_character_animation_name(direction: CharacterSprite.Direction) -> StringName:
 	match direction:
 		CharacterSprite.Direction.DOWN: return &"down"

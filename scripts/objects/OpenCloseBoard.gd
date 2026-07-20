@@ -21,18 +21,22 @@ var _is_open: bool = false
 var _visual_controller: OpenCloseBoardVisualController = OpenCloseBoardVisualController.new()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _ready() -> void:
 	_visual_controller.setup(self)
 	_visual_controller.ready()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_hover_display_name() -> String:
 	return "Open/Close Board"
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_open_state(is_open: bool, animated: bool = true) -> void:
 	_visual_controller.set_open_state(is_open, animated)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func request_interaction() -> void:
 	_visual_controller.request_interaction()

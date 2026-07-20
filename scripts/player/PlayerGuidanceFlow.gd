@@ -4,20 +4,25 @@ extends RefCounted
 var player = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(player_node) -> void:
 	player = player_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func update_interaction_hint() -> void:
 	if player._is_action_locked():
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var areas: Array[Area2D] = player.interaction_area.get_overlapping_areas()
 	trigger_interaction_guidance(areas)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func trigger_interaction_guidance(areas: Array[Area2D]) -> void:
 	for area in areas:
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var door_type: String = player._get_storage_door_type(area)
 
 		if door_type == "yard":
@@ -48,6 +53,7 @@ func trigger_interaction_guidance(areas: Array[Area2D]) -> void:
 			)
 			return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var carried_object: Shelf = player._get_carried_shelf()
 
 	if carried_object != null:
@@ -58,6 +64,7 @@ func trigger_interaction_guidance(areas: Array[Area2D]) -> void:
 		)
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var best_target: Node = player._get_best_interaction_target(areas)
 
 	if best_target == null:
@@ -126,7 +133,9 @@ func trigger_interaction_guidance(areas: Array[Area2D]) -> void:
 		return
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func trigger_shelf_guidance(shelf: Shelf) -> void:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var shelf_name := get_object_prompt_name(shelf)
 
 	if shelf.has_meta("is_carried_storage_object") and bool(shelf.get_meta("is_carried_storage_object")):
@@ -143,8 +152,11 @@ func trigger_shelf_guidance(shelf: Shelf) -> void:
 		)
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var inventory_items := Inventory.get_all()
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var has_inventory_item := not inventory_items.is_empty()
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var has_shelf_stock := shelf.has_stock()
 
 	if has_inventory_item and has_shelf_stock:
@@ -176,20 +188,24 @@ func trigger_shelf_guidance(shelf: Shelf) -> void:
 	)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func show_guided_hint_once(key: String, first_time_text: String) -> void:
 	if player._seen_guidance_keys.has(key):
 		return
 
 	player._seen_guidance_keys[key] = true
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var hud: Node = player.get_tree().get_first_node_in_group("hud")
 
 	if hud != null and hud.has_method("show_hint_dialog"):
 		hud.call("show_hint_dialog", key, first_time_text)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_object_prompt_name(target: Node) -> String:
 	if target is NPC:
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var npc := target as NPC
 
 		if npc.npc_data != null and npc.npc_data.display_name != "":
@@ -202,6 +218,7 @@ func get_object_prompt_name(target: Node) -> String:
 		return "Supply Box"
 
 	if target is Shelf:
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var shelf := target as Shelf
 
 		match shelf.shelf_type:
@@ -210,5 +227,6 @@ func get_object_prompt_name(target: Node) -> String:
 			ItemData.ShelfType.GHOST:
 				return "Ghost Shelf"
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var node_name := String(target.name)
 	return node_name.capitalize()

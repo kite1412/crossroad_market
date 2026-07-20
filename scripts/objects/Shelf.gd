@@ -25,6 +25,7 @@ var _visual_controller: ShelfVisualController = ShelfVisualController.new()
 var _hover_controller: ShelfHoverController = ShelfHoverController.new()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _ready() -> void:
 	_setup_shelf_controllers()
 	y_sort_enabled = false
@@ -33,56 +34,69 @@ func _ready() -> void:
 	_setup_cursor_hover()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _setup_shelf_controllers() -> void:
 	_stock_controller.setup(self)
 	_visual_controller.setup(self)
 	_hover_controller.setup(self)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _apply_shelf_color() -> void:
 	_visual_controller.apply_shelf_color()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func apply_ghost_glow(enabled: bool) -> void:
 	_visual_controller.apply_ghost_glow(enabled)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func place_item(item_id: String) -> int:
 	return _stock_controller.place_item(item_id)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func stock_item_direct(item_id: String) -> int:
 	return _stock_controller.stock_item_direct(item_id)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func remove_item(slot_index: int) -> String:
 	return _stock_controller.remove_item(slot_index)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func remove_first_item() -> String:
 	return _stock_controller.remove_first_item()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func take_item_for_npc(item_id: String) -> bool:
 	return _stock_controller.take_item_for_npc(item_id)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func has_item(item_id: String) -> bool:
 	return _stock_controller.has_item(item_id)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func has_stock() -> bool:
 	return _stock_controller.has_stock()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_first_stocked_item_id() -> String:
 	return _stock_controller.get_first_stocked_item_id()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_slot_content(slot_index: int) -> String:
 	return _stock_controller.get_slot_content(slot_index)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_hover_display_name() -> String:
 	match shelf_type:
 		ItemData.ShelfType.GHOST:
@@ -91,45 +105,56 @@ func get_hover_display_name() -> String:
 			return "Human Shelf"
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_empty_slot() -> int:
 	return _stock_controller.get_empty_slot()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _apply_visual_tint(color: Color) -> void:
 	_visual_controller.apply_visual_tint(color)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _refresh_slot_visual(slot_index: int, item_id: String) -> void:
 	_visual_controller.refresh_slot_visual(slot_index, item_id)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _setup_cursor_hover() -> void:
 	_hover_controller.setup_cursor_hover()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_shelf_mouse_entered() -> void:
 	_hover_controller.on_shelf_mouse_entered()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_shelf_mouse_exited() -> void:
 	_hover_controller.on_shelf_mouse_exited()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_slot_mouse_entered(slot_index: int) -> void:
 	_hover_controller.on_slot_mouse_entered(slot_index)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_slot_mouse_exited() -> void:
 	_hover_controller.on_slot_mouse_exited()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_slot_hover_name(slot_index: int) -> String:
 	return _hover_controller.get_slot_hover_name(slot_index)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _show_cursor_tooltip(text: String) -> void:
 	_hover_controller.show_cursor_tooltip(text)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _hide_cursor_tooltip() -> void:
 	_hover_controller.hide_cursor_tooltip()

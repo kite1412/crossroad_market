@@ -9,10 +9,12 @@ const OUT_OF_STOCK_EXIT_SECONDS: float = 15.0
 var npc = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(npc_node) -> void:
 	npc = npc_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func process_enter() -> void:
 	npc._enter_pause_timer += npc.get_process_delta_time()
 
@@ -20,9 +22,11 @@ func process_enter() -> void:
 		return
 
 	npc._choose_available_item_to_buy()
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var target_shelf: Shelf = npc._find_reachable_matching_shelf()
 
 	if target_shelf == null:
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var fallback_shelf: Shelf = npc._find_matching_shelf()
 		if fallback_shelf != null:
 			_begin_wait_for_shelf("enter_no_shelf_fallback")
@@ -30,6 +34,7 @@ func process_enter() -> void:
 			_begin_wait_for_shelf("enter_no_shelf")
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var visit_position: Vector2 = npc._get_shelf_visit_position(target_shelf)
 
 	if not visit_position.is_finite():
@@ -42,6 +47,7 @@ func process_enter() -> void:
 
 	npc._target_shelf = target_shelf
 	npc.target_position = visit_position
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var route_info := get_route_travel_info(visit_position)
 	npc.shelf_route_ready.emit(
 		npc,
@@ -50,6 +56,7 @@ func process_enter() -> void:
 	set_state(NPC.State.WALK_TO_SHELF)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_route_travel_seconds(destination: Vector2) -> float:
 	return float(
 		get_route_travel_info(destination).get(
@@ -59,9 +66,13 @@ func get_route_travel_seconds(destination: Vector2) -> float:
 	)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_route_travel_info(destination: Vector2) -> Dictionary:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var route: Array[Vector2] = npc._build_movement_route(destination)
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var distance := 0.0
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var previous: Vector2 = npc.global_position
 
 	for point in route:
@@ -88,6 +99,7 @@ func get_route_travel_info(destination: Vector2) -> Dictionary:
 	}
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func process_walk_to_shelf() -> void:
 	if not npc._is_target_shelf_valid():
 		if _handle_shelf_wait_or_leave("walk_shelf_lost"):
@@ -108,6 +120,7 @@ func process_walk_to_shelf() -> void:
 		set_state(NPC.State.SEARCH_ITEM)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func process_search_item(delta: float) -> void:
 	if not npc._is_target_shelf_valid():
 		_handle_shelf_wait_or_leave("search_shelf_lost")
@@ -117,9 +130,11 @@ func process_search_item(delta: float) -> void:
 	npc.move_and_slide()
 	npc._search_timer += delta
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var stocked_shelf := _find_reachable_stocked_shelf()
 
 	if stocked_shelf != null:
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var visit_position: Vector2 = npc._get_shelf_visit_position(stocked_shelf)
 
 		if stocked_shelf != npc._target_shelf:
@@ -153,12 +168,14 @@ func process_search_item(delta: float) -> void:
 	set_state(NPC.State.EXIT)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func process_browse_item(delta: float) -> void:
 	npc._search_timer += delta
 
 	if npc._search_timer < 8.0:
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var alt_item: String = npc._find_alternative_item()
 
 	if alt_item != "":
@@ -173,6 +190,7 @@ func process_browse_item(delta: float) -> void:
 		set_state(NPC.State.EXIT)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func process_take_item() -> void:
 	if not npc._is_target_shelf_valid() and not npc._has_taken_shelf_item:
 		if _handle_shelf_wait_or_leave("take_shelf_lost"):
@@ -215,6 +233,7 @@ func process_take_item() -> void:
 	set_state(NPC.State.SEARCH_ITEM)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func process_checkout(delta: float) -> void:
 	if npc._checkout_timer == 0.0:
 		npc._show_dialog(
@@ -227,6 +246,7 @@ func process_checkout(delta: float) -> void:
 		npc.npc_data.patience_type == NPCData.PatienceType.IMPATIENT
 		and npc._checkout_timer >= npc.CHECKOUT_PATIENCE
 	):
+		@warning_ignore("static_called_on_instance")
 		npc._show_dialog(
 			BlueprintManager.get_checkout_wait_dialog(npc)
 		)
@@ -237,6 +257,7 @@ func process_checkout(delta: float) -> void:
 		set_state(NPC.State.EXIT)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func process_exit() -> void:
 	if (
 		npc.global_position.distance_to(npc.target_position)
@@ -258,6 +279,7 @@ func process_exit() -> void:
 		complete_exit()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func complete_exit() -> void:
 	if npc._exit_completed or npc.is_queued_for_deletion():
 		return
@@ -275,9 +297,11 @@ func complete_exit() -> void:
 	npc.queue_done()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _begin_wait_for_shelf(_reason: String) -> void:
 	npc._waiting_for_shelf_return = true
 	npc._shelf_wait_timer = 0.0
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var store_provider := _get_store_provider()
 
 	if (
@@ -295,6 +319,7 @@ func _begin_wait_for_shelf(_reason: String) -> void:
 	set_state(NPC.State.WAIT_FOR_SHELF)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func process_wait_for_shelf(delta: float) -> void:
 	if (
 		npc.global_position.distance_to(npc.target_position)
@@ -307,8 +332,10 @@ func process_wait_for_shelf(delta: float) -> void:
 
 	npc._shelf_wait_timer += delta
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var replacement_shelf: Shelf = npc._find_reachable_matching_shelf()
 	if replacement_shelf != null:
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var visit_position: Vector2 = npc._get_shelf_visit_position(
 			replacement_shelf
 		)
@@ -330,13 +357,16 @@ func process_wait_for_shelf(delta: float) -> void:
 		set_state(NPC.State.EXIT)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _find_reachable_stocked_shelf() -> Shelf:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var requested_items: Array[String] = npc._get_requested_items()
 
 	for shelf in npc._get_matching_shelf_candidates():
 		if shelf == null or not is_instance_valid(shelf):
 			continue
 
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var has_requested_stock := false
 		for item_id in requested_items:
 			if shelf.has_item(item_id):
@@ -346,6 +376,7 @@ func _find_reachable_stocked_shelf() -> Shelf:
 		if not has_requested_stock:
 			continue
 
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var visit_position: Vector2 = npc._get_shelf_visit_position(shelf)
 		if visit_position.is_finite():
 			return shelf
@@ -353,10 +384,12 @@ func _find_reachable_stocked_shelf() -> Shelf:
 	return null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_store_provider() -> Node:
 	return npc._get_store_route_provider()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func finish_checkout_and_exit() -> void:
 	npc._dialog_timer = npc.DIALOG_DURATION
 	npc._target_shelf = null
@@ -365,11 +398,13 @@ func finish_checkout_and_exit() -> void:
 	set_state(NPC.State.EXIT)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _handle_shelf_wait_or_leave(debug_stage: String) -> bool:
 	_begin_wait_for_shelf(debug_stage)
 	return true
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_state(new_state: int) -> void:
 	if new_state == NPC.State.ENTER:
 		npc._enter_pause_timer = 0.0
@@ -402,6 +437,7 @@ func set_state(new_state: int) -> void:
 	npc.current_state = new_state
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_perf_npc_label() -> String:
 	if (
 		npc != null

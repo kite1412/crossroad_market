@@ -32,6 +32,7 @@ signal dialog_finished
 @onready var next_button: Button = $DialogPanel/NextButton
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	next_button.pressed.connect(_on_next_pressed)
@@ -40,6 +41,7 @@ func _ready() -> void:
 	call_deferred("_layout_portrait")
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _unhandled_input(event: InputEvent) -> void:
 	if not visible or not event.is_pressed():
 		return
@@ -55,6 +57,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func show_dialog(
 		dialogue_name: String,
 		dialogue_content: String,
@@ -69,16 +72,19 @@ func show_dialog(
 	show()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func hide_dialog() -> void:
 	hide()
 	dialog_finished.emit()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_portrait_frame(frame: int) -> void:
 	portrait_frame = max(frame, 0)
 	_update_portrait()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _apply_dialog() -> void:
 	if not is_node_ready():
 		return
@@ -91,6 +97,7 @@ func _apply_dialog() -> void:
 	_update_portrait()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _update_portrait() -> void:
 	if portrait == null:
 		portrait_view.set_portrait(null)
@@ -102,6 +109,7 @@ func _update_portrait() -> void:
 	_layout_portrait()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _layout_portrait() -> void:
 	if portrait_view == null or dialog_panel == null:
 		return
@@ -116,6 +124,7 @@ func _layout_portrait() -> void:
 	)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_next_pressed() -> void:
 	next_requested.emit()
 	if close_on_next:

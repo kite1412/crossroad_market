@@ -7,11 +7,13 @@ const PANEL_HINT_FONT_SIZE: int = 7
 
 
 static func ensure(owner: Node) -> Dictionary:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var cashier_layer := CanvasLayer.new()
 	cashier_layer.name = "CashierUILayer"
 	cashier_layer.layer = 20
 	owner.add_child(cashier_layer)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var cashier_panel := ColorRect.new()
 	cashier_panel.name = "CashierPanel"
 	cashier_panel.color = Color(0.12, 0.08, 0.05, 0.94)
@@ -24,6 +26,7 @@ static func ensure(owner: Node) -> Dictionary:
 	cashier_layer.add_child(cashier_panel)
 
 	# Patience progress bar positioned above the cashier panel
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var patience_bar := ProgressBar.new()
 	patience_bar.name = "PatienceBar"
 	patience_bar.custom_minimum_size = Vector2(0, 6)
@@ -39,6 +42,7 @@ static func ensure(owner: Node) -> Dictionary:
 	patience_bar.offset_bottom = 59.0
 	cashier_layer.add_child(patience_bar)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var root := VBoxContainer.new()
 	root.name = "Content"
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -50,17 +54,20 @@ static func ensure(owner: Node) -> Dictionary:
 	root.clip_contents = true
 	cashier_panel.add_child(root)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var shell_title := Label.new()
 	shell_title.text = "STORE OS"
 	shell_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	shell_title.add_theme_font_size_override("font_size", PANEL_TITLE_FONT_SIZE)
 	root.add_child(shell_title)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var panel_title := Label.new()
 	panel_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	panel_title.add_theme_font_size_override("font_size", PANEL_TITLE_FONT_SIZE)
 	root.add_child(panel_title)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var content_row := HBoxContainer.new()
 	content_row.name = "CheckoutColumns"
 	content_row.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -68,6 +75,7 @@ static func ensure(owner: Node) -> Dictionary:
 	content_row.clip_contents = true
 	root.add_child(content_row)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item_column := VBoxContainer.new()
 	item_column.name = "ItemColumn"
 	item_column.custom_minimum_size = Vector2(220, 0)
@@ -77,6 +85,7 @@ static func ensure(owner: Node) -> Dictionary:
 	item_column.clip_contents = true
 	content_row.add_child(item_column)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item_title := Label.new()
 	item_title.text = "ITEM LIST"
 	item_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -87,6 +96,7 @@ static func ensure(owner: Node) -> Dictionary:
 	# Keep the scroll viewport constrained by the checkout panel. Without this
 	# wrapper, the ScrollContainer can propagate the full item-list minimum
 	# height into the HBox and get clipped instead of becoming scrollable.
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var scroll_viewport := Control.new()
 	scroll_viewport.name = "ItemScrollViewport"
 	scroll_viewport.custom_minimum_size = Vector2(0, 0)
@@ -95,6 +105,7 @@ static func ensure(owner: Node) -> Dictionary:
 	scroll_viewport.clip_contents = true
 	item_column.add_child(scroll_viewport)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var scroll := ScrollContainer.new()
 	scroll.name = "ItemScroll"
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -105,12 +116,14 @@ static func ensure(owner: Node) -> Dictionary:
 	scroll_viewport.add_child(scroll)
 	scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item_margin := MarginContainer.new()
 	item_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	item_margin.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	item_margin.add_theme_constant_override("margin_right", 10)
 	scroll.add_child(item_margin)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item_list := VBoxContainer.new()
 	item_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	item_list.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
@@ -121,6 +134,7 @@ static func ensure(owner: Node) -> Dictionary:
 	# checkout row. The customer flow has more controls than the idle POS view,
 	# so allowing that minimum height to bubble up makes the item viewport taller
 	# than the visible panel and leaves the last item rows unreachable.
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var detail_viewport := Control.new()
 	detail_viewport.name = "DetailViewport"
 	detail_viewport.custom_minimum_size = Vector2(166, 0)
@@ -129,6 +143,7 @@ static func ensure(owner: Node) -> Dictionary:
 	detail_viewport.clip_contents = true
 	content_row.add_child(detail_viewport)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var detail_scroll := ScrollContainer.new()
 	detail_scroll.name = "DetailScroll"
 	detail_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -139,6 +154,7 @@ static func ensure(owner: Node) -> Dictionary:
 	detail_viewport.add_child(detail_scroll)
 	detail_scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var detail_column := VBoxContainer.new()
 	detail_column.name = "DetailColumn"
 	detail_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -146,22 +162,26 @@ static func ensure(owner: Node) -> Dictionary:
 	detail_column.add_theme_constant_override("separation", 3)
 	detail_scroll.add_child(detail_column)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var customer_label := Label.new()
 	customer_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	customer_label.add_theme_font_size_override("font_size", PANEL_FONT_SIZE)
 	detail_column.add_child(customer_label)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var request_label := Label.new()
 	request_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	request_label.theme_type_variation = "SmallLabel"
 	request_label.add_theme_font_size_override("font_size", PANEL_FONT_SIZE)
 	detail_column.add_child(request_label)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var selected_label := Label.new()
 	selected_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	selected_label.add_theme_font_size_override("font_size", PANEL_FONT_SIZE)
 	detail_column.add_child(selected_label)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var guide_label := Label.new()
 	guide_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	guide_label.theme_type_variation = "SmallLabel"
@@ -169,6 +189,7 @@ static func ensure(owner: Node) -> Dictionary:
 	guide_label.add_theme_font_size_override("font_size", PANEL_HINT_FONT_SIZE)
 	detail_column.add_child(guide_label)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var action_row := VBoxContainer.new()
 	action_row.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	action_row.add_theme_constant_override("separation", 2)

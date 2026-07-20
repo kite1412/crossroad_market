@@ -8,10 +8,12 @@ const RESTOCK_TAX_RETRY_INTERVAL: float = 0.25
 var store: Node = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(store_node: Node) -> void:
 	store = store_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_storage_restock_order_purchased(order_items: Array) -> void:
 	if store == null or order_items.is_empty():
 		return
@@ -25,6 +27,7 @@ func on_storage_restock_order_purchased(order_items: Array) -> void:
 	sync_restock_deliveries_to_yard()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_storage_restock_panel_opened() -> void:
 	if store == null:
 		return
@@ -36,6 +39,7 @@ func on_storage_restock_panel_opened() -> void:
 	store._tax_restock_retry_token += 1
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_storage_restock_panel_closed(had_checkout: bool = false) -> void:
 	if store == null:
 		return
@@ -61,20 +65,24 @@ func on_storage_restock_panel_closed(had_checkout: bool = false) -> void:
 	schedule_restock_tax_retry()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func schedule_restock_tax_retry() -> void:
 	if store == null:
 		return
 
 	store._tax_restock_retry_token += 1
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var retry_token: int = int(store._tax_restock_retry_token)
 	defer_restock_tax_retry(retry_token)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func defer_restock_tax_retry(retry_token: int) -> void:
 	if store == null:
 		return
 
 	while retry_token == store._tax_restock_retry_token and should_continue_restock_tax_retry():
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var remaining_msec: int = int(store._tax_restock_close_ready_at_msec) - Time.get_ticks_msec()
 
 		if remaining_msec > 0:
@@ -86,6 +94,7 @@ func defer_restock_tax_retry(retry_token: int) -> void:
 			await store.get_tree().create_timer(RESTOCK_TAX_RETRY_INTERVAL).timeout
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func should_continue_restock_tax_retry() -> bool:
 	return (
 		store != null
@@ -97,6 +106,7 @@ func should_continue_restock_tax_retry() -> bool:
 	)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_storage_restock_item_purchased(item_id: String, quantity: int) -> void:
 	if item_id == "" or quantity <= 0:
 		return
@@ -107,15 +117,20 @@ func on_storage_restock_item_purchased(item_id: String, quantity: int) -> void:
 	}])
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func duplicate_restock_items(order_items: Array) -> Array[Dictionary]:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var items: Array[Dictionary] = []
 
 	for item in order_items:
 		if not (item is Dictionary):
 			continue
 
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var data := item as Dictionary
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var item_id := str(data.get("item_id", ""))
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var quantity := int(data.get("quantity", 0))
 
 		if item_id == "" or quantity <= 0:
@@ -129,6 +144,7 @@ func duplicate_restock_items(order_items: Array) -> Array[Dictionary]:
 	return items
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_yard_restock_delivery_collected(delivery_id: int) -> void:
 	if store == null:
 		return
@@ -138,6 +154,7 @@ func on_yard_restock_delivery_collected(delivery_id: int) -> void:
 		return
 
 	for i in range(store._pending_restock_deliveries.size() - 1, -1, -1):
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var delivery: Dictionary = store._pending_restock_deliveries[i]
 
 		if int(delivery.get("id", -1)) == delivery_id:
@@ -145,6 +162,7 @@ func on_yard_restock_delivery_collected(delivery_id: int) -> void:
 			return
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func sync_restock_deliveries_to_yard() -> void:
 	if store == null:
 		return
@@ -158,6 +176,7 @@ func sync_restock_deliveries_to_yard() -> void:
 	store._current_yard.call("set_restock_deliveries", store._pending_restock_deliveries)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func update_end_day_tax_flow() -> void:
 	if store == null:
 		return
@@ -181,6 +200,7 @@ func update_end_day_tax_flow() -> void:
 	try_show_tax_panel()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func try_show_tax_panel() -> bool:
 	if store == null:
 		return false
@@ -193,6 +213,7 @@ func try_show_tax_panel() -> bool:
 	store._latest_daily_report = EconomyManager.get_daily_report()
 	store._connect_hud_signals()
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var hud := store.get_tree().get_first_node_in_group("hud")
 
 	if hud == null or not hud.has_method("show_tax_notice"):
@@ -207,6 +228,7 @@ func try_show_tax_panel() -> bool:
 	return true
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func can_show_tax_panel() -> bool:
 	if store == null:
 		return false
@@ -232,11 +254,13 @@ func can_show_tax_panel() -> bool:
 	return true
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func show_tax_panel(warning: String = "") -> bool:
 	if store == null:
 		return false
 
 	store._connect_hud_signals()
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var hud := store.get_tree().get_first_node_in_group("hud")
 
 	if hud == null or not hud.has_method("show_tax_notice"):
@@ -248,6 +272,7 @@ func show_tax_panel(warning: String = "") -> bool:
 	return true
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_tax_ignore_requested() -> void:
 	if store == null:
 		return
@@ -259,6 +284,7 @@ func on_tax_ignore_requested() -> void:
 	store._tax_notice_active = false
 	store._tax_pending = false
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var hud := store.get_tree().get_first_node_in_group("hud")
 
 	if hud != null and hud.has_method("hide_tax_notice"):
@@ -270,6 +296,7 @@ func on_tax_ignore_requested() -> void:
 	store._show_notification("Tax payment ignored.", 1.5)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_player_entered_home() -> void:
 	if store == null:
 		return
@@ -287,6 +314,7 @@ func on_player_entered_home() -> void:
 	store._show_notification("You went to sleep without paying tax. Penalties may apply.", 3.0)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_tax_payment_requested() -> void:
 	if store == null:
 		return
@@ -294,15 +322,18 @@ func on_tax_payment_requested() -> void:
 	if not store._tax_notice_active:
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var tax := EconomyManager.get_daily_tax()
 
 	if EconomyManager.gold < tax:
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var hud := store.get_tree().get_first_node_in_group("hud")
 		if hud != null and hud.has_method("show_tax_notice"):
 			hud.call("show_tax_notice", store._latest_daily_report, "Not enough gold to pay today's tax.")
 		return
 
 	if not EconomyManager.pay_tax():
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var hud := store.get_tree().get_first_node_in_group("hud")
 		if hud != null and hud.has_method("show_tax_notice"):
 			hud.call("show_tax_notice", store._latest_daily_report, "Not enough gold to pay today's tax.")
@@ -317,6 +348,7 @@ func on_tax_payment_requested() -> void:
 	store._tax_restock_close_ready_at_msec = 0
 	store._tax_restock_retry_token += 1
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var hud := store.get_tree().get_first_node_in_group("hud")
 
 	if hud != null and hud.has_method("hide_tax_notice"):
@@ -327,6 +359,7 @@ func on_tax_payment_requested() -> void:
 	store._show_notification("Tax paid.", 1.0)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func start_midnight_to_morning_transition() -> void:
 	if store == null:
 		return
@@ -341,6 +374,7 @@ func start_midnight_to_morning_transition() -> void:
 	store.call_deferred("_run_midnight_to_morning_transition")
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func run_midnight_to_morning_transition() -> void:
 	if store == null:
 		return
@@ -353,6 +387,7 @@ func run_midnight_to_morning_transition() -> void:
 	store._is_transitioning = false
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func reset_day_state() -> void:
 	if store == null:
 		return

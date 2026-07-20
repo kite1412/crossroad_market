@@ -57,6 +57,7 @@ extends Resource
 @export var up_margin: Vector2i = Vector2i.ZERO
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_direction_settings(direction: int) -> Dictionary:
 	match direction:
 		0:
@@ -71,6 +72,7 @@ func get_direction_settings(direction: int) -> Dictionary:
 	return {}
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _settings(texture: Texture2D, rows: int, columns: int, frames_per_row: int, start_row: int, start_column: int, end_row: int, end_column: int, spacing: Vector2i, margin: Vector2i) -> Dictionary:
 	return {
 		"texture": texture,

@@ -20,6 +20,7 @@ static func get_icon(
 	if tile_position.x < 0 or tile_position.y < 0:
 		return null
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var cache_key := "%s:%d:%d:%d:%d" % [
 		tileset_path,
 		tile_position.x,
@@ -31,16 +32,19 @@ static func get_icon(
 	if _icon_cache.has(cache_key):
 		return _icon_cache[cache_key] as Texture2D
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var tileset := load(tileset_path) as Texture2D
 	if tileset == null:
 		push_warning("Tileset icon source could not be loaded: %s" % tileset_path)
 		return null
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var region := Rect2(tile_position * tile_size, tile_size)
 	if region.end.x > tileset.get_width() or region.end.y > tileset.get_height():
 		push_warning("Tileset icon coordinates are outside the source image: %s" % tileset_path)
 		return null
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var atlas_texture := AtlasTexture.new()
 	atlas_texture.atlas = tileset
 	atlas_texture.region = region

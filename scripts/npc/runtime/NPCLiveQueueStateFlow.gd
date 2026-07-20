@@ -7,6 +7,7 @@ const SHELF_WAIT_ABANDON_SECONDS: float = 20.0
 var _shelf_wait_announced: bool = false
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func finish_checkout_and_exit() -> void:
 	# The exit lane must reflect the queue at checkout completion, not the
 	# snapshot taken when this NPC first started moving toward the cashier.
@@ -15,6 +16,7 @@ func finish_checkout_and_exit() -> void:
 	super.finish_checkout_and_exit()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _begin_wait_for_shelf(_reason: String) -> void:
 	# Shelf pickup is recoverable. Keep the customer in a dedicated wait state
 	# instead of converting the missing shelf directly into an EXIT request.
@@ -28,6 +30,7 @@ func _begin_wait_for_shelf(_reason: String) -> void:
 	set_state(NPC.State.WAIT_FOR_SHELF)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func process_wait_for_shelf(delta: float) -> void:
 	npc.velocity = Vector2.ZERO
 	npc.move_and_slide()
@@ -38,8 +41,10 @@ func process_wait_for_shelf(delta: float) -> void:
 	if not npc._has_any_requested_item_available():
 		npc._choose_available_item_to_buy()
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var replacement_shelf: Shelf = npc._find_reachable_matching_shelf()
 	if replacement_shelf != null:
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var visit_position: Vector2 = npc._get_shelf_visit_position(
 			replacement_shelf
 		)
@@ -76,6 +81,7 @@ func process_wait_for_shelf(delta: float) -> void:
 	set_state(NPC.State.EXIT)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func process_exit() -> void:
 	# Show departure feedback before checking whether the NPC already overlaps
 	# the shared entry/exit marker. Without this guard, an NPC waiting near the

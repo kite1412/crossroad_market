@@ -44,18 +44,22 @@ static func _refresh_ghost_shelf_access(ghost_shelf: Shelf) -> void:
 	if bool(ghost_shelf.get_meta("npc_path_ready", false)):
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var tree := ghost_shelf.get_tree()
 	if tree == null:
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var store := tree.get_first_node_in_group("store")
 	if store == null or not store.has_method("_get_store_path_graph"):
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var graph_variant: Variant = store.call("_get_store_path_graph")
 	if not (graph_variant is StorePathGraph):
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var graph := graph_variant as StorePathGraph
 	graph.store_shelf_access_metadata(
 		ghost_shelf,

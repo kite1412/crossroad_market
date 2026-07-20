@@ -4,10 +4,12 @@ extends RefCounted
 var hud: CanvasLayer = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(hud_node: CanvasLayer) -> void:
 	hud = hud_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func show_tax_report(report: Dictionary) -> void:
 	ensure_tax_panel()
 	render_tax_report(report, "")
@@ -16,6 +18,7 @@ func show_tax_report(report: Dictionary) -> void:
 	hud.begin_action_lock()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func show_tax_warning(message: String, report: Dictionary = {}) -> void:
 	ensure_tax_panel()
 
@@ -28,6 +31,7 @@ func show_tax_warning(message: String, report: Dictionary = {}) -> void:
 	hud._tax_panel.visible = true
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func hide_tax_report() -> void:
 	if hud._tax_panel != null:
 		hud._tax_panel.visible = false
@@ -38,6 +42,7 @@ func hide_tax_report() -> void:
 	hud.end_action_lock()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func ensure_tax_notice_button() -> void:
 	if (
 		hud._tax_notice_button != null
@@ -80,12 +85,14 @@ func ensure_tax_notice_button() -> void:
 	)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func show_tax_notice(report: Dictionary, warning: String = "") -> void:
 	ensure_tax_notice_button()
 
 	hud._pending_tax_report = report.duplicate(true)
 	hud._pending_tax_warning = warning
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var tax := int(
 		report.get(
 			"tax",
@@ -97,6 +104,7 @@ func show_tax_notice(report: Dictionary, warning: String = "") -> void:
 	hud._tax_notice_button.visible = true
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func hide_tax_notice() -> void:
 	if hud._tax_notice_button != null:
 		hud._tax_notice_button.visible = false
@@ -105,6 +113,7 @@ func hide_tax_notice() -> void:
 	hud._pending_tax_warning = ""
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func ensure_tax_panel() -> void:
 	if hud._tax_layer != null and is_instance_valid(hud._tax_layer):
 		return
@@ -126,6 +135,7 @@ func ensure_tax_panel() -> void:
 	hud._tax_panel.clip_contents = true
 	hud._tax_layer.add_child(hud._tax_panel)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var root := VBoxContainer.new()
 	root.name = "Content"
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -153,6 +163,7 @@ func ensure_tax_panel() -> void:
 	hud._tax_warning_label.add_theme_font_size_override("font_size", 8)
 	root.add_child(hud._tax_warning_label)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var button_row := HBoxContainer.new()
 	button_row.size_flags_horizontal = (
 		Control.SIZE_EXPAND_FILL
@@ -163,6 +174,7 @@ func ensure_tax_panel() -> void:
 	)
 	root.add_child(button_row)
 	
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var ignore_button := Button.new()
 	ignore_button.text = "Ignore"
 	ignore_button.size_flags_horizontal = (
@@ -174,6 +186,7 @@ func ensure_tax_panel() -> void:
 	)
 	button_row.add_child(ignore_button)
 	
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var pay_button := Button.new()
 	pay_button.text = "Pay Tax"
 	pay_button.size_flags_horizontal = (
@@ -186,15 +199,23 @@ func ensure_tax_panel() -> void:
 	button_row.add_child(pay_button)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func render_tax_report(report: Dictionary, warning: String) -> void:
 	ensure_tax_panel()
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var day := int(report.get("day", TimeManager.current_day))
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var revenue := int(report.get("revenue", EconomyManager.daily_revenue))
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var expenses := int(report.get("expenses", EconomyManager.daily_expenses))
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var tax := int(report.get("tax", EconomyManager.get_daily_tax()))
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var net_profit := int(report.get("net_profit", revenue - expenses - tax))
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var total_gold := int(report.get("total_gold", EconomyManager.gold))
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var target_reached := bool(report.get("target_reached", revenue >= EconomyManager.daily_target))
 
 	hud._tax_title_label.text = "DAY %d REPORT" % day

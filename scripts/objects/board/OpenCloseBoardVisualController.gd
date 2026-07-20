@@ -4,10 +4,12 @@ extends RefCounted
 var board: OpenCloseBoard = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(board_node: OpenCloseBoard) -> void:
 	board = board_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func ready() -> void:
 	board.add_to_group("open_close_board")
 
@@ -17,12 +19,14 @@ func ready() -> void:
 	set_open_state(false, false)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_open_state(is_open: bool, animated: bool = true) -> void:
 	board._is_open = is_open
 
 	if board.status_label != null:
 		board.status_label.text = "OPEN" if board._is_open else "CLOSED"
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var target_color := board.OPEN_COLOR if board._is_open else board.CLOSED_COLOR
 
 	if board._status_tween != null and board._status_tween.is_valid():
@@ -49,7 +53,9 @@ func set_open_state(is_open: bool, animated: bool = true) -> void:
 		board._status_tween.chain().tween_property(board.visual_root, "scale", Vector2.ONE, 0.12)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func request_interaction() -> void:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var store := board.get_tree().get_first_node_in_group("store")
 
 	if store != null and store.has_method("request_toggle_store_open"):

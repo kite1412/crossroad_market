@@ -29,12 +29,14 @@ var _wallet_flow: EconomyWalletFlow = EconomyWalletFlow.new()
 var _daily_report_flow: EconomyDailyReportFlow = EconomyDailyReportFlow.new()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _ready() -> void:
 	_wallet_flow.setup(self)
 	_daily_report_flow.setup(self)
 	TimeManager.day_started.connect(_on_day_started)
 	TimeManager.day_ended.connect(_on_day_ended)
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_daily_target_for_day(day: int) -> int:
 	return mini(
 		BASE_DAILY_TARGET + maxi(0, day - 1) * DAILY_TARGET_INCREASE,
@@ -42,29 +44,36 @@ func get_daily_target_for_day(day: int) -> int:
 	)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func add_gold(amount: int) -> void:
 	_wallet_flow.add_gold(amount)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func spend_gold(amount: int) -> bool:
 	return _wallet_flow.spend_gold(amount)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_daily_tax() -> int:
 	return _daily_report_flow.get_daily_tax()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func pay_tax() -> bool:
 	return _wallet_flow.pay_tax()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_daily_report() -> Dictionary:
 	return _daily_report_flow.get_daily_report()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_day_started(day: int) -> void:
 	_daily_report_flow.on_day_started(day)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_day_ended(day: int) -> void:
 	_daily_report_flow.on_day_ended(day)

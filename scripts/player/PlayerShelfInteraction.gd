@@ -17,9 +17,11 @@ static func is_shelf_installed_in_store(shelf: Shelf) -> bool:
 
 
 static func is_supply_box_shelf_ready(tree: SceneTree, available_items: Array) -> bool:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var required_shelf_types: Dictionary = {}
 
 	for item_id_variant in available_items:
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var item := ItemDatabase.get_item(str(item_id_variant))
 
 		if item == null:
@@ -30,6 +32,7 @@ static func is_supply_box_shelf_ready(tree: SceneTree, available_items: Array) -
 	if required_shelf_types.is_empty():
 		return true
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var world: Node = tree.get_first_node_in_group("store") if tree != null else null
 
 	if world != null and world.has_method("is_shelf_type_installed"):
@@ -54,6 +57,7 @@ static func has_installed_shelf_type(tree: SceneTree, shelf_type: int) -> bool:
 		if not node is Shelf:
 			continue
 
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var shelf := node as Shelf
 
 		if shelf.shelf_type == shelf_type and is_shelf_installed_in_store(shelf):

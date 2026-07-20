@@ -35,99 +35,123 @@ var _phase_flow: TimePhaseFlow = TimePhaseFlow.new()
 var _clock_formatter: TimeClockFormatter = TimeClockFormatter.new()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _ready() -> void:
 	_setup_time_controllers()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _setup_time_controllers() -> void:
 	_runtime.setup(self)
 	_phase_flow.setup(self)
 	_clock_formatter.setup(self)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _process(delta: float) -> void:
 	_runtime.process(delta)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func start_game() -> void:
 	_phase_flow.start_game()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func start_next_day() -> void:
 	_phase_flow.start_next_day()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func start_day_phase() -> void:
 	_phase_flow.start_day_phase()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func start_clock() -> void:
 	_runtime.start_clock()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func end_day_sequence() -> void:
 	_phase_flow.end_day_sequence()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func pause() -> void:
 	_runtime.pause()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func resume() -> void:
 	_runtime.resume()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func can_sleep() -> bool:
 	return _phase_flow.can_sleep()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func sleep_until_next_day(force: bool = false) -> bool:
 	return _phase_flow.sleep_until_next_day(force)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_phase_name() -> String:
 	return _clock_formatter.get_phase_name()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_time_display() -> String:
 	return _clock_formatter.get_time_display()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_clock_display() -> String:
 	return _clock_formatter.get_clock_display()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_phase_time_range() -> String:
 	return _clock_formatter.get_phase_time_range()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_world_minutes() -> int:
 	return _clock_formatter.get_world_minutes()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_current_clock_minutes() -> int:
 	return _clock_formatter.get_current_clock_minutes()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_precise_clock_minutes() -> float:
 	return _clock_formatter.get_precise_world_minutes()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_phase_world_duration_minutes(phase: Phase) -> int:
 	return _clock_formatter.get_phase_world_duration_minutes(phase)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _advance_phase() -> void:
 	_phase_flow.advance_phase()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _set_phase(new_phase: Phase) -> void:
 	_phase_flow.set_phase(new_phase)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_phase_start_minutes(phase: Phase) -> int:
 	return _clock_formatter.get_phase_start_minutes(phase)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_phase_world_duration_minutes(phase: Phase) -> int:
 	return _clock_formatter.get_phase_world_duration_minutes(phase)

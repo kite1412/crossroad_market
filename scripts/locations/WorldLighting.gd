@@ -11,6 +11,7 @@ extends CanvasLayer
 var _tween: Tween = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _ready() -> void:
 	layer = 1
 
@@ -25,14 +26,17 @@ func _ready() -> void:
 	_apply_phase(TimeManager.current_phase, false)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_phase_changed(phase) -> void:
 	_apply_phase(phase, true)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _apply_phase(phase, animated: bool) -> void:
 	if overlay == null:
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var target_color := _get_phase_color(phase)
 
 	if _tween != null and _tween.is_valid():
@@ -45,6 +49,7 @@ func _apply_phase(phase, animated: bool) -> void:
 		overlay.color = target_color
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_phase_color(phase) -> Color:
 	match phase:
 		TimeManager.Phase.MORNING:

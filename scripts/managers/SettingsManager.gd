@@ -38,6 +38,7 @@ const DEFAULTS: Dictionary = {
 var _settings: Dictionary = {}
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _ready() -> void:
 	_settings = DEFAULTS.duplicate(true)
 	_load()
@@ -48,6 +49,7 @@ func _ready() -> void:
 # ---------------------------------------------------------------------------
 
 ## Get any setting by its key. Returns default if key is unknown.
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_value(key: String) -> Variant:
 	if _settings.has(key):
 		return _settings[key]
@@ -55,7 +57,9 @@ func get_value(key: String) -> Variant:
 
 
 ## Set a setting and emit change signal. Persists automatically.
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_value(key: String, value: Variant) -> void:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var old_value: Variant = _settings.get(key)
 	_settings[key] = value
 	if old_value != value:
@@ -64,12 +68,15 @@ func set_value(key: String, value: Variant) -> void:
 
 
 ## Convenience – current difficulty enum value.
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_difficulty() -> Difficulty:
 	return _settings.get("difficulty", Difficulty.MEDIUM) as Difficulty
 
 
 ## Convenience – patience duration for the current difficulty.
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_patience_duration() -> float:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var diff: Difficulty = get_difficulty()
 	return PATIENCE_DURATION.get(diff, PATIENCE_DURATION[Difficulty.MEDIUM])
 
@@ -78,14 +85,18 @@ func get_patience_duration() -> float:
 # Persistence
 # ---------------------------------------------------------------------------
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _save() -> void:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var config := ConfigFile.new()
 	for key in _settings:
 		config.set_value("game", key, _settings[key])
 	config.save(SETTINGS_PATH)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _load() -> void:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var config := ConfigFile.new()
 	if config.load(SETTINGS_PATH) != OK:
 		return

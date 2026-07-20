@@ -4,10 +4,12 @@ extends RefCounted
 var hud: CanvasLayer = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(hud_node: CanvasLayer) -> void:
 	hud = hud_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func handle_dialog_skip_input(event: InputEvent) -> void:
 	if not is_dialog_skip_event(event):
 		return
@@ -15,6 +17,7 @@ func handle_dialog_skip_input(event: InputEvent) -> void:
 	if hud.has_method("is_dialog_visible") and hud.is_dialog_visible():
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var skipped := false
 
 	if hud._hint_dialog_flow != null and hud._hint_dialog_flow.is_visible():
@@ -33,8 +36,10 @@ func handle_dialog_skip_input(event: InputEvent) -> void:
 		hud.get_viewport().set_input_as_handled()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func is_dialog_skip_event(event: InputEvent) -> bool:
 	if event is InputEventMouseButton:
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var mouse_event := event as InputEventMouseButton
 		return mouse_event.pressed and mouse_event.button_index in [
 			MOUSE_BUTTON_LEFT,
@@ -48,7 +53,9 @@ func is_dialog_skip_event(event: InputEvent) -> bool:
 	return false
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func skip_world_dialogs() -> bool:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var skipped := false
 
 	for node in hud.get_tree().get_nodes_in_group("dialog_skip_target"):
@@ -58,6 +65,7 @@ func skip_world_dialogs() -> bool:
 	return skipped
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func has_interactive_overlay_open() -> bool:
 	return (
 		(hud.has_method("is_dialog_visible") and hud.is_dialog_visible())
@@ -68,7 +76,9 @@ func has_interactive_overlay_open() -> bool:
 	)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func has_visible_overlay_named(node_name: String) -> bool:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var root := hud.get_tree().root
 
 	if root == null:
@@ -77,6 +87,7 @@ func has_visible_overlay_named(node_name: String) -> bool:
 	return find_visible_overlay_named(root, node_name)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func find_visible_overlay_named(node: Node, node_name: String) -> bool:
 	if node.name == node_name:
 		if node is CanvasLayer:
@@ -92,6 +103,7 @@ func find_visible_overlay_named(node: Node, node_name: String) -> bool:
 	return false
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func has_visible_overlay_content(node: Node) -> bool:
 	for child in node.get_children():
 		if child is CanvasItem and (child as CanvasItem).is_visible_in_tree():

@@ -4,10 +4,12 @@ extends RefCounted
 var hud: CanvasLayer = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(hud_node: CanvasLayer) -> void:
 	hud = hud_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func show_hint_dialog(_key: String, text: String) -> void:
 	if text == "" or hud._has_interactive_overlay_open():
 		return
@@ -33,6 +35,7 @@ func show_hint_dialog(_key: String, text: String) -> void:
 	hud._hint_tween.tween_property(hud._hint_dialog, "scale", Vector2.ONE, 0.18)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func create_hint_dialog() -> void:
 	if hud._hint_dialog != null:
 		return
@@ -63,7 +66,9 @@ func create_hint_dialog() -> void:
 	hud._hint_dialog.add_child(hud._hint_label)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_hint_dialog_base_position() -> Vector2:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var viewport_size := hud.get_viewport().get_visible_rect().size
 	return Vector2(
 		(viewport_size.x - hud.HINT_DIALOG_WIDTH) * 0.5,
@@ -71,6 +76,7 @@ func get_hint_dialog_base_position() -> Vector2:
 	)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func update_hint_dialog_timer(delta: float) -> void:
 	if not hud._hint_dialog_visible:
 		return
@@ -81,6 +87,7 @@ func update_hint_dialog_timer(delta: float) -> void:
 		hide_hint_dialog(true)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func hide_hint_dialog(animated: bool = true) -> void:
 	if hud._hint_dialog == null:
 		return
@@ -104,5 +111,6 @@ func hide_hint_dialog(animated: bool = true) -> void:
 	)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func is_visible() -> bool:
 	return hud._hint_dialog_visible

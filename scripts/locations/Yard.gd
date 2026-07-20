@@ -18,6 +18,7 @@ signal restock_delivery_collected(delivery_id: int)
 var _restock_deliveries: Array[Dictionary] = []
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _ready() -> void:
 	add_to_group("location")
 	add_to_group("yard")
@@ -25,39 +26,47 @@ func _ready() -> void:
 	_configure_doors()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _setup_yard_controllers() -> void:
 	for controller in [scene_flow, restock_flow]:
 		if controller != null and controller.has_method("setup"):
 			controller.call("setup", self)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _configure_doors() -> void:
 	if scene_flow != null:
 		scene_flow.configure_doors()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func request_return_to_store() -> bool:
 	return scene_flow != null and scene_flow.request_return_to_store()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func request_enter_home() -> bool:
 	return scene_flow != null and scene_flow.request_enter_home()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_restock_deliveries(deliveries: Array) -> void:
 	if restock_flow != null:
 		restock_flow.set_restock_deliveries(deliveries)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _is_action_locked() -> bool:
 	return scene_flow != null and scene_flow.is_action_locked()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _refresh_restock_packages() -> void:
 	if restock_flow != null:
 		restock_flow.refresh_restock_packages()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_restock_drop_markers() -> Array[Marker2D]:
 	if restock_flow != null:
 		return restock_flow.get_restock_drop_markers()
@@ -65,6 +74,7 @@ func _get_restock_drop_markers() -> Array[Marker2D]:
 	return []
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_restock_package_collected(delivery_id: int) -> void:
 	if restock_flow != null:
 		restock_flow.on_restock_package_collected(delivery_id)

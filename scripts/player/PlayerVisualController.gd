@@ -15,10 +15,12 @@ const SPRITE_ACTION_BACK_Z: int = 1
 var player = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(player_node) -> void:
 	player = player_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func initialize() -> void:
 	apply_sprite_base_z_indexes()
 
@@ -32,16 +34,20 @@ func initialize() -> void:
 		player.sprite_action_sprint.visible = false
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func update_character_sprite(motion: Vector2) -> void:
 	if player.sprite_move == null and player.sprite_idle == null and player.sprite_action == null:
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var is_moving := motion != Vector2.ZERO
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var carrying_shelf := is_carrying_shelf()
 
 	if is_moving:
 		player._move_direction = get_direction(motion)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var active_sprite := get_active_character_sprite(carrying_shelf, is_moving)
 	set_character_sprite_visibility(active_sprite)
 
@@ -56,6 +62,7 @@ func update_character_sprite(motion: Vector2) -> void:
 			active_sprite.call("play_direction_loop", player._move_direction)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_active_character_sprite(is_carrying_shelf_value: bool, is_moving: bool) -> AnimatedSprite2D:
 	if is_carrying_shelf_value:
 		if is_moving and player.is_sprinting:
@@ -68,6 +75,7 @@ func get_active_character_sprite(is_carrying_shelf_value: bool, is_moving: bool)
 	return player.sprite_move if is_moving else player.sprite_idle
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_character_sprite_visibility(active_sprite: AnimatedSprite2D) -> void:
 	for sprite in [player.sprite_move, player.sprite_sprint, player.sprite_idle, player.sprite_action, player.sprite_action_sprint]:
 		if sprite == null:
@@ -76,7 +84,9 @@ func set_character_sprite_visibility(active_sprite: AnimatedSprite2D) -> void:
 		sprite.visible = sprite == active_sprite
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func update_carried_object_visual(carried_object: Node2D = null) -> void:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var object: Node2D = carried_object if carried_object != null else player._get_carried_object()
 	if object == null:
 		apply_sprite_base_z_indexes()
@@ -87,10 +97,12 @@ func update_carried_object_visual(carried_object: Node2D = null) -> void:
 	apply_carry_sprite_z_index()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func is_carrying_shelf() -> bool:
 	return player._get_carried_object() != null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_direction(motion: Vector2) -> CharacterSprite.Direction:
 	if motion == Vector2.ZERO:
 		return CharacterSprite.Direction.DOWN
@@ -101,6 +113,7 @@ func get_direction(motion: Vector2) -> CharacterSprite.Direction:
 		return CharacterSprite.Direction.DOWN if motion.y > 0 else CharacterSprite.Direction.UP
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_carried_object_offset() -> Vector2:
 	match player._move_direction:
 		CharacterSprite.Direction.UP:
@@ -113,6 +126,7 @@ func get_carried_object_offset() -> Vector2:
 			return CARRIED_OBJECT_FRONT_OFFSET
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_carried_object_z_index() -> int:
 	match player._move_direction:
 		CharacterSprite.Direction.UP:
@@ -123,6 +137,7 @@ func get_carried_object_z_index() -> int:
 			return CARRIED_OBJECT_FRONT_Z
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func apply_sprite_base_z_indexes() -> void:
 	if player.sprite_move != null:
 		player.sprite_move.z_index = SPRITE_NORMAL_Z
@@ -134,7 +149,9 @@ func apply_sprite_base_z_indexes() -> void:
 		player.sprite_action_sprint.z_index = SPRITE_ACTION_FRONT_Z
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func apply_carry_sprite_z_index() -> void:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var action_z_index := SPRITE_ACTION_BACK_Z if player._move_direction == CharacterSprite.Direction.UP else SPRITE_ACTION_FRONT_Z
 	if player.sprite_action != null:
 		player.sprite_action.z_index = action_z_index

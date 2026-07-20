@@ -4,24 +4,30 @@ extends RefCounted
 var package: RestockPackage = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(package_node: RestockPackage) -> void:
 	package = package_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func ensure_visual() -> void:
 	if package.get_node_or_null("CollisionShape2D") == null:
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var shape := CollisionShape2D.new()
 		shape.name = "CollisionShape2D"
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var rect := RectangleShape2D.new()
 		rect.size = Vector2(64, 42)
 		shape.shape = rect
 		package.add_child(shape)
 
 	if package.get_node_or_null("VisualRoot") == null:
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var visual_root := Node2D.new()
 		visual_root.name = "VisualRoot"
 		package.add_child(visual_root)
 
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var box := ColorRect.new()
 		box.name = "SupplyBox"
 		box.offset_left = -30.0
@@ -31,6 +37,7 @@ func ensure_visual() -> void:
 		box.color = Color(0.46, 0.31, 0.16, 1.0)
 		visual_root.add_child(box)
 
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var strap := ColorRect.new()
 		strap.name = "SupplyBoxStrap"
 		strap.offset_left = -30.0
@@ -51,6 +58,7 @@ func ensure_visual() -> void:
 		package._label = package.get_node_or_null("VisualRoot/SupplyBoxLabel") as Label
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func refresh_label() -> void:
 	if package._label == null:
 		return
@@ -58,7 +66,9 @@ func refresh_label() -> void:
 	package._label.text = "x%d" % package.quantity
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func show_notification(text: String, duration: float) -> void:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var hud := package.get_tree().get_first_node_in_group("hud")
 
 	if hud != null and hud.has_method("show_notification"):

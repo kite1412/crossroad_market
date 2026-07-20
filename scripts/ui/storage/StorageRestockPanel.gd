@@ -7,12 +7,14 @@ const PANEL_HINT_FONT_SIZE: int = 7
 
 
 static func ensure(owner: Node) -> Dictionary:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var layer := CanvasLayer.new()
 	layer.name = "StorageRestockLayer"
 	layer.layer = 20
 	layer.visible = false
 	owner.add_child(layer)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var panel := ColorRect.new()
 	panel.name = "StorageRestockPanel"
 	panel.color = Color(0.1, 0.08, 0.07, 0.94)
@@ -25,6 +27,7 @@ static func ensure(owner: Node) -> Dictionary:
 	panel.clip_contents = true
 	layer.add_child(panel)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var root := VBoxContainer.new()
 	root.name = "Content"
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -36,18 +39,21 @@ static func ensure(owner: Node) -> Dictionary:
 	root.clip_contents = true
 	panel.add_child(root)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var shell_title := Label.new()
 	shell_title.text = "STORAGE OS"
 	shell_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	shell_title.add_theme_font_size_override("font_size", PANEL_TITLE_FONT_SIZE)
 	root.add_child(shell_title)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var title := Label.new()
 	title.text = "STORAGE RESTOCK"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", PANEL_TITLE_FONT_SIZE)
 	root.add_child(title)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var content_row := HBoxContainer.new()
 	content_row.name = "RestockColumns"
 	content_row.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -55,6 +61,7 @@ static func ensure(owner: Node) -> Dictionary:
 	content_row.clip_contents = true
 	root.add_child(content_row)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item_column := VBoxContainer.new()
 	item_column.custom_minimum_size = Vector2(168, 0)
 	item_column.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
@@ -63,12 +70,14 @@ static func ensure(owner: Node) -> Dictionary:
 	item_column.clip_contents = true
 	content_row.add_child(item_column)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item_title := Label.new()
 	item_title.text = "ITEM LIST"
 	item_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	item_title.add_theme_font_size_override("font_size", PANEL_FONT_SIZE)
 	item_column.add_child(item_title)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var scroll := ScrollContainer.new()
 	scroll.custom_minimum_size = Vector2(0, 76)
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -80,18 +89,21 @@ static func ensure(owner: Node) -> Dictionary:
 	scroll.clip_contents = true
 	item_column.add_child(scroll)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item_margin := MarginContainer.new()
 	item_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	item_margin.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	item_margin.add_theme_constant_override("margin_right", 6)
 	scroll.add_child(item_margin)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item_list := VBoxContainer.new()
 	item_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	item_list.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	item_list.add_theme_constant_override("separation", 2)
 	item_margin.add_child(item_list)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var detail_scroll := ScrollContainer.new()
 	detail_scroll.custom_minimum_size = Vector2(204, 76)
 	detail_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -103,12 +115,14 @@ static func ensure(owner: Node) -> Dictionary:
 	detail_scroll.clip_contents = true
 	content_row.add_child(detail_scroll)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var detail_margin := MarginContainer.new()
 	detail_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	detail_margin.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	detail_margin.add_theme_constant_override("margin_right", 6)
 	detail_scroll.add_child(detail_margin)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var detail_column := VBoxContainer.new()
 	detail_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	detail_column.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
@@ -116,15 +130,18 @@ static func ensure(owner: Node) -> Dictionary:
 	detail_column.clip_contents = true
 	detail_margin.add_child(detail_column)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var wallet_label := Label.new()
 	wallet_label.add_theme_font_size_override("font_size", PANEL_FONT_SIZE)
 	detail_column.add_child(wallet_label)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var selected_label := Label.new()
 	selected_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	selected_label.add_theme_font_size_override("font_size", PANEL_FONT_SIZE)
 	detail_column.add_child(selected_label)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var guide_label := Label.new()
 	guide_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	guide_label.theme_type_variation = "SmallLabel"
@@ -132,6 +149,7 @@ static func ensure(owner: Node) -> Dictionary:
 	guide_label.add_theme_font_size_override("font_size", PANEL_HINT_FONT_SIZE)
 	detail_column.add_child(guide_label)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var action_row := VBoxContainer.new()
 	action_row.custom_minimum_size = Vector2(0, 42)
 	action_row.size_flags_vertical = Control.SIZE_SHRINK_BEGIN

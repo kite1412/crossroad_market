@@ -4,10 +4,12 @@ extends RefCounted
 var manager: Node = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(manager_node: Node) -> void:
 	manager = manager_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func process(delta: float) -> void:
 	if not manager.is_running:
 		return
@@ -19,6 +21,7 @@ func process(delta: float) -> void:
 		manager._advance_phase()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func start_clock() -> void:
 	if manager._day_finished:
 		return
@@ -26,9 +29,11 @@ func start_clock() -> void:
 	manager.is_running = true
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func pause() -> void:
 	manager.is_running = false
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func resume() -> void:
 	start_clock()

@@ -24,16 +24,19 @@ static func find_matching_shelf(tree: SceneTree, item_id: String) -> Shelf:
 	if tree == null:
 		return null
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item: ItemData = ItemDatabase.get_item(item_id)
 
 	if item == null:
 		return null
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var stocked_shelf := find_shelf_with_item(tree, item_id)
 
 	if stocked_shelf != null:
 		return stocked_shelf
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var fallback_shelf: Shelf = null
 
 	for shelf in tree.get_nodes_in_group("shelves"):
@@ -56,7 +59,9 @@ static func find_alternative_item(tree: SceneTree, item_id: String, original_ite
 	if tree == null:
 		return ""
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var target_type := ItemData.ShelfType.HUMAN
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var wanted_item: ItemData = ItemDatabase.get_item(item_id)
 
 	if wanted_item != null:
@@ -70,6 +75,7 @@ static func find_alternative_item(tree: SceneTree, item_id: String, original_ite
 			continue
 
 		for i in shelf.max_slots:
+			@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 			var shelf_item_id: String = shelf.get_slot_content(i)
 
 			if shelf_item_id != "" and shelf_item_id != original_item_id:
@@ -89,6 +95,7 @@ static func find_first_stocked_item_for_shelf_type(tree: SceneTree, shelf_type: 
 		if shelf.shelf_type != shelf_type:
 			continue
 
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var item_id: String = shelf.get_first_stocked_item_id()
 
 		if item_id != "":

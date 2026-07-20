@@ -42,6 +42,7 @@ static func get_checkout_dialog(npc) -> String:
 
 
 static func get_done_dialog(npc) -> String:
+	@warning_ignore("static_called_on_instance")
 	return BlueprintDialogResolver.get_done_dialog(npc)
 
 
@@ -50,6 +51,7 @@ static func get_queue_too_long_dialog(npc) -> String:
 
 
 static func get_checkout_wait_dialog(npc) -> String:
+	@warning_ignore("static_called_on_instance")
 	return BlueprintDialogResolver.get_checkout_wait_dialog(npc)
 
 

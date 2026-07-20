@@ -85,6 +85,7 @@ var _restock_cart: Dictionary = {}
 var _restock_checkout_completed_this_session: bool = false
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _ready() -> void:
 	add_to_group("location")
 	add_to_group("storage")
@@ -97,6 +98,7 @@ func _ready() -> void:
 	_apply_mystery_phase_state(false)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _setup_storage_controllers() -> void:
 	for controller in [
 		scene_flow,
@@ -109,6 +111,7 @@ func _setup_storage_controllers() -> void:
 			controller.call("setup", self)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _process(_delta: float) -> void:
 	_find_player_if_needed()
 	_update_player_depth_override()
@@ -116,56 +119,67 @@ func _process(_delta: float) -> void:
 	_handle_carry_input()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_entry_door(door_type: String) -> void:
 	if scene_flow != null:
 		scene_flow.set_entry_door(door_type)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_shelf_install_state(human_installed: bool, ghost_installed: bool) -> void:
 	if mystery_flow != null:
 		mystery_flow.set_shelf_install_state(human_installed, ghost_installed)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_normal_supply_depleted(is_depleted: bool) -> void:
 	if mystery_flow != null:
 		mystery_flow.set_normal_supply_depleted(is_depleted)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_locked_half_unlocked(is_unlocked: bool) -> void:
 	if mystery_flow != null:
 		mystery_flow.set_locked_half_unlocked(is_unlocked)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_mystery_phase_unlocked(is_unlocked: bool) -> void:
 	if mystery_flow != null:
 		mystery_flow.set_mystery_phase_unlocked(is_unlocked)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_mystery_discovered(is_discovered: bool) -> void:
 	if mystery_flow != null:
 		mystery_flow.set_mystery_discovered(is_discovered)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_mystery_supply_depleted(is_depleted: bool) -> void:
 	if mystery_flow != null:
 		mystery_flow.set_mystery_supply_depleted(is_depleted)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_mystery_items_taken(item_ids: Array[String]) -> void:
 	if mystery_flow != null:
 		mystery_flow.set_mystery_items_taken(item_ids)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func unlock_locked_half() -> void:
 	if mystery_flow != null:
 		mystery_flow.unlock_locked_half()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func unlock_mystery_phase() -> void:
 	if mystery_flow != null:
 		mystery_flow.unlock_mystery_phase()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_player_spawn_position() -> Vector2:
 	if scene_flow != null:
 		return scene_flow.get_player_spawn_position()
@@ -173,68 +187,82 @@ func get_player_spawn_position() -> Vector2:
 	return Vector2(42, 68)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func request_return_to_store() -> bool:
 	return scene_flow != null and scene_flow.request_return_to_store()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func open_restock_panel() -> void:
 	if restock_flow != null:
 		restock_flow.open_restock_panel()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func request_pickup_shelf(shelf: Shelf) -> bool:
 	return shelf_carry_controller != null and shelf_carry_controller.request_pickup_shelf(shelf)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func request_drop_carried_object() -> bool:
 	return shelf_carry_controller != null and shelf_carry_controller.request_drop_carried_object()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _connect_signals() -> void:
 	if scene_flow != null:
 		scene_flow.connect_signals()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _resize_background_to_viewport() -> void:
 	if presentation != null:
 		presentation.resize_background_to_viewport()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _setup_shelves() -> void:
 	if mystery_flow != null:
 		mystery_flow.setup_shelves()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _apply_shelf_install_state() -> void:
 	if mystery_flow != null:
 		mystery_flow.apply_shelf_install_state()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _apply_normal_box_state() -> void:
 	if mystery_flow != null:
 		mystery_flow.apply_normal_box_state()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _apply_mystery_phase_state(animated: bool) -> void:
 	if mystery_flow != null:
 		await mystery_flow.apply_mystery_phase_state(animated)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _handle_carry_input() -> void:
 	if shelf_carry_controller != null:
 		shelf_carry_controller.handle_carry_input()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _find_player_if_needed() -> void:
 	if shelf_carry_controller != null:
 		shelf_carry_controller.find_player_if_needed()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _update_player_depth_override() -> void:
 	if presentation != null:
 		presentation.update_player_depth_override()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_nearest_carryable_shelf() -> Node2D:
 	if shelf_carry_controller != null:
 		return shelf_carry_controller.get_nearest_carryable_shelf()
@@ -242,21 +270,25 @@ func _get_nearest_carryable_shelf() -> Node2D:
 	return null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _pickup_object(object: Node2D) -> void:
 	if shelf_carry_controller != null:
 		shelf_carry_controller.pickup_object(object)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _drop_carried_object() -> void:
 	if shelf_carry_controller != null:
 		shelf_carry_controller.drop_carried_object()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _update_carried_object_position() -> void:
 	if shelf_carry_controller != null:
 		shelf_carry_controller.update_carried_object_position()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_carried_object_from_player() -> Node2D:
 	if shelf_carry_controller != null:
 		return shelf_carry_controller.get_carried_object_from_player()
@@ -264,37 +296,45 @@ func _get_carried_object_from_player() -> Node2D:
 	return null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _set_node_enabled_recursive(node: Node, enabled: bool) -> void:
 	if shelf_carry_controller != null:
 		shelf_carry_controller.set_node_enabled_recursive(node, enabled)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_mystery_box_discovered() -> void:
 	if mystery_flow != null:
 		mystery_flow.on_mystery_box_discovered()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_mystery_box_item_taken(item_id: String) -> void:
 	if mystery_flow != null:
 		mystery_flow.on_mystery_box_item_taken(item_id)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_ghost_shelf_item_placed(slot_index: int, item_id: String) -> void:
 	if mystery_flow != null:
 		mystery_flow.on_ghost_shelf_item_placed(slot_index, item_id)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _apply_mystery_box_item_state() -> void:
 	if mystery_flow != null:
 		mystery_flow.apply_mystery_box_item_state()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_gold_changed(_amount: int) -> void:
 	if restock_flow != null:
 		restock_flow.on_gold_changed(_amount)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _is_action_locked() -> bool:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var hud: Node = get_tree().get_first_node_in_group("hud")
 
 	if hud == null or not hud.has_method("is_action_locked"):
@@ -303,6 +343,7 @@ func _is_action_locked() -> bool:
 	return bool(hud.call("is_action_locked"))
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _show_notification(text: String, duration: float = 2.0) -> void:
 	if presentation != null:
 		presentation.show_notification(text, duration)

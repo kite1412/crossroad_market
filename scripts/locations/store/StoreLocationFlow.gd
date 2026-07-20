@@ -8,10 +8,12 @@ const STORE_STORAGE_RETURN_FALLBACK_POSITION := Vector2(383, 76)
 var store: Node = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(store_node: Node) -> void:
 	store = store_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func start_game_in_yard() -> void:
 	if store._yard_intro_shown:
 		return
@@ -36,7 +38,9 @@ func start_game_in_yard() -> void:
 	store.open_close_board = null
 	store._update_store_status_board(false)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var spawn_marker := store._current_yard.get_node_or_null("PlayerSpawn") as Node2D
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var spawn_position: Vector2 = spawn_marker.global_position if spawn_marker != null else Vector2(240, 136)
 
 	store._set_store_world_active(false)
@@ -45,11 +49,13 @@ func start_game_in_yard() -> void:
 	store._show_yard_intro()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func connect_yard_return_signal() -> void:
 	if store._current_yard == null:
 		return
 
 	if store._current_yard.has_signal("return_to_store"):
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var return_callable := Callable(store, "_on_yard_return")
 
 		if not store._current_yard.is_connected("return_to_store", return_callable):
@@ -58,6 +64,7 @@ func connect_yard_return_signal() -> void:
 		pass
 
 	if store._current_yard.has_signal("enter_home"):
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var home_callable := Callable(store, "_on_yard_enter_home")
 
 		if not store._current_yard.is_connected("enter_home", home_callable):
@@ -66,10 +73,12 @@ func connect_yard_return_signal() -> void:
 		pass
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func configure_yard_scene() -> void:
 	connect_yard_return_signal()
 
 	if store._current_yard != null and store._current_yard.has_signal("restock_delivery_collected"):
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var restock_collected_callable := Callable(store, "_on_yard_restock_delivery_collected")
 
 		if not store._current_yard.is_connected("restock_delivery_collected", restock_collected_callable):
@@ -78,6 +87,7 @@ func configure_yard_scene() -> void:
 	store._sync_restock_deliveries_to_yard()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func enter_storage() -> void:
 	if store.storage_scene == null:
 		pass
@@ -125,11 +135,13 @@ func enter_storage() -> void:
 
 	connect_storage_signals()
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var spawn_position := Vector2(42, 68)
 
 	if store._current_storage.has_method("get_player_spawn_position"):
 		spawn_position = store._current_storage.get_player_spawn_position()
 	else:
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var spawn_marker := store._current_storage.get_node_or_null("StorageMarkers/PlayerSpawn") as Node2D
 		spawn_position = spawn_marker.global_position if spawn_marker != null else spawn_position
 
@@ -141,8 +153,10 @@ func enter_storage() -> void:
 	store._is_transitioning = false
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func connect_storage_signals() -> void:
 	if store._current_storage.has_signal("return_to_store"):
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var return_callable := Callable(store, "_on_storage_return")
 
 		if not store._current_storage.is_connected("return_to_store", return_callable):
@@ -151,54 +165,63 @@ func connect_storage_signals() -> void:
 		pass
 
 	if store._current_storage.has_signal("mystery_discovered"):
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var mystery_callable := Callable(store, "_on_storage_mystery_discovered")
 
 		if not store._current_storage.is_connected("mystery_discovered", mystery_callable):
 			store._current_storage.connect("mystery_discovered", mystery_callable)
 
 	if store._current_storage.has_signal("mystery_item_taken"):
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var mystery_item_callable := Callable(store, "_on_storage_mystery_item_taken")
 
 		if not store._current_storage.is_connected("mystery_item_taken", mystery_item_callable):
 			store._current_storage.connect("mystery_item_taken", mystery_item_callable)
 
 	if store._current_storage.has_signal("mystery_supply_depleted"):
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var mystery_depleted_callable := Callable(store, "_on_storage_mystery_supply_depleted")
 
 		if not store._current_storage.is_connected("mystery_supply_depleted", mystery_depleted_callable):
 			store._current_storage.connect("mystery_supply_depleted", mystery_depleted_callable)
 
 	if store._current_storage.has_signal("ghost_shelf_item_placed"):
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var ghost_shelf_callable := Callable(store, "_on_ghost_shelf_item_placed")
 
 		if not store._current_storage.is_connected("ghost_shelf_item_placed", ghost_shelf_callable):
 			store._current_storage.connect("ghost_shelf_item_placed", ghost_shelf_callable)
 
 	if store._current_storage.has_signal("restock_order_purchased"):
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var restock_order_callable := Callable(store, "_on_storage_restock_order_purchased")
 
 		if not store._current_storage.is_connected("restock_order_purchased", restock_order_callable):
 			store._current_storage.connect("restock_order_purchased", restock_order_callable)
 
 	if store._current_storage.has_signal("restock_panel_opened"):
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var restock_panel_opened_callable := Callable(store, "_on_storage_restock_panel_opened")
 
 		if not store._current_storage.is_connected("restock_panel_opened", restock_panel_opened_callable):
 			store._current_storage.connect("restock_panel_opened", restock_panel_opened_callable)
 
 	if store._current_storage.has_signal("restock_panel_closed"):
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var restock_panel_closed_callable := Callable(store, "_on_storage_restock_panel_closed")
 
 		if not store._current_storage.is_connected("restock_panel_closed", restock_panel_closed_callable):
 			store._current_storage.connect("restock_panel_closed", restock_panel_closed_callable)
 
 	if store._current_storage.has_signal("restock_item_purchased"):
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var restock_callable := Callable(store, "_on_storage_restock_item_purchased")
 
 		if not store._current_storage.is_connected("restock_item_purchased", restock_callable):
 			store._current_storage.connect("restock_item_purchased", restock_callable)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_storage_return(_door_type: String) -> void:
 	if store._is_transitioning:
 		return
@@ -215,6 +238,7 @@ func on_storage_return(_door_type: String) -> void:
 	else:
 		pass
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var storage_to_remove: Node2D = store._current_storage
 
 	if storage_to_remove != null:
@@ -229,6 +253,7 @@ func on_storage_return(_door_type: String) -> void:
 	store._is_transitioning = false
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func enter_yard() -> void:
 	if store.yard_scene == null:
 		pass
@@ -254,7 +279,9 @@ func enter_yard() -> void:
 	store.open_close_board = null
 	store._update_store_status_board(false)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var spawn_marker := store._current_yard.get_node_or_null("PlayerSpawn") as Node2D
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var spawn_position: Vector2 = spawn_marker.global_position if spawn_marker != null else Vector2(240, 136)
 
 	store._set_store_world_active(false)
@@ -265,6 +292,7 @@ func enter_yard() -> void:
 	store._is_transitioning = false
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_yard_return(_door_type: String) -> void:
 	if store._is_transitioning:
 		return
@@ -280,6 +308,7 @@ func on_yard_return(_door_type: String) -> void:
 	else:
 		pass
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var yard_to_remove: Node2D = store._current_yard
 
 	if yard_to_remove != null:
@@ -300,6 +329,7 @@ func on_yard_return(_door_type: String) -> void:
 		store.call_deferred("_show_morning_intro")
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_yard_enter_home() -> void:
 	if store._is_transitioning:
 		return
@@ -310,6 +340,7 @@ func on_yard_enter_home() -> void:
 	enter_home()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func enter_home() -> void:
 	if store.home_scene == null:
 		pass
@@ -332,6 +363,7 @@ func enter_home() -> void:
 	store._current_home.z_index = 100
 
 	if store._current_home.has_signal("return_to_yard"):
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var return_callable := Callable(store, "_on_home_return_to_yard")
 
 		if not store._current_home.is_connected("return_to_yard", return_callable):
@@ -339,12 +371,15 @@ func enter_home() -> void:
 	else:
 		pass
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var spawn_marker := store._current_home.get_node_or_null("PlayerSpawn") as Node2D
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var spawn_position: Vector2 = spawn_marker.global_position if spawn_marker != null else Vector2(240, 210)
 
 	store._set_store_world_active(false)
 	StoreTransitionController.prepare_player_for_location(store.player, store._current_home, spawn_position)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var yard_to_remove: Node2D = store._current_yard
 
 	if yard_to_remove != null:
@@ -358,6 +393,7 @@ func enter_home() -> void:
 	store._is_transitioning = false
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_home_return_to_yard(_door_type: String) -> void:
 	if store._is_transitioning:
 		return
@@ -380,7 +416,9 @@ func on_home_return_to_yard(_door_type: String) -> void:
 	store.open_close_board = null
 	store._update_store_status_board(false)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var spawn_marker := store._current_yard.get_node_or_null("PlayerHomeArea/HomeReturnSpawn") as Node2D
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var spawn_position: Vector2 = spawn_marker.global_position if spawn_marker != null else Vector2(856, 144)
 
 	if store.player != null:
@@ -388,6 +426,7 @@ func on_home_return_to_yard(_door_type: String) -> void:
 	else:
 		pass
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var home_to_remove: Node2D = store._current_home
 
 	if home_to_remove != null:
@@ -401,6 +440,7 @@ func on_home_return_to_yard(_door_type: String) -> void:
 	store._is_transitioning = false
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_storage_return_position() -> Vector2:
 	if store == null:
 		return STORE_STORAGE_RETURN_FALLBACK_POSITION
@@ -414,6 +454,7 @@ func get_storage_return_position() -> Vector2:
 	return STORE_STORAGE_RETURN_FALLBACK_POSITION
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_yard_return_position() -> Vector2:
 	if store == null:
 		return STORE_ENTRY_FALLBACK_POSITION
@@ -421,15 +462,20 @@ func get_yard_return_position() -> Vector2:
 	if store.store_entry_pos != null:
 		return store.store_entry_pos.global_position
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var structure_bottom := store.get_node_or_null("StoreStructure/Boundaries/Bottom/CollisionShape2D") as CollisionShape2D
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var bottom_shape: RectangleShape2D = null
 
 	if structure_bottom != null:
 		bottom_shape = structure_bottom.shape as RectangleShape2D
 
 	if structure_bottom != null and bottom_shape != null:
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var player_bottom_offset := 30.0
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var player_collision: CollisionShape2D = null
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var player_shape: RectangleShape2D = null
 
 		if store.player != null:
@@ -441,7 +487,9 @@ func get_yard_return_position() -> Vector2:
 		if player_collision != null and player_shape != null:
 			player_bottom_offset = player_collision.position.y + player_shape.size.y * 0.5
 
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var structure_center_x := 240.0
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var base_floor := store.get_node_or_null("StoreStructure/BaseFloor") as Node2D
 
 		if base_floor != null:

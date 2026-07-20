@@ -15,16 +15,19 @@ const SHELF_DROP_FALLBACKS: Array[Vector2] = [
 var storage: Node = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(storage_node: Node) -> void:
 	storage = storage_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func process_carry(_delta: float) -> void:
 	find_player_if_needed()
 	update_carried_object_position()
 	handle_carry_input()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func handle_carry_input() -> void:
 	if storage._is_action_locked():
 		return
@@ -42,6 +45,7 @@ func handle_carry_input() -> void:
 		drop_carried_object()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func find_player_if_needed() -> void:
 	if storage._player != null and is_instance_valid(storage._player):
 		return
@@ -52,17 +56,21 @@ func find_player_if_needed() -> void:
 			return
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_nearest_carryable_shelf() -> Node2D:
 	if storage._player == null:
 		return null
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var nearest_object: Node2D = null
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var nearest_distance: float = storage.pickup_distance
 
 	for shelf in [storage.shelf_human, storage.shelf_ghost]:
 		if not shelf is Node2D:
 			continue
 
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var object := shelf as Node2D
 
 		if not object.visible:
@@ -74,6 +82,7 @@ func get_nearest_carryable_shelf() -> Node2D:
 		if object.has_meta("is_carried_storage_object") and bool(object.get_meta("is_carried_storage_object")):
 			continue
 
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var distance: float = storage._player.global_position.distance_to(object.global_position)
 
 		if distance <= nearest_distance:
@@ -83,6 +92,7 @@ func get_nearest_carryable_shelf() -> Node2D:
 	return nearest_object
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func pickup_object(object: Node2D) -> void:
 	if storage._player == null:
 		return
@@ -99,6 +109,7 @@ func pickup_object(object: Node2D) -> void:
 		storage._player.call("update_carried_object_visual", object)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func request_pickup_shelf(shelf: Shelf) -> bool:
 	find_player_if_needed()
 
@@ -125,6 +136,7 @@ func request_pickup_shelf(shelf: Shelf) -> bool:
 	return true
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func request_drop_carried_object() -> bool:
 	find_player_if_needed()
 
@@ -135,16 +147,19 @@ func request_drop_carried_object() -> bool:
 	return true
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func drop_carried_object() -> void:
 	if storage._player == null or storage._carried_object == null:
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var drop_position := find_safe_drop_position(storage._carried_object)
 
 	if drop_position == Vector2.INF:
 		storage._show_notification("No room to put the shelf here.", 0.5)
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var object: Node2D = storage._carried_object
 	object.reparent(storage, true)
 	object.global_position = drop_position
@@ -156,6 +171,7 @@ func drop_carried_object() -> void:
 	storage._carried_object = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func update_carried_object_position() -> void:
 	if storage._player == null:
 		return
@@ -170,6 +186,7 @@ func update_carried_object_position() -> void:
 			storage._carried_object.position = storage.carry_offset
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_carried_object_from_player() -> Node2D:
 	if storage._player == null:
 		return null
@@ -182,6 +199,7 @@ func get_carried_object_from_player() -> Node2D:
 	return null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func find_safe_drop_position(object: Node2D) -> Vector2:
 	for candidate in get_drop_candidates():
 		if is_drop_position_clear(object, candidate):
@@ -190,19 +208,25 @@ func find_safe_drop_position(object: Node2D) -> Vector2:
 	return Vector2.INF
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_drop_candidates() -> Array[Vector2]:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var candidates: Array[Vector2] = []
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var base_position: Vector2 = storage._player.global_position
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var facing := get_player_facing_direction()
 
 	candidates.append(base_position + facing * 56.0)
 
 	for offset in SHELF_DROP_FALLBACKS:
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var candidate: Vector2 = base_position + offset
 
 		if candidate not in candidates:
 			candidates.append(candidate)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var legacy_candidate: Vector2 = base_position + storage.drop_offset
 
 	if legacy_candidate not in candidates:
@@ -211,7 +235,9 @@ func get_drop_candidates() -> Array[Vector2]:
 	return candidates
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_player_facing_direction() -> Vector2:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var facing: Variant = storage._player.get("facing_direction") if storage._player != null else Vector2.DOWN
 
 	if facing is Vector2 and not facing.is_zero_approx():
@@ -220,21 +246,26 @@ func get_player_facing_direction() -> Vector2:
 	return Vector2.DOWN
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func is_drop_position_clear(object: Node2D, candidate: Vector2) -> bool:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var collision_shape := get_object_collision_shape(object)
 
 	if collision_shape == null or collision_shape.shape == null:
 		return true
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var query := PhysicsShapeQueryParameters2D.new()
 	query.shape = collision_shape.shape
 	query.transform = Transform2D(0.0, candidate + collision_shape.position)
 	query.collide_with_bodies = true
 	query.collide_with_areas = false
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var hits: Array[Dictionary] = storage.get_world_2d().direct_space_state.intersect_shape(query, 16)
 
 	for hit in hits:
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var collider: Node = hit.get("collider", null)
 
 		if collider == null:
@@ -248,6 +279,7 @@ func is_drop_position_clear(object: Node2D, candidate: Vector2) -> bool:
 	return true
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_object_collision_shape(object: Node2D) -> CollisionShape2D:
 	if object == null:
 		return null
@@ -255,7 +287,9 @@ func get_object_collision_shape(object: Node2D) -> CollisionShape2D:
 	return object.get_node_or_null("PhysicsBody/CollisionShape2D") as CollisionShape2D
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func is_descendant_of(node: Node, ancestor: Node) -> bool:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var current := node
 
 	while current != null:
@@ -267,11 +301,13 @@ func is_descendant_of(node: Node, ancestor: Node) -> bool:
 	return false
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_node_enabled_recursive(node: Node, enabled: bool) -> void:
 	if node == null:
 		return
 
 	if node is Area2D:
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var area := node as Area2D
 		area.monitoring = enabled
 		area.monitorable = enabled

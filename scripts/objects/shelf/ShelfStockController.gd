@@ -4,10 +4,12 @@ extends RefCounted
 var shelf: Shelf = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(shelf_node: Shelf) -> void:
 	shelf = shelf_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func initialize_slots() -> void:
 	shelf._slots.resize(shelf.max_slots)
 	shelf._slots.fill(null)
@@ -15,7 +17,9 @@ func initialize_slots() -> void:
 	shelf._slot_quantities.fill(0)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func place_item(item_id: String) -> int:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item: ItemData = ItemDatabase.get_item(item_id)
 	if item == null:
 		pass
@@ -27,6 +31,7 @@ func place_item(item_id: String) -> int:
 	if not Inventory.remove_item(item_id):
 		return -1
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var slot := find_item_slot(item_id)
 	if slot == -1:
 		slot = get_empty_slot()
@@ -41,7 +46,9 @@ func place_item(item_id: String) -> int:
 	return slot
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func stock_item_direct(item_id: String) -> int:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item: ItemData = ItemDatabase.get_item(item_id)
 	if item == null:
 		pass
@@ -50,6 +57,7 @@ func stock_item_direct(item_id: String) -> int:
 	if item.shelf_type != shelf.shelf_type:
 		return -1
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var slot := find_item_slot(item_id)
 	if slot == -1:
 		slot = get_empty_slot()
@@ -63,10 +71,12 @@ func stock_item_direct(item_id: String) -> int:
 	return slot
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func remove_item(slot_index: int) -> String:
 	if slot_index < 0 or slot_index >= shelf._slots.size():
 		return ""
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item_id: String = shelf._slots[slot_index]
 	if item_id == null:
 		return ""
@@ -81,6 +91,7 @@ func remove_item(slot_index: int) -> String:
 	return item_id
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func remove_first_item() -> String:
 	for i in shelf._slots.size():
 		if shelf._slots[i] != null:
@@ -89,6 +100,7 @@ func remove_first_item() -> String:
 	return ""
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func take_item_for_npc(item_id: String) -> bool:
 	for i in shelf._slots.size():
 		if shelf._slots[i] == item_id:
@@ -102,10 +114,12 @@ func take_item_for_npc(item_id: String) -> bool:
 	return false
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func has_item(item_id: String) -> bool:
 	return shelf._slots.has(item_id)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func has_stock() -> bool:
 	for item_id in shelf._slots:
 		if item_id != null:
@@ -114,6 +128,7 @@ func has_stock() -> bool:
 	return false
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_first_stocked_item_id() -> String:
 	for item_id in shelf._slots:
 		if item_id != null:
@@ -122,6 +137,7 @@ func get_first_stocked_item_id() -> String:
 	return ""
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_slot_content(slot_index: int) -> String:
 	if slot_index < 0 or slot_index >= shelf._slots.size():
 		return ""
@@ -129,6 +145,7 @@ func get_slot_content(slot_index: int) -> String:
 	return shelf._slots[slot_index] if shelf._slots[slot_index] != null else ""
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_empty_slot() -> int:
 	for i in shelf._slots.size():
 		if shelf._slots[i] == null:
@@ -136,6 +153,7 @@ func get_empty_slot() -> int:
 	return -1
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func find_item_slot(item_id: String) -> int:
 	for i in shelf._slots.size():
 		if shelf._slots[i] == item_id:

@@ -7,14 +7,17 @@ const GOOBY_ID: String = "gooby"
 var player = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(player_node) -> void:
 	player = player_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func try_interact() -> void:
 	if player._is_action_locked():
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var areas: Array[Area2D] = player.interaction_area.get_overlapping_areas()
 
 	if areas.is_empty():
@@ -26,6 +29,7 @@ func try_interact() -> void:
 		if player._try_storage_door_interaction(area):
 			return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var best_target := get_best_interaction_target(areas)
 
 	if best_target == null:
@@ -68,21 +72,29 @@ func try_interact() -> void:
 		return
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_storage_door_type(area: Area2D) -> String:
 	return PlayerInteraction.get_storage_door_type(area)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_interaction_priority(target: Node) -> int:
 	return PlayerInteraction.get_interaction_priority(target)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_best_interaction_target(areas: Array[Area2D]) -> Node:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var best_target: Node = null
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var best_priority: int = 999
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var best_distance: float = INF
 
 	for area in areas:
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var target: Node = area
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var priority: int = get_interaction_priority(target)
 
 		if priority == 999:
@@ -96,6 +108,7 @@ func get_best_interaction_target(areas: Array[Area2D]) -> Node:
 		if priority == 999:
 			continue
 
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var distance: float = player.global_position.distance_squared_to(area.global_position)
 
 		if priority < best_priority:
@@ -109,7 +122,9 @@ func get_best_interaction_target(areas: Array[Area2D]) -> Node:
 	return best_target
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func interact_with_npc(npc: NPC) -> void:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var trust_text := apply_story_npc_interaction_trust(npc)
 
 	if npc.current_state != NPC.State.CHECKOUT:
@@ -119,7 +134,9 @@ func interact_with_npc(npc: NPC) -> void:
 			player._show_notification("They are busy right now.", 0.7)
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item_id: String = npc.item_to_buy
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item: ItemData = ItemDatabase.get_item(item_id)
 
 	if item != null:
@@ -129,6 +146,7 @@ func interact_with_npc(npc: NPC) -> void:
 			player._show_notification("Use the cashier to scan %s." % item.display_name)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func apply_story_npc_interaction_trust(npc: NPC) -> String:
 	if npc == null or npc.npc_data == null:
 		return ""
@@ -143,11 +161,13 @@ func apply_story_npc_interaction_trust(npc: NPC) -> String:
 	return "%s Trust +%d." % [npc.npc_data.display_name, STORY_INTERACTION_TRUST_GAIN]
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func interact_with_open_close_board(board: OpenCloseBoard) -> void:
 	if board != null and board.has_method("request_interaction"):
 		board.call("request_interaction")
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func interact_with_cashier(cashier: Cashier) -> void:
 	if player._get_carried_shelf() != null:
 		player._show_notification("Put down the shelf first.", 0.8)
@@ -156,6 +176,7 @@ func interact_with_cashier(cashier: Cashier) -> void:
 	cashier.try_checkout()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func interact_with_activity_board(activity_board: ActivityBoard) -> void:
 	if player._get_carried_shelf() != null:
 		player._show_notification("Put down the shelf first.", 0.8)
@@ -167,6 +188,7 @@ func interact_with_activity_board(activity_board: ActivityBoard) -> void:
 		activity_board.open_board()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func interact_with_sleep_bed(sleep_bed: SleepBed) -> void:
 	if player._get_carried_shelf() != null:
 		player._show_notification("Put down the shelf first.", 0.8)
@@ -175,9 +197,11 @@ func interact_with_sleep_bed(sleep_bed: SleepBed) -> void:
 	sleep_bed.request_interaction()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func interact_with_storage_restock_terminal(terminal: StorageRestockTerminal) -> void:
 	terminal.request_interaction()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func interact_with_restock_package(restock_package: RestockPackage) -> void:
 	restock_package.request_interaction()

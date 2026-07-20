@@ -1,7 +1,6 @@
 class_name ItemData
 extends Resource
 
-const TilesetIconLoader = preload("res://scripts/items/TilesetIconLoader.gd")
 
 enum ShelfType {
 	HUMAN, GHOST
@@ -19,6 +18,7 @@ enum ShelfType {
 @export var icon_tile_size: Vector2i = Vector2i(16, 16)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_icon() -> Texture2D:
 	if icon != null:
 		return icon

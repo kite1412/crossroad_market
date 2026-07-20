@@ -4,30 +4,36 @@ extends Node
 var storage: Node = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(storage_node: Node) -> void:
 	storage = storage_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_shelf_install_state(human_installed: bool, ghost_installed: bool) -> void:
 	storage._human_shelf_installed = human_installed
 	storage._ghost_shelf_installed = ghost_installed
 	apply_shelf_install_state()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_normal_supply_depleted(is_depleted: bool) -> void:
 	storage._normal_supply_depleted = is_depleted
 	apply_normal_box_state()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_locked_half_unlocked(is_unlocked: bool) -> void:
 	set_mystery_phase_unlocked(is_unlocked)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_mystery_phase_unlocked(is_unlocked: bool) -> void:
 	storage._mystery_phase_unlocked = is_unlocked
 	apply_mystery_phase_state(true)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_mystery_discovered(is_discovered: bool) -> void:
 	storage._mystery_discovered = is_discovered
 
@@ -35,11 +41,13 @@ func set_mystery_discovered(is_discovered: bool) -> void:
 		storage.mystery_box.mark_discovered()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_mystery_supply_depleted(is_depleted: bool) -> void:
 	storage._mystery_supply_depleted = is_depleted
 	apply_mystery_box_item_state()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_mystery_items_taken(item_ids: Array[String]) -> void:
 	if storage.mystery_box == null:
 		return
@@ -49,14 +57,17 @@ func set_mystery_items_taken(item_ids: Array[String]) -> void:
 			storage.mystery_box.mark_item_taken_without_inventory(item_id)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func unlock_locked_half() -> void:
 	set_mystery_phase_unlocked(true)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func unlock_mystery_phase() -> void:
 	set_mystery_phase_unlocked(true)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup_shelves() -> void:
 	for shelf in [storage.shelf_human, storage.shelf_ghost]:
 		if shelf == null:
@@ -70,6 +81,7 @@ func setup_shelves() -> void:
 	apply_shelf_install_state()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func apply_shelf_install_state() -> void:
 	if storage.shelf_human != null and storage._human_shelf_installed:
 		storage.shelf_human.queue_free()
@@ -80,6 +92,7 @@ func apply_shelf_install_state() -> void:
 		storage.shelf_ghost = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func apply_normal_box_state() -> void:
 	if storage.normal_box == null:
 		return
@@ -91,7 +104,9 @@ func apply_normal_box_state() -> void:
 		storage.normal_box.mark_all_taken_without_inventory()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func apply_mystery_phase_state(animated: bool) -> void:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var is_open: bool = storage._mystery_phase_unlocked
 
 	if storage.mystery_box != null:
@@ -123,6 +138,7 @@ func apply_mystery_phase_state(animated: bool) -> void:
 		storage.locked_overlay.visible = true
 		storage.locked_overlay.modulate.a = 0.78
 
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var tween := storage.create_tween()
 		tween.tween_property(storage.locked_overlay, "modulate:a", 0.0, 0.45)
 		await tween.finished
@@ -136,11 +152,13 @@ func apply_mystery_phase_state(animated: bool) -> void:
 		storage.locked_overlay.modulate.a = 0.78
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_mystery_box_discovered() -> void:
 	storage._mystery_discovered = true
 	storage.mystery_discovered.emit()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_mystery_box_item_taken(item_id: String) -> void:
 	storage.mystery_item_taken.emit(item_id)
 
@@ -149,10 +167,12 @@ func on_mystery_box_item_taken(item_id: String) -> void:
 		storage.mystery_supply_depleted.emit()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_ghost_shelf_item_placed(slot_index: int, item_id: String) -> void:
 	storage.ghost_shelf_item_placed.emit(slot_index, item_id)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func apply_mystery_box_item_state() -> void:
 	if storage.mystery_box == null:
 		return

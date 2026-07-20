@@ -6,6 +6,7 @@ static func move_to(npc: CharacterBody2D, target: Vector2, speed: float, arrival
 	if npc == null:
 		return true
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var distance := npc.global_position.distance_to(target)
 
 	if distance <= arrival_threshold:

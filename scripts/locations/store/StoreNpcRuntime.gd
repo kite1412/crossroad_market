@@ -10,10 +10,12 @@ const CUSTOMER_INTAKE_CLOSED_META: StringName = &"customer_intake_closed_today"
 var store: Node = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(store_node: Node) -> void:
 	store = store_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup_static_data() -> void:
 	if store == null:
 		return
@@ -42,6 +44,7 @@ func setup_static_data() -> void:
 		NPC.store_path_position = Vector2.INF
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_npc_spawn_requested(npc_data: NPCData) -> void:
 	if store == null:
 		return
@@ -66,6 +69,7 @@ func on_npc_spawn_requested(npc_data: NPCData) -> void:
 	):
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var npc := StoreNpcSpawner.spawn_npc(
 		store,
 		store.npc_scene,
@@ -78,6 +82,7 @@ func on_npc_spawn_requested(npc_data: NPCData) -> void:
 	if npc != null:
 		install_shelf_arrival_controllers(npc)
 
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var route_ready_callable := Callable(
 			self,
 			"on_npc_shelf_route_ready"
@@ -87,6 +92,7 @@ func on_npc_spawn_requested(npc_data: NPCData) -> void:
 			npc.shelf_route_ready.connect(route_ready_callable)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func is_store_world_available_for_customer_spawn() -> bool:
 	return (
 		bool(store._is_store_world_active)
@@ -97,6 +103,7 @@ func is_store_world_available_for_customer_spawn() -> bool:
 	)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func install_shelf_arrival_controllers(npc: NPC) -> void:
 	if npc == null or not is_instance_valid(npc):
 		return
@@ -113,6 +120,7 @@ func install_shelf_arrival_controllers(npc: NPC) -> void:
 	npc._queue_flow.setup(npc)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_npc_spawn_marker() -> Marker2D:
 	if store == null:
 		return null
@@ -129,6 +137,7 @@ func get_npc_spawn_marker() -> Marker2D:
 	return store.entrance_pos
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_npc_purchase(
 	_npc: NPC,
 	_item_id: String,
@@ -146,11 +155,13 @@ func on_npc_purchase(
 		)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_npc_exited(_npc: NPC) -> void:
 	if store != null:
 		store._update_end_day_tax_flow()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_npc_shelf_route_ready(
 	npc: NPC,
 	travel_seconds: float

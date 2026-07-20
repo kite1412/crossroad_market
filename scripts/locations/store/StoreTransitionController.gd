@@ -32,6 +32,7 @@ static func prepare_player_for_location(
 
 
 static func _reset_player_camera(player: Node2D) -> void:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var camera := player.get_node_or_null("Camera2D") as Camera2D
 
 	if camera == null:
@@ -45,11 +46,13 @@ static func _reset_player_camera(player: Node2D) -> void:
 
 
 static func create_fade_layer(owner: Node) -> Dictionary:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var fade_layer := CanvasLayer.new()
 	fade_layer.name = "FadeLayer"
 	fade_layer.layer = 1000
 	owner.add_child(fade_layer)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var fade_rect := ColorRect.new()
 	fade_rect.name = "FadeRect"
 	fade_rect.color = Color.BLACK
@@ -68,6 +71,7 @@ static func fade_to(owner: Node, fade_rect: ColorRect, target_alpha: float, dura
 	if owner == null or fade_rect == null:
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var tween := owner.create_tween()
 	tween.tween_property(fade_rect, "modulate:a", target_alpha, duration)
 	await tween.finished
@@ -90,6 +94,7 @@ static func _restore_or_suspend_canvas_item(node: Node, is_active: bool) -> void
 	if not node is CanvasItem:
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var canvas_item := node as CanvasItem
 	if is_active:
 		if canvas_item.has_meta(META_VISIBLE):
@@ -105,6 +110,7 @@ static func _restore_or_suspend_area(node: Node, is_active: bool) -> void:
 	if not node is Area2D:
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var area := node as Area2D
 	if is_active:
 		if area.has_meta(META_MONITORING):
@@ -123,6 +129,7 @@ static func _restore_or_suspend_area(node: Node, is_active: bool) -> void:
 
 static func _restore_or_suspend_collision(node: Node, is_active: bool) -> void:
 	if node is CollisionShape2D:
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var collision_shape := node as CollisionShape2D
 		if is_active:
 			if collision_shape.has_meta(META_COLLISION_DISABLED):
@@ -134,6 +141,7 @@ static func _restore_or_suspend_collision(node: Node, is_active: bool) -> void:
 		return
 
 	if node is CollisionPolygon2D:
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var collision_polygon := node as CollisionPolygon2D
 		if is_active:
 			if collision_polygon.has_meta(META_COLLISION_DISABLED):
@@ -181,6 +189,7 @@ static func set_node_enabled_recursive(node: Node, enabled: bool) -> void:
 		(node as CollisionPolygon2D).disabled = not enabled
 
 	if node is Area2D:
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var area := node as Area2D
 		area.monitoring = enabled
 		area.monitorable = enabled

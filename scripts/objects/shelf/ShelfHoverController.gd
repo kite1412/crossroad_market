@@ -4,16 +4,21 @@ extends RefCounted
 var shelf: Shelf = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(shelf_node: Shelf) -> void:
 	shelf = shelf_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup_cursor_hover() -> void:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var interaction_area := shelf.get_node_or_null("InteractionArea") as Area2D
 
 	if interaction_area != null:
 		interaction_area.input_pickable = true
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var shelf_entered := Callable(shelf, "_on_shelf_mouse_entered")
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var shelf_exited := Callable(shelf, "_on_shelf_mouse_exited")
 
 		if not interaction_area.mouse_entered.is_connected(shelf_entered):
@@ -22,19 +27,23 @@ func setup_cursor_hover() -> void:
 		if not interaction_area.mouse_exited.is_connected(shelf_exited):
 			interaction_area.mouse_exited.connect(shelf_exited)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var slots := shelf.get_node_or_null("Slots")
 
 	if slots == null:
 		return
 
 	for i in range(shelf.max_slots):
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var slot_area := slots.get_node_or_null("Slot%d" % i) as Area2D
 
 		if slot_area == null:
 			continue
 
 		slot_area.input_pickable = true
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var slot_entered := Callable(shelf, "_on_slot_mouse_entered").bind(i)
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var slot_exited := Callable(shelf, "_on_slot_mouse_exited")
 
 		if not slot_area.mouse_entered.is_connected(slot_entered):
@@ -44,20 +53,24 @@ func setup_cursor_hover() -> void:
 			slot_area.mouse_exited.connect(slot_exited)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_shelf_mouse_entered() -> void:
 	shelf._is_shelf_hovered = true
 	show_cursor_tooltip(shelf.get_hover_display_name())
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_shelf_mouse_exited() -> void:
 	shelf._is_shelf_hovered = false
 	hide_cursor_tooltip()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_slot_mouse_entered(slot_index: int) -> void:
 	show_cursor_tooltip(get_slot_hover_name(slot_index))
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_slot_mouse_exited() -> void:
 	if shelf._is_shelf_hovered:
 		show_cursor_tooltip(shelf.get_hover_display_name())
@@ -65,24 +78,31 @@ func on_slot_mouse_exited() -> void:
 		hide_cursor_tooltip()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_slot_hover_name(slot_index: int) -> String:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item_id := shelf.get_slot_content(slot_index)
 
 	if item_id == "":
 		return shelf.get_hover_display_name()
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item := ItemDatabase.get_item(item_id)
 	return item.display_name if item != null and item.display_name != "" else item_id.capitalize()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func show_cursor_tooltip(text: String) -> void:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var hud := shelf.get_tree().get_first_node_in_group("hud")
 
 	if hud != null and hud.has_method("show_cursor_tooltip"):
 		hud.call("show_cursor_tooltip", text)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func hide_cursor_tooltip() -> void:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var hud := shelf.get_tree().get_first_node_in_group("hud")
 
 	if hud != null and hud.has_method("hide_cursor_tooltip"):

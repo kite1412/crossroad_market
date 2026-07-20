@@ -6,6 +6,7 @@ static func apply_name_label(npc: Node, npc_data: NPCData) -> void:
 	if npc == null:
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var label := npc.get_node_or_null("NameLabel") as Label
 
 	if label == null:
@@ -19,6 +20,7 @@ static func apply_visual(npc: Node, npc_data: NPCData) -> void:
 	if npc == null:
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var name_label := npc.get_node_or_null("NameLabel") as Label
 
 	if npc_data == null:
@@ -57,6 +59,7 @@ static func _apply_visual_tint(npc: Node, color: Color) -> void:
 			#walk_visual.modulate = color
 		#return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var color_rect := npc.get_node_or_null("VisualRoot/PlaceholderRect") as ColorRect
 
 	if color_rect != null:

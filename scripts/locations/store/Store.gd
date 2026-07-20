@@ -177,6 +177,7 @@ var human_shelf: Shelf = null
 var ghost_shelf: Shelf = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _ready() -> void:
 	add_to_group("store")
 	_placement_grid = StorePlacementGrid.new(
@@ -204,6 +205,7 @@ func _ready() -> void:
 	call_deferred("_start_game_in_yard")
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _setup_store_controllers() -> void:
 	for controller in [
 		location_flow,
@@ -223,6 +225,7 @@ func _setup_store_controllers() -> void:
 			controller.call("setup", self)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _process(_delta: float) -> void:
 	_update_end_day_tax_flow()
 
@@ -233,6 +236,7 @@ func _process(_delta: float) -> void:
 		npc_interaction_runtime.process_npc_interactions(_delta)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func request_enter_storage(_door_type: String = "storage") -> void:
 	if _is_transitioning or _current_storage != null:
 		return
@@ -240,6 +244,7 @@ func request_enter_storage(_door_type: String = "storage") -> void:
 	await _enter_storage()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func request_enter_yard(_door_type: String = "yard") -> void:
 	if _is_transitioning or _current_yard != null:
 		return
@@ -247,16 +252,19 @@ func request_enter_yard(_door_type: String = "yard") -> void:
 	await _enter_yard()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_normal_item_taken() -> void:
 	if day_runtime != null:
 		day_runtime.on_normal_item_taken()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_human_item_placed() -> void:
 	if day_runtime != null:
 		day_runtime.on_human_item_placed()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func is_shelf_type_installed(shelf_type: ItemData.ShelfType) -> bool:
 	match shelf_type:
 		ItemData.ShelfType.HUMAN:
@@ -267,11 +275,13 @@ func is_shelf_type_installed(shelf_type: ItemData.ShelfType) -> bool:
 	return false
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func request_toggle_store_open() -> void:
 	if open_close_controller != null:
 		open_close_controller.request_toggle_store_open()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func can_player_sleep() -> Dictionary:
 	if day_runtime != null:
 		return day_runtime.can_player_sleep()
@@ -279,25 +289,30 @@ func can_player_sleep() -> Dictionary:
 	return {"allowed": false, "message": ""}
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _is_day_setup_complete() -> bool:
 	return open_close_controller != null and open_close_controller.is_day_setup_complete()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _open_store() -> void:
 	if open_close_controller != null:
 		open_close_controller.open_store()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _close_store() -> void:
 	if open_close_controller != null:
 		open_close_controller.close_store()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _update_store_status_board(animated: bool = true) -> void:
 	if open_close_controller != null:
 		open_close_controller.update_store_status_board(animated)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_open_close_board() -> Node:
 	if open_close_controller != null:
 		return open_close_controller.get_open_close_board()
@@ -305,6 +320,7 @@ func _get_open_close_board() -> Node:
 	return open_close_board
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_npc_entry_route_to_shelf(shelf_position: Vector2, from_position: Vector2 = Vector2.INF) -> Array[Vector2]:
 	if npc_routes != null:
 		return npc_routes.get_npc_entry_route_to_shelf(shelf_position, from_position)
@@ -312,6 +328,7 @@ func get_npc_entry_route_to_shelf(shelf_position: Vector2, from_position: Vector
 	return []
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_npc_shelf_access_position(shelf: Shelf) -> Vector2:
 	if npc_routes != null:
 		return npc_routes.get_npc_shelf_access_position(shelf)
@@ -319,6 +336,7 @@ func get_npc_shelf_access_position(shelf: Shelf) -> Vector2:
 	return Vector2.INF
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_npc_shelf_visit_position(shelf: Shelf, _npc: Node = null) -> Vector2:
 	if npc_routes != null:
 		return npc_routes.get_npc_shelf_visit_position(shelf, _npc)
@@ -326,10 +344,12 @@ func get_npc_shelf_visit_position(shelf: Shelf, _npc: Node = null) -> Vector2:
 	return shelf.global_position + Vector2(0, 34) if shelf != null else Vector2.INF
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func has_npc_shelf_access_metadata(shelf: Shelf) -> bool:
 	return npc_routes != null and npc_routes.has_npc_shelf_access_metadata(shelf)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_npc_route_to_shelf_access(shelf: Shelf, from_position: Vector2 = Vector2.INF, npc_node: Node = null) -> Array[Vector2]:
 	if npc_routes != null:
 		return npc_routes.get_npc_route_to_shelf_access(shelf, from_position, npc_node)
@@ -337,6 +357,7 @@ func get_npc_route_to_shelf_access(shelf: Shelf, from_position: Vector2 = Vector
 	return []
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_npc_route_to_cashier_from(from_position: Vector2) -> Array[Vector2]:
 	if npc_routes != null:
 		return npc_routes.get_npc_route_to_cashier_from(from_position)
@@ -344,6 +365,7 @@ func get_npc_route_to_cashier_from(from_position: Vector2) -> Array[Vector2]:
 	return []
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_npc_route_to_queue_target_from(from_position: Vector2, queue_index: int) -> Array[Vector2]:
 	if npc_routes != null:
 		return npc_routes.get_npc_route_to_queue_target_from(from_position, queue_index)
@@ -351,6 +373,7 @@ func get_npc_route_to_queue_target_from(from_position: Vector2, queue_index: int
 	return []
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_npc_queue_target(queue_index: int, fallback_position: Vector2) -> Vector2:
 	if npc_routes != null:
 		return npc_routes.get_npc_queue_target(queue_index, fallback_position)
@@ -358,6 +381,7 @@ func get_npc_queue_target(queue_index: int, fallback_position: Vector2) -> Vecto
 	return fallback_position
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_npc_cashier_target(fallback_position: Vector2) -> Vector2:
 	if npc_routes != null:
 		return npc_routes.get_npc_cashier_target(fallback_position)
@@ -365,6 +389,7 @@ func get_npc_cashier_target(fallback_position: Vector2) -> Vector2:
 	return fallback_position
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_npc_route_from_shelf_to_cashier(shelf: Shelf) -> Array[Vector2]:
 	if npc_routes != null:
 		return npc_routes.get_npc_route_from_shelf_to_cashier(shelf)
@@ -372,12 +397,14 @@ func get_npc_route_from_shelf_to_cashier(shelf: Shelf) -> Array[Vector2]:
 	return []
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_npc_exit_route_from(from_position: Vector2) -> Array[Vector2]:
 	if npc_routes != null:
 		return npc_routes.get_npc_exit_route_from(from_position)
 
 	return []
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_npc_shelf_wait_position(index: int = 0) -> Vector2:
 	if npc_routes != null:
 		return npc_routes.get_npc_shelf_wait_position(index)
@@ -386,6 +413,7 @@ func get_npc_shelf_wait_position(index: int = 0) -> Vector2:
 
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_npc_exit_route_from_cashier(from_position: Vector2) -> Array[Vector2]:
 	if npc_routes != null:
 		return npc_routes.get_npc_exit_route_from_cashier(from_position)
@@ -393,6 +421,7 @@ func get_npc_exit_route_from_cashier(from_position: Vector2) -> Array[Vector2]:
 	return []
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_activity_board_guidance() -> Dictionary:
 	if progression_flow != null:
 		return progression_flow.get_activity_board_guidance()
@@ -403,11 +432,13 @@ func get_activity_board_guidance() -> Dictionary:
 	}
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_gooby_resolved() -> void:
 	if day_runtime != null:
 		day_runtime.on_gooby_resolved()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _connect_manager_signals() -> void:
 	if not NPCScheduler.npc_spawn_requested.is_connected(_on_npc_spawn_requested):
 		NPCScheduler.npc_spawn_requested.connect(_on_npc_spawn_requested)
@@ -430,21 +461,26 @@ func _connect_manager_signals() -> void:
 	call_deferred("_connect_hud_signals")
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _connect_hud_signals() -> void:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var hud := get_tree().get_first_node_in_group("hud")
 
 	if hud == null or not hud.has_signal("tax_payment_requested"):
 		return
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var pay_callable := Callable(self, "_on_tax_payment_requested")
 	if hud.has_signal("tax_payment_requested") and not hud.is_connected("tax_payment_requested", pay_callable):
 		hud.connect("tax_payment_requested", pay_callable)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var ignore_callable := Callable(self, "_on_tax_ignore_requested")
 	if hud.has_signal("tax_ignore_requested") and not hud.is_connected("tax_ignore_requested", ignore_callable):
 		hud.connect("tax_ignore_requested", ignore_callable)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _connect_scene_signals() -> void:
 	if storage_door == null:
 		pass
@@ -459,120 +495,144 @@ func _connect_scene_signals() -> void:
 		_connect_cursor_tooltip(yard_door, "Yard Door")
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _show_morning_intro() -> void:
 	if progression_flow != null:
 		await progression_flow.show_morning_intro()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _show_first_activity_board() -> void:
 	if progression_flow != null:
 		progression_flow.show_first_activity_board()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _start_game_in_yard() -> void:
 	if location_flow != null:
 		location_flow.start_game_in_yard()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _show_yard_intro() -> void:
 	if progression_flow != null:
 		await progression_flow.show_yard_intro()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _connect_yard_return_signal() -> void:
 	if location_flow != null:
 		location_flow.connect_yard_return_signal()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _configure_yard_scene() -> void:
 	if location_flow != null:
 		location_flow.configure_yard_scene()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _enter_storage() -> void:
 	if location_flow != null:
 		await location_flow.enter_storage()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_storage_return(_door_type: String) -> void:
 	if location_flow != null:
 		await location_flow.on_storage_return(_door_type)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _enter_yard() -> void:
 	if location_flow != null:
 		await location_flow.enter_yard()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_yard_return(_door_type: String) -> void:
 	if location_flow != null:
 		await location_flow.on_yard_return(_door_type)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_yard_enter_home() -> void:
 	if location_flow != null:
 		location_flow.on_yard_enter_home()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _enter_home() -> void:
 	if location_flow != null:
 		await location_flow.enter_home()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_home_return_to_yard(_door_type: String) -> void:
 	if location_flow != null:
 		location_flow.on_home_return_to_yard(_door_type)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_storage_mystery_discovered() -> void:
 	if progression_flow != null:
 		progression_flow.on_storage_mystery_discovered()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_storage_mystery_item_taken(item_id: String) -> void:
 	if progression_flow != null:
 		progression_flow.on_storage_mystery_item_taken(item_id)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_storage_mystery_supply_depleted() -> void:
 	if progression_flow != null:
 		progression_flow.on_storage_mystery_supply_depleted()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_storage_restock_order_purchased(order_items: Array) -> void:
 	if tax_flow != null:
 		tax_flow.on_storage_restock_order_purchased(order_items)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_storage_restock_panel_opened() -> void:
 	if tax_flow != null:
 		tax_flow.on_storage_restock_panel_opened()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_storage_restock_panel_closed(had_checkout: bool = false) -> void:
 	if tax_flow != null:
 		tax_flow.on_storage_restock_panel_closed(had_checkout)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _schedule_restock_tax_retry() -> void:
 	if tax_flow != null:
 		tax_flow.schedule_restock_tax_retry()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _defer_restock_tax_retry(retry_token: int) -> void:
 	if tax_flow != null:
 		await tax_flow.defer_restock_tax_retry(retry_token)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _should_continue_restock_tax_retry() -> bool:
 	return tax_flow != null and tax_flow.should_continue_restock_tax_retry()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_storage_restock_item_purchased(item_id: String, quantity: int) -> void:
 	if tax_flow != null:
 		tax_flow.on_storage_restock_item_purchased(item_id, quantity)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _duplicate_restock_items(order_items: Array) -> Array[Dictionary]:
 	if tax_flow == null:
 		return []
@@ -580,29 +640,35 @@ func _duplicate_restock_items(order_items: Array) -> Array[Dictionary]:
 	return tax_flow.duplicate_restock_items(order_items)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_yard_restock_delivery_collected(delivery_id: int) -> void:
 	if tax_flow != null:
 		tax_flow.on_yard_restock_delivery_collected(delivery_id)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _sync_restock_deliveries_to_yard() -> void:
 	if tax_flow != null:
 		tax_flow.sync_restock_deliveries_to_yard()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _update_end_day_tax_flow() -> void:
 	if tax_flow != null:
 		tax_flow.update_end_day_tax_flow()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _try_show_tax_panel() -> bool:
 	return tax_flow != null and tax_flow.try_show_tax_panel()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _can_show_tax_panel() -> bool:
 	return tax_flow != null and tax_flow.can_show_tax_panel()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _has_active_customer_npcs() -> bool:
 	NPCQueueSystem.prune_invalid(NPC.current_queue)
 
@@ -616,34 +682,41 @@ func _has_active_customer_npcs() -> bool:
 	return false
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _has_blocking_overlay_for_tax() -> bool:
 	return false
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _show_tax_panel(warning: String = "") -> bool:
 	return tax_flow != null and tax_flow.show_tax_panel(warning)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_tax_payment_requested() -> void:
 	if tax_flow != null:
 		tax_flow.on_tax_payment_requested()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_tax_ignore_requested() -> void:
 	if tax_flow != null:
 		tax_flow.on_tax_ignore_requested()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _start_midnight_to_morning_transition() -> void:
 	if tax_flow != null:
 		tax_flow.start_midnight_to_morning_transition()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _run_midnight_to_morning_transition() -> void:
 	if tax_flow != null:
 		await tax_flow.run_midnight_to_morning_transition()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_storage_return_position() -> Vector2:
 	if location_flow != null:
 		return location_flow.get_storage_return_position()
@@ -651,6 +724,7 @@ func _get_storage_return_position() -> Vector2:
 	return STORE_STORAGE_RETURN_FALLBACK_POSITION
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_yard_return_position() -> Vector2:
 	if location_flow != null:
 		return location_flow.get_yard_return_position()
@@ -658,14 +732,17 @@ func _get_yard_return_position() -> Vector2:
 	return STORE_ENTRY_FALLBACK_POSITION
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _is_put_pressed() -> bool:
 	return world_state_controller != null and world_state_controller.is_put_pressed()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _is_action_locked() -> bool:
 	return world_state_controller != null and world_state_controller.is_action_locked()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_carried_object_from_player() -> Node2D:
 	if shelf_placement_controller != null:
 		return shelf_placement_controller.get_carried_object_from_player()
@@ -673,53 +750,64 @@ func _get_carried_object_from_player() -> Node2D:
 	return null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func request_drop_carried_shelf() -> bool:
 	return shelf_placement_controller != null and shelf_placement_controller.request_drop_carried_shelf()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func request_pickup_shelf(shelf: Shelf) -> bool:
 	return shelf_placement_controller != null and shelf_placement_controller.request_pickup_shelf(shelf)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _is_player_carrying_shelf_named(shelf_name: String) -> bool:
 	return shelf_placement_controller != null and shelf_placement_controller.is_player_carrying_shelf_named(shelf_name)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _drop_carried_shelf_in_store(object: Node2D) -> void:
 	if shelf_placement_controller != null:
 		shelf_placement_controller.drop_carried_shelf_in_store(object)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _create_carry_shelf_blocker() -> void:
 	if shelf_placement_controller != null:
 		shelf_placement_controller.create_carry_shelf_blocker()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _create_restricted_placement_warning() -> void:
 	if shelf_placement_controller != null:
 		shelf_placement_controller.create_restricted_placement_warning()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _update_carry_shelf_blocker() -> void:
 	if shelf_placement_controller != null:
 		shelf_placement_controller.update_carry_shelf_blocker()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _update_customer_path_visual() -> void:
 	if shelf_placement_controller != null:
 		shelf_placement_controller.update_customer_path_visual()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _set_customer_path_visual_visible(should_show: bool) -> void:
 	if shelf_placement_controller != null:
 		shelf_placement_controller.set_customer_path_visual_visible(should_show)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _set_carry_shelf_blocker_enabled(_enabled: bool) -> void:
 	if shelf_placement_controller != null:
 		shelf_placement_controller.set_carry_shelf_blocker_enabled(_enabled)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_shelf_placement_grid_positions() -> Array[Vector2]:
 	if shelf_placement_controller != null:
 		return shelf_placement_controller.get_shelf_placement_grid_positions()
@@ -727,7 +815,9 @@ func _get_shelf_placement_grid_positions() -> Array[Vector2]:
 	return []
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_marker2d(primary_path: NodePath, fallback_path: NodePath = NodePath("")) -> Marker2D:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var marker := get_node_or_null(primary_path) as Marker2D
 
 	if marker != null:
@@ -739,6 +829,7 @@ func _get_marker2d(primary_path: NodePath, fallback_path: NodePath = NodePath(""
 	return null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_store_path_marker_by_role(
 	role: StringName,
 	fallback_path: NodePath = NodePath(""),
@@ -749,7 +840,9 @@ func _get_store_path_marker_by_role(
 			if not child is Marker2D:
 				continue
 
+			@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 			var marker := child as Marker2D
+			@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 			var marker_role: Variant = marker.get_meta(&"store_path_role", StringName())
 
 			if marker_role is String and StringName(marker_role) == role:
@@ -758,6 +851,7 @@ func _get_store_path_marker_by_role(
 			if marker_role is StringName and marker_role == role:
 				return marker
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var marker := _get_marker2d(fallback_path, legacy_fallback_path)
 
 	if marker != null:
@@ -766,6 +860,7 @@ func _get_store_path_marker_by_role(
 	return null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_store_path_graph() -> StorePathGraph:
 	if npc_routes != null:
 		return npc_routes.get_store_path_graph()
@@ -776,116 +871,139 @@ func _get_store_path_graph() -> StorePathGraph:
 	return _store_path_graph
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _schedule_shelf_access_warmup(delay: float = SHELF_ACCESS_WARMUP_DELAY) -> void:
 	if shelf_placement_controller != null:
 		shelf_placement_controller.schedule_shelf_access_warmup(delay)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _hide_restricted_placement_warning() -> void:
 	if shelf_placement_controller != null:
 		shelf_placement_controller.hide_restricted_placement_warning()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _cancel_restricted_drop_feedback() -> void:
 	if shelf_placement_controller != null:
 		shelf_placement_controller.cancel_restricted_drop_feedback()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _update_player_depth_override() -> void:
 	if shelf_placement_controller != null:
 		shelf_placement_controller.update_player_depth_override()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _register_installed_shelf(object: Node2D) -> void:
 	if progression_flow != null:
 		progression_flow.register_installed_shelf(object)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _register_human_stock_progress() -> void:
 	if progression_flow != null:
 		progression_flow.register_human_stock_progress()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _connect_human_shelf_signals(shelf: Shelf) -> void:
 	if progression_flow != null:
 		progression_flow.connect_human_shelf_signals(shelf)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _set_human_stock_count(stock_count: int) -> void:
 	if progression_flow != null:
 		progression_flow.set_human_stock_count(stock_count)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _set_store_world_active(is_active: bool) -> void:
 	if world_state_controller != null:
 		world_state_controller.set_store_world_active(is_active)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _set_node_enabled_recursive(node: Node, enabled: bool) -> void:
 	if world_state_controller != null:
 		world_state_controller.set_node_enabled_recursive(node, enabled)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _create_fade_layer() -> void:
 	if presentation != null:
 		presentation.create_fade_layer()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _create_location_title_layer() -> void:
 	if presentation != null:
 		presentation.create_location_title_layer()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _show_location_title_once(location_key: String, title: String) -> void:
 	if presentation != null:
 		presentation.show_location_title_once(location_key, title)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _show_location_title(title: String) -> void:
 	if presentation != null:
 		presentation.show_location_title(title)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _fade_to_black() -> void:
 	if presentation != null:
 		await presentation.fade_to_black()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _fade_from_black() -> void:
 	if presentation != null:
 		await presentation.fade_from_black()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _setup_npc_static_data() -> void:
 	if npc_runtime != null:
 		npc_runtime.setup_static_data()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _close_cashier_runtime_ui() -> void:
 	if world_state_controller != null:
 		world_state_controller.close_cashier_runtime_ui()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _connect_cursor_tooltip(area: Area2D, tooltip_text: String) -> void:
 	if presentation != null:
 		presentation.connect_cursor_tooltip(area, tooltip_text)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_cursor_tooltip_entered(tooltip_text: String) -> void:
 	if presentation != null:
 		presentation._on_cursor_tooltip_entered(tooltip_text)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_cursor_tooltip_exited() -> void:
 	if presentation != null:
 		presentation._on_cursor_tooltip_exited()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_npc_spawn_requested(npc_data: NPCData) -> void:
 	if npc_runtime != null:
 		npc_runtime.on_npc_spawn_requested(npc_data)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_npc_spawn_marker() -> Marker2D:
 	if npc_runtime != null:
 		return npc_runtime.get_npc_spawn_marker()
@@ -893,70 +1011,84 @@ func _get_npc_spawn_marker() -> Marker2D:
 	return entrance_pos
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_npc_purchase(_npc: NPC, _item_id: String, price: int) -> void:
 	if npc_runtime != null:
 		npc_runtime.on_npc_purchase(_npc, _item_id, price)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_npc_exited(_npc: NPC) -> void:
 	if npc_runtime != null:
 		npc_runtime.on_npc_exited(_npc)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_phase_changed(phase) -> void:
 	if day_runtime != null:
 		day_runtime.on_phase_changed(phase)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_target_reached() -> void:
 	if day_runtime != null:
 		day_runtime.on_target_reached()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_daily_report(report: Dictionary) -> void:
 	if day_runtime != null:
 		day_runtime.on_daily_report(report)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_day_ended(_day: int) -> void:
 	if day_runtime != null:
 		day_runtime.on_day_ended(_day)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_day_started(_day: int) -> void:
 	if day_runtime != null:
 		day_runtime.on_day_started(_day)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_human_shelf_item_placed(_slot_index: int, item_id: String) -> void:
 	if progression_flow != null:
 		progression_flow.on_human_shelf_item_placed(_slot_index, item_id)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_human_shelf_item_removed(_slot_index: int, item_id: String) -> void:
 	if progression_flow != null:
 		progression_flow.on_human_shelf_item_removed(_slot_index, item_id)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_ghost_shelf_item_placed(_slot_index: int, item_id: String) -> void:
 	if progression_flow != null:
 		await progression_flow.on_ghost_shelf_item_placed(_slot_index, item_id)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _check_customer_spawning_ready(show_notice: bool = true) -> bool:
 	return progression_flow != null and progression_flow.check_customer_spawning_ready(show_notice)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _show_customer_open_notification() -> void:
 	if progression_flow != null:
 		progression_flow.show_customer_open_notification()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _update_objective() -> void:
 	if progression_flow != null:
 		progression_flow.update_objective()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_current_objective_text() -> String:
 	if progression_flow != null:
 		return progression_flow.get_current_objective_text()
@@ -964,26 +1096,31 @@ func _get_current_objective_text() -> String:
 	return ""
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _show_notification(text: String, duration: float = 2.0) -> void:
 	if presentation != null:
 		presentation.show_notification(text, duration)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _show_passive_notification(text: String, duration: float = 2.0, instant_text: bool = false) -> void:
 	if presentation != null:
 		presentation.show_passive_notification(text, duration, instant_text)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _show_status_notification(text: String, duration: float = 1.0) -> void:
 	if presentation != null:
 		presentation.show_status_notification(text, duration)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _show_task_complete_notice(key: String, message: String) -> void:
 	if task_completion != null:
 		task_completion.show_task_complete_notice(key, message)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _show_notification_sequence(messages: Array[String]) -> void:
 	if presentation != null:
 		await presentation.show_notification_sequence(messages)

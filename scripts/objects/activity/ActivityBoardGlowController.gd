@@ -4,10 +4,12 @@ extends RefCounted
 var board: ActivityBoard = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(board_node: ActivityBoard) -> void:
 	board = board_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func play_completion_glow() -> void:
 	if board._glow_line == null:
 		setup_completion_glow()
@@ -43,6 +45,7 @@ func play_completion_glow() -> void:
 	)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup_completion_glow() -> void:
 	if board._glow_line != null:
 		return
@@ -59,6 +62,7 @@ func setup_completion_glow() -> void:
 	board.add_child(board._glow_line)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_board_glow_points() -> PackedVector2Array:
 	return PackedVector2Array([
 		Vector2(-40, -40),

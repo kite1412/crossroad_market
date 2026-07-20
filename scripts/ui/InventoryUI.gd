@@ -7,6 +7,7 @@ extends Control
 var _list_renderer: InventoryListRenderer = InventoryListRenderer.new()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _ready() -> void:
 	_list_renderer.setup(self)
 	_setup_style()
@@ -17,13 +18,16 @@ func _ready() -> void:
 	_refresh()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _setup_style() -> void:
 	_list_renderer.setup_style()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_inventory_changed(_item_id: String, _quantity: int) -> void:
 	_refresh()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _refresh() -> void:
 	_list_renderer.refresh()

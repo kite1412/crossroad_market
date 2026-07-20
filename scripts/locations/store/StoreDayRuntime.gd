@@ -7,10 +7,12 @@ const CUSTOMER_INTAKE_CLOSED_META: StringName = &"customer_intake_closed_today"
 var store: Node = null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(store_node: Node) -> void:
 	store = store_node
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_normal_item_taken() -> void:
 	store._normal_items_taken = min(store._normal_items_taken + 1, NORMAL_STOCK_REQUIRED)
 	store._update_objective()
@@ -22,17 +24,20 @@ func on_normal_item_taken() -> void:
 		return
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_human_item_placed() -> void:
 	store._register_human_stock_progress()
 	store._update_objective()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_gooby_resolved() -> void:
 	store._gooby_resolved = true
 	store._show_task_complete_notice("gooby_resolved", "Gooby branch resolved.")
 	store._update_objective()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func can_player_sleep() -> Dictionary:
 	if TimeManager.current_phase != TimeManager.Phase.NIGHT:
 		return {
@@ -64,6 +69,7 @@ func can_player_sleep() -> Dictionary:
 	}
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_phase_changed(phase) -> void:
 	match phase:
 		TimeManager.Phase.DAY:
@@ -82,20 +88,24 @@ func on_phase_changed(phase) -> void:
 	store._update_objective()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_target_reached() -> void:
 	store._show_notification("Daily target achieved.", 2.5)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_daily_report(report: Dictionary) -> void:
 	store._latest_daily_report = report.duplicate()
 	store._update_end_day_tax_flow()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_day_ended(_day: int) -> void:
 	store._show_notification("Close the store, restock, and pay today's tax.", 3.0)
 	store._update_end_day_tax_flow()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_day_started(_day: int) -> void:
 	store._store_open = false
 	store._store_opened_today = false
@@ -107,6 +117,7 @@ func on_day_started(_day: int) -> void:
 	NPCScheduler.stop_normal_customer_spawning()
 	store._update_store_status_board(false)
 
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var hud := store.get_tree().get_first_node_in_group("hud")
 
 	if hud != null and hud.has_method("hide_tax_report"):

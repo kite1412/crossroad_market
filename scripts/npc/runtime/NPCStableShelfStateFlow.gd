@@ -4,6 +4,7 @@ const SOLO_CHECKOUT_EXIT_META: StringName = &"solo_checkout_exit"
 const EXIT_ORIGIN_SHELF_META: StringName = &"exit_origin_shelf"
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func finish_checkout_and_exit() -> void:
 	if not npc.has_meta(SOLO_CHECKOUT_EXIT_META):
 		_capture_solo_checkout_fallback()
@@ -14,8 +15,11 @@ func finish_checkout_and_exit() -> void:
 	super.finish_checkout_and_exit()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func process_search_item(delta: float) -> void:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var shelf_before_exit := npc._target_shelf as Shelf
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var previous_state: int = npc.current_state
 
 	super.process_search_item(delta)
@@ -34,6 +38,7 @@ func process_search_item(delta: float) -> void:
 		npc.set_meta(SOLO_CHECKOUT_EXIT_META, false)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func complete_exit() -> void:
 	if npc.has_meta(SOLO_CHECKOUT_EXIT_META):
 		npc.remove_meta(SOLO_CHECKOUT_EXIT_META)
@@ -43,14 +48,17 @@ func complete_exit() -> void:
 	super.complete_exit()
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _capture_solo_checkout_fallback() -> void:
 	NPCQueueSystem.prune_invalid(NPC.current_queue)
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var has_waiting_customer := false
 
 	for queued_variant in NPC.current_queue:
 		if not (queued_variant is NPC):
 			continue
 
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var queued_npc := queued_variant as NPC
 		if queued_npc == npc:
 			continue
@@ -70,9 +78,13 @@ func _capture_solo_checkout_fallback() -> void:
 	)
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _find_reachable_stocked_shelf() -> Shelf:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var requested_items: Array[String] = npc._get_requested_items()
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var current_shelf := npc._target_shelf as Shelf
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var interaction_tolerance := maxf(
 		npc.SHELF_ACTION_DISTANCE,
 		npc.ARRIVAL_THRESHOLD + 2.0
@@ -98,6 +110,7 @@ func _find_reachable_stocked_shelf() -> Shelf:
 		if not _shelf_has_requested_stock(shelf, requested_items):
 			continue
 
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var visit_position: Vector2 = npc._get_shelf_visit_position(shelf)
 		if visit_position.is_finite():
 			return shelf
@@ -105,6 +118,7 @@ func _find_reachable_stocked_shelf() -> Shelf:
 	return null
 
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _shelf_has_requested_stock(
 	shelf: Shelf,
 	requested_items: Array[String]

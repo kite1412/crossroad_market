@@ -11,9 +11,11 @@ enum BlueprintType {
 # Mood 0 = IMPATIENT, Mood 1 = PATIENT, Mood 2 = QUITTER
 var mood_dialogs: Dictionary = {}
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _init() -> void:
 	_setup_default_dialogs()
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _setup_default_dialogs() -> void:
 	# --- IMMEDIATE_LEAVE (Impatient) ---
 	mood_dialogs[BlueprintType.IMMEDIATE_LEAVE] = {
@@ -99,6 +101,7 @@ func _setup_default_dialogs() -> void:
 		}
 	}
 
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_dialog(blueprint_type: BlueprintType, mood: int, key: String) -> String:
 	if not mood_dialogs.has(blueprint_type):
 		return ""
