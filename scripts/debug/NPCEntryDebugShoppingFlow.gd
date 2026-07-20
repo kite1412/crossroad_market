@@ -55,17 +55,17 @@ func _ensure_shelf_path_ready(shelf: Shelf) -> bool:
 			or elapsed_msec >= SLOW_STAGE_THRESHOLD_MSEC
 		)
 	):
-		print(
+		var message := (
 			"[NPC_SHELF_PROFILE] npc=%s shelf=%s was_ready=%s "
 			+ "ready_after=%s elapsed_ms=%.3f"
-			% [
-				_get_npc_label(),
-				shelf_label,
-				str(was_ready),
-				str(result),
-				elapsed_msec
-			]
-		)
+		) % [
+			_get_npc_label(),
+			shelf_label,
+			str(was_ready),
+			str(result),
+			elapsed_msec
+		]
+		print(message)
 
 	return result
 
