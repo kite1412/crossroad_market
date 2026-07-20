@@ -393,3 +393,100 @@ func has_reachable_shelf_access(
 	candidate: Vector2
 ) -> bool:
 	return bool(find_best_shelf_access(candidate, object).get("valid", false))
+
+
+# Override contracts implemented by StorePathGraph.gd.
+func find_best_shelf_access(
+	_candidate_position: Vector2,
+	_shelf_object: Node2D
+) -> Dictionary:
+	return {"valid": false}
+
+
+func find_best_vertical_shelf_access(
+	_candidate_position: Vector2,
+	_shelf_object: Node2D
+) -> Dictionary:
+	return {"valid": false}
+
+
+func _get_surface_points_signature(_points: Array[Vector2]) -> String:
+	return ""
+
+
+func _append_clear_route_variants(
+	_candidates: Array[Dictionary],
+	_from_position: Vector2,
+	_target_position: Vector2,
+	_shelf_object: Node2D,
+	_shelf_position: Vector2,
+	_ignore_endpoint: bool
+) -> void:
+	pass
+
+
+func _get_shortest_route(_candidates: Array[Dictionary]) -> Array[Vector2]:
+	return []
+
+
+func _variant_route_to_vector2_array(_route_variant: Variant) -> Array[Vector2]:
+	return []
+
+
+func _store_access_metadata_from_result(
+	_object: Node2D,
+	_result: Dictionary
+) -> void:
+	pass
+
+
+func get_shelf_access_graph_node(_shelf: Shelf) -> StringName:
+	return StringName()
+
+
+func _append_access_route_variants(
+	_candidates: Array[Dictionary],
+	_from_position: Vector2,
+	_access_position: Vector2,
+	_shelf: Shelf,
+	_npc_node: Node
+) -> void:
+	pass
+
+
+func _get_nearest_graph_node_names_for_access(
+	_access_position: Vector2,
+	_preferred_node: StringName,
+	_limit: int
+) -> Array[StringName]:
+	return []
+
+
+func _get_connection_from_graph_node_to_access(
+	_graph_node: StringName,
+	_access_position: Vector2,
+	_shelf: Shelf
+) -> Array[Vector2]:
+	return []
+
+
+func _append_route_candidate(
+	_candidates: Array[Dictionary],
+	_from_position: Vector2,
+	_route: Array[Vector2]
+) -> void:
+	pass
+
+
+func _get_shortest_checkout_route(
+	_from_position: Vector2,
+	_source_shelf: Shelf
+) -> Array[Vector2]:
+	return []
+
+
+func _build_cashier_exit_route_via_queue_right(
+	_from_position: Vector2,
+	_fallback_exit_position: Vector2
+) -> Array[Vector2]:
+	return []
