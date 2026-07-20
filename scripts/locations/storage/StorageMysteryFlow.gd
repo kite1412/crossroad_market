@@ -1,6 +1,8 @@
 class_name StorageMysteryFlow
 extends Node
 
+const STORED_IN_STORAGE_META: StringName = &"stored_in_storage"
+
 var storage: Node = null
 
 
@@ -69,10 +71,13 @@ func unlock_mystery_phase() -> void:
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup_shelves() -> void:
-	for shelf in [storage.shelf_human, storage.shelf_ghost]:
-		if shelf == null:
+	for shelf_variant in [storage.shelf_human, storage.shelf_ghost]:
+		if not is_instance_valid(shelf_variant):
+			continue
+		if not (shelf_variant is Shelf):
 			continue
 
+		var shelf := shelf_variant as Shelf
 		shelf.remove_from_group("shelves")
 		shelf.set_meta("is_installed_in_store", false)
 		shelf.set_meta("is_carried_storage_object", false)
@@ -83,13 +88,36 @@ func setup_shelves() -> void:
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func apply_shelf_install_state() -> void:
-	if storage.shelf_human != null and storage._human_shelf_installed:
-		storage.shelf_human.queue_free()
+	# Only scene placeholders should be removed when a matching shelf is installed
+	# in Store. A restored shelf carries stored_in_storage=true and must survive
+	# even if an older install flag was temporarily stale.
+	if _should_remove_placeholder(storage.shelf_human, storage._human_shelf_installed):
+		storage.shelf_human.free()
+		storage.shelf_human = null
+	elif not is_instance_valid(storage.shelf_human):
 		storage.shelf_human = null
 
-	if storage.shelf_ghost != null and storage._ghost_shelf_installed:
-		storage.shelf_ghost.queue_free()
+	if _should_remove_placeholder(storage.shelf_ghost, storage._ghost_shelf_installed):
+		storage.shelf_ghost.free()
 		storage.shelf_ghost = null
+	elif not is_instance_valid(storage.shelf_ghost):
+		storage.shelf_ghost = null
+
+
+func _should_remove_placeholder(shelf_variant: Variant, installed: bool) -> bool:
+	if not installed:
+		return false
+	if not is_instance_valid(shelf_variant):
+		return false
+	if not (shelf_variant is Shelf):
+		return false
+
+	var shelf := shelf_variant as Shelf
+	if bool(shelf.get_meta(STORED_IN_STORAGE_META, false)):
+		return false
+	if bool(shelf.get_meta("is_carried_storage_object", false)):
+		return false
+	return true
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -118,16 +146,17 @@ func apply_mystery_phase_state(animated: bool) -> void:
 				storage.mystery_box.mark_discovered()
 			else:
 				storage.mystery_box.unlock_mystery()
-
 			apply_mystery_box_item_state()
 
-	if storage.shelf_ghost != null:
-		storage.shelf_ghost.visible = is_open
-		storage._set_node_enabled_recursive(storage.shelf_ghost, is_open)
-		storage.shelf_ghost.set_meta("is_carryable_storage_object", is_open)
+	var ghost_variant: Variant = storage.shelf_ghost
+	if is_instance_valid(ghost_variant) and ghost_variant is Shelf:
+		var ghost_shelf := ghost_variant as Shelf
+		ghost_shelf.visible = is_open
+		storage._set_node_enabled_recursive(ghost_shelf, is_open)
+		ghost_shelf.set_meta("is_carryable_storage_object", is_open)
 
 		if is_open:
-			storage.shelf_ghost.apply_ghost_glow(true)
+			ghost_shelf.apply_ghost_glow(true)
 
 	storage._set_node_enabled_recursive(storage.locked_blocker, not is_open)
 
