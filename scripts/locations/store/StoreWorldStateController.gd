@@ -2,6 +2,7 @@ class_name StoreWorldStateController
 extends Node
 
 const PUT_ACTION: StringName = &"put"
+const STORED_IN_STORAGE_META: StringName = &"stored_in_storage"
 
 var store: Node = null
 
@@ -59,6 +60,15 @@ func set_store_world_active(is_active: bool) -> void:
 			continue
 
 		if child.name == "HUD":
+			continue
+
+		# Shelves returned to Storage are parked under Store only so they survive
+		# destruction of the temporary Storage scene. They must remain hidden and
+		# collision-disabled when the Store world is reactivated.
+		if bool(child.get_meta(STORED_IN_STORAGE_META, false)):
+			set_node_enabled_recursive(child, false)
+			if child is CanvasItem:
+				(child as CanvasItem).visible = false
 			continue
 
 		set_node_active_recursive(child, is_active)
