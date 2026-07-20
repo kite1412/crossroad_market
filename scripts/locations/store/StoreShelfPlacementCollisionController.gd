@@ -1,5 +1,10 @@
 extends "res://scripts/locations/store/StoreShelfPlacementController.gd"
 
+const STORE_ENTRY_DROP_BLOCK_ROLES: Array[StringName] = [
+	&"entry",
+	&"exit",
+	&"enter_store"
+]
 const QUEUE_DROP_BLOCK_ROLES: Array[StringName] = [
 	&"queue_front",
 	&"queue_back",
@@ -7,6 +12,7 @@ const QUEUE_DROP_BLOCK_ROLES: Array[StringName] = [
 	&"queue_back_right",
 	&"queue_exit_right"
 ]
+const STORE_ENTRY_DROP_BLOCK_SIZE := Vector2(88, 56)
 
 
 func evaluate_shelf_drop_restriction(
@@ -14,6 +20,21 @@ func evaluate_shelf_drop_restriction(
 	candidate: Vector2
 ) -> Dictionary:
 	var object_rect := get_object_body_rect_at(object, candidate)
+	var entrance_restricted_rect := get_marker_drop_restricted_rect(
+		object_rect,
+		STORE_ENTRY_DROP_BLOCK_ROLES,
+		STORE_ENTRY_DROP_BLOCK_SIZE
+	)
+
+	if rect_has_area(entrance_restricted_rect):
+		return make_drop_restriction(
+			true,
+			DROP_REJECTION_CASHIER_FLOW,
+			"Keep the store entrance clear.",
+			entrance_restricted_rect,
+			true
+		)
+
 	var queue_restricted_rect := get_queue_marker_drop_restricted_rect(
 		object_rect
 	)
@@ -40,6 +61,29 @@ func evaluate_shelf_drop_restriction(
 
 
 func get_queue_drop_block_markers() -> Array[Marker2D]:
+	return get_drop_block_markers_for_roles(QUEUE_DROP_BLOCK_ROLES)
+
+
+func get_marker_drop_restricted_rect(
+	object_rect: Rect2,
+	roles: Array[StringName],
+	block_size: Vector2
+) -> Rect2:
+	for marker in get_drop_block_markers_for_roles(roles):
+		var marker_rect := Rect2(
+			marker.global_position - block_size * 0.5,
+			block_size
+		)
+
+		if object_rect.intersects(marker_rect):
+			return marker_rect
+
+	return Rect2()
+
+
+func get_drop_block_markers_for_roles(
+	roles: Array[StringName]
+) -> Array[Marker2D]:
 	var markers: Array[Marker2D] = []
 
 	if store == null or store.store_path_markers == null:
@@ -51,7 +95,7 @@ func get_queue_drop_block_markers() -> Array[Marker2D]:
 			continue
 
 		var role := StringName(str(marker.get_meta("store_path_role")))
-		if role in QUEUE_DROP_BLOCK_ROLES:
+		if role in roles:
 			markers.append(marker)
 
 	return markers
