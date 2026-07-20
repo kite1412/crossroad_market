@@ -72,11 +72,13 @@ static func set_node_active_recursive(node: Node, is_active: bool) -> void:
 		var canvas_item := node as CanvasItem
 
 		if is_active:
+			# Only restore CanvasItems that were actually suspended. A node may be
+			# created while the Store world is inactive, and forcing that node visible
+			# would reveal intentionally hidden controls such as NPC placeholders and
+			# dialog bubbles.
 			if canvas_item.has_meta("_world_active_was_visible"):
 				canvas_item.visible = bool(canvas_item.get_meta("_world_active_was_visible"))
 				canvas_item.remove_meta("_world_active_was_visible")
-			else:
-				canvas_item.visible = true
 		else:
 			canvas_item.set_meta("_world_active_was_visible", canvas_item.visible)
 			canvas_item.visible = false
