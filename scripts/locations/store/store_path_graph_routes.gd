@@ -142,7 +142,7 @@ func build_route_from_graph_path(path: Array[StringName]) -> Array[Vector2]:
 	var previous_position := Vector2.INF
 
 	for node_name in path:
-		var marker := _graph._nav.get_graph_marker(node_name)
+		var marker: Marker2D = _graph._nav.get_graph_marker(node_name)
 
 		if marker == null:
 			continue

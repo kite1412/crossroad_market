@@ -119,7 +119,7 @@ func get_shelf_anchor_positions() -> Array[Vector2]:
 	var positions: Array[Vector2] = []
 
 	for node_name in graph_nodes:
-		var marker := _nav.get_graph_marker(node_name)
+		var marker: Marker2D = _nav.get_graph_marker(node_name)
 
 		if marker == null:
 			continue
@@ -136,7 +136,7 @@ func get_shelf_anchor_positions() -> Array[Vector2]:
 
 func get_queue_target_position(queue_index: int, fallback_position: Vector2) -> Vector2:
 	var node_name := _nav.get_queue_target_node_name(queue_index)
-	var marker := _nav.get_graph_marker(node_name)
+	var marker: Marker2D = _nav.get_graph_marker(node_name)
 
 	if marker == null:
 		return fallback_position
@@ -150,7 +150,7 @@ func get_queue_target_position(queue_index: int, fallback_position: Vector2) -> 
 
 
 func get_cashier_target_position(fallback_position: Vector2) -> Vector2:
-	var marker := get_marker_for_role(ROLE_CASHIER, CASHIER)
+	var marker: Marker2D = get_marker_for_role(ROLE_CASHIER, CASHIER)
 	return marker.global_position if marker != null else fallback_position
 
 
@@ -168,7 +168,7 @@ func get_entry_route_to_shelf(shelf_position: Vector2, from_position: Vector2 = 
 	if not bool(start.get("valid", false)):
 		return _routes.dedupe_route_points(_routes.make_orthogonal_route(from_position, shelf_position, true))
 
-	var path := _nav.find_graph_path(start.get("node", entry_node) as StringName, aisle_node)
+	var path: Array[StringName] = _nav.find_graph_path(start.get("node", entry_node) as StringName, aisle_node)
 	var route := start.get("route", []) as Array[Vector2]
 	route.append_array(_routes.build_route_from_graph_path(path))
 	_routes.append_orthogonal_route_to(route, shelf_position, true, from_position)
@@ -207,7 +207,7 @@ func get_route_to_shelf_access(shelf: Shelf, from_position: Vector2 = Vector2.IN
 	if not access_point.is_finite() or graph_node == StringName():
 		return []
 
-	var route_start := from_position if from_position.is_finite() else _nav.get_marker_position(_nav.get_role_node_name(ROLE_ENTRY, ENTRY))
+	var route_start: Vector2 = from_position if from_position.is_finite() else _nav.get_marker_position(_nav.get_role_node_name(ROLE_ENTRY, ENTRY))
 	var entry_route_result := _get_entry_to_access_route(access_point, shelf, graph_node, route_start, npc_node)
 
 	if bool(entry_route_result.get("valid", false)):
@@ -215,8 +215,8 @@ func get_route_to_shelf_access(shelf: Shelf, from_position: Vector2 = Vector2.IN
 		pass
 		return _routes.dedupe_route_points(entry_route)
 
-	var start_node := _nav.find_nearest_graph_node(route_start)
-	var path := _nav.find_graph_path(start_node.get("node", _nav.get_role_node_name(ROLE_ENTRY, ENTRY)) as StringName, graph_node) if bool(start_node.get("valid", false)) else []
+	var start_node: Dictionary = _nav.find_nearest_graph_node(route_start)
+	var path: Array[StringName] = _nav.find_graph_path(start_node.get("node", _nav.get_role_node_name(ROLE_ENTRY, ENTRY)) as StringName, graph_node) if bool(start_node.get("valid", false)) else []
 	var route := (start_node.get("route", []) as Array[Vector2]).duplicate()
 	route.append_array(_routes.build_route_from_graph_path(path))
 	_append_surface_access_route_to(route, shelf, graph_node, access_point, true)
@@ -226,14 +226,14 @@ func get_route_to_shelf_access(shelf: Shelf, from_position: Vector2 = Vector2.IN
 
 
 func get_route_to_cashier_from(from_position: Vector2) -> Array[Vector2]:
-	var start := _nav.find_nearest_graph_node(from_position)
+	var start: Dictionary = _nav.find_nearest_graph_node(from_position)
 
 	if not bool(start.get("valid", false)):
 		pass
 		return []
 
-	var cashier_node := _nav.get_role_node_name(ROLE_CASHIER, CASHIER)
-	var cashier_marker := _nav.get_graph_marker(cashier_node)
+	var cashier_node: StringName = _nav.get_role_node_name(ROLE_CASHIER, CASHIER)
+	var cashier_marker: Marker2D = _nav.get_graph_marker(cashier_node)
 	var direct_routes: Array = []
 
 	if cashier_marker != null:
@@ -273,7 +273,7 @@ func get_route_to_cashier_from(from_position: Vector2) -> Array[Vector2]:
 				pass
 				return direct_result
 
-	var path := _nav.find_graph_path(start.get("node", cashier_node) as StringName, cashier_node)
+	var path: Array[StringName] = _nav.find_graph_path(start.get("node", cashier_node) as StringName, cashier_node)
 	var route := start.get("route", []) as Array[Vector2]
 	route.append_array(_routes.build_route_from_graph_path(path))
 	var result := _routes.dedupe_route_points(route)
@@ -302,7 +302,7 @@ func get_shelf_wait_position(index: int = 0) -> Vector2:
 
 func get_route_to_queue_target_from(from_position: Vector2, queue_index: int) -> Array[Vector2]:
 	var queue_target := get_queue_target_position(queue_index, from_position)
-	var queue_node := _nav.get_queue_target_node_name(queue_index)
+	var queue_node: StringName = _nav.get_queue_target_node_name(queue_index)
 	var direct_route: Array[Vector2] = [queue_target]
 	var direct_clear := _clearance.is_queue_route_clear_from_current_position(from_position, direct_route)
 	pass
@@ -314,7 +314,7 @@ func get_route_to_queue_target_from(from_position: Vector2, queue_index: int) ->
 		var direct_result := _routes.dedupe_route_points(direct_route)
 		return direct_result
 
-	var queue_start := _nav.find_nearest_reachable_graph_node_for_route(from_position, queue_node)
+	var queue_start: Dictionary = _nav.find_nearest_reachable_graph_node_for_route(from_position, queue_node)
 
 	if bool(queue_start.get("valid", false)):
 		var queue_route := queue_start.get("route", []) as Array[Vector2]
@@ -327,10 +327,10 @@ func get_route_to_queue_target_from(from_position: Vector2, queue_index: int) ->
 	else:
 		pass
 
-	var approach_node := _nav.get_queue_approach_node_name(queue_index)
+	var approach_node: StringName = _nav.get_queue_approach_node_name(queue_index)
 
 	if approach_node != StringName():
-		var approach_start := _nav.find_nearest_reachable_graph_node_for_route(from_position, approach_node)
+		var approach_start: Dictionary = _nav.find_nearest_reachable_graph_node_for_route(from_position, approach_node)
 
 		if bool(approach_start.get("valid", false)):
 			var approach_route := approach_start.get("route", []) as Array[Vector2]
@@ -357,7 +357,7 @@ func get_route_from_shelf_to_cashier(shelf: Shelf) -> Array[Vector2]:
 		return []
 
 	var direct_target_node := _get_direct_checkout_target_node_name(access_point)
-	var direct_target_marker := _nav.get_graph_marker(direct_target_node)
+	var direct_target_marker: Marker2D = _nav.get_graph_marker(direct_target_node)
 	var direct_route: Array[Vector2] = []
 	var direct_clear := false
 
@@ -381,7 +381,7 @@ func get_route_from_shelf_to_cashier(shelf: Shelf) -> Array[Vector2]:
 			pass
 			return direct_result
 
-	var path := _nav.find_checkout_graph_path(graph_node)
+	var path: Array[StringName] = _nav.find_checkout_graph_path(graph_node)
 	var route := _get_surface_access_route(shelf, graph_node, access_point)
 	var surface_route_points := route.size()
 	route.reverse()
@@ -401,7 +401,7 @@ func get_cashier_exit_route(from_position: Vector2, fallback_exit_position: Vect
 
 
 func _build_cashier_exit_route_via_queue_right(from_position: Vector2, fallback_exit_position: Vector2) -> Array[Vector2]:
-	var queue_right_nodes := _nav.get_queue_right_node_names()
+	var queue_right_nodes: Array[StringName] = _nav.get_queue_right_node_names()
 
 	if queue_right_nodes.size() < 3:
 		return []
@@ -409,7 +409,7 @@ func _build_cashier_exit_route_via_queue_right(from_position: Vector2, fallback_
 	var route: Array[Vector2] = []
 
 	for node_name in queue_right_nodes:
-		var marker := _nav.get_graph_marker(node_name)
+		var marker: Marker2D = _nav.get_graph_marker(node_name)
 
 		if marker == null:
 			return []
@@ -419,11 +419,11 @@ func _build_cashier_exit_route_via_queue_right(from_position: Vector2, fallback_
 	if not _clearance.is_route_clear_from_current_position(from_position, route):
 		return []
 
-	var exit_node := _nav.get_role_node_name(ROLE_EXIT, EXIT)
+	var exit_node: StringName = _nav.get_role_node_name(ROLE_EXIT, EXIT)
 
 	if exit_node != StringName():
 		var last_queue_position: Vector2 = route.back()
-		var graph_rejoin := _nav.find_nearest_reachable_graph_node_for_route(last_queue_position, exit_node)
+		var graph_rejoin: Dictionary = _nav.find_nearest_reachable_graph_node_for_route(last_queue_position, exit_node)
 
 		if bool(graph_rejoin.get("valid", false)):
 			var graph_route := graph_rejoin.get("route", []) as Array[Vector2]
@@ -442,8 +442,8 @@ func _build_cashier_exit_route_via_queue_right(from_position: Vector2, fallback_
 
 
 func get_exit_route_from(from_position: Vector2, fallback_exit_position: Vector2) -> Array[Vector2]:
-	var exit_node := _nav.get_role_node_name(ROLE_EXIT, EXIT)
-	var start := _nav.find_nearest_reachable_graph_node_for_route(from_position, exit_node)
+	var exit_node: StringName = _nav.get_role_node_name(ROLE_EXIT, EXIT)
+	var start: Dictionary = _nav.find_nearest_reachable_graph_node_for_route(from_position, exit_node)
 
 	if bool(start.get("valid", false)):
 		return _routes.dedupe_route_points(start.get("route", []) as Array[Vector2])
@@ -475,7 +475,7 @@ func _find_best_shelf_access(candidate_position: Vector2, shelf_object: Node2D, 
 	var candidates_start_usec := Time.get_ticks_usec()
 	var candidates := _shelf.get_shelf_access_candidates(candidate_position, vertical_only)
 	var candidates_elapsed_msec := _elapsed_msec(candidates_start_usec)
-	var cashier_marker := get_marker_for_role(ROLE_CASHIER, CASHIER)
+	var cashier_marker: Marker2D = get_marker_for_role(ROLE_CASHIER, CASHIER)
 	var cashier_pos := cashier_marker.global_position if cashier_marker != null else Vector2.INF
 	var prefer_below := false
 	if cashier_pos.is_finite() and candidate_position.is_finite():
@@ -592,7 +592,7 @@ func _find_best_shelf_access(candidate_position: Vector2, shelf_object: Node2D, 
 		var graph_node := reachable_node.get("node", StringName()) as StringName
 		pass
 		var checkout_start_usec := Time.get_ticks_usec()
-		var graph_path := _nav.find_checkout_graph_path(graph_node)
+		var graph_path: Array[StringName] = _nav.find_checkout_graph_path(graph_node)
 		checkout_elapsed_msec += _elapsed_msec(checkout_start_usec)
 
 		if graph_path.is_empty():
@@ -715,7 +715,7 @@ func _find_nearest_reachable_graph_node(
 	var best_score := INF
 
 	for node_name in _nav.get_graph_node_names():
-		var marker := _nav.get_graph_marker(node_name)
+		var marker: Marker2D = _nav.get_graph_marker(node_name)
 
 		if marker == null:
 			continue
@@ -755,7 +755,7 @@ func _find_reachable_graph_node_for_access(
 	)
 
 	if preferred_node != StringName():
-		var preferred_marker := _nav.get_graph_marker(preferred_node)
+		var preferred_marker: Marker2D = _nav.get_graph_marker(preferred_node)
 
 		if preferred_marker != null:
 			var preferred_route := _routes.make_orthogonal_route(preferred_marker.global_position, access_point, true)
@@ -775,7 +775,7 @@ func _find_reachable_graph_node_for_access(
 		if node_name == preferred_node:
 			continue
 
-		var marker := _nav.get_graph_marker(node_name)
+		var marker: Marker2D = _nav.get_graph_marker(node_name)
 
 		if marker == null:
 			continue
@@ -797,7 +797,7 @@ func _find_reachable_graph_node_for_access(
 		return best_result
 
 	for node_name in graph_node_names:
-		var marker := _nav.get_graph_marker(node_name)
+		var marker: Marker2D = _nav.get_graph_marker(node_name)
 
 		if marker == null:
 			continue
@@ -887,7 +887,7 @@ func _get_entry_to_access_route(
 	from_position: Vector2,
 	npc_node: Node = null
 ) -> Dictionary:
-	var route_start := from_position if from_position.is_finite() else _nav.get_marker_position(_nav.get_role_node_name(ROLE_ENTRY, ENTRY))
+	var route_start: Vector2 = from_position if from_position.is_finite() else _nav.get_marker_position(_nav.get_role_node_name(ROLE_ENTRY, ENTRY))
 
 	if not route_start.is_finite() or not access_point.is_finite():
 		return {"valid": false}
@@ -914,7 +914,7 @@ func _get_entry_to_access_route(
 
 	var best_result := {"valid": false}
 	var best_score := INF
-	var start_node := _nav.find_nearest_graph_node(route_start)
+	var start_node: Dictionary = _nav.find_nearest_graph_node(route_start)
 
 	if not bool(start_node.get("valid", false)):
 		return best_result
@@ -922,12 +922,12 @@ func _get_entry_to_access_route(
 	var start_graph_node := start_node.get("node", _nav.get_role_node_name(ROLE_ENTRY, ENTRY)) as StringName
 
 	for node_name in _get_nearest_graph_node_names_for_access(access_point, metadata_graph_node, MAX_ACCESS_GRAPH_NODE_CANDIDATES):
-		var marker := _nav.get_graph_marker(node_name)
+		var marker: Marker2D = _nav.get_graph_marker(node_name)
 
 		if marker == null:
 			continue
 
-		var path := _nav.find_graph_path(start_graph_node, node_name)
+		var path: Array[StringName] = _nav.find_graph_path(start_graph_node, node_name)
 
 		if path.is_empty():
 			continue
@@ -961,8 +961,8 @@ func _get_entry_to_access_route(
 
 
 func _get_direct_checkout_access(access_point: Vector2, shelf_object: Node2D, shelf_position: Vector2) -> Dictionary:
-	var queue_front_node := _nav.get_role_node_name(ROLE_QUEUE_FRONT, QUEUE_FRONT)
-	var cashier_node := _nav.get_role_node_name(ROLE_CASHIER, CASHIER)
+	var queue_front_node: StringName = _nav.get_role_node_name(ROLE_QUEUE_FRONT, QUEUE_FRONT)
+	var cashier_node: StringName = _nav.get_role_node_name(ROLE_CASHIER, CASHIER)
 
 	var attempts: Array[Dictionary] = []
 
@@ -983,7 +983,7 @@ func _get_direct_checkout_access(access_point: Vector2, shelf_object: Node2D, sh
 			StringName()
 		) as StringName
 
-		var marker := _nav.get_graph_marker(node_name)
+		var marker: Marker2D = _nav.get_graph_marker(node_name)
 
 		if marker == null:
 			continue
@@ -1037,11 +1037,11 @@ func _get_direct_checkout_access(access_point: Vector2, shelf_object: Node2D, sh
 
 
 func _get_direct_checkout_target_node_name(from_position: Vector2) -> StringName:
-	var queue_front_node := _nav.get_role_node_name(ROLE_QUEUE_FRONT, QUEUE_FRONT)
-	var cashier_node := _nav.get_role_node_name(ROLE_CASHIER, CASHIER)
+	var queue_front_node: StringName = _nav.get_role_node_name(ROLE_QUEUE_FRONT, QUEUE_FRONT)
+	var cashier_node: StringName = _nav.get_role_node_name(ROLE_CASHIER, CASHIER)
 
 	for node_name in [queue_front_node, cashier_node]:
-		var marker := _nav.get_graph_marker(node_name)
+		var marker: Marker2D = _nav.get_graph_marker(node_name)
 
 		if marker == null:
 			continue
@@ -1055,11 +1055,11 @@ func _get_direct_checkout_target_node_name(from_position: Vector2) -> StringName
 
 
 func _get_nearest_graph_node_names_for_access(access_point: Vector2, preferred_node: StringName, limit: int) -> Array[StringName]:
-	var names := _nav.get_graph_node_names()
+	var names: Array[StringName] = _nav.get_graph_node_names()
 	var ranked: Array[Dictionary] = []
 
 	for node_name in names:
-		var marker := _nav.get_graph_marker(node_name)
+		var marker: Marker2D = _nav.get_graph_marker(node_name)
 
 		if marker == null:
 			continue
@@ -1095,33 +1095,33 @@ func _get_nearest_graph_node_names_for_access(access_point: Vector2, preferred_n
 # ── Exit route via queue right ───────────────────────────────────────────────
 
 func _build_exit_route_via_queue_right(from_position: Vector2, fallback_exit_position: Vector2) -> Array[Vector2]:
-	var queue_right_nodes := _nav.get_queue_right_node_names()
+	var queue_right_nodes: Array[StringName] = _nav.get_queue_right_node_names()
 	if queue_right_nodes.is_empty():
 		return []
 
-	var queue_right_node := _nav.get_nearest_queue_right_node_name(from_position)
+	var queue_right_node: StringName = _nav.get_nearest_queue_right_node_name(from_position)
 
 	if queue_right_node == StringName():
 		return []
 
-	var queue_right_marker := _nav.get_graph_marker(queue_right_node)
+	var queue_right_marker: Marker2D = _nav.get_graph_marker(queue_right_node)
 
 	if queue_right_marker == null:
 		return []
 
 	var route: Array[Vector2] = [queue_right_marker.global_position]
 
-	var start_index := queue_right_nodes.find(queue_right_node)
+	var start_index: int = queue_right_nodes.find(queue_right_node)
 	for i in range(start_index + 1, queue_right_nodes.size()):
-		var next_marker := _nav.get_graph_marker(queue_right_nodes[i])
+		var next_marker: Marker2D = _nav.get_graph_marker(queue_right_nodes[i])
 		if next_marker != null:
 			route.append(next_marker.global_position)
 
 	var last_node := queue_right_nodes.back() as StringName
-	var exit_node := _nav.get_role_node_name(ROLE_EXIT, EXIT)
+	var exit_node: StringName = _nav.get_role_node_name(ROLE_EXIT, EXIT)
 
 	if exit_node != StringName():
-		var exit_path := _nav.find_graph_path(last_node, exit_node)
+		var exit_path: Array[StringName] = _nav.find_graph_path(last_node, exit_node)
 
 		if not exit_path.is_empty():
 			route.append_array(_routes.build_route_from_graph_path(exit_path))

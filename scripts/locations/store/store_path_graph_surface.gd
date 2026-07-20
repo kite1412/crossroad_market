@@ -27,7 +27,7 @@ func find_surface_route_between_marker_and_access(
 
 	var debug_start_usec := Time.get_ticks_usec()
 	var initial_surface_searches := int(surface_searches[0]) if not surface_searches.is_empty() else 0
-	var marker := _graph._nav.get_graph_marker(graph_node)
+	var marker: Marker2D = _graph._nav.get_graph_marker(graph_node)
 
 	if marker == null or not access_point.is_finite():
 		var missing_result := {"valid": false}
@@ -58,8 +58,8 @@ func find_surface_route_between_marker_and_access(
 	var best_distance := INF
 
 	for marker_index in marker_indices:
-		var marker_anchor := _graph._shelf_access_points[marker_index]
-		var marker_route := _graph._routes.make_orthogonal_route(marker_position, marker_anchor, true)
+		var marker_anchor: Vector2 = _graph._shelf_access_points[marker_index]
+		var marker_route: Array[Vector2] = _graph._routes.make_orthogonal_route(marker_position, marker_anchor, true)
 
 		if not _graph._clearance.is_route_clear(marker_position, marker_route, shelf_object, shelf_position):
 			continue
@@ -71,8 +71,8 @@ func find_surface_route_between_marker_and_access(
 				pass
 				return search_limit_result.duplicate(true)
 
-			var access_anchor := _graph._shelf_access_points[access_index]
-			var access_route := _graph._routes.make_orthogonal_route(access_anchor, access_point, true)
+			var access_anchor: Vector2 = _graph._shelf_access_points[access_index]
+			var access_route: Array[Vector2] = _graph._routes.make_orthogonal_route(access_anchor, access_point, true)
 
 			if not _graph._clearance.is_route_clear(access_anchor, access_route, shelf_object, shelf_position):
 				continue
@@ -96,7 +96,7 @@ func find_surface_route_between_marker_and_access(
 			if route.is_empty() or not _graph._clearance.is_route_clear(marker_position, route, shelf_object, shelf_position):
 				continue
 
-			var distance := _graph._routes.get_route_distance(marker_position, route)
+			var distance: float = _graph._routes.get_route_distance(marker_position, route)
 
 			if distance < best_distance:
 				best_distance = distance
@@ -145,7 +145,7 @@ func _get_nearest_surface_anchor_indices(
 		return indices
 
 	for index in range(_graph._shelf_access_points.size()):
-		var point := _graph._shelf_access_points[index]
+		var point: Vector2 = _graph._shelf_access_points[index]
 
 		if not _graph._clearance.is_npc_access_point_clear(point, shelf_object, shelf_position):
 			continue
@@ -196,8 +196,8 @@ func _find_surface_anchor_path(
 
 	var frontier: Array[int] = [start_index]
 	var g_score := {start_index: 0.0}
-	var goal_pos := _graph._shelf_access_points[goal_index]
-	var f_score := {start_index: _graph._shelf_access_points[start_index].distance_to(goal_pos)}
+	var goal_pos: Vector2 = _graph._shelf_access_points[goal_index]
+	var f_score: Dictionary = {start_index: _graph._shelf_access_points[start_index].distance_to(goal_pos)}
 	var previous := {}
 	var visited := {}
 
@@ -212,23 +212,23 @@ func _find_surface_anchor_path(
 		if current == goal_index:
 			break
 
-		var current_position := _graph._shelf_access_points[current]
+		var current_position: Vector2 = _graph._shelf_access_points[current]
 
 		for neighbor in _get_surface_anchor_neighbors(current):
 			if visited.has(neighbor):
 				continue
 
-			var neighbor_position := _graph._shelf_access_points[neighbor]
+			var neighbor_position: Vector2 = _graph._shelf_access_points[neighbor]
 
 			if not _graph._clearance.is_route_segment_clear(current_position, neighbor_position, shelf_object, shelf_position):
 				continue
 
 			var edge_cost := current_position.distance_to(neighbor_position)
-			var next_cost := float(g_score.get(current, 0.0)) + edge_cost
+			var next_cost: float = float(g_score.get(current, 0.0)) + edge_cost
 
 			if not g_score.has(neighbor) or next_cost < float(g_score[neighbor]):
 				g_score[neighbor] = next_cost
-				var h_cost := neighbor_position.distance_to(goal_pos)
+				var h_cost: float = neighbor_position.distance_to(goal_pos)
 				f_score[neighbor] = next_cost + h_cost
 				previous[neighbor] = current
 
@@ -278,7 +278,7 @@ func _get_surface_anchor_neighbors(index: int) -> Array[int]:
 
 
 func _ensure_surface_neighbor_cache() -> void:
-	var signature := _graph._get_surface_points_signature(_graph._shelf_access_points)
+	var signature: String = _graph._get_surface_points_signature(_graph._shelf_access_points)
 
 	if _graph._surface_neighbor_signature == signature:
 		return
@@ -296,7 +296,7 @@ func _find_axis_surface_neighbors(source_index: int) -> Array[int]:
 	if source_index < 0 or source_index >= _graph._shelf_access_points.size():
 		return neighbors
 
-	var source_position := _graph._shelf_access_points[source_index]
+	var source_position: Vector2 = _graph._shelf_access_points[source_index]
 	_append_surface_axis_neighbor(neighbors, source_index, source_position, true, -1.0)
 	_append_surface_axis_neighbor(neighbors, source_index, source_position, true, 1.0)
 	_append_surface_axis_neighbor(neighbors, source_index, source_position, false, -1.0)
@@ -318,8 +318,8 @@ func _append_surface_axis_neighbor(
 		if candidate_index == source_index:
 			continue
 
-		var candidate_position := _graph._shelf_access_points[candidate_index]
-		var same_axis := (
+		var candidate_position: Vector2 = _graph._shelf_access_points[candidate_index]
+		var same_axis: bool = (
 			absf(candidate_position.y - source_position.y) <= _graph.SURFACE_ALIGNMENT_EPSILON
 			if horizontal
 			else absf(candidate_position.x - source_position.x) <= _graph.SURFACE_ALIGNMENT_EPSILON
@@ -328,7 +328,7 @@ func _append_surface_axis_neighbor(
 		if not same_axis:
 			continue
 
-		var offset := (
+		var offset: float = (
 			candidate_position.x - source_position.x
 			if horizontal
 			else candidate_position.y - source_position.y

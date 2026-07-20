@@ -156,7 +156,7 @@ func is_route_segment_clear(
 		return true
 
 	var distance := from_pos.distance_to(to_pos)
-	var steps := maxi(1, int(ceil(distance / _graph.ROUTE_SAMPLE_STEP)))
+	var steps: int = maxi(1, int(ceil(distance / _graph.ROUTE_SAMPLE_STEP)))
 
 	for index in range(steps + 1):
 		var point := from_pos.lerp(to_pos, float(index) / float(steps))
@@ -178,7 +178,7 @@ func is_route_segment_clear_except_endpoint(
 		return true
 
 	var distance := from_pos.distance_to(to_pos)
-	var steps := maxi(1, int(ceil(distance / _graph.ROUTE_SAMPLE_STEP)))
+	var steps: int = maxi(1, int(ceil(distance / _graph.ROUTE_SAMPLE_STEP)))
 
 	for index in range(steps):
 		var point := from_pos.lerp(to_pos, float(index) / float(steps))
@@ -200,7 +200,7 @@ func is_route_segment_clear_except_start(
 		return true
 
 	var distance := from_pos.distance_to(to_pos)
-	var steps := maxi(1, int(ceil(distance / _graph.ROUTE_SAMPLE_STEP)))
+	var steps: int = maxi(1, int(ceil(distance / _graph.ROUTE_SAMPLE_STEP)))
 
 	for index in range(1, steps + 1):
 		var point := from_pos.lerp(to_pos, float(index) / float(steps))
@@ -222,7 +222,7 @@ func is_route_segment_clear_except_start_and_endpoint(
 		return true
 
 	var distance := from_pos.distance_to(to_pos)
-	var steps := maxi(1, int(ceil(distance / _graph.ROUTE_SAMPLE_STEP)))
+	var steps: int = maxi(1, int(ceil(distance / _graph.ROUTE_SAMPLE_STEP)))
 
 	for index in range(1, steps):
 		var point := from_pos.lerp(to_pos, float(index) / float(steps))
@@ -464,7 +464,7 @@ func debug_route_segment_clear_except_endpoint(
 		return {"valid": true}
 
 	var distance := from_pos.distance_to(to_pos)
-	var steps := maxi(1, int(ceil(distance / _graph.ROUTE_SAMPLE_STEP)))
+	var steps: int = maxi(1, int(ceil(distance / _graph.ROUTE_SAMPLE_STEP)))
 
 	for index in range(steps):
 		var point := from_pos.lerp(to_pos, float(index) / float(steps))
@@ -492,7 +492,7 @@ func debug_route_segment_clear_except_start(
 		return {"valid": true}
 
 	var distance := from_pos.distance_to(to_pos)
-	var steps := maxi(1, int(ceil(distance / _graph.ROUTE_SAMPLE_STEP)))
+	var steps: int = maxi(1, int(ceil(distance / _graph.ROUTE_SAMPLE_STEP)))
 
 	for index in range(1, steps + 1):
 		var point := from_pos.lerp(to_pos, float(index) / float(steps))
@@ -520,7 +520,7 @@ func debug_route_segment_clear_except_start_and_endpoint(
 		return {"valid": true}
 
 	var distance := from_pos.distance_to(to_pos)
-	var steps := maxi(1, int(ceil(distance / _graph.ROUTE_SAMPLE_STEP)))
+	var steps: int = maxi(1, int(ceil(distance / _graph.ROUTE_SAMPLE_STEP)))
 
 	for index in range(1, steps):
 		var point := from_pos.lerp(to_pos, float(index) / float(steps))
@@ -548,7 +548,7 @@ func debug_route_segment_clear(
 		return {"valid": true}
 
 	var distance := from_pos.distance_to(to_pos)
-	var steps := maxi(1, int(ceil(distance / _graph.ROUTE_SAMPLE_STEP)))
+	var steps: int = maxi(1, int(ceil(distance / _graph.ROUTE_SAMPLE_STEP)))
 
 	for index in range(steps + 1):
 		var point := from_pos.lerp(to_pos, float(index) / float(steps))
@@ -620,7 +620,7 @@ func debug_npc_access_point_clear(
 	if npc_node is CollisionObject2D:
 		query.exclude = [(npc_node as CollisionObject2D).get_rid()]
 
-	var hits := _graph._store.get_world_2d().direct_space_state.intersect_shape(query, 16)
+	var hits: Array[Dictionary] = _graph._store.get_world_2d().direct_space_state.intersect_shape(query, 16)
 
 	if hits.is_empty():
 		return {"valid": true}
@@ -655,7 +655,7 @@ func is_npc_standing_position_clear(position: Vector2, npc: Node = null) -> bool
 	if npc is CollisionObject2D:
 		query.exclude = [(npc as CollisionObject2D).get_rid()]
 
-	var hits := _graph._store.get_world_2d().direct_space_state.intersect_shape(query, 16)
+	var hits: Array[Dictionary] = _graph._store.get_world_2d().direct_space_state.intersect_shape(query, 16)
 	return hits.is_empty()
 
 
@@ -664,7 +664,7 @@ func is_npc_standing_position_clear(position: Vector2, npc: Node = null) -> bool
 # ---------------------------------------------------------------------------
 
 func get_npc_standing_rect(position: Vector2) -> Rect2:
-	var center := position + _graph.STANDING_SHAPE_OFFSET
+	var center: Vector2 = position + _graph.STANDING_SHAPE_OFFSET
 	return Rect2(center - _graph.STANDING_SHAPE_SIZE * 0.5, _graph.STANDING_SHAPE_SIZE)
 
 

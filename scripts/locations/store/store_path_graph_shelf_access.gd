@@ -19,7 +19,7 @@ func get_shelf_access_candidates(shelf_position: Vector2, vertical_only: bool = 
 		append_rect_vertical_shelf_access_candidates(candidates, shelf_position)
 
 	for node_name in _graph._nav.get_graph_node_names():
-		var marker := _graph._nav.get_graph_marker(node_name)
+		var marker: Marker2D = _graph._nav.get_graph_marker(node_name)
 
 		if marker == null:
 			continue
@@ -60,15 +60,15 @@ func get_shelf_access_candidates(shelf_position: Vector2, vertical_only: bool = 
 ## Appends vertical shelf access candidates (above and below shelf).
 func append_rect_vertical_shelf_access_candidates(candidates: Array[Dictionary], shelf_position: Vector2) -> void:
 	var shelf_object := find_shelf_object_at_position(shelf_position)
-	var shelf_rect := _graph._clearance.get_object_body_rect_at(shelf_object, shelf_position) if shelf_object != null else Rect2()
+	var shelf_rect: Rect2 = _graph._clearance.get_object_body_rect_at(shelf_object, shelf_position) if shelf_object != null else Rect2()
 
 	if not _rect_has_area(shelf_rect):
 		return
 
-	var standing_half_height := _graph.STANDING_SHAPE_SIZE.y * 0.5
-	var standing_offset_y := _graph.STANDING_SHAPE_OFFSET.y
-	var standing_center_above_y := shelf_rect.position.y - _graph.SHELF_ACCESS_STANDING_CLEARANCE - standing_half_height - standing_offset_y
-	var standing_center_below_y := shelf_rect.position.y + shelf_rect.size.y + _graph.SHELF_ACCESS_STANDING_CLEARANCE + standing_half_height - standing_offset_y
+	var standing_half_height: float = _graph.STANDING_SHAPE_SIZE.y * 0.5
+	var standing_offset_y: float = _graph.STANDING_SHAPE_OFFSET.y
+	var standing_center_above_y: float = shelf_rect.position.y - _graph.SHELF_ACCESS_STANDING_CLEARANCE - standing_half_height - standing_offset_y
+	var standing_center_below_y: float = shelf_rect.position.y + shelf_rect.size.y + _graph.SHELF_ACCESS_STANDING_CLEARANCE + standing_half_height - standing_offset_y
 	var x_positions: Array[float] = [
 		shelf_position.x
 	]
@@ -137,7 +137,7 @@ func append_shelf_access_candidate(
 	if direct_distance <= _graph.MARKER_ALIGNMENT_EPSILON or direct_distance > _graph.MAX_SHELF_ACCESS_DISTANCE:
 		return
 
-	var vertical_access := horizontal_distance <= _graph.SHELF_ACCESS_COLUMN_EPSILON and vertical_distance > _graph.MARKER_ALIGNMENT_EPSILON
+	var vertical_access: bool = horizontal_distance <= _graph.SHELF_ACCESS_COLUMN_EPSILON and vertical_distance > _graph.MARKER_ALIGNMENT_EPSILON
 
 	if vertical_only and not vertical_access:
 		return

@@ -185,7 +185,7 @@ func get_queue_back_right_node_names() -> Array[StringName]:
 func get_queue_right_node_names() -> Array[StringName]:
 	var queue_right_nodes: Array[StringName] = []
 
-	var queue_front_right := get_role_node_name(_graph.ROLE_QUEUE_FRONT_RIGHT, StringName())
+	var queue_front_right: StringName = get_role_node_name(_graph.ROLE_QUEUE_FRONT_RIGHT, StringName())
 
 	if queue_front_right != StringName():
 		queue_right_nodes.append(queue_front_right)
@@ -250,7 +250,7 @@ func find_graph_path(start_node: StringName, goal_node: StringName) -> Array[Str
 	var goal_position := get_marker_position(goal_node)
 	var frontier: Array[StringName] = [start_node]
 	var g_score := {start_node: 0.0}
-	var f_score := {start_node: _graph._routes.get_euclidean_distance(get_marker_position(start_node), goal_position)}
+	var f_score: Dictionary = {start_node: _graph._routes.get_euclidean_distance(get_marker_position(start_node), goal_position)}
 	var previous := {}
 	var visited := {}
 
@@ -337,7 +337,7 @@ func find_nearest_graph_node(position: Vector2) -> Dictionary:
 		if marker == null:
 			continue
 
-		var distance := _graph._routes.get_euclidean_distance(position, marker.global_position)
+		var distance: float = _graph._routes.get_euclidean_distance(position, marker.global_position)
 
 		if distance < best_score:
 			best_score = distance
@@ -366,7 +366,7 @@ func find_nearest_reachable_graph_node_for_route(position: Vector2, goal_node: S
 		if marker == null:
 			continue
 
-		var entry_route := _graph._routes.make_orthogonal_route(position, marker.global_position, true)
+		var entry_route: Array[Vector2] = _graph._routes.make_orthogonal_route(position, marker.global_position, true)
 
 		if not _graph._clearance.is_route_clear_from_current_position(position, entry_route):
 			pass
@@ -390,7 +390,7 @@ func find_nearest_reachable_graph_node_for_route(position: Vector2, goal_node: S
 			pass
 			continue
 
-		var score := _graph._routes.get_route_distance(position, route)
+		var score: float = _graph._routes.get_route_distance(position, route)
 		pass
 
 		if score >= best_score:
@@ -452,7 +452,7 @@ func _append_axis_neighbor(
 			continue
 
 		var candidate_position := candidate.global_position
-		var same_axis := (
+		var same_axis: bool = (
 			absf(candidate_position.y - source_position.y) <= _graph.MARKER_ALIGNMENT_EPSILON
 			if horizontal
 			else absf(candidate_position.x - source_position.x) <= _graph.MARKER_ALIGNMENT_EPSILON
@@ -461,7 +461,7 @@ func _append_axis_neighbor(
 		if not same_axis:
 			continue
 
-		var offset := (
+		var offset: float = (
 			candidate_position.x - source_position.x
 			if horizontal
 			else candidate_position.y - source_position.y
@@ -508,8 +508,8 @@ func _append_diagonal_neighbor(
 			continue
 
 		var candidate_position := candidate.global_position
-		var dx := candidate_position.x - source_position.x
-		var dy := candidate_position.y - source_position.y
+		var dx: float = candidate_position.x - source_position.x
+		var dy: float = candidate_position.y - source_position.y
 
 		if absf(dx) <= _graph.MARKER_ALIGNMENT_EPSILON or absf(dy) <= _graph.MARKER_ALIGNMENT_EPSILON:
 			continue
@@ -517,7 +517,7 @@ func _append_diagonal_neighbor(
 		if signf(dx) != signf(dir_x) or signf(dy) != signf(dir_y):
 			continue
 
-		var distance := source_position.distance_to(candidate_position)
+		var distance: float = source_position.distance_to(candidate_position)
 
 		if distance <= _graph.MARKER_ALIGNMENT_EPSILON or distance >= best_distance:
 			continue
