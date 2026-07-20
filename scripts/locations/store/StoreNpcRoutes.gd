@@ -199,7 +199,7 @@ func get_npc_exit_route_from_cashier(
 
 
 func get_store_path_graph() -> StorePathGraph:
-	var needs_optimized_graph := (
+	var needs_optimized_graph = (
 		store._store_path_graph == null
 		or store._store_path_graph.get_script() != OptimizedStorePathGraphScript
 	)

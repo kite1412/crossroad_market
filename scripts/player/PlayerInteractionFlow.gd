@@ -71,6 +71,10 @@ func try_interact() -> void:
 		interact_with_restock_package(best_target as RestockPackage)
 		return
 
+	if best_target is NpcFeedbackBoard:
+		interact_with_npc_feedback_board(best_target as NpcFeedbackBoard)
+		return
+
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_storage_door_type(area: Area2D) -> String:
@@ -205,3 +209,12 @@ func interact_with_storage_restock_terminal(terminal: StorageRestockTerminal) ->
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func interact_with_restock_package(restock_package: RestockPackage) -> void:
 	restock_package.request_interaction()
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func interact_with_npc_feedback_board(feedback_board: NpcFeedbackBoard) -> void:
+	if player._get_carried_shelf() != null:
+		player._show_notification("Put down the shelf first.", 0.8)
+		return
+
+	feedback_board.request_interaction()

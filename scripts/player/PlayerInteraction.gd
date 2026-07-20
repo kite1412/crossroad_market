@@ -51,4 +51,7 @@ static func get_interaction_priority(target: Node) -> int:
 	if target is RestockPackage:
 		return 8
 
+	if target is NpcFeedbackBoard:
+		return 9
+
 	return 999

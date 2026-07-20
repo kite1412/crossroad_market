@@ -1,21 +1,31 @@
 [gd_scene format=3 uid="uid://bcn1tcfnwf23b"]
 
 [ext_resource type="Texture2D" uid="uid://be3xsyx5m1fyk" path="res://assets/store/npc-feedback-board.png" id="1_ehuxv"]
+[ext_resource type="Script" uid="uid://bs5r3itd7od6j" path="res://scripts/objects/NpcFeedbackBoard.gd" id="2_script"]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_ry2rs"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(34, 14)
 
-[node name="NpcFeedbackBoard" type="Node2D" unique_id=998557072]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_area"]
+size = Vector2(34, 34)
 
-[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=17267162]
+[node name="NpcFeedbackBoard" type="StaticBody2D" unique_id=998557072]
+script = ExtResource("2_script")
 
-[node name="AssetSprite" type="Sprite2D" parent="StaticBody2D" unique_id=1406884544]
+[node name="AssetSprite" type="Sprite2D" parent="." unique_id=1406884544]
 position = Vector2(-17, -34)
 texture = ExtResource("1_ehuxv")
 centered = false
 region_enabled = true
 region_rect = Rect2(301, 187, 34, 34)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=406131456]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=406131456]
 position = Vector2(0, -12)
-shape = SubResource("RectangleShape2D_ry2rs")
+shape = SubResource("RectangleShape2D_body")
+
+[node name="InteractionArea" type="Area2D" parent="." unique_id=216878289]
+position = Vector2(0, -14)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="InteractionArea" unique_id=73444025]
+position = Vector2(0, -3)
+shape = SubResource("RectangleShape2D_area")

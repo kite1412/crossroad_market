@@ -132,6 +132,13 @@ func trigger_interaction_guidance(areas: Array[Area2D]) -> void:
 		)
 		return
 
+	if best_target is NpcFeedbackBoard:
+		show_guided_hint_once(
+			"npc_feedback_board",
+			"Customer Feedback Board. Press E to read NPC feedback."
+		)
+		return
+
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func trigger_shelf_guidance(shelf: Shelf) -> void:
