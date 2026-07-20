@@ -29,7 +29,13 @@ static func can_unlock_customer_spawning(
 	if ghost_shelf == null or not is_instance_valid(ghost_shelf):
 		return false
 
-	return ghost_shelf.has_stock()
+	# Night customers must not start until the installed ghost shelf has both
+	# stock and a valid NPC access point. Otherwise they enter WAIT_FOR_SHELF at
+	# the store exit and appear to skip the shopping sequence.
+	return (
+		ghost_shelf.has_stock()
+		and bool(ghost_shelf.get_meta("npc_path_ready", false))
+	)
 
 
 static func should_start_day_one_customers_now() -> bool:
