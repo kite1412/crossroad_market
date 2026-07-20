@@ -1,9 +1,6 @@
 class_name StoreNpcRoutes
 extends Node
 
-const StoreDynamicRoutePlannerScript = preload(
-	"res://scripts/locations/store/StoreDynamicRoutePlanner.gd"
-)
 const STORE_ENTRY_FALLBACK_POSITION := Vector2(240, 204)
 const CHECKOUT_RIGHT_ROUTE_MARKERS: Array[StringName] = [
 	&"StorePathQueueFrontRight",
@@ -21,14 +18,10 @@ const CHECKOUT_GRAPH_REJOIN_MARKER: StringName = &"StorePathAisleRight"
 const CHECKOUT_ROUTE_RESUME_DISTANCE: float = 18.0
 
 var store: Node = null
-var _dynamic_route_planner: StoreDynamicRoutePlanner = null
 
 
 func setup(store_node: Node) -> void:
 	store = store_node
-	if _dynamic_route_planner == null:
-		_dynamic_route_planner = StoreDynamicRoutePlannerScript.new()
-	_dynamic_route_planner.setup(store)
 
 
 func get_npc_entry_route_to_shelf(
@@ -51,7 +44,6 @@ func get_npc_shelf_visit_position(
 ) -> Vector2:
 	if not has_npc_shelf_access_metadata(shelf):
 		return Vector2.INF
-
 	return get_npc_shelf_access_position(shelf)
 
 
@@ -66,18 +58,7 @@ func get_npc_route_to_shelf_access(
 ) -> Array[Vector2]:
 	if not has_npc_shelf_access_metadata(shelf):
 		return []
-
-	var graph := get_store_path_graph()
-	var dynamic_route := _dynamic_route_planner.get_route_to_shelf_access(
-		graph,
-		shelf,
-		from_position,
-		npc_node
-	)
-	if not dynamic_route.is_empty():
-		return dynamic_route
-
-	return graph.get_route_to_shelf_access(
+	return get_store_path_graph().get_route_to_shelf_access(
 		shelf,
 		from_position,
 		npc_node
@@ -87,15 +68,7 @@ func get_npc_route_to_shelf_access(
 func get_npc_route_to_cashier_from(
 	from_position: Vector2
 ) -> Array[Vector2]:
-	var graph := get_store_path_graph()
-	var shortest_route := _dynamic_route_planner.get_shortest_checkout_route(
-		graph,
-		from_position
-	)
-	if not shortest_route.is_empty():
-		return shortest_route
-
-	return graph.get_route_to_cashier_from(from_position)
+	return get_store_path_graph().get_route_to_cashier_from(from_position)
 
 
 func get_npc_route_to_queue_target_from(
@@ -129,18 +102,7 @@ func get_npc_route_from_shelf_to_cashier(
 ) -> Array[Vector2]:
 	if shelf == null or not is_instance_valid(shelf):
 		return []
-
-	var graph := get_store_path_graph()
-	var access_position := graph.get_shelf_access_position(shelf)
-	var shortest_route := _dynamic_route_planner.get_shortest_checkout_route(
-		graph,
-		access_position,
-		shelf
-	)
-	if not shortest_route.is_empty():
-		return shortest_route
-
-	return graph.get_route_from_shelf_to_cashier(shelf)
+	return get_store_path_graph().get_route_from_shelf_to_cashier(shelf)
 
 
 func get_npc_exit_route_from(
@@ -176,21 +138,19 @@ func get_npc_exit_route_from_shelf(
 	if shelf == null or not is_instance_valid(shelf):
 		return get_npc_exit_route_from(from_position)
 
-	# Reuse the shelf-aware route so the source shelf is allowed only while the
-	# NPC moves away from its access point, then join the normal exit lane.
+	# Move away from the source shelf through the same collision-aware path used
+	# after shopping, then join the normal single-customer exit lane.
 	var route := get_npc_route_from_shelf_to_cashier(shelf)
 	if route.is_empty():
 		return get_npc_exit_route_from(from_position)
 
 	var route_end: Vector2 = route.back()
 	var exit_route := get_npc_single_customer_exit_route(route_end)
-
 	if exit_route.is_empty():
 		exit_route = get_npc_exit_route_from(route_end)
 
 	for point in exit_route:
 		_append_unique_route_point(route, point)
-
 	return route
 
 
@@ -200,14 +160,12 @@ func get_npc_exit_route_from_cashier(
 	var mandatory_markers := _get_named_markers(
 		CHECKOUT_RIGHT_ROUTE_MARKERS
 	)
-
 	if mandatory_markers.size() != CHECKOUT_RIGHT_ROUTE_MARKERS.size():
 		return []
 
 	var rejoin_marker := store.store_path_markers.get_node_or_null(
 		String(CHECKOUT_GRAPH_REJOIN_MARKER)
 	) as Marker2D
-
 	if rejoin_marker == null:
 		return []
 
@@ -216,7 +174,6 @@ func get_npc_exit_route_from_cashier(
 		from_position,
 		mandatory_markers
 	)
-
 	for index in range(start_index, mandatory_markers.size()):
 		route.append(mandatory_markers[index].global_position)
 
@@ -229,12 +186,11 @@ func get_npc_exit_route_from_cashier(
 		rejoin_marker.global_position,
 		exit_position
 	)
-
 	for point in graph_route:
 		_append_unique_route_point(route, point)
 
-	# A graph rebuild can already be at AisleRight. Keep the real exit as the
-	# final waypoint so completion cannot occur before the NPC leaves the store.
+	# Keep the real exit as the final mandatory waypoint even when the graph is
+	# already rejoined at AisleRight.
 	_append_unique_route_point(route, exit_position)
 	return route
 
@@ -279,13 +235,11 @@ func _build_named_marker_route(
 		from_position,
 		route_markers
 	)
-
 	for index in range(start_index, route_markers.size()):
 		_append_unique_route_point(
 			route,
 			route_markers[index].global_position
 		)
-
 	return route
 
 
@@ -293,7 +247,6 @@ func _get_named_markers(
 	marker_names: Array[StringName]
 ) -> Array[Marker2D]:
 	var result: Array[Marker2D] = []
-
 	if store == null or store.store_path_markers == null:
 		return result
 
@@ -301,12 +254,9 @@ func _get_named_markers(
 		var route_marker := store.store_path_markers.get_node_or_null(
 			String(marker_name)
 		) as Marker2D
-
 		if route_marker == null:
 			return []
-
 		result.append(route_marker)
-
 	return result
 
 
@@ -315,33 +265,24 @@ func _get_checkout_route_start_index(
 	route_markers: Array[Marker2D]
 ) -> int:
 	var final_marker: Marker2D = route_markers.back()
-
-	# Route rebuilds continue forward from the closest completed marker rather
-	# than sending an NPC back to the beginning of its exit lane.
 	if from_position.y >= final_marker.global_position.y - 4.0:
 		return route_markers.size()
 
 	var nearest_index := -1
 	var nearest_distance := INF
-
 	for index in range(route_markers.size()):
 		var distance := from_position.distance_to(
 			route_markers[index].global_position
 		)
-
 		if distance < nearest_distance:
 			nearest_distance = distance
 			nearest_index = index
 
 	if nearest_distance <= CHECKOUT_ROUTE_RESUME_DISTANCE:
 		var nearest_marker: Marker2D = route_markers[nearest_index]
-
-		# Being near a marker from above does not mean it has been completed yet.
 		if from_position.y < nearest_marker.global_position.y - 4.0:
 			return nearest_index
-
 		return mini(nearest_index + 1, route_markers.size())
-
 	return 0
 
 
@@ -351,8 +292,6 @@ func _append_unique_route_point(
 ) -> void:
 	if not point.is_finite():
 		return
-
 	if not route.is_empty() and route.back().distance_to(point) <= 2.0:
 		return
-
 	route.append(point)
