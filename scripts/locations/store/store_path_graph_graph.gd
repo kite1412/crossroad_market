@@ -164,9 +164,10 @@ func find_graph_path(
 		return result
 
 	var goal_position := get_marker_position_func.call(goal_node, markers) if get_marker_position_func.is_valid() else Vector2.INF
+	var start_position := get_marker_position_func.call(start_node, markers) if get_marker_position_func.is_valid() else Vector2.INF
 	var frontier: Array[StringName] = [start_node]
 	var g_score := {start_node: 0.0}
-	var f_score := {start_node: position.distance_to(goal_position) if goal_position.is_finite() else INF}
+	var f_score := {start_node: start_position.distance_to(goal_position) if goal_position.is_finite() and start_position.is_finite() else INF}
 	var previous := {}
 	var visited := {}
 

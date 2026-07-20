@@ -29,7 +29,7 @@ func get_store_route_for_current_state(
 				if not shelf_exit_route.is_empty():
 					return shelf_exit_route
 
-			var use_solo_checkout_exit := (
+			var use_solo_checkout_exit: bool = (
 				npc._exit_after_checkout
 				and npc.has_meta(SOLO_CHECKOUT_EXIT_META)
 				and bool(npc.get_meta(SOLO_CHECKOUT_EXIT_META))

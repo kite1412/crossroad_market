@@ -254,7 +254,7 @@ func is_route_to_access_clear(
 		return true
 
 	var current := start
-	var shelf_position := shelf.global_position if shelf != null else Vector2.INF
+	var shelf_position: Vector2 = shelf.global_position if shelf != null else Vector2.INF
 
 	for index in range(route.size()):
 		var point := route[index]
