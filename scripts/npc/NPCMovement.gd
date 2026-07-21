@@ -65,6 +65,7 @@ static func move_to(
 	else:
 		npc.velocity = Vector2(0.0, signf(delta.y) * speed)
 
+	# Hard invariant: NPC movement is always horizontal or vertical, never diagonal.
 	assert(is_zero_approx(npc.velocity.x) or is_zero_approx(npc.velocity.y))
 	npc.move_and_slide()
 	return false
