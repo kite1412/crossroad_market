@@ -221,8 +221,26 @@ func take_requested_items_from_shelves() -> bool:
 		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var shelf: Shelf = npc._target_shelf if npc._target_shelf is Shelf else null
 
-		if shelf != null and shelf.take_item_for_npc(requested_item_id):
+		if shelf == null:
+			continue
+
+		var reserve_result: Dictionary = shelf.reserve_item_for_npc(
+			requested_item_id,
+			npc
+		)
+		if not bool(reserve_result.get("ok", false)):
+			continue
+
+		var commit_result: Dictionary = shelf.commit_npc_item_reservation(
+			reserve_result.get("token", {}),
+			npc
+		)
+		if bool(commit_result.get("ok", false)):
 			npc._cart_items.append(requested_item_id)
+		else:
+			shelf.cancel_npc_item_reservation(
+				reserve_result.get("token", {})
+			)
 
 	if not npc._cart_items.is_empty():
 		npc.item_to_buy = npc._cart_items[0]

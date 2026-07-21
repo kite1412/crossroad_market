@@ -28,6 +28,8 @@ var _slots: Array = []
 @warning_ignore("unused_private_class_variable")
 var _slot_quantities: Array[int] = []
 @warning_ignore("unused_private_class_variable")
+var _slot_reserved_quantities: Array[int] = []
+@warning_ignore("unused_private_class_variable")
 var _is_shelf_hovered: bool = false
 
 @warning_ignore("unused_private_class_variable")
@@ -88,6 +90,21 @@ func remove_first_item() -> String:
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func take_item_for_npc(item_id: String) -> bool:
 	return _stock_controller.take_item_for_npc(item_id)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func reserve_item_for_npc(item_id: String, npc: Node) -> Dictionary:
+	return _stock_controller.reserve_item_for_npc(item_id, npc)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func commit_npc_item_reservation(token: Dictionary, npc: Node) -> Dictionary:
+	return _stock_controller.commit_npc_item_reservation(token, npc)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func cancel_npc_item_reservation(token: Dictionary) -> Dictionary:
+	return _stock_controller.cancel_npc_item_reservation(token)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

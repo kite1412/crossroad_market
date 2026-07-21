@@ -2,6 +2,8 @@ class_name ShelfStockController
 extends RefCounted
 
 var shelf: Shelf = null
+var _next_reservation_id: int = 0
+var _item_reservations: Dictionary = {}
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -15,6 +17,8 @@ func initialize_slots() -> void:
 	shelf._slots.fill(null)
 	shelf._slot_quantities.resize(shelf.max_slots)
 	shelf._slot_quantities.fill(0)
+	shelf._slot_reserved_quantities.resize(shelf.max_slots)
+	shelf._slot_reserved_quantities.fill(0)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -80,6 +84,8 @@ func remove_item(slot_index: int) -> String:
 	var item_id: String = shelf._slots[slot_index]
 	if item_id == null:
 		return ""
+	if get_available_quantity(slot_index) <= 0:
+		return ""
 
 	shelf._slot_quantities[slot_index] -= 1
 	if shelf._slot_quantities[slot_index] <= 0:
@@ -103,7 +109,7 @@ func remove_first_item() -> String:
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func take_item_for_npc(item_id: String) -> bool:
 	for i in shelf._slots.size():
-		if shelf._slots[i] == item_id:
+		if shelf._slots[i] == item_id and get_available_quantity(i) > 0:
 			shelf._slot_quantities[i] -= 1
 			if shelf._slot_quantities[i] <= 0:
 				shelf._slot_quantities[i] = 0
@@ -116,7 +122,10 @@ func take_item_for_npc(item_id: String) -> bool:
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func has_item(item_id: String) -> bool:
-	return shelf._slots.has(item_id)
+	for i in shelf._slots.size():
+		if shelf._slots[i] == item_id and get_available_quantity(i) > 0:
+			return true
+	return false
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -130,11 +139,131 @@ func has_stock() -> bool:
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_first_stocked_item_id() -> String:
-	for item_id in shelf._slots:
-		if item_id != null:
-			return item_id
+	for i in shelf._slots.size():
+		if shelf._slots[i] != null and get_available_quantity(i) > 0:
+			return shelf._slots[i]
 
 	return ""
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func reserve_item_for_npc(item_id: String, npc: Node) -> Dictionary:
+	if shelf.get_lifecycle() != Shelf.LIFECYCLE_PLACED:
+		return _reservation_result(false, &"shelf_unavailable")
+
+	var slot_index: int = find_available_item_slot(item_id)
+	if slot_index < 0:
+		return _reservation_result(false, &"out_of_stock")
+
+	_next_reservation_id += 1
+	var token_id: StringName = StringName(
+		"%s_item_%d" % [
+			str(shelf.get_shelf_id()),
+			_next_reservation_id
+		]
+	)
+	var owner_id: int = npc.get_instance_id() if npc != null else 0
+	var token: Dictionary = {
+		"token_id": token_id,
+		"owner_id": owner_id,
+		"shelf_id": shelf.get_shelf_id(),
+		"shelf_revision": shelf.get_revision(),
+		"item_id": item_id,
+		"slot_index": slot_index,
+		"status": &"active"
+	}
+
+	shelf._slot_reserved_quantities[slot_index] += 1
+	_item_reservations[token_id] = token.duplicate()
+	return {
+		"ok": true,
+		"reason": &"reserved",
+		"token": token
+	}
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func commit_npc_item_reservation(token: Dictionary, npc: Node) -> Dictionary:
+	var token_id: StringName = StringName(str(token.get("token_id", StringName())))
+	if token_id == StringName() or not _item_reservations.has(token_id):
+		return _reservation_result(false, &"reservation_missing")
+
+	var reservation: Dictionary = _item_reservations[token_id]
+	if StringName(str(reservation.get("status", &"active"))) == &"committed":
+		return {
+			"ok": true,
+			"reason": &"already_committed",
+			"item_id": str(reservation.get("item_id", ""))
+		}
+
+	var owner_id: int = npc.get_instance_id() if npc != null else 0
+	if owner_id != int(reservation.get("owner_id", 0)):
+		return _reservation_result(false, &"owner_mismatch")
+
+	if shelf.get_lifecycle() != Shelf.LIFECYCLE_PLACED:
+		cancel_npc_item_reservation(reservation)
+		return _reservation_result(false, &"shelf_unavailable")
+
+	if shelf.get_revision() != int(reservation.get("shelf_revision", -1)):
+		cancel_npc_item_reservation(reservation)
+		return _reservation_result(false, &"shelf_changed")
+
+	var slot_index: int = int(reservation.get("slot_index", -1))
+	var item_id: String = str(reservation.get("item_id", ""))
+	if slot_index < 0 or slot_index >= shelf._slots.size():
+		cancel_npc_item_reservation(reservation)
+		return _reservation_result(false, &"slot_missing")
+
+	if shelf._slots[slot_index] != item_id or shelf._slot_quantities[slot_index] <= 0:
+		cancel_npc_item_reservation(reservation)
+		return _reservation_result(false, &"item_missing")
+
+	shelf._slot_quantities[slot_index] -= 1
+	shelf._slot_reserved_quantities[slot_index] = maxi(
+		0,
+		shelf._slot_reserved_quantities[slot_index] - 1
+	)
+	if shelf._slot_quantities[slot_index] <= 0:
+		shelf._slot_quantities[slot_index] = 0
+		shelf._slots[slot_index] = null
+	shelf._refresh_slot_visual(slot_index, "")
+	shelf.item_removed.emit(slot_index, item_id)
+
+	reservation["status"] = &"committed"
+	_item_reservations[token_id] = reservation
+	return {
+		"ok": true,
+		"reason": &"committed",
+		"item_id": item_id
+	}
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func cancel_npc_item_reservation(token: Dictionary) -> Dictionary:
+	var token_id: StringName = StringName(str(token.get("token_id", StringName())))
+	if token_id == StringName() or not _item_reservations.has(token_id):
+		return _reservation_result(false, &"reservation_missing")
+
+	var reservation: Dictionary = _item_reservations[token_id]
+	if StringName(str(reservation.get("status", &"active"))) == &"committed":
+		return {
+			"ok": true,
+			"reason": &"already_committed"
+		}
+
+	var slot_index: int = int(reservation.get("slot_index", -1))
+	if slot_index >= 0 and slot_index < shelf._slot_reserved_quantities.size():
+		shelf._slot_reserved_quantities[slot_index] = maxi(
+			0,
+			shelf._slot_reserved_quantities[slot_index] - 1
+		)
+
+	reservation["status"] = &"cancelled"
+	_item_reservations.erase(token_id)
+	return {
+		"ok": true,
+		"reason": &"cancelled"
+	}
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -160,3 +289,30 @@ func find_item_slot(item_id: String) -> int:
 			return i
 
 	return -1
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func find_available_item_slot(item_id: String) -> int:
+	for i in shelf._slots.size():
+		if shelf._slots[i] == item_id and get_available_quantity(i) > 0:
+			return i
+	return -1
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func get_available_quantity(slot_index: int) -> int:
+	if slot_index < 0 or slot_index >= shelf._slot_quantities.size():
+		return 0
+	var reserved_quantity: int = 0
+	if slot_index < shelf._slot_reserved_quantities.size():
+		reserved_quantity = shelf._slot_reserved_quantities[slot_index]
+	return maxi(0, shelf._slot_quantities[slot_index] - reserved_quantity)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _reservation_result(ok: bool, reason: StringName) -> Dictionary:
+	return {
+		"ok": ok,
+		"reason": reason,
+		"token": {}
+	}
