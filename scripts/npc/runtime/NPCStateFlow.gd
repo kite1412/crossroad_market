@@ -7,6 +7,7 @@ const PERF_SHELF_THRESHOLD_MSEC: float = 16.0
 const OUT_OF_STOCK_WARNING_SECONDS: float = 10.0
 const OUT_OF_STOCK_EXIT_SECONDS: float = 15.0
 const SHELF_APPROACH_PROBE_COOLDOWN_MSEC: int = 650
+const SHELF_APPROACH_ARRIVAL_DISTANCE: float = 14.0
 
 var npc = null
 var _next_shelf_approach_probe_msec: int = 0
@@ -104,9 +105,10 @@ func process_walk_to_shelf() -> void:
 		if _handle_shelf_wait_or_leave("walk_shelf_lost"):
 			return
 
+	var shelf_arrival_distance: float = _get_shelf_approach_arrival_distance()
 	if (
 		npc.global_position.distance_to(npc.target_position)
-		<= npc.SHELF_VISIT_ARRIVAL_DISTANCE
+		<= shelf_arrival_distance
 	):
 		npc.velocity = Vector2.ZERO
 		npc.move_and_slide()
@@ -114,7 +116,10 @@ func process_walk_to_shelf() -> void:
 		set_state(NPC.State.SEARCH_ITEM)
 		return
 
-	var arrived: bool = npc._move_to(npc.target_position)
+	var arrived: bool = npc._move_to_with_arrival_threshold(
+		npc.target_position,
+		shelf_arrival_distance
+	)
 	_record_shelf_approach_probe(arrived)
 	if arrived:
 		npc._face_target_shelf()
@@ -217,13 +222,17 @@ func process_take_item() -> void:
 		npc._enter_checkout_queue()
 		return
 
+	var shelf_action_distance: float = _get_shelf_approach_arrival_distance()
 	if (
 		npc.global_position.distance_to(npc.target_position)
-		> npc.SHELF_ACTION_DISTANCE
-		and not npc._move_to(npc.target_position)
+		> shelf_action_distance
+		and not npc._move_to_with_arrival_threshold(
+			npc.target_position,
+			shelf_action_distance
+		)
 	):
 		_record_shelf_probe(&"npc_shelf_take_waiting_for_range", {
-			"action_distance": npc.SHELF_ACTION_DISTANCE
+			"action_distance": shelf_action_distance
 		})
 		return
 
@@ -304,6 +313,16 @@ func _record_shelf_probe(
 
 func _format_vector(value: Vector2) -> String:
 	return "%.1f,%.1f" % [value.x, value.y]
+
+
+func _get_shelf_approach_arrival_distance() -> float:
+	return maxf(
+		SHELF_APPROACH_ARRIVAL_DISTANCE,
+		maxf(
+			npc.SHELF_VISIT_ARRIVAL_DISTANCE,
+			npc.SHELF_ACTION_DISTANCE
+		)
+	)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
