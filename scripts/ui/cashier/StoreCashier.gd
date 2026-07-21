@@ -228,64 +228,72 @@ func _build_scan_tab() -> void:
 
 
 func _build_exchange_tab() -> void:
-	_exchange_total = _make_label("TOTAL 0G", BODY_FONT_SIZE, HORIZONTAL_ALIGNMENT_CENTER)
-	_exchange_total.position = Vector2(124, 192)
-	_exchange_total.size = Vector2(80, 16)
-	_exchange_total.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_exchange_total.add_theme_color_override("font_color", Color.WHITE)
-	_exchange_tab.add_child(_exchange_total)
-
-	_exchange_cart_rows = VBoxContainer.new()
-	_exchange_cart_rows.position = Vector2(113, 214)
-	_exchange_cart_rows.size = Vector2(72, 28)
-	_exchange_cart_rows.add_theme_constant_override("separation", 0)
-	_exchange_tab.add_child(_exchange_cart_rows)
-
-	_exchange_input = _make_label("", BODY_FONT_SIZE, HORIZONTAL_ALIGNMENT_RIGHT)
-	_exchange_input.position = Vector2(113, 244)
-	_exchange_input.size = Vector2(72, 13)
-	_exchange_input.add_theme_color_override("font_color", Color("fff2a6"))
-	_exchange_input.add_theme_stylebox_override("normal", _panel_style(Color("6e514d"), Color("d9c2a8"), 1))
-	_exchange_tab.add_child(_exchange_input)
-
-	_exchange_hint = _make_label("CHANGE 0G", BODY_FONT_SIZE, HORIZONTAL_ALIGNMENT_CENTER)
-	_exchange_hint.position = Vector2(126, 179)
-	_exchange_hint.size = Vector2(50, 12)
-	_exchange_tab.add_child(_exchange_hint)
-
-	_build_calculator()
-	_exchange_dialog = _make_dialog_label()
-	_exchange_tab.add_child(_exchange_dialog)
+	_exchange_total = _exchange_tab.get_node("Total") as Label
+	_exchange_cart_rows = _exchange_tab.get_node("Screen/CartItems") as VBoxContainer
+	_exchange_input = _exchange_tab.get_node("Screen/InputAmount") as Label
+	_exchange_hint = _exchange_tab.get_node("TotalExchange/Label") as Label
+	_exchange_dialog = _exchange_tab.get_node("Dialog") as Label
 	_exchange_portrait = _exchange_tab.get_node("PortraitAnimation") as PortraitAnimation
 
+	var digit_nodes := {
+		"One": "1",
+		"Two": "2",
+		"Three": "3",
+		"Four": "4",
+		"Five": "5",
+		"Six": "6",
+		"Seven": "7",
+		"Eight": "8",
+		"Nine": "9",
+		"Zero": "0",
+	}
+	for node_name in digit_nodes:
+		var digit_control := _exchange_tab.get_node("Calc/Numbers/%s" % node_name) as Control
+		_bind_exchange_control(
+			digit_control,
+			_on_digit_pressed.bind(digit_nodes[node_name]),
+			"Add %s to the change amount." % digit_nodes[node_name]
+		)
 
-func _build_calculator() -> void:
-	var digits := ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]
-	for index in digits.size():
-		var column := index % 3
-		var row := index / 3
-		var position := Vector2(2 + column * 16, 212 + row * 13)
-		var digit_button := _make_button(digits[index], Rect2(position, Vector2(14, 11)), SMALL_FONT_SIZE)
-		digit_button.tooltip_text = "Add %s to the change amount." % digits[index]
-		digit_button.pressed.connect(_on_digit_pressed.bind(digits[index]))
-		_exchange_tab.add_child(digit_button)
+	_bind_exchange_control(
+		_exchange_tab.get_node("Calc/FreeButton") as Control,
+		_on_free_pressed,
+		"Give the selected items to the customer for free."
+	)
+	_bind_exchange_control(
+		_exchange_tab.get_node("Calc/Actions/Nine") as Control,
+		_on_delete_or_back_pressed,
+		"Delete the last digit, or return to Scan when the field is empty."
+	)
+	_bind_exchange_control(
+		_exchange_tab.get_node("Calc/Actions/Nine2") as Control,
+		_on_confirm_exchange_pressed,
+		"Return the exact change to complete the checkout."
+	)
 
-	var free_button := _make_button("FREE", Rect2(63, 216, 30, 25), BODY_FONT_SIZE)
-	free_button.tooltip_text = "Give the selected items to the customer for free."
-	free_button.add_theme_color_override("font_color", Color("fff0e8"))
-	free_button.add_theme_stylebox_override("normal", _panel_style(Color("ba1f26"), Color("ff5c5c"), 1))
-	free_button.pressed.connect(_on_free_pressed)
-	_exchange_tab.add_child(free_button)
 
-	var delete_button := _make_button("DEL", Rect2(63, 246, 14, 11), SMALL_FONT_SIZE)
-	delete_button.tooltip_text = "Delete the last digit, or return to Scan when the field is empty."
-	delete_button.pressed.connect(_on_delete_or_back_pressed)
-	_exchange_tab.add_child(delete_button)
+func _bind_exchange_control(control: Control, action: Callable, tooltip: String) -> void:
+	if control == null:
+		return
+	control.mouse_filter = Control.MOUSE_FILTER_STOP
+	control.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	control.tooltip_text = tooltip
+	control.gui_input.connect(_on_exchange_control_input.bind(action))
 
-	var confirm_button := _make_button("OK", Rect2(79, 246, 14, 11), SMALL_FONT_SIZE)
-	confirm_button.tooltip_text = "Return the exact change to complete the checkout."
-	confirm_button.pressed.connect(_on_confirm_exchange_pressed)
-	_exchange_tab.add_child(confirm_button)
+
+func _on_exchange_control_input(event: InputEvent, action: Callable) -> void:
+	var activated: bool = (
+		event is InputEventMouseButton
+		and event.button_index == MOUSE_BUTTON_LEFT
+		and event.pressed
+	) or (
+		event is InputEventScreenTouch
+		and event.pressed
+	)
+	if not activated:
+		return
+	action.call()
+	get_viewport().set_input_as_handled()
 
 
 func _refresh_scan_tab() -> void:
@@ -434,7 +442,7 @@ func show_exchange_tab() -> void:
 
 func _refresh_exchange_tab() -> void:
 	_change_due = max(_customer_cash - _total, 0)
-	_exchange_hint.text = "CHANGE %dG" % _change_due
+	_exchange_hint.text = "%dG" % _change_due
 	_exchange_input.text = ("[%sG]" % _entered_change) if not _entered_change.is_empty() else "[--G]"
 	_exchange_dialog.text = _get_customer_dialogue()
 	_refresh_cart_displays()
