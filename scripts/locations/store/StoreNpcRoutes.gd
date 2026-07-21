@@ -47,8 +47,7 @@ func get_npc_shelf_visit_position(
 	shelf: Shelf,
 	_npc: Node = null
 ) -> Vector2:
-	if not has_npc_shelf_access_metadata(shelf):
-		return Vector2.INF
+	# get_shelf_access_position now handles cache miss with fallback computation
 	return get_npc_shelf_access_position(shelf)
 
 
@@ -61,8 +60,10 @@ func get_npc_route_to_shelf_access(
 	from_position: Vector2 = Vector2.INF,
 	npc_node: Node = null
 ) -> Array[Vector2]:
+	# get_shelf_access_position handles cache miss, but we also need to
+	# trigger metadata computation if not cached before calling route
 	if not has_npc_shelf_access_metadata(shelf):
-		return []
+		get_store_path_graph().store_shelf_access_metadata(shelf, shelf.global_position)
 	return get_store_path_graph().get_route_to_shelf_access(
 		shelf,
 		from_position,
@@ -243,8 +244,7 @@ func get_store_path_graph() -> StorePathGraph:
 
 	var layout_signature := _get_shelf_layout_signature()
 	if (
-		not needs_runtime_graph
-		and _has_shelf_layout_signature
+		_has_shelf_layout_signature
 		and layout_signature != _last_shelf_layout_signature
 		and store._store_path_graph.has_method("invalidate_dynamic_navigation")
 	):
