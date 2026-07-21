@@ -23,6 +23,8 @@ const DROP_REJECTION_COLLISION: StringName = &"collision"
 const SHELF_DROP_FALLBACK_DISTANCE: float = 44.0
 const QUEUE_MARKER_DROP_BLOCK_SIZE := Vector2(56, 18)
 const PENDING_ACCESS_UPDATE_META: StringName = &"pending_shelf_access_update_token"
+const NPC_PATH_PENDING_META: StringName = &"npc_path_pending"
+const DEFERRED_ACCESS_DELAY_MSEC: int = 150
 const SHELF_ACCESS_WARMUP_DELAY: float = 1.0
 
 var store: Node = null
@@ -219,12 +221,20 @@ func drop_carried_shelf_in_store(object: Node2D) -> void:
 	if object is Shelf:
 		(object as Shelf).set_lifecycle(Shelf.LIFECYCLE_BEING_DROPPED)
 
+	var dirty_rect := get_object_body_rect_at(object, drop_position).grow(16.0)
 	object.reparent(store, true)
 	object.global_position = drop_position
 	object.z_index = 0
 	set_shelf_carried_state(object, false)
 	if not object.is_in_group("shelves"):
 		object.add_to_group("shelves")
+
+	if object is Shelf:
+		object.set_meta(NPC_PATH_PENDING_META, true)
+		object.set_meta("npc_path_ready", false)
+
+	if store.has_method("mark_navigation_dirty"):
+		store.call("mark_navigation_dirty", dirty_rect)
 
 	store._show_passive_notification("Shelf placed in the store.", 2.0, true)
 	schedule_post_shelf_drop_update(object, drop_position)
@@ -586,15 +596,6 @@ func evaluate_shelf_drop_restriction(object: Node2D, candidate: Vector2) -> Dict
 			true
 		)
 
-	if object is Shelf and not has_reachable_store_shelf_visit_position(object, candidate):
-		return make_drop_restriction(
-			true,
-			DROP_REJECTION_COLLISION,
-			"Customers can't reach this shelf.",
-			object_rect,
-			false
-		)
-
 	return make_drop_restriction()
 
 
@@ -749,6 +750,10 @@ func pickup_installed_shelf(object: Node2D) -> void:
 	elif object == store.ghost_shelf:
 		store._ghost_shelf_installed = false
 
+	var dirty_rect := get_object_body_rect_at(object, object.global_position).grow(16.0)
+	if store.has_method("mark_navigation_dirty"):
+		store.call("mark_navigation_dirty", dirty_rect)
+
 	if object is Shelf:
 		(object as Shelf).set_lifecycle(Shelf.LIFECYCLE_BEING_PICKED_UP)
 
@@ -798,7 +803,59 @@ func schedule_post_shelf_drop_update(object: Node2D, drop_position: Vector2) -> 
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var update_token: int = int(store._shelf_access_metadata_update_token)
 	object.set_meta(PENDING_ACCESS_UPDATE_META, update_token)
-	defer_post_shelf_drop_update(object, drop_position, update_token)
+	var ready_msec: int = Time.get_ticks_msec() + DEFERRED_ACCESS_DELAY_MSEC
+	if store != null and store.has_method("enqueue_simulation_job"):
+		store.call(
+			"enqueue_simulation_job",
+			Callable(
+				self,
+				"execute_deferred_shelf_access_update"
+			).bind(object, drop_position, update_token, ready_msec),
+			&"normal",
+			&"shelf_access_update"
+		)
+	else:
+		defer_post_shelf_drop_update(object, drop_position, update_token)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func execute_deferred_shelf_access_update(
+	object: Node2D,
+	drop_position: Vector2,
+	update_token: int,
+	ready_msec: int
+) -> bool:
+	if Time.get_ticks_msec() < ready_msec:
+		return false
+
+	if object == null or not is_instance_valid(object):
+		return true
+
+	if not object.has_meta(PENDING_ACCESS_UPDATE_META):
+		return true
+
+	if int(object.get_meta(PENDING_ACCESS_UPDATE_META)) != update_token:
+		return true
+
+	if object.has_meta("is_carried_storage_object") and bool(object.get_meta("is_carried_storage_object")):
+		object.remove_meta(PENDING_ACCESS_UPDATE_META)
+		object.remove_meta(NPC_PATH_PENDING_META)
+		return true
+
+	object.remove_meta(PENDING_ACCESS_UPDATE_META)
+	store_shelf_access_metadata(object, drop_position)
+	object.remove_meta(NPC_PATH_PENDING_META)
+
+	if object is Shelf and not bool(object.get_meta("npc_path_ready", false)):
+		store._show_passive_notification(
+			"Customers can't reach this shelf.",
+			2.0,
+			true
+		)
+		return true
+
+	store._register_installed_shelf(object)
+	return true
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

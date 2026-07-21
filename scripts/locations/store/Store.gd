@@ -2,6 +2,8 @@ class_name Store
 extends Node2D
 
 
+const StoreSimulationSchedulerScript = preload("res://scripts/locations/store/StoreSimulationScheduler.gd")
+
 const SHELF_ACCESS_WARMUP_DELAY: float = 1.0
 const STORE_ENTRY_FALLBACK_POSITION := Vector2(240, 204)
 const STORE_STORAGE_RETURN_FALLBACK_POSITION := Vector2(383, 76)
@@ -78,6 +80,8 @@ var _restricted_placement_warning_tween: Tween = null
 @warning_ignore("unused_private_class_variable")
 var _store_path_graph: StorePathGraph = null
 @warning_ignore("unused_private_class_variable")
+var _simulation_scheduler: RefCounted = null
+@warning_ignore("unused_private_class_variable")
 var _placement_grid: StorePlacementGrid = null
 @warning_ignore("unused_private_class_variable")
 var _placement_surface: Node = null
@@ -87,6 +91,8 @@ var _placement_surface_anchor_cache: Array[Vector2] = []
 var _shelf_access_metadata_update_token: int = 0
 @warning_ignore("unused_private_class_variable")
 var _shelf_access_warmup_token: int = 0
+var _has_navigation_dirty_bounds: bool = false
+var _navigation_dirty_bounds: Rect2 = Rect2()
 @warning_ignore("unused_private_class_variable")
 var _is_transitioning: bool = false
 @warning_ignore("unused_private_class_variable")
@@ -184,6 +190,7 @@ func _ready() -> void:
 		shelf_placement_fallback_polygon,
 		shelf_placement_fallback_spacing
 	)
+	_simulation_scheduler = StoreSimulationSchedulerScript.new()
 	_placement_surface = get_node_or_null("StorePlacementSurface")
 	_store_path_graph = StorePathGraph.new(self, store_path_markers)
 
@@ -228,12 +235,82 @@ func _setup_store_controllers() -> void:
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _process(_delta: float) -> void:
 	_update_end_day_tax_flow()
+	_flush_navigation_dirty_bounds()
+	_process_simulation_scheduler()
 
 	if world_state_controller != null:
 		world_state_controller.process_store_world(_delta)
 
 	if npc_interaction_runtime != null:
 		npc_interaction_runtime.process_npc_interactions(_delta)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func enqueue_simulation_job(
+	execute_step: Callable,
+	priority: StringName = &"normal",
+	label: StringName = &"job"
+) -> void:
+	if _simulation_scheduler == null:
+		_simulation_scheduler = StoreSimulationSchedulerScript.new()
+	_simulation_scheduler.enqueue(execute_step, priority, label)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _process_simulation_scheduler() -> void:
+	if _simulation_scheduler == null:
+		return
+	_simulation_scheduler.tick()
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func mark_navigation_dirty(bounds: Rect2) -> void:
+	if not bounds.has_area():
+		return
+
+	if _has_navigation_dirty_bounds:
+		_navigation_dirty_bounds = _navigation_dirty_bounds.merge(bounds)
+	else:
+		_navigation_dirty_bounds = bounds
+		_has_navigation_dirty_bounds = true
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _flush_navigation_dirty_bounds() -> void:
+	if not _has_navigation_dirty_bounds:
+		return
+
+	var dirty_bounds := _navigation_dirty_bounds
+	_navigation_dirty_bounds = Rect2()
+	_has_navigation_dirty_bounds = false
+
+	for npc_node in get_tree().get_nodes_in_group("npcs"):
+		if npc_node == null or not is_instance_valid(npc_node):
+			continue
+
+		if _is_npc_route_affected_by_bounds(npc_node, dirty_bounds):
+			npc_node.set_meta(&"path_possibly_invalid", true)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _is_npc_route_affected_by_bounds(npc_node: Node, bounds: Rect2) -> bool:
+	if not (npc_node is Node2D):
+		return false
+
+	var route_variant: Variant = npc_node.get("_movement_route")
+	if not route_variant is Array:
+		return false
+
+	var route := route_variant as Array
+	if route.is_empty():
+		return false
+
+	var route_bounds := Rect2((npc_node as Node2D).global_position, Vector2.ONE)
+	for point_variant in route:
+		if point_variant is Vector2:
+			route_bounds = route_bounds.expand(point_variant as Vector2)
+
+	return route_bounds.grow(16.0).intersects(bounds)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

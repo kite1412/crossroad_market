@@ -178,6 +178,11 @@ func reset_stuck_watchdog() -> void:
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func should_rebuild_movement_route(target: Vector2) -> bool:
+	if npc.has_meta(&"path_possibly_invalid"):
+		npc.remove_meta(&"path_possibly_invalid")
+		NPCMovementReservationSystemScript.release_for(npc)
+		return true
+
 	if npc._movement_route.is_empty():
 		if (
 			uses_store_navigation_state()
