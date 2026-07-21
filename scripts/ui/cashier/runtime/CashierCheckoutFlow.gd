@@ -41,7 +41,6 @@ func process_scan(npc: NPC) -> void:
 	cashier._pending_item_id = ""
 	cashier._ask_again_count = 0
 
-	show_customer_request_bubble()
 	cashier._show_scan_panel()
 	cashier._start_patience_timer()
 

@@ -67,6 +67,7 @@ func render_empty_pos_app() -> void:
 
 func ensure_cashier_panel() -> void:
 	if cashier_ui != null and is_instance_valid(cashier_ui):
+		cashier._patience_bar = cashier_ui.get_patience_bar()
 		return
 
 	var instance := STORE_CASHIER_SCENE.instantiate() as StoreCashierUI
@@ -77,6 +78,7 @@ func ensure_cashier_panel() -> void:
 	cashier_ui = instance
 	cashier_ui.name = "StoreCashierUI"
 	cashier.add_child(cashier_ui)
+	cashier._patience_bar = cashier_ui.get_patience_bar()
 	cashier_ui.payment_requested.connect(_on_payment_requested)
 	cashier_ui.free_requested.connect(_on_free_requested)
 	cashier_ui.checkout_cancelled.connect(_on_checkout_cancelled)

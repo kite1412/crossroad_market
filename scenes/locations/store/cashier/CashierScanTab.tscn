@@ -9,7 +9,25 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/PortraitAnimation.tscn" id="6_portrait"]
 [ext_resource type="Texture2D" uid="uid://cetfyouqru4oo" path="res://assets/cashier/item-card.png" id="7_ytwti"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_patience_background"]
+bg_color = Color(0.137255, 0.0784314, 0.0588235, 0.9)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_patience_fill"]
+bg_color = Color(1, 1, 1, 1)
+
 [node name="StoreScanTab" type="Node2D" unique_id=900483876]
+
+[node name="PatienceBar" type="ProgressBar" parent="." unique_id=144689174]
+visible = false
+offset_left = 2.0
+offset_top = 172.0
+offset_right = 106.0
+offset_bottom = 176.0
+mouse_filter = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_patience_background")
+theme_override_styles/fill = SubResource("StyleBoxFlat_patience_fill")
+value = 1.0
+show_percentage = false
 
 [node name="MainFrame" type="Sprite2D" parent="." unique_id=1187040639]
 position = Vector2(240, 135)

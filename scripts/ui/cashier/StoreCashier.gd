@@ -23,6 +23,8 @@ const ITEM_CARD_TEXTURE: Texture2D = preload("res://assets/cashier/item-card.png
 
 @onready var _scan_tab: Node2D = $StoreCashier
 @onready var _exchange_tab: Node2D = $CashierExchangeTab
+@onready var _scan_patience_bar: ProgressBar = $StoreCashier/PatienceBar
+@onready var _exchange_patience_bar: ProgressBar = $CashierExchangeTab/PatienceBar
 
 var _ui_layer: CanvasLayer
 var _scan_list: Control
@@ -73,6 +75,20 @@ func _ready() -> void:
 	_build_exchange_tab()
 	_ui_layer.visible = false
 	_hide_inventory_panel()
+
+
+func _process(_delta: float) -> void:
+	# Cashier.gd owns the timer and updates the Scan bar. Mirror that state so
+	# changing tabs preserves the exact remaining time and green/yellow/red tint.
+	if _scan_patience_bar == null or _exchange_patience_bar == null:
+		return
+	_exchange_patience_bar.value = _scan_patience_bar.value
+	_exchange_patience_bar.visible = _scan_patience_bar.visible
+	_exchange_patience_bar.modulate = _scan_patience_bar.modulate
+
+
+func get_patience_bar() -> ProgressBar:
+	return _scan_patience_bar
 
 
 ## Starts a checkout for an NPC.  This is the hand-off point when replacing
@@ -638,11 +654,36 @@ func _get_customer_dialogue() -> String:
 
 
 func _get_store_items() -> Array[ItemData]:
-	var items: Array[ItemData] = ItemDatabase.get_all_items()
+	var stocked_item_ids: Dictionary[String, bool] = {}
+	var store := get_tree().get_first_node_in_group("store") as Store
+	if store != null:
+		_collect_shelf_item_ids(store.human_shelf, stocked_item_ids)
+		_collect_shelf_item_ids(store.ghost_shelf, stocked_item_ids)
+
+	# Shopping removes units from shelf stock before checkout. Keep the active
+	# cart scannable when the customer took the final unit of an item.
+	for item_id in _target_item_ids:
+		if not item_id.is_empty():
+			stocked_item_ids[item_id] = true
+
+	var items: Array[ItemData] = []
+	for item_id in stocked_item_ids:
+		var item: ItemData = ItemDatabase.get_item(item_id)
+		if item != null:
+			items.append(item)
 	items.sort_custom(func(a: ItemData, b: ItemData) -> bool:
 		return a.display_name.naturalnocasecmp_to(b.display_name) < 0
 	)
 	return items
+
+
+func _collect_shelf_item_ids(shelf: Shelf, item_ids: Dictionary[String, bool]) -> void:
+	if shelf == null or not is_instance_valid(shelf):
+		return
+	for slot_index in shelf.max_slots:
+		var item_id := shelf.get_slot_content(slot_index)
+		if not item_id.is_empty():
+			item_ids[item_id] = true
 
 
 func _make_dialog_label() -> Label:

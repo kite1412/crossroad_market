@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://bwb0k6qicbyb1"]
+[gd_scene load_steps=10 format=3 uid="uid://bwb0k6qicbyb1"]
 
 [ext_resource type="Texture2D" uid="uid://b5888a5cr0ouo" path="res://assets/cashier/main-frame.png" id="1_pvh45"]
 [ext_resource type="Texture2D" uid="uid://cxs24ek4jqxak" path="res://assets/cashier/side-bar-1.png" id="2_q8ap6"]
@@ -8,7 +8,25 @@
 [ext_resource type="Texture2D" uid="uid://cpeuj3ml4gynm" path="res://assets/cashier/screen.png" id="7_wfpe6"]
 [ext_resource type="PackedScene" path="res://scenes/ui/PortraitAnimation.tscn" id="8_portrait"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_patience_background"]
+bg_color = Color(0.137255, 0.0784314, 0.0588235, 0.9)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_patience_fill"]
+bg_color = Color(1, 1, 1, 1)
+
 [node name="CashierExchangeTab" type="Node2D" unique_id=1003639902]
+
+[node name="PatienceBar" type="ProgressBar" parent="."]
+visible = false
+offset_left = 2.0
+offset_top = 172.0
+offset_right = 106.0
+offset_bottom = 176.0
+mouse_filter = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_patience_background")
+theme_override_styles/fill = SubResource("StyleBoxFlat_patience_fill")
+value = 1.0
+show_percentage = false
 
 [node name="MainFrame" type="Sprite2D" parent="." unique_id=1370145577]
 position = Vector2(240, 135)
