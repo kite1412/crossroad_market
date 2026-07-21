@@ -5,9 +5,14 @@ on:
     paths:
       - "scripts/navigation/store/**"
       - "scripts/locations/store/StoreNpcRoutes.gd"
+      - "scripts/locations/store/StoreNpcRoutesRuntime.gd"
       - "scripts/locations/store/StoreNpcRuntime.gd"
       - "scripts/locations/store/StoreRuntimePathGraph.gd"
+      - "scripts/locations/store/StoreShelfAccessRuntimeGraph.gd"
+      - "scripts/locations/store/StoreBudgetedShelfPlacementController.gd"
+      - "scripts/npc/runtime/NPCReachableShelfShoppingFlow.gd"
       - "scripts/npc/runtime/NPCLayeredNavigationRouteController.gd"
+      - "scenes/locations/Store.tscn"
       - "data/navigation/store_navigation_cost_policy.tres"
       - ".github/workflows/store-navigation-parse.yml"
   workflow_dispatch:
@@ -49,8 +54,12 @@ jobs:
               Path(path)
               for path in [
                   "scripts/locations/store/StoreNpcRoutes.gd",
+                  "scripts/locations/store/StoreNpcRoutesRuntime.gd",
                   "scripts/locations/store/StoreNpcRuntime.gd",
                   "scripts/locations/store/StoreRuntimePathGraph.gd",
+                  "scripts/locations/store/StoreShelfAccessRuntimeGraph.gd",
+                  "scripts/locations/store/StoreBudgetedShelfPlacementController.gd",
+                  "scripts/npc/runtime/NPCReachableShelfShoppingFlow.gd",
                   "scripts/npc/runtime/NPCLayeredNavigationRouteController.gd",
               ]
           )
@@ -81,8 +90,13 @@ jobs:
           checked_roots = [
               Path("scripts/navigation/store"),
               Path("scripts/locations/store/StoreNpcRoutes.gd"),
+              Path("scripts/locations/store/StoreNpcRoutesRuntime.gd"),
               Path("scripts/locations/store/StoreNpcRuntime.gd"),
+              Path("scripts/locations/store/StoreShelfAccessRuntimeGraph.gd"),
+              Path("scripts/locations/store/StoreBudgetedShelfPlacementController.gd"),
+              Path("scripts/npc/runtime/NPCReachableShelfShoppingFlow.gd"),
               Path("scripts/npc/runtime/NPCLayeredNavigationRouteController.gd"),
+              Path("scenes/locations/Store.tscn"),
               Path("data/navigation/store_navigation_cost_policy.tres"),
           ]
           files = []
