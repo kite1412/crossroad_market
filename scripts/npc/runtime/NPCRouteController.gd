@@ -5,9 +5,13 @@ const StoreRouteSafetyScript = preload("res://scripts/npc/runtime/StoreRouteSafe
 const NPCMovementReservationSystemScript = preload("res://scripts/npc/runtime/NPCMovementReservationSystem.gd")
 const NPCQueueReservationControllerScript = preload("res://scripts/npc/runtime/NPCQueueReservationController.gd")
 
+const NO_ROUTE_RETRY_COOLDOWN_MSEC: int = 450
+
 var npc = null
 @warning_ignore("unused_private_class_variable")
 var _route_safety = null
+var _no_route_retry_destination: Vector2 = Vector2.INF
+var _next_no_route_retry_msec: int = 0
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -27,6 +31,11 @@ func move_to(target: Vector2, arrival_threshold: float = -1.0) -> bool:
 		NPCMovementReservationSystemScript.release_for(npc)
 		npc._movement_route = build_movement_route(target)
 		npc._movement_route_destination = target
+		if npc._movement_route.is_empty() and uses_store_navigation_state():
+			_no_route_retry_destination = target
+			_next_no_route_retry_msec = (
+				Time.get_ticks_msec() + NO_ROUTE_RETRY_COOLDOWN_MSEC
+			)
 
 	_trim_arrived_route_points(threshold)
 
@@ -121,8 +130,11 @@ func update_stuck_watchdog(delta: float) -> void:
 			npc._stuck_watchdog_rebuilds = 0
 			return
 
-		npc.target_position = get_exit_position()
-		npc._set_state(NPC.State.EXIT)
+		if try_recover_to_alternate_shelf():
+			reset_stuck_watchdog()
+			return
+
+		abandon_purchase_and_exit()
 		return
 
 	npc._movement_route.clear()
@@ -160,14 +172,66 @@ func reset_stuck_watchdog() -> void:
 	npc._last_watchdog_position = Vector2.INF
 	npc._stuck_watchdog_timer = 0.0
 	npc._stuck_watchdog_rebuilds = 0
+	_no_route_retry_destination = Vector2.INF
+	_next_no_route_retry_msec = 0
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func should_rebuild_movement_route(target: Vector2) -> bool:
 	if npc._movement_route.is_empty():
+		if (
+			uses_store_navigation_state()
+			and _no_route_retry_destination.is_finite()
+			and _no_route_retry_destination.is_equal_approx(target)
+			and Time.get_ticks_msec() < _next_no_route_retry_msec
+		):
+			return false
 		return true
 
 	return not npc._movement_route_destination.is_equal_approx(target)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func try_recover_to_alternate_shelf() -> bool:
+	if npc._has_taken_shelf_item or not npc._cart_items.is_empty():
+		return false
+
+	if not (npc.current_state in [
+		NPC.State.WALK_TO_SHELF,
+		NPC.State.SEARCH_ITEM,
+		NPC.State.TAKE_ITEM,
+		NPC.State.WAIT_FOR_SHELF
+	]):
+		return false
+
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
+	var replacement_shelf: Shelf = npc._find_reachable_matching_shelf()
+	if replacement_shelf == null:
+		return false
+
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
+	var visit_position: Vector2 = npc._get_shelf_visit_position(replacement_shelf)
+	if not visit_position.is_finite():
+		return false
+
+	npc._target_shelf = replacement_shelf
+	if npc._shopping_job != null:
+		npc._shopping_job.set_target_shelf(replacement_shelf)
+	npc.target_position = visit_position
+	npc._movement_route.clear()
+	npc._movement_route_destination = Vector2.INF
+	npc._set_state(NPC.State.WALK_TO_SHELF)
+	return true
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func abandon_purchase_and_exit() -> void:
+	if not npc._cart_items.is_empty():
+		npc._return_cart_items_to_shelf()
+
+	npc._exit_after_checkout = false
+	npc.target_position = get_exit_position()
+	npc._set_state(NPC.State.EXIT)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
