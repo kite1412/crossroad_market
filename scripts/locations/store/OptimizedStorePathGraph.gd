@@ -65,46 +65,14 @@ func get_route_to_shelf_access(
 		shelf,
 		npc_node
 	)
-
-	for candidate_node in _get_nearest_graph_node_names_for_access(
+	_append_fast_marker_access_routes(
+		candidates,
+		from_position,
 		access_position,
 		shelf_graph_node,
-		LIVE_ACCESS_GRAPH_NODE_LIMIT
-	):
-		var graph_result: Dictionary = _nav.find_nearest_reachable_graph_node_for_route(
-			from_position,
-			candidate_node
-		)
-		if not bool(graph_result.get("valid", false)):
-			continue
-
-		var route: Array[Vector2] = _variant_route_to_vector2_array(
-			graph_result.get("route", [])
-		)
-		var route_end: Vector2 = from_position
-		if not route.is_empty():
-			route_end = route.back()
-
-		for horizontal_first in [true, false]:
-			var access_connection: Array[Vector2] = _routes.make_orthogonal_route(
-				route_end,
-				access_position,
-				horizontal_first
-			)
-			var complete_route: Array[Vector2] = route.duplicate()
-			complete_route.append_array(access_connection)
-			complete_route = _routes.dedupe_route_points(complete_route)
-			if _clearance.is_route_to_access_clear(
-				from_position,
-				complete_route,
-				shelf,
-				npc_node
-			):
-				_append_route_candidate(
-					candidates,
-					from_position,
-					complete_route
-				)
+		shelf,
+		npc_node
+	)
 
 	return _get_shortest_route(candidates)
 
@@ -129,6 +97,58 @@ func _append_fast_live_access_routes(
 			npc_node
 		):
 			_append_route_candidate(candidates, from_position, route)
+
+
+func _append_fast_marker_access_routes(
+	candidates: Array[Dictionary],
+	from_position: Vector2,
+	access_position: Vector2,
+	shelf_graph_node: StringName,
+	shelf: Shelf,
+	npc_node: Node
+) -> void:
+	var marker_nodes: Array[StringName] = []
+	var aisle_node: StringName = _nav.get_role_node_name(
+		&"aisle_right",
+		AISLE_RIGHT
+	)
+	if aisle_node != StringName():
+		marker_nodes.append(aisle_node)
+	if shelf_graph_node != StringName() and shelf_graph_node not in marker_nodes:
+		marker_nodes.append(shelf_graph_node)
+
+	for marker_node in marker_nodes:
+		var marker_position: Vector2 = _nav.get_marker_position(marker_node)
+		if not marker_position.is_finite():
+			continue
+
+		for first_leg_horizontal in [true, false]:
+			var route: Array[Vector2] = _routes.make_orthogonal_route(
+				from_position,
+				marker_position,
+				first_leg_horizontal
+			)
+			for second_leg_horizontal in [true, false]:
+				var candidate_route: Array[Vector2] = route.duplicate()
+				candidate_route.append_array(
+					_routes.make_orthogonal_route(
+						marker_position,
+						access_position,
+						second_leg_horizontal
+					)
+				)
+				candidate_route = _routes.dedupe_route_points(candidate_route)
+				if _clearance.is_route_to_access_clear(
+					from_position,
+					candidate_route,
+					shelf,
+					npc_node
+				):
+					_append_route_candidate(
+						candidates,
+						from_position,
+						candidate_route
+					)
 
 
 func _find_fast_vertical_shelf_access(
