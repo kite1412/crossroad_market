@@ -10,6 +10,7 @@ const NPCPresentationRuntimeScript = preload("res://scripts/npc/runtime/NPCPrese
 const NPCAssetRuntimeScript = preload("res://scripts/npc/runtime/NPCAssetRuntime.gd")
 const NPCMetadataFlowScript = preload("res://scripts/npc/runtime/NPCMetadataFlow.gd")
 const NPCShoppingJobScript = preload("res://scripts/npc/runtime/NPCShoppingJob.gd")
+const NPCMovementReservationSystemScript = preload("res://scripts/npc/runtime/NPCMovementReservationSystem.gd")
 
 enum State {
 	ENTER,
@@ -169,6 +170,7 @@ func _ready() -> void:
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _exit_tree() -> void:
 	_ensure_npc_controllers()
+	NPCMovementReservationSystemScript.release_for(self)
 	_disconnect_trust_signal()
 	_leave_queue()
 

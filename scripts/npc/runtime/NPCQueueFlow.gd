@@ -1,6 +1,8 @@
 class_name NPCQueueFlow
 extends RefCounted
 
+const NPCQueueReservationControllerScript = preload("res://scripts/npc/runtime/NPCQueueReservationController.gd")
+
 var npc = null
 
 
@@ -12,7 +14,7 @@ func setup(npc_node) -> void:
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func process_wait_in_queue(delta: float) -> void:
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-	var queue_index := NPC.current_queue.find(npc)
+	var queue_index := NPCQueueReservationControllerScript.index_of(npc)
 
 	if queue_index < 0:
 		enter_checkout_queue()
@@ -69,7 +71,11 @@ func process_wait_in_queue(delta: float) -> void:
 	if not arrived:
 		arrived = npc._move_to_with_arrival_threshold(npc.target_position, npc.QUEUE_SLOT_ARRIVAL_DISTANCE)
 
-	if queue_index == 0 and NPC.current_queue.size() <= 1 and not npc._is_moving_from_queue_to_cashier:
+	if (
+		queue_index == 0
+		and NPCQueueReservationControllerScript.size() <= 1
+		and not npc._is_moving_from_queue_to_cashier
+	):
 		start_queue_to_cashier(queue_index)
 		return
 
@@ -89,12 +95,12 @@ func process_wait_in_queue(delta: float) -> void:
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func join_queue() -> void:
-	NPCQueueSystem.join_queue(NPC.current_queue, npc)
+	NPCQueueReservationControllerScript.join(npc)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func leave_queue() -> void:
-	NPCQueueSystem.leave_queue(NPC.current_queue, npc)
+	NPCQueueReservationControllerScript.leave(npc)
 	npc._last_queue_index = -1
 	npc._is_moving_from_queue_to_cashier = false
 	npc._queue_entry_shelf = null
@@ -104,7 +110,7 @@ func leave_queue() -> void:
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func enter_checkout_queue() -> void:
 	join_queue()
-	npc._last_queue_index = NPC.current_queue.find(npc)
+	npc._last_queue_index = NPCQueueReservationControllerScript.index_of(npc)
 	npc._is_moving_from_queue_to_cashier = false
 	npc.target_position = get_queue_target()
 	npc._movement_route.clear()
@@ -118,7 +124,7 @@ func is_ready_for_checkout_service() -> bool:
 	if npc.is_queued_for_deletion():
 		return false
 
-	if NPC.current_queue.is_empty() or NPC.current_queue[0] != npc:
+	if not NPCQueueReservationControllerScript.is_front(npc):
 		return false
 
 	if npc.current_state == NPC.State.CHECKOUT:
@@ -217,7 +223,7 @@ func get_cashier_face_target() -> Vector2:
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_queue_target() -> Vector2:
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-	var position_in_queue := NPC.current_queue.find(npc)
+	var position_in_queue := NPCQueueReservationControllerScript.index_of(npc)
 
 	if position_in_queue < 0:
 		return NPC.counter_position
@@ -232,7 +238,7 @@ func get_queue_target() -> Vector2:
 		if result is Vector2:
 			return result as Vector2
 
-	return NPCQueueSystem.get_queue_target(NPC.current_queue, npc, NPC.counter_position)
+	return NPCQueueReservationControllerScript.get_target(npc, NPC.counter_position)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

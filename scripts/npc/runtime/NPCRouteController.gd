@@ -2,6 +2,8 @@ class_name NPCRouteController
 extends RefCounted
 
 const StoreRouteSafetyScript = preload("res://scripts/npc/runtime/StoreRouteSafety.gd")
+const NPCMovementReservationSystemScript = preload("res://scripts/npc/runtime/NPCMovementReservationSystem.gd")
+const NPCQueueReservationControllerScript = preload("res://scripts/npc/runtime/NPCQueueReservationController.gd")
 
 var npc = null
 @warning_ignore("unused_private_class_variable")
@@ -22,12 +24,14 @@ func move_to(target: Vector2, arrival_threshold: float = -1.0) -> bool:
 	var threshold: float = npc.ARRIVAL_THRESHOLD if arrival_threshold < 0.0 else arrival_threshold
 
 	if should_rebuild_movement_route(target):
+		NPCMovementReservationSystemScript.release_for(npc)
 		npc._movement_route = build_movement_route(target)
 		npc._movement_route_destination = target
 
 	_trim_arrived_route_points(threshold)
 
 	if npc._movement_route.is_empty():
+		NPCMovementReservationSystemScript.release_for(npc)
 		if uses_store_navigation_state():
 			npc.velocity = Vector2.ZERO
 			npc.move_and_slide()
@@ -42,6 +46,10 @@ func move_to(target: Vector2, arrival_threshold: float = -1.0) -> bool:
 
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var next_target: Vector2 = npc._movement_route[0]
+	if not NPCMovementReservationSystemScript.reserve_next_position(npc, next_target):
+		npc.velocity = Vector2.ZERO
+		npc.move_and_slide()
+		return false
 
 	if not NPCMovement.move_to(
 		npc,
@@ -52,6 +60,7 @@ func move_to(target: Vector2, arrival_threshold: float = -1.0) -> bool:
 		return false
 
 	npc._movement_route.remove_at(0)
+	NPCMovementReservationSystemScript.release_for(npc)
 	_trim_arrived_route_points(threshold)
 	return npc._movement_route.is_empty()
 
@@ -147,6 +156,7 @@ func uses_store_navigation_state() -> bool:
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func reset_stuck_watchdog() -> void:
+	NPCMovementReservationSystemScript.release_for(npc)
 	npc._last_watchdog_position = Vector2.INF
 	npc._stuck_watchdog_timer = 0.0
 	npc._stuck_watchdog_rebuilds = 0
@@ -223,7 +233,7 @@ func get_store_route_for_current_state(destination: Vector2) -> Array[Vector2]:
 
 		NPC.State.WAIT_IN_QUEUE:
 			@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-			var queue_index := NPC.current_queue.find(npc)
+			var queue_index := NPCQueueReservationControllerScript.index_of(npc)
 
 			if npc._is_moving_from_queue_to_cashier:
 				return call_store_route(
@@ -254,7 +264,7 @@ func get_store_route_for_current_state(destination: Vector2) -> Array[Vector2]:
 				queue_index >= 0
 				and store.has_method("get_npc_route_to_queue_target_from")
 			):
-				if queue_index == 0 and NPC.current_queue.size() <= 1:
+				if queue_index == 0 and NPCQueueReservationControllerScript.size() <= 1:
 					return call_store_route(
 						store,
 						&"get_npc_route_to_cashier_from",
