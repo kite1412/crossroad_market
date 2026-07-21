@@ -542,7 +542,14 @@ func build_movement_route(destination: Vector2) -> Array[Vector2]:
 
 	if not route.is_empty():
 		route = dedupe_route_points(route)
-		if _route_safety != null:
+		if _should_skip_store_route_safety_pass():
+			_record_route_probe(&"npc_route_safety_accept", {
+				"raw_route_points": route.size(),
+				"after_marker_insert_points": route.size(),
+				"sanitized_route_points": route.size(),
+				"reason": "prevalidated_queue_egress"
+			})
+		elif _route_safety != null:
 			route = _route_safety.sanitize_store_route(route)
 		return dedupe_route_points(route)
 
@@ -564,6 +571,13 @@ func build_direct_fallback(destination: Vector2) -> Array[Vector2]:
 		return []
 
 	return [destination]
+
+
+func _should_skip_store_route_safety_pass() -> bool:
+	return (
+		npc.current_state == NPC.State.WAIT_IN_QUEUE
+		and npc._queue_egress_route_pending
+	)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

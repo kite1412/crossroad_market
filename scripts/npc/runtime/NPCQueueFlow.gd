@@ -292,7 +292,9 @@ func start_queue_to_cashier(queue_index: int) -> void:
 	npc._movement_route_destination = Vector2.INF
 	_record_queue_probe(&"npc_queue_to_cashier", {
 		"queue_index": queue_index,
-		"cashier_target": _format_vector(npc.target_position)
+		"queue_target": _format_vector(get_queue_target()),
+		"cashier_target": _format_vector(npc.target_position),
+		"cashier_face_target": _format_vector(get_cashier_face_target())
 	})
 	pass
 
@@ -361,6 +363,13 @@ func process_queue_to_cashier(queue_index: int) -> void:
 			"queue_index": queue_index,
 			"arrived": arrived,
 			"target_kind": "cashier",
+			"queue_target": _format_vector(get_queue_target()),
+			"cashier_target": _format_vector(cashier_target),
+			"next_route_point": _format_vector(
+				npc._movement_route[0]
+				if not npc._movement_route.is_empty()
+				else Vector2.INF
+			),
 			"distance": snappedf(
 				npc.global_position.distance_to(cashier_target),
 				0.01

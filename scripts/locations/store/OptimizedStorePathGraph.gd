@@ -110,77 +110,93 @@ func get_shelf_egress_route_to_queue_from(
 	if not access_position.is_finite():
 		return []
 
-	var anchor_node := _get_nearest_shelf_anchor_node(access_position)
-	if anchor_node == StringName():
+	var anchor_nodes := _get_ranked_shelf_anchor_nodes(access_position)
+	if anchor_nodes.is_empty():
 		return []
 
-	var anchor_position: Vector2 = _nav.get_marker_position(anchor_node)
-	if not anchor_position.is_finite():
-		return []
+	var candidates: Array[Dictionary] = []
+	var rejected_candidates := 0
+	for anchor_node in anchor_nodes:
+		var anchor_position: Vector2 = _nav.get_marker_position(anchor_node)
+		if not anchor_position.is_finite():
+			continue
 
-	var queue_route := _get_anchor_route_to_queue_egress(
-		anchor_position,
-		queue_index,
-		destination
-	)
-	if queue_route.is_empty():
-		var queue_egress_target := get_queue_egress_target_position(
+		var queue_route := _get_anchor_route_to_queue_egress(
+			anchor_position,
 			queue_index,
 			destination
 		)
-		if not queue_egress_target.is_finite():
-			queue_egress_target = destination
-		if not queue_egress_target.is_finite():
-			return []
-		queue_route = _routes.make_orthogonal_route(
-			anchor_position,
-			queue_egress_target,
-			true
-		)
-
-	var candidates: Array[Dictionary] = []
-	for horizontal_first in [true, false]:
-		var direct_anchor_route: Array[Vector2] = _routes.make_orthogonal_route(
-			from_position,
-			anchor_position,
-			horizontal_first
-		)
-		direct_anchor_route.append_array(queue_route)
-		_append_route_candidate(
-			candidates,
-			from_position,
-			_routes.dedupe_route_points(direct_anchor_route)
-		)
-
-	for first_leg_horizontal in [true, false]:
-		var first_leg: Array[Vector2] = _build_route_leg(
-			from_position,
-			access_position,
-			shelf,
-			shelf.global_position,
-			npc_node,
-			first_leg_horizontal
-		)
-		for second_leg_horizontal in [true, false]:
-			var candidate_route: Array[Vector2] = first_leg.duplicate()
-			candidate_route.append_array(
-				_build_route_leg(
-					access_position,
-					anchor_position,
-					shelf,
-					shelf.global_position,
-					npc_node,
-					second_leg_horizontal
-				)
+		if queue_route.is_empty():
+			var queue_egress_target := get_queue_egress_target_position(
+				queue_index,
+				destination
 			)
-			candidate_route.append_array(queue_route)
-			candidate_route = _routes.dedupe_route_points(candidate_route)
-			_append_route_candidate(candidates, from_position, candidate_route)
+			if not queue_egress_target.is_finite():
+				queue_egress_target = destination
+			if not queue_egress_target.is_finite():
+				continue
+			queue_route = _routes.make_orthogonal_route(
+				anchor_position,
+				queue_egress_target,
+				true
+			)
+
+		for horizontal_first in [true, false]:
+			var direct_anchor_route: Array[Vector2] = _routes.make_orthogonal_route(
+				from_position,
+				anchor_position,
+				horizontal_first
+			)
+			direct_anchor_route.append_array(queue_route)
+			direct_anchor_route = _routes.dedupe_route_points(direct_anchor_route)
+			if _clearance.is_queue_route_clear_from_current_position(
+				from_position,
+				direct_anchor_route
+			):
+				_append_route_candidate(
+					candidates,
+					from_position,
+					direct_anchor_route
+				)
+			else:
+				rejected_candidates += 1
+
+		for first_leg_horizontal in [true, false]:
+			var first_leg: Array[Vector2] = _routes.make_orthogonal_route(
+				from_position,
+				access_position,
+				first_leg_horizontal
+			)
+			for second_leg_horizontal in [true, false]:
+				var candidate_route: Array[Vector2] = first_leg.duplicate()
+				candidate_route.append_array(
+					_routes.make_orthogonal_route(
+						access_position,
+						anchor_position,
+						second_leg_horizontal
+					)
+				)
+				candidate_route.append_array(queue_route)
+				candidate_route = _routes.dedupe_route_points(candidate_route)
+				if _clearance.is_queue_route_clear_from_current_position(
+					from_position,
+					candidate_route
+				):
+					_append_route_candidate(candidates, from_position, candidate_route)
+				else:
+					rejected_candidates += 1
 
 	var route := _get_shortest_route(candidates)
-	if route.is_empty():
-		return []
-
+	_record_path_graph_probe(&"npc_shelf_egress_anchor_select", {
+		"from": _format_vector(from_position),
+		"access": _format_vector(access_position),
+		"queue_index": queue_index,
+		"destination": _format_vector(destination),
+		"anchor_count": anchor_nodes.size(),
+		"candidate_count": candidates.size(),
+		"rejected_candidates": rejected_candidates,
+		"route_points": route.size()
+	})
 	return route
 
 
@@ -548,6 +564,33 @@ func _get_nearest_shelf_anchor_node(access_position: Vector2) -> StringName:
 	if marker_nodes.is_empty():
 		return StringName()
 	return marker_nodes.front()
+
+
+func _get_ranked_shelf_anchor_nodes(access_position: Vector2) -> Array[StringName]:
+	var ranked_nodes: Array[Dictionary] = []
+	for node_name in _nav.get_graph_node_names():
+		var marker: Marker2D = _nav.get_graph_marker(node_name)
+		if marker == null:
+			continue
+		if not bool(marker.get_meta(SHELF_ANCHOR_META, false)):
+			continue
+
+		ranked_nodes.append({
+			"node": node_name,
+			"distance": marker.global_position.distance_to(access_position)
+		})
+
+	ranked_nodes.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return float(a.get("distance", INF)) < float(b.get("distance", INF))
+	)
+
+	var result: Array[StringName] = []
+	for entry in ranked_nodes:
+		var node_name := entry.get("node", StringName()) as StringName
+		if node_name != StringName():
+			result.append(node_name)
+
+	return result
 
 
 func _is_shelf_entry_route_allowed(
