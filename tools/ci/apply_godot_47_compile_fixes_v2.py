@@ -1,0 +1,263 @@
+from pathlib import Path
+
+
+def replace_count(
+    path: str,
+    old: str,
+    new: str,
+    expected_count: int = 1,
+) -> None:
+    file_path = Path(path)
+    text = file_path.read_text(encoding="utf-8")
+    count = text.count(old)
+    if count != expected_count:
+        raise SystemExit(
+            f"Expected {expected_count} match(es) in {path}, "
+            f"found {count}: {old!r}"
+        )
+    file_path.write_text(text.replace(old, new), encoding="utf-8")
+
+
+def apply_source_fixes() -> None:
+    replace_count(
+        "scripts/locations/store/StoreNpcRoutes.gd",
+        "\tvar route_end := legacy_route.back()",
+        "\tvar route_end: Vector2 = legacy_route.back() as Vector2",
+    )
+    replace_count(
+        "scripts/locations/store/StoreNpcRoutes.gd",
+        "\tvar needs_runtime_graph := (",
+        "\tvar needs_runtime_graph: bool = (",
+    )
+
+    runtime_path = "scripts/locations/store/StoreNpcRoutesRuntime.gd"
+    replace_count(
+        runtime_path,
+        "\tvar store_node := store as Node2D",
+        "\tvar store_node: Node2D = store as Node2D",
+        3,
+    )
+    replace_count(
+        runtime_path,
+        "\tvar marker_root := store.store_path_markers as Node2D",
+        "\tvar marker_root: Node2D = store.store_path_markers as Node2D",
+        2,
+    )
+    replace_count(
+        runtime_path,
+        "\tvar needs_runtime_graph := (",
+        "\tvar needs_runtime_graph: bool = (",
+    )
+    replace_count(
+        runtime_path,
+        "\tvar layout_signature := _get_shelf_layout_signature()",
+        "\tvar layout_signature: String = _get_shelf_layout_signature()",
+    )
+    replace_count(
+        runtime_path,
+        "\tvar layout_changed := (",
+        "\tvar layout_changed: bool = (",
+    )
+
+    replace_count(
+        "scripts/navigation/store/StoreDynamicObstacleTracker.gd",
+        "\t\tvar oldest := revisions.pop_front()\n\t\t_dirty_history.erase(oldest)",
+        "\t\tvar oldest: int = int(revisions.pop_front())\n\t\t_dirty_history.erase(oldest)",
+    )
+
+    replace_count(
+        "scripts/navigation/store/StoreThetaStarPlanner.gd",
+        """\tvar key := _to_grid_key(_anchors[index])
+\tfor offset in [
+\t\tVector2i(-1, -1),
+\t\tVector2i(0, -1),
+\t\tVector2i(1, -1),
+\t\tVector2i(-1, 0),
+\t\tVector2i(1, 0),
+\t\tVector2i(-1, 1),
+\t\tVector2i(0, 1),
+\t\tVector2i(1, 1)
+\t]:
+\t\tvar neighbor_key := key + offset""",
+        """\tvar key: Vector2i = _to_grid_key(_anchors[index])
+\tvar neighbor_offsets: Array[Vector2i] = [
+\t\tVector2i(-1, -1),
+\t\tVector2i(0, -1),
+\t\tVector2i(1, -1),
+\t\tVector2i(-1, 0),
+\t\tVector2i(1, 0),
+\t\tVector2i(-1, 1),
+\t\tVector2i(0, 1),
+\t\tVector2i(1, 1)
+\t]
+\tfor offset: Vector2i in neighbor_offsets:
+\t\tvar neighbor_key: Vector2i = key + offset""",
+    )
+
+    local_avoidance = "scripts/navigation/store/StoreLocalAvoidance.gd"
+    replacements = [
+        (
+            "\tvar desired_direction := npc.global_position.direction_to(desired_target)",
+            "\tvar desired_direction: Vector2 = npc.global_position.direction_to(desired_target)",
+        ),
+        ("\tvar nearest_distance := INF", "\tvar nearest_distance: float = INF"),
+        (
+            "\t\tvar other := other_variant as NPC",
+            "\t\tvar other: NPC = other_variant as NPC",
+        ),
+        (
+            "\t\tvar offset := other.global_position - npc.global_position",
+            "\t\tvar offset: Vector2 = other.global_position - npc.global_position",
+        ),
+        (
+            "\t\tvar distance := offset.length()",
+            "\t\tvar distance: float = offset.length()",
+        ),
+        (
+            "\tvar relative := nearest_blocker.global_position - npc.global_position",
+            "\tvar relative: Vector2 = nearest_blocker.global_position - npc.global_position",
+        ),
+        (
+            "\tvar perpendicular := Vector2(-desired_direction.y, desired_direction.x)",
+            "\tvar perpendicular: Vector2 = Vector2(-desired_direction.y, desired_direction.x)",
+        ),
+        (
+            "\tvar cross_sign := signf(desired_direction.cross(relative))",
+            "\tvar cross_sign: float = signf(desired_direction.cross(relative))",
+        ),
+        (
+            """\tfor side_sign in [cross_sign, -cross_sign]:
+\t\tvar sidestep_target := (""",
+            """\tvar side_signs: Array[float] = [cross_sign, -cross_sign]
+\tfor side_sign: float in side_signs:
+\t\tvar sidestep_target: Vector2 = (""",
+        ),
+        ("\t\tvar context := {", "\t\tvar context: Dictionary = {"),
+    ]
+    for old, new in replacements:
+        replace_count(local_avoidance, old, new)
+
+    runtime_theta = "scripts/navigation/store/StoreThetaStarRuntimePlanner.gd"
+    replace_count(
+        runtime_theta,
+        """\tvar clear := _physics_segment_clear(
+\t\tfrom_position,
+\t\tto_position,
+\t\tcontext,
+\t\tignore_start,
+\t\tignore_endpoint
+\t)""",
+        """\tvar clear: bool = _physics_segment_clear(
+\t\tfrom_position,
+\t\tto_position,
+\t\tcontext,
+\t\tignore_start,
+\t\tignore_endpoint,
+\t\tendpoint_shelf
+\t)""",
+    )
+    replace_count(
+        runtime_theta,
+        """func _physics_segment_clear(
+\tfrom_position: Vector2,
+\tto_position: Vector2,
+\tcontext: Dictionary,
+\tignore_start: bool,
+\tignore_endpoint: bool
+) -> bool:""",
+        """func _physics_segment_clear(
+\tfrom_position: Vector2,
+\tto_position: Vector2,
+\tcontext: Dictionary,
+\tignore_start: bool,
+\tignore_endpoint: bool,
+\t_ignored_shelf: Shelf
+) -> bool:""",
+    )
+
+
+def install_permanent_workflow() -> None:
+    workflow = '''name: Godot 4.7 Compile
+
+on:
+  pull_request:
+    paths:
+      - "scripts/**"
+      - "scenes/**"
+      - "project.godot"
+      - ".github/workflows/store-navigation-parse.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compile-gdscript:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Godot 4.7 stable
+        shell: bash
+        run: |
+          curl --fail --location --retry 3 \\
+            --output /tmp/godot.zip \\
+            https://github.com/godotengine/godot/releases/download/4.7-stable/Godot_v4.7-stable_linux.x86_64.zip
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          chmod +x /tmp/godot/Godot_v4.7-stable_linux.x86_64
+
+      - name: Compile every GDScript resource
+        shell: bash
+        run: |
+          cat > /tmp/check_all_scripts.gd <<'GDSCRIPT'
+          extends SceneTree
+
+          var failures: int = 0
+
+          func _init() -> void:
+              _scan_directory("res://")
+              if failures > 0:
+                  push_error("Failed to compile %d GDScript resource(s)." % failures)
+              quit(1 if failures > 0 else 0)
+
+          func _scan_directory(path: String) -> void:
+              var directory: DirAccess = DirAccess.open(path)
+              if directory == null:
+                  push_error("Cannot open %s" % path)
+                  failures += 1
+                  return
+              directory.list_dir_begin()
+              var entry: String = directory.get_next()
+              while entry != "":
+                  if entry == ".godot" or entry == ".git":
+                      entry = directory.get_next()
+                      continue
+                  var full_path: String = path.path_join(entry)
+                  if directory.current_is_dir():
+                      _scan_directory(full_path)
+                  elif entry.ends_with(".gd"):
+                      var script: Resource = ResourceLoader.load(
+                          full_path,
+                          "Script",
+                          ResourceLoader.CACHE_MODE_IGNORE
+                      )
+                      if script == null:
+                          failures += 1
+                  entry = directory.get_next()
+              directory.list_dir_end()
+          GDSCRIPT
+          timeout 180s /tmp/godot/Godot_v4.7-stable_linux.x86_64 \\
+            --headless --path . --script /tmp/check_all_scripts.gd
+'''
+    Path(".github/workflows/store-navigation-parse.yml").write_text(
+        workflow,
+        encoding="utf-8",
+    )
+
+
+if __name__ == "__main__":
+    apply_source_fixes()
+    install_permanent_workflow()
