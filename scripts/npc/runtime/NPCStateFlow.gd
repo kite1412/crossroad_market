@@ -1,6 +1,7 @@
 class_name NPCStateFlow
 extends RefCounted
 
+const NPCShoppingJobScript = preload("res://scripts/npc/runtime/NPCShoppingJob.gd")
 const PERF_SHELF_THRESHOLD_MSEC: float = 16.0
 const OUT_OF_STOCK_WARNING_SECONDS: float = 10.0
 const OUT_OF_STOCK_EXIT_SECONDS: float = 15.0
@@ -15,6 +16,8 @@ func setup(npc_node) -> void:
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func process_enter() -> void:
+	npc._shopping_job.wanted_item = npc.item_to_buy
+	npc._shopping_job.set_state(NPCShoppingJobScript.STATE_CHOOSING_ITEM)
 	npc._enter_pause_timer += npc.get_process_delta_time()
 
 	if npc._enter_pause_timer < npc.ENTER_PAUSE:
@@ -45,6 +48,7 @@ func process_enter() -> void:
 		return
 
 	npc._target_shelf = target_shelf
+	npc._shopping_job.set_target_shelf(target_shelf)
 	npc.target_position = visit_position
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var route_info = get_route_travel_info(visit_position)
@@ -100,6 +104,7 @@ func get_route_travel_info(destination: Vector2) -> Dictionary:
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func process_walk_to_shelf() -> void:
+	npc._shopping_job.set_state(NPCShoppingJobScript.STATE_MOVING_TO_SHELF)
 	if not npc._is_target_shelf_valid():
 		if _handle_shelf_wait_or_leave("walk_shelf_lost"):
 			return
@@ -191,6 +196,7 @@ func process_browse_item(delta: float) -> void:
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func process_take_item() -> void:
+	npc._shopping_job.set_state(NPCShoppingJobScript.STATE_PICKING_UP_ITEM)
 	if not npc._is_target_shelf_valid() and not npc._has_taken_shelf_item:
 		if _handle_shelf_wait_or_leave("take_shelf_lost"):
 			return
@@ -234,6 +240,7 @@ func process_take_item() -> void:
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func process_checkout(delta: float) -> void:
+	npc._shopping_job.set_state(NPCShoppingJobScript.STATE_CHECKING_OUT)
 	if npc._checkout_timer == 0.0:
 		npc._show_dialog(
 			"I'd like to buy %s." % npc.get_checkout_item_label()
@@ -392,6 +399,7 @@ func _get_store_provider() -> Node:
 func finish_checkout_and_exit() -> void:
 	npc._dialog_timer = npc.DIALOG_DURATION
 	npc._target_shelf = null
+	npc._shopping_job.clear_target_shelf()
 	npc._exit_after_checkout = true
 	npc.target_position = npc._get_exit_position()
 	set_state(NPC.State.EXIT)
@@ -405,6 +413,7 @@ func _handle_shelf_wait_or_leave(wait_stage: String) -> bool:
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_state(new_state: int) -> void:
+	_update_shopping_job_state(new_state)
 	if new_state == NPC.State.ENTER:
 		npc._enter_pause_timer = 0.0
 
@@ -434,6 +443,29 @@ func set_state(new_state: int) -> void:
 	npc._movement_route_destination = Vector2.INF
 	npc._reset_stuck_watchdog()
 	npc.current_state = new_state
+
+
+func _update_shopping_job_state(new_state: int) -> void:
+	if npc == null or npc._shopping_job == null:
+		return
+
+	match new_state:
+		NPC.State.ENTER:
+			npc._shopping_job.set_state(NPCShoppingJobScript.STATE_CHOOSING_ITEM)
+		NPC.State.WALK_TO_SHELF:
+			npc._shopping_job.set_state(NPCShoppingJobScript.STATE_MOVING_TO_SHELF)
+		NPC.State.SEARCH_ITEM:
+			npc._shopping_job.set_state(NPCShoppingJobScript.STATE_RESOLVING_SHELF)
+		NPC.State.TAKE_ITEM:
+			npc._shopping_job.set_state(NPCShoppingJobScript.STATE_PICKING_UP_ITEM)
+		NPC.State.WAIT_IN_QUEUE:
+			npc._shopping_job.set_state(NPCShoppingJobScript.STATE_WAITING_IN_QUEUE)
+		NPC.State.CHECKOUT:
+			npc._shopping_job.set_state(NPCShoppingJobScript.STATE_CHECKING_OUT)
+		NPC.State.EXIT:
+			npc._shopping_job.set_state(NPCShoppingJobScript.STATE_LEAVING_STORE)
+		NPC.State.WAIT_FOR_SHELF:
+			npc._shopping_job.set_state(NPCShoppingJobScript.STATE_RECOVERING)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

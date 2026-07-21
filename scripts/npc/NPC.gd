@@ -9,6 +9,7 @@ const NPCCheckoutFlowScript = preload("res://scripts/npc/runtime/NPCCheckoutFlow
 const NPCPresentationRuntimeScript = preload("res://scripts/npc/runtime/NPCPresentationRuntime.gd")
 const NPCAssetRuntimeScript = preload("res://scripts/npc/runtime/NPCAssetRuntime.gd")
 const NPCMetadataFlowScript = preload("res://scripts/npc/runtime/NPCMetadataFlow.gd")
+const NPCShoppingJobScript = preload("res://scripts/npc/runtime/NPCShoppingJob.gd")
 
 enum State {
 	ENTER,
@@ -144,6 +145,8 @@ var _presentation_runtime = null
 var _asset_runtime = null
 @warning_ignore("unused_private_class_variable")
 var _metadata_flow = null
+@warning_ignore("unused_private_class_variable")
+var _shopping_job: RefCounted = null
 
 @onready var sprite_move: CharacterSprite = $VisualRoot/SpriteMove
 @onready var sprite_idle: CharacterSprite = $VisualRoot/SpriteIdle
@@ -232,6 +235,8 @@ func _ensure_npc_controllers() -> void:
 	_presentation_runtime = NPCPresentationRuntimeScript.new()
 	_asset_runtime = NPCAssetRuntimeScript.new()
 	_metadata_flow = NPCMetadataFlowScript.new()
+	_shopping_job = NPCShoppingJobScript.new()
+	_shopping_job.reset()
 
 	for controller in [
 		_state_flow,
