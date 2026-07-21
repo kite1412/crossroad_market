@@ -492,13 +492,6 @@ func get_store_route_for_current_state(destination: Vector2) -> Array[Vector2]:
 			@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 			var queue_index := NPCQueueReservationControllerScript.index_of(npc)
 
-			if npc._is_moving_from_queue_to_cashier:
-				return call_store_route(
-					store,
-					&"get_npc_route_to_cashier_from",
-					[npc.global_position]
-				)
-
 			if (
 				queue_index >= 0
 				and npc._queue_egress_route_pending
@@ -516,6 +509,13 @@ func get_store_route_for_current_state(destination: Vector2) -> Array[Vector2]:
 					npc._queue_egress_route_pending = false
 					npc._queue_entry_shelf = null
 					return egress_queue_route
+
+			if npc._is_moving_from_queue_to_cashier:
+				return call_store_route(
+					store,
+					&"get_npc_route_to_cashier_from",
+					[npc.global_position]
+				)
 
 			if (
 				queue_index >= 0
@@ -583,6 +583,15 @@ func get_shelf_egress_queue_route(
 	if egress_route.is_empty():
 		return []
 
+	var access_position: Vector2 = egress_route.front()
+	if npc._queue_entry_shelf.has_meta(&"npc_access_point"):
+		var access_variant: Variant = npc._queue_entry_shelf.get_meta(
+			&"npc_access_point",
+			Vector2.INF
+		)
+		if access_variant is Vector2:
+			access_position = access_variant as Vector2
+
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var egress_end: Vector2 = egress_route.back()
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
@@ -595,10 +604,40 @@ func get_shelf_egress_queue_route(
 	if queue_route.is_empty():
 		return []
 
-	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-	var route := egress_route.duplicate()
-	route.append_array(queue_route)
-	route = dedupe_route_points(route)
+	var route: Array[Vector2] = []
+	var best_distance := INF
+	for horizontal_first in [true, false]:
+		var candidate_route := make_orthogonal_route(
+			npc.global_position,
+			access_position,
+			horizontal_first
+		)
+		if (
+			candidate_route.is_empty()
+			or candidate_route.back().distance_to(access_position)
+			> npc.ARRIVAL_THRESHOLD
+		):
+			candidate_route.append(access_position)
+		candidate_route.append_array(egress_route)
+		candidate_route.append_array(queue_route)
+		candidate_route = dedupe_route_points(candidate_route)
+		var sanitized_route: Array[Vector2] = candidate_route
+		if _route_safety != null:
+			sanitized_route = _route_safety.sanitize_store_route(
+				candidate_route
+			)
+		if sanitized_route.is_empty():
+			continue
+
+		var route_distance := _get_route_distance(
+			npc.global_position,
+			sanitized_route
+		)
+		if route_distance >= best_distance:
+			continue
+
+		best_distance = route_distance
+		route = sanitized_route
 
 	if (
 		not route.is_empty()
@@ -711,6 +750,16 @@ func dedupe_route_points(route: Array[Vector2]) -> Array[Vector2]:
 		deduped.append(point)
 
 	return deduped
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _get_route_distance(from_position: Vector2, route: Array[Vector2]) -> float:
+	var distance := 0.0
+	var current := from_position
+	for point in route:
+		distance += current.distance_to(point)
+		current = point
+	return distance
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

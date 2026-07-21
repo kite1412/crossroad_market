@@ -2,6 +2,7 @@ class_name NPCQueueFlow
 extends RefCounted
 
 const NPCQueueReservationControllerScript = preload("res://scripts/npc/runtime/NPCQueueReservationController.gd")
+const StoreRuntimeDebugProbeScript = preload("res://scripts/debug/StoreRuntimeDebugProbe.gd")
 const EXIT_ORIGIN_SHELF_META: StringName = &"exit_origin_shelf"
 
 var npc = null
@@ -120,6 +121,11 @@ func enter_checkout_queue() -> void:
 	npc.target_position = get_queue_target()
 	npc._movement_route.clear()
 	npc._movement_route_destination = Vector2.INF
+	_record_queue_probe(&"npc_queue_enter", {
+		"queue_index": npc._last_queue_index,
+		"queue_target": _format_vector(npc.target_position),
+		"has_origin_shelf": npc.has_meta(EXIT_ORIGIN_SHELF_META)
+	})
 	npc._set_state(NPC.State.WAIT_IN_QUEUE)
 	npc._target_shelf = null
 
@@ -168,6 +174,10 @@ func start_queue_to_cashier(queue_index: int) -> void:
 	npc.target_position = get_cashier_target()
 	npc._movement_route.clear()
 	npc._movement_route_destination = Vector2.INF
+	_record_queue_probe(&"npc_queue_to_cashier", {
+		"queue_index": queue_index,
+		"cashier_target": _format_vector(npc.target_position)
+	})
 	pass
 
 
@@ -175,6 +185,33 @@ func start_queue_to_cashier(queue_index: int) -> void:
 func _clear_queue_entry_shelf_obstacle() -> void:
 	if npc.has_meta(EXIT_ORIGIN_SHELF_META):
 		npc.remove_meta(EXIT_ORIGIN_SHELF_META)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _record_queue_probe(
+	label: StringName,
+	extra_context: Dictionary
+) -> void:
+	var context: Dictionary = {
+		"npc_id": npc.get_instance_id(),
+		"state": int(npc.current_state),
+		"position": _format_vector(npc.global_position),
+		"target": _format_vector(npc.target_position),
+		"route_points": npc._movement_route.size()
+	}
+
+	if npc._queue_entry_shelf != null and is_instance_valid(npc._queue_entry_shelf):
+		context["entry_shelf_id"] = String(npc._queue_entry_shelf.get_shelf_id())
+		context["entry_shelf_revision"] = npc._queue_entry_shelf.get_revision()
+
+	for key in extra_context:
+		context[key] = extra_context[key]
+
+	StoreRuntimeDebugProbeScript.record(label, 0.0, context, 0.0)
+
+
+func _format_vector(value: Vector2) -> String:
+	return "%.1f,%.1f" % [value.x, value.y]
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
