@@ -113,17 +113,23 @@ func get_shelf_egress_route_to_queue_from(
 
 	var candidates: Array[Dictionary] = []
 	for first_leg_horizontal in [true, false]:
-		var first_leg: Array[Vector2] = _routes.make_orthogonal_route(
+		var first_leg: Array[Vector2] = _build_route_leg(
 			from_position,
 			access_position,
+			shelf,
+			shelf.global_position,
+			npc_node,
 			first_leg_horizontal
 		)
 		for second_leg_horizontal in [true, false]:
 			var candidate_route: Array[Vector2] = first_leg.duplicate()
 			candidate_route.append_array(
-				_routes.make_orthogonal_route(
+				_build_route_leg(
 					access_position,
 					anchor_position,
+					shelf,
+					shelf.global_position,
+					npc_node,
 					second_leg_horizontal
 				)
 			)
@@ -160,9 +166,12 @@ func _get_anchor_route_to_queue_target(
 	var candidates: Array[Dictionary] = []
 	if approach_position.is_finite():
 		for horizontal_first in [true, false]:
-			var route: Array[Vector2] = _routes.make_orthogonal_route(
+			var route: Array[Vector2] = _build_route_leg(
 				anchor_position,
 				approach_position,
+				null,
+				Vector2.INF,
+				null,
 				horizontal_first
 			)
 			_append_route_candidate(candidates, anchor_position, route)
@@ -187,6 +196,38 @@ func _get_anchor_route_to_queue_target(
 		)
 
 	return _get_shortest_route(candidates)
+
+
+func _build_route_leg(
+	from_position: Vector2,
+	to_position: Vector2,
+	shelf_object: Node2D = null,
+	shelf_position: Vector2 = Vector2.INF,
+	npc_node: Node = null,
+	horizontal_first: bool = true
+) -> Array[Vector2]:
+	if not from_position.is_finite() or not to_position.is_finite():
+		return []
+
+	var grid_result: Dictionary = _grid.find_route(
+		from_position,
+		to_position,
+		shelf_object,
+		shelf_position,
+		npc_node
+	)
+	if bool(grid_result.get("valid", false)):
+		var grid_route := _variant_route_to_vector2_array(
+			grid_result.get("route", [])
+		)
+		if not grid_route.is_empty():
+			return grid_route
+
+	return _routes.make_orthogonal_route(
+		from_position,
+		to_position,
+		horizontal_first
+	)
 
 
 func _append_fast_live_access_routes(
