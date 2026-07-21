@@ -216,6 +216,9 @@ func drop_carried_shelf_in_store(object: Node2D) -> void:
 		show_drop_restriction_feedback(primary_restriction)
 		return
 
+	if object is Shelf:
+		(object as Shelf).set_lifecycle(Shelf.LIFECYCLE_BEING_DROPPED)
+
 	object.reparent(store, true)
 	object.global_position = drop_position
 	object.z_index = 0
@@ -689,6 +692,9 @@ func pickup_installed_shelf(object: Node2D) -> void:
 	elif object == store.ghost_shelf:
 		store._ghost_shelf_installed = false
 
+	if object is Shelf:
+		(object as Shelf).set_lifecycle(Shelf.LIFECYCLE_BEING_PICKED_UP)
+
 	object.reparent(store.player, true)
 	object.position = Vector2(0, -18)
 	object.z_index = 80
@@ -709,9 +715,13 @@ func set_shelf_carried_state(object: Node2D, is_carried: bool) -> void:
 	object.set_meta("is_installed_in_store", not is_carried)
 
 	if is_carried:
+		if object is Shelf:
+			(object as Shelf).set_lifecycle(Shelf.LIFECYCLE_CARRIED)
 		object.remove_from_group("shelves")
 		store._set_node_enabled_recursive(object, false)
 	else:
+		if object is Shelf:
+			(object as Shelf).set_lifecycle(Shelf.LIFECYCLE_PLACED)
 		store._set_node_enabled_recursive(object, true)
 
 
