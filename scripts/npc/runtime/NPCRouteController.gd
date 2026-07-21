@@ -285,6 +285,13 @@ func _consume_pending_path_request(target: Vector2) -> bool:
 		_pending_path_request.clear()
 		return false
 
+	var request_id := int(_pending_path_request.get("id", -1))
+	var finished_request: Dictionary = NPCPathRequestServiceScript.consume_finished_request(
+		request_id
+	)
+	if not finished_request.is_empty():
+		_pending_path_request = finished_request
+
 	var status := StringName(str(_pending_path_request.get("status", &"pending")))
 	if status == NPCPathRequestServiceScript.STATUS_PENDING:
 		_mark_waiting_for_path()

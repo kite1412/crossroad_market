@@ -11,6 +11,7 @@ const REQUEST_TIMEOUT_MSEC: int = 2500
 
 static var _next_request_id: int = 0
 static var _requests: Array[Dictionary] = []
+static var _finished_requests: Dictionary = {}
 
 
 static func request_route(
@@ -85,11 +86,13 @@ static func tick(max_completed: int = MAX_COMPLETED_ROUTES_PER_TICK) -> void:
 		debug_context["status"] = String(request.get("status", STATUS_PENDING))
 		debug_context["reason"] = String(request.get("reason", &""))
 		debug_context["route_points"] = (request.get("route", []) as Array).size()
+		_finished_requests[int(request.get("id", -1))] = request.duplicate(true)
+		_trim_finished_requests()
 		StoreRuntimeDebugProbeScript.record(
 			&"npc_path_request",
 			route_elapsed_msec,
 			debug_context,
-			8.0
+			0.0
 		)
 
 		completed_count += 1
@@ -102,6 +105,7 @@ static func cancel(handle: Dictionary) -> void:
 	handle["status"] = STATUS_FAILED
 	handle["reason"] = &"cancelled"
 	var request_id: int = int(handle.get("id", -1))
+	_finished_requests.erase(request_id)
 	for i in range(_requests.size() - 1, -1, -1):
 		if int(_requests[i].get("id", -2)) == request_id:
 			_requests.remove_at(i)
@@ -109,6 +113,19 @@ static func cancel(handle: Dictionary) -> void:
 
 static func has_pending_requests() -> bool:
 	return not _requests.is_empty()
+
+
+static func get_finished_request(request_id: int) -> Dictionary:
+	if request_id < 0 or not _finished_requests.has(request_id):
+		return {}
+	return (_finished_requests[request_id] as Dictionary).duplicate(true)
+
+
+static func consume_finished_request(request_id: int) -> Dictionary:
+	var result := get_finished_request(request_id)
+	if not result.is_empty():
+		_finished_requests.erase(request_id)
+	return result
 
 
 static func _make_failed_handle(destination: Vector2, reason: StringName) -> Dictionary:
@@ -164,6 +181,16 @@ static func _build_request_context(
 		context["shelf_id"] = String(target_shelf.get_shelf_id())
 		context["shelf_revision"] = target_shelf.get_revision()
 
+	var queue_entry_shelf_variant: Variant = npc.get("_queue_entry_shelf")
+	if (
+		queue_entry_shelf_variant is Shelf
+		and is_instance_valid(queue_entry_shelf_variant)
+	):
+		var queue_entry_shelf := queue_entry_shelf_variant as Shelf
+		context["entry_shelf_id"] = String(queue_entry_shelf.get_shelf_id())
+		context["entry_shelf_revision"] = queue_entry_shelf.get_revision()
+	context["egress_pending"] = bool(npc.get("_queue_egress_route_pending"))
+
 	return context
 
 
@@ -179,3 +206,25 @@ static func _sort_requests() -> void:
 			return a_priority < b_priority
 		return int(a.get("requested_msec", 0)) < int(b.get("requested_msec", 0))
 	)
+
+
+static func _trim_finished_requests() -> void:
+	const MAX_FINISHED_REQUESTS: int = 160
+	if _finished_requests.size() <= MAX_FINISHED_REQUESTS:
+		return
+
+	var ranked: Array[Dictionary] = []
+	for request_id in _finished_requests.keys():
+		var request := _finished_requests[request_id] as Dictionary
+		ranked.append({
+			"id": int(request_id),
+			"requested_msec": int(request.get("requested_msec", 0))
+		})
+
+	ranked.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return int(a.get("requested_msec", 0)) < int(b.get("requested_msec", 0))
+	)
+
+	while _finished_requests.size() > MAX_FINISHED_REQUESTS and not ranked.is_empty():
+		var oldest := ranked.pop_front() as Dictionary
+		_finished_requests.erase(int(oldest.get("id", -1)))
