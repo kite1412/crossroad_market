@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://c3jpds51r7i41"]
 
-[ext_resource type="Script" uid="uid://dnxk2wvi0sofp" path="res://scripts/ui/cashier/Cashier.gd" id="1"]
+[ext_resource type="Script" uid="uid://l5u15m31f1qq" path="res://scripts/ui/cashier/Cashier.gd" id="1"]
 [ext_resource type="Texture2D" uid="uid://dbxp57o5xk7n2" path="res://assets/store/table.png" id="2_table"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_back_counter"]

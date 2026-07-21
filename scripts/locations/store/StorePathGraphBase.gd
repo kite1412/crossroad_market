@@ -440,7 +440,7 @@ func _store_access_metadata_from_result(
 	pass
 
 
-func get_shelf_access_graph_node(_shelf: Shelf) -> StringName:
+func get_shelf_access_graph_node(_shelf_node: Shelf) -> StringName:
 	return StringName()
 
 
@@ -448,7 +448,7 @@ func _append_access_route_variants(
 	_candidates: Array[Dictionary],
 	_from_position: Vector2,
 	_access_position: Vector2,
-	_shelf: Shelf,
+	_shelf_node: Shelf,
 	_npc_node: Node
 ) -> void:
 	pass
@@ -465,7 +465,7 @@ func _get_nearest_graph_node_names_for_access(
 func _get_connection_from_graph_node_to_access(
 	_graph_node: StringName,
 	_access_position: Vector2,
-	_shelf: Shelf
+	_shelf_node: Shelf
 ) -> Array[Vector2]:
 	return []
 

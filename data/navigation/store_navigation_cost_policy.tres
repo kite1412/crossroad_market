@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="StoreNavigationCostPolicy" format=3]
+
+[ext_resource type="Script" path="res://scripts/navigation/store/StoreNavigationCostPolicy.gd" id="1_policy"]
+
+[resource]
+script = ExtResource("1_policy")
+distance_weight = 1.0
+turn_penalty = 1.5
+queue_lane_penalty = 120.0
+queue_front_avoid_penalty = 10000.0
+occupied_area_penalty = 24.0
+near_obstacle_penalty = 8.0
+preferred_role_bonus = 4.0

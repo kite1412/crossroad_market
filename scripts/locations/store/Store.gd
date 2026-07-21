@@ -820,10 +820,10 @@ func _get_shelf_placement_grid_positions() -> Array[Vector2]:
 func _get_marker2d(primary_path: NodePath, fallback_path: NodePath = NodePath("")) -> Marker2D:
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	@warning_ignore("shadowed_variable", "shadowed_variable_base_class")
-	var marker := get_node_or_null(primary_path) as Marker2D
+	var marker_node := get_node_or_null(primary_path) as Marker2D
 
-	if marker != null:
-		return marker
+	if marker_node != null:
+		return marker_node
 
 	if not fallback_path.is_empty():
 		return get_node_or_null(fallback_path) as Marker2D
@@ -844,22 +844,22 @@ func _get_store_path_marker_by_role(
 
 			@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 			@warning_ignore("shadowed_variable", "shadowed_variable_base_class")
-			var marker := child as Marker2D
+			var marker_node := child as Marker2D
 			@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-			var marker_role: Variant = marker.get_meta(&"store_path_role", StringName())
+			var marker_role: Variant = marker_node.get_meta(&"store_path_role", StringName())
 
 			if marker_role is String and StringName(marker_role) == role:
-				return marker
+				return marker_node
 
 			if marker_role is StringName and marker_role == role:
-				return marker
+				return marker_node
 
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	@warning_ignore("shadowed_variable", "shadowed_variable_base_class")
-	var marker := _get_marker2d(fallback_path, legacy_fallback_path)
+	var fallback_marker := _get_marker2d(fallback_path, legacy_fallback_path)
 
-	if marker != null:
-		return marker
+	if fallback_marker != null:
+		return fallback_marker
 
 	return null
 

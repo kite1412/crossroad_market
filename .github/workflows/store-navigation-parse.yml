@@ -1,0 +1,76 @@
+name: Godot 4.7 Compile
+
+on:
+  pull_request:
+    paths:
+      - "scripts/**"
+      - "scenes/**"
+      - "project.godot"
+      - ".github/workflows/store-navigation-parse.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compile-gdscript:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Godot 4.7 stable
+        shell: bash
+        run: |
+          curl --fail --location --retry 3 \
+            --output /tmp/godot.zip \
+            https://github.com/godotengine/godot/releases/download/4.7-stable/Godot_v4.7-stable_linux.x86_64.zip
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          chmod +x /tmp/godot/Godot_v4.7-stable_linux.x86_64
+
+      # Load every script resource so Godot catches static typing, dependency,
+      # class resolution, and override-signature errors—not grammar alone.
+      - name: Compile every GDScript resource
+        shell: bash
+        run: |
+          cat > /tmp/check_all_scripts.gd <<'GDSCRIPT'
+          extends SceneTree
+
+          var failures: int = 0
+
+          func _init() -> void:
+              _scan_directory("res://")
+              if failures > 0:
+                  push_error("Failed to compile %d GDScript resource(s)." % failures)
+              quit(1 if failures > 0 else 0)
+
+          func _scan_directory(path: String) -> void:
+              var directory: DirAccess = DirAccess.open(path)
+              if directory == null:
+                  push_error("Cannot open %s" % path)
+                  failures += 1
+                  return
+              directory.list_dir_begin()
+              var entry: String = directory.get_next()
+              while entry != "":
+                  if entry == ".godot" or entry == ".git":
+                      entry = directory.get_next()
+                      continue
+                  var full_path: String = path.path_join(entry)
+                  if directory.current_is_dir():
+                      _scan_directory(full_path)
+                  elif entry.ends_with(".gd"):
+                      var script: Resource = ResourceLoader.load(
+                          full_path,
+                          "Script",
+                          ResourceLoader.CACHE_MODE_IGNORE
+                      )
+                      if script == null:
+                          failures += 1
+                  entry = directory.get_next()
+              directory.list_dir_end()
+          GDSCRIPT
+          timeout 180s /tmp/godot/Godot_v4.7-stable_linux.x86_64 \
+            --headless --path . --script /tmp/check_all_scripts.gd

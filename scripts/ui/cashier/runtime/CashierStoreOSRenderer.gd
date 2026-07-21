@@ -95,7 +95,7 @@ func show_scan_panel() -> void:
 	)
 
 	add_cashier_action_button(
-		"Ask Again %d/3" % cashier._ask_again_count,
+		"Ask Again %d/2" % cashier._ask_again_count,
 		cashier.CASHIER_SECONDARY_BUTTON_WIDTH,
 		"Repeat the customer's request. After 3 asks, they leave.",
 		Callable(cashier, "_on_ask_again_pressed")

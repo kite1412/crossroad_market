@@ -1,0 +1,102 @@
+class_name StoreNpcRoutesRuntime
+extends "res://scripts/locations/store/StoreNpcRoutes.gd"
+
+const StrictPathGraphScript = preload(
+	"res://scripts/locations/store/StoreShelfAccessRuntimeGraph.gd"
+)
+const StrictNavigationServiceScript = preload(
+	"res://scripts/navigation/store/StoreAccessAwareNavigationService.gd"
+)
+
+
+func _process(_delta: float) -> void:
+	if store == null or _shelf_access_coordinator == null:
+		return
+	if (
+		not bool(store._is_store_world_active)
+		or bool(store._is_transitioning)
+		or store._current_storage != null
+		or store._current_yard != null
+		or store._current_home != null
+	):
+		return
+	_shelf_access_coordinator.process_pending_jobs()
+
+
+func get_store_path_graph() -> StorePathGraph:
+	var store_node: Node2D = store as Node2D
+	if store_node == null:
+		return null
+
+	var marker_root: Node2D = store.store_path_markers as Node2D
+	if marker_root == null:
+		return null
+
+	var needs_runtime_graph: bool = (
+		store._store_path_graph == null
+		or store._store_path_graph.get_script() != StrictPathGraphScript
+	)
+	if needs_runtime_graph:
+		store._store_path_graph = StrictPathGraphScript.new(
+			store_node,
+			marker_root
+		)
+	else:
+		store._store_path_graph.setup(store_node, marker_root)
+
+	if not _anchors_initialized:
+		_navigation_anchors = store._get_shelf_placement_grid_positions()
+		_anchors_initialized = true
+	store._store_path_graph.set_shelf_access_points(_navigation_anchors)
+
+	var layout_signature: String = _get_shelf_layout_signature()
+	var layout_changed: bool = (
+		_has_shelf_layout_signature
+		and layout_signature != _last_shelf_layout_signature
+	)
+	if (
+		layout_changed
+		and not needs_runtime_graph
+		and store._store_path_graph.has_method("invalidate_dynamic_navigation")
+	):
+		store._store_path_graph.call("invalidate_dynamic_navigation")
+
+	_last_shelf_layout_signature = layout_signature
+	_has_shelf_layout_signature = true
+	_ensure_shelf_access_coordinator(store._store_path_graph)
+	if layout_changed and _shelf_access_coordinator != null:
+		_shelf_access_coordinator.invalidate_all(false)
+	_ensure_navigation_service(store._store_path_graph, _navigation_anchors)
+	return store._store_path_graph
+
+
+func _ensure_navigation_service(
+	graph: StorePathGraph,
+	anchors: Array[Vector2]
+) -> void:
+	var store_node: Node2D = store as Node2D
+	if store_node == null or graph == null:
+		return
+	var marker_root: Node2D = store.store_path_markers as Node2D
+	if marker_root == null:
+		return
+	if (
+		_navigation_service == null
+		or _navigation_service.get_script() != StrictNavigationServiceScript
+	):
+		_navigation_service = StrictNavigationServiceScript.new()
+	_navigation_service.setup(
+		store_node,
+		marker_root,
+		graph,
+		anchors
+	)
+
+
+func _ensure_shelf_access_coordinator(graph: StorePathGraph) -> void:
+	var store_node: Node2D = store as Node2D
+	if store_node == null or graph == null:
+		return
+	if _shelf_access_coordinator == null:
+		_shelf_access_coordinator = ShelfAccessCoordinatorScript.new()
+	_shelf_access_coordinator.setup(store_node, graph)

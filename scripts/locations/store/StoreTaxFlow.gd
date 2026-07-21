@@ -331,17 +331,17 @@ func on_tax_payment_requested() -> void:
 	if EconomyManager.gold < tax:
 		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		@warning_ignore("shadowed_variable")
-		var hud := store.get_tree().get_first_node_in_group("hud")
-		if hud != null and hud.has_method("show_tax_notice"):
-			hud.call("show_tax_notice", store._latest_daily_report, "Not enough gold to pay today's tax.")
+		var hud1 := store.get_tree().get_first_node_in_group("hud")
+		if hud1 != null and hud1.has_method("show_tax_notice"):
+			hud1.call("show_tax_notice", store._latest_daily_report, "Not enough gold to pay today's tax.")
 		return
 
 	if not EconomyManager.pay_tax():
 		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		@warning_ignore("shadowed_variable")
-		var hud := store.get_tree().get_first_node_in_group("hud")
-		if hud != null and hud.has_method("show_tax_notice"):
-			hud.call("show_tax_notice", store._latest_daily_report, "Not enough gold to pay today's tax.")
+		var hud2 := store.get_tree().get_first_node_in_group("hud")
+		if hud2 != null and hud2.has_method("show_tax_notice"):
+			hud2.call("show_tax_notice", store._latest_daily_report, "Not enough gold to pay today's tax.")
 		return
 
 	store._tax_pending = false
@@ -355,12 +355,12 @@ func on_tax_payment_requested() -> void:
 
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	@warning_ignore("shadowed_variable")
-	var hud := store.get_tree().get_first_node_in_group("hud")
+	var hud3 := store.get_tree().get_first_node_in_group("hud")
 
-	if hud != null and hud.has_method("hide_tax_notice"):
-		hud.call("hide_tax_notice")
-	if hud != null and hud.has_method("hide_tax_report"):
-		hud.call("hide_tax_report")
+	if hud3 != null and hud3.has_method("hide_tax_notice"):
+		hud3.call("hide_tax_notice")
+	if hud3 != null and hud3.has_method("hide_tax_report"):
+		hud3.call("hide_tax_report")
 
 	store._show_notification("Tax paid.", 1.0)
 

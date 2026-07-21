@@ -180,7 +180,7 @@ func get_checkout_history() -> Array[Dictionary]:
 func on_ask_again_pressed() -> void:
 	cashier._ask_again_count += 1
 
-	if cashier._ask_again_count > 3:
+	if cashier._ask_again_count > 2:
 		if cashier._has_scanned_customer() and cashier._scanned_npc.has_method("cancel_checkout_and_leave"):
 			cashier._scanned_npc.cancel_checkout_and_leave()
 		add_history(cashier._scanned_npc, cashier._scanned_item_label, 0, "LEFT")
@@ -219,7 +219,7 @@ func get_customer_request_line() -> String:
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_ask_again_panel_text() -> String:
-	return "Ask Again used: %d/3" % cashier._ask_again_count
+	return "Ask Again used: %d/2" % cashier._ask_again_count
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

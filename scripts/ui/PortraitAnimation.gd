@@ -28,6 +28,8 @@ func _ready() -> void:
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _process(delta: float) -> void:
+	if get_tree().paused:
+		return
 	if not is_visible_in_tree() or portrait == null or frame_count <= 1:
 		return
 

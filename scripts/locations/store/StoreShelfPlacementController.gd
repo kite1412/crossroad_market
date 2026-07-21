@@ -608,19 +608,19 @@ func get_queue_drop_block_markers() -> Array[Marker2D]:
 	for child in store.store_path_markers.get_children():
 		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		@warning_ignore("shadowed_variable", "shadowed_variable_base_class")
-		var marker := child as Marker2D
-		if marker == null:
+		var marker_node := child as Marker2D
+		if marker_node == null:
 			continue
 
 		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var role := StringName()
-		if marker.has_meta("store_path_role"):
+		if marker_node.has_meta("store_path_role"):
 			@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-			var role_value: Variant = marker.get_meta("store_path_role")
+			var role_value: Variant = marker_node.get_meta("store_path_role")
 			role = StringName(str(role_value))
 
 		if role == &"queue_front" or role == &"queue_back":
-			markers.append(marker)
+			markers.append(marker_node)
 
 	return markers
 
