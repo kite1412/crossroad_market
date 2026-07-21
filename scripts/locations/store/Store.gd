@@ -11,6 +11,7 @@ const STORE_ENTRY_FALLBACK_POSITION := Vector2(240, 204)
 const STORE_STORAGE_RETURN_FALLBACK_POSITION := Vector2(383, 76)
 const RUNTIME_DEBUG_OVERLAY_TOGGLE_KEY: Key = KEY_F9
 const RUNTIME_DEBUG_CLEAR_KEY: Key = KEY_F8
+const RUNTIME_DEBUG_DUMP_KEY: Key = KEY_F10
 
 var npc_scene: PackedScene = preload("res://scenes/npc/NPC.tscn")
 var storage_scene: PackedScene = preload("res://scenes/locations/Storage.tscn")
@@ -71,6 +72,9 @@ var _runtime_debug_overlay_label: Label = null
 var _runtime_debug_overlay_visible: bool = false
 var _runtime_debug_overlay_key_was_pressed: bool = false
 var _runtime_debug_clear_key_was_pressed: bool = false
+var _runtime_debug_dump_key_was_pressed: bool = false
+var _runtime_debug_last_dump_path: String = ""
+var _runtime_debug_last_dump_count: int = 0
 @warning_ignore("unused_private_class_variable")
 var _location_title_layer: CanvasLayer = null
 @warning_ignore("unused_private_class_variable")
@@ -302,6 +306,11 @@ func _update_runtime_debug_overlay() -> void:
 		StoreRuntimeDebugProbeScript.clear()
 
 	_runtime_debug_clear_key_was_pressed = clear_key_pressed
+	var dump_key_pressed := Input.is_key_pressed(RUNTIME_DEBUG_DUMP_KEY)
+	if dump_key_pressed and not _runtime_debug_dump_key_was_pressed:
+		_dump_runtime_debug_events_to_file()
+
+	_runtime_debug_dump_key_was_pressed = dump_key_pressed
 
 	if not _runtime_debug_overlay_visible:
 		return
@@ -346,12 +355,17 @@ func _format_runtime_debug_overlay_text() -> String:
 	var summary: Dictionary = StoreRuntimeDebugProbeScript.get_summary()
 	var events: Array[Dictionary] = StoreRuntimeDebugProbeScript.get_events()
 	var lines: Array[String] = [
-		"Runtime Debug Probe (F9 show, F8 clear)",
+		"Runtime Debug Probe (F9 show, F8 clear, F10 dump)",
 		"events: %d enabled: %s" % [
 			int(summary.get("event_count", 0)),
 			str(summary.get("enabled", false))
 		]
 	]
+	if _runtime_debug_last_dump_path != "":
+		lines.append("dumped %d: %s" % [
+			_runtime_debug_last_dump_count,
+			_runtime_debug_last_dump_path
+		])
 
 	var max_elapsed: Dictionary = summary.get("max_elapsed_msec", {})
 	for label in max_elapsed.keys():
@@ -375,6 +389,53 @@ func _format_runtime_debug_overlay_text() -> String:
 		])
 
 	return "\n".join(lines)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _dump_runtime_debug_events_to_file() -> void:
+	var events: Array[Dictionary] = StoreRuntimeDebugProbeScript.get_events()
+	var timestamp := Time.get_datetime_string_from_system(false, true)
+	timestamp = timestamp.replace(":", "-").replace(" ", "_")
+	var user_path := "user://store_runtime_debug_%s.jsonl" % timestamp
+	var file := FileAccess.open(user_path, FileAccess.WRITE)
+	if file == null:
+		_runtime_debug_last_dump_path = "failed error=%d" % FileAccess.get_open_error()
+		_runtime_debug_last_dump_count = 0
+		return
+
+	for event in events:
+		file.store_line(JSON.stringify(_normalize_runtime_debug_value(event)))
+
+	_runtime_debug_last_dump_count = events.size()
+	_runtime_debug_last_dump_path = ProjectSettings.globalize_path(user_path)
+
+
+func _normalize_runtime_debug_value(value: Variant) -> Variant:
+	match typeof(value):
+		TYPE_DICTIONARY:
+			var normalized: Dictionary = {}
+			var value_dictionary: Dictionary = value
+			for key in value_dictionary.keys():
+				normalized[str(key)] = _normalize_runtime_debug_value(
+					value_dictionary[key]
+				)
+			return normalized
+		TYPE_ARRAY:
+			var normalized_array: Array = []
+			var value_array: Array = value
+			for item in value_array:
+				normalized_array.append(_normalize_runtime_debug_value(item))
+			return normalized_array
+		TYPE_VECTOR2:
+			var vector_value: Vector2 = value
+			return {
+				"x": snappedf(vector_value.x, 0.01),
+				"y": snappedf(vector_value.y, 0.01)
+			}
+		TYPE_STRING_NAME:
+			return str(value)
+		_:
+			return value
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
