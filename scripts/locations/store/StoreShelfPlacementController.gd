@@ -536,8 +536,65 @@ func is_drop_position_clear(object: Node2D, candidate: Vector2) -> bool:
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func evaluate_shelf_drop_restriction(object: Node2D, candidate: Vector2) -> Dictionary:
-	# All restrictions removed — shelf can be placed anywhere.
-	# NPC vertical flow handles access point validity; player places freely.
+	if object == null or not candidate.is_finite():
+		return make_drop_restriction(
+			true,
+			DROP_REJECTION_COLLISION,
+			"I can't place the shelf here.",
+			Rect2(),
+			false
+		)
+
+	var object_rect: Rect2 = get_object_body_rect_at(object, candidate)
+
+	if not is_drop_position_clear(object, candidate):
+		return make_drop_restriction(
+			true,
+			DROP_REJECTION_COLLISION,
+			"I can't place the shelf here.",
+			object_rect,
+			false
+		)
+
+	var cashier_flow_rect: Rect2 = get_cashier_flow_restricted_rect()
+	if rect_has_area(cashier_flow_rect) and object_rect.intersects(cashier_flow_rect):
+		return make_drop_restriction(
+			true,
+			DROP_REJECTION_CASHIER_FLOW,
+			"Keep this area clear for customers.",
+			cashier_flow_rect,
+			true
+		)
+
+	var cashier_rect: Rect2 = get_cashier_drop_restricted_rect(object_rect)
+	if rect_has_area(cashier_rect):
+		return make_drop_restriction(
+			true,
+			DROP_REJECTION_CASHIER_FLOW,
+			"Keep the cashier clear.",
+			cashier_rect,
+			true
+		)
+
+	var queue_rect: Rect2 = get_queue_marker_drop_restricted_rect(object_rect)
+	if rect_has_area(queue_rect):
+		return make_drop_restriction(
+			true,
+			DROP_REJECTION_CASHIER_FLOW,
+			"Keep the checkout queue clear.",
+			queue_rect,
+			true
+		)
+
+	if object is Shelf and not has_reachable_store_shelf_visit_position(object, candidate):
+		return make_drop_restriction(
+			true,
+			DROP_REJECTION_COLLISION,
+			"Customers can't reach this shelf.",
+			object_rect,
+			false
+		)
+
 	return make_drop_restriction()
 
 
