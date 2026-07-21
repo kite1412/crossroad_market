@@ -1,6 +1,31 @@
 class_name StoreNavigationRuntimeService
 extends "res://scripts/navigation/store/StoreNavigationService.gd"
 
+const RuntimeThetaScript = preload(
+	"res://scripts/navigation/store/StoreThetaStarRuntimePlanner.gd"
+)
+
+
+func _init() -> void:
+	_theta = RuntimeThetaScript.new()
+
+
+func set_cost_policy(policy: StoreNavigationCostPolicy) -> void:
+	if policy == null or _policy == policy:
+		return
+	_policy = policy
+	if _initialized:
+		_semantic.setup(
+			_marker_root,
+			_anchors,
+			_obstacles,
+			_policy
+		)
+		_reverse.clear()
+		_dstar_by_goal.clear()
+		_route_cache.invalidate_all()
+		_theta.clear_dynamic_cache()
+
 
 func should_repair_route(
 	start_position: Vector2,
