@@ -9,6 +9,7 @@ const StoreRuntimeDebugProbeScript = preload("res://scripts/debug/StoreRuntimeDe
 const SHELF_ACCESS_WARMUP_DELAY: float = 1.0
 const STORE_ENTRY_FALLBACK_POSITION := Vector2(240, 204)
 const STORE_STORAGE_RETURN_FALLBACK_POSITION := Vector2(383, 76)
+const RUNTIME_DEBUG_OVERLAY_TOGGLE_KEY: Key = KEY_F9
 
 var npc_scene: PackedScene = preload("res://scenes/npc/NPC.tscn")
 var storage_scene: PackedScene = preload("res://scenes/locations/Storage.tscn")
@@ -63,6 +64,11 @@ var _current_home: Node2D = null
 var _fade_layer: CanvasLayer = null
 @warning_ignore("unused_private_class_variable")
 var _fade_rect: ColorRect = null
+var _runtime_debug_overlay_layer: CanvasLayer = null
+var _runtime_debug_overlay_background: ColorRect = null
+var _runtime_debug_overlay_label: Label = null
+var _runtime_debug_overlay_visible: bool = false
+var _runtime_debug_overlay_key_was_pressed: bool = false
 @warning_ignore("unused_private_class_variable")
 var _location_title_layer: CanvasLayer = null
 @warning_ignore("unused_private_class_variable")
@@ -240,6 +246,7 @@ func _process(_delta: float) -> void:
 	_flush_navigation_dirty_bounds()
 	_process_simulation_scheduler()
 	NPCPathRequestServiceScript.tick()
+	_update_runtime_debug_overlay()
 
 	if world_state_controller != null:
 		world_state_controller.process_store_world(_delta)
@@ -277,6 +284,90 @@ func get_runtime_debug_events() -> Array[Dictionary]:
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_runtime_debug_summary() -> Dictionary:
 	return StoreRuntimeDebugProbeScript.get_summary()
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _update_runtime_debug_overlay() -> void:
+	var key_pressed := Input.is_key_pressed(RUNTIME_DEBUG_OVERLAY_TOGGLE_KEY)
+	if key_pressed and not _runtime_debug_overlay_key_was_pressed:
+		_runtime_debug_overlay_visible = not _runtime_debug_overlay_visible
+		_ensure_runtime_debug_overlay()
+		_runtime_debug_overlay_layer.visible = _runtime_debug_overlay_visible
+
+	_runtime_debug_overlay_key_was_pressed = key_pressed
+
+	if not _runtime_debug_overlay_visible:
+		return
+
+	_ensure_runtime_debug_overlay()
+	_runtime_debug_overlay_label.text = _format_runtime_debug_overlay_text()
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _ensure_runtime_debug_overlay() -> void:
+	if _runtime_debug_overlay_layer != null:
+		return
+
+	_runtime_debug_overlay_layer = CanvasLayer.new()
+	_runtime_debug_overlay_layer.name = "RuntimeDebugOverlay"
+	_runtime_debug_overlay_layer.layer = 120
+	_runtime_debug_overlay_layer.visible = _runtime_debug_overlay_visible
+	add_child(_runtime_debug_overlay_layer)
+
+	_runtime_debug_overlay_background = ColorRect.new()
+	_runtime_debug_overlay_background.name = "Background"
+	_runtime_debug_overlay_background.color = Color(0.0, 0.0, 0.0, 0.72)
+	_runtime_debug_overlay_background.position = Vector2(8, 8)
+	_runtime_debug_overlay_background.size = Vector2(420, 180)
+	_runtime_debug_overlay_layer.add_child(_runtime_debug_overlay_background)
+
+	_runtime_debug_overlay_label = Label.new()
+	_runtime_debug_overlay_label.name = "Summary"
+	_runtime_debug_overlay_label.position = Vector2(16, 14)
+	_runtime_debug_overlay_label.size = Vector2(404, 168)
+	_runtime_debug_overlay_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_runtime_debug_overlay_label.add_theme_color_override(
+		"font_color",
+		Color(0.92, 0.98, 1.0, 1.0)
+	)
+	_runtime_debug_overlay_label.add_theme_font_size_override("font_size", 12)
+	_runtime_debug_overlay_layer.add_child(_runtime_debug_overlay_label)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _format_runtime_debug_overlay_text() -> String:
+	var summary: Dictionary = StoreRuntimeDebugProbeScript.get_summary()
+	var events: Array[Dictionary] = StoreRuntimeDebugProbeScript.get_events()
+	var lines: Array[String] = [
+		"Runtime Debug Probe (F9)",
+		"events: %d enabled: %s" % [
+			int(summary.get("event_count", 0)),
+			str(summary.get("enabled", false))
+		]
+	]
+
+	var max_elapsed: Dictionary = summary.get("max_elapsed_msec", {})
+	for label in max_elapsed.keys():
+		lines.append("%s max %.2f ms" % [
+			str(label),
+			float(max_elapsed[label])
+		])
+
+	if events.is_empty():
+		lines.append("No spike above threshold yet.")
+		return "\n".join(lines)
+
+	lines.append("Recent:")
+	var start_index: int = maxi(0, events.size() - 4)
+	for i in range(start_index, events.size()):
+		var event: Dictionary = events[i]
+		lines.append("%s %.2f ms %s" % [
+			str(event.get("label", &"unknown")),
+			float(event.get("elapsed_msec", 0.0)),
+			str(event.get("context", {}))
+		])
+
+	return "\n".join(lines)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
