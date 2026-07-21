@@ -4,10 +4,16 @@ extends "res://scripts/navigation/store/StoreNavigationService.gd"
 const RuntimeThetaScript = preload(
 	"res://scripts/navigation/store/StoreThetaStarRuntimePlanner.gd"
 )
+const DefaultCostPolicy = preload(
+	"res://data/navigation/store_navigation_cost_policy.tres"
+)
 
 
 func _init() -> void:
 	_theta = RuntimeThetaScript.new()
+	var policy_copy := DefaultCostPolicy.duplicate(true)
+	if policy_copy is StoreNavigationCostPolicy:
+		_policy = policy_copy as StoreNavigationCostPolicy
 
 
 func set_cost_policy(policy: StoreNavigationCostPolicy) -> void:
