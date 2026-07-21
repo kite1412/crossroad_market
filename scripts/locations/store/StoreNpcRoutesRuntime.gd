@@ -9,6 +9,20 @@ const StrictNavigationServiceScript = preload(
 )
 
 
+func _process(_delta: float) -> void:
+	if store == null or _shelf_access_coordinator == null:
+		return
+	if (
+		not bool(store._is_store_world_active)
+		or bool(store._is_transitioning)
+		or store._current_storage != null
+		or store._current_yard != null
+		or store._current_home != null
+	):
+		return
+	_shelf_access_coordinator.process_pending_jobs()
+
+
 func get_store_path_graph() -> StorePathGraph:
 	if store == null:
 		return null
