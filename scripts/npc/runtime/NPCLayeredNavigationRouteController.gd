@@ -66,20 +66,20 @@ func should_rebuild_movement_route(target: Vector2) -> bool:
 	if super.should_rebuild_movement_route(target):
 		return true
 
-	var navigation_service := _get_navigation_service()
-	if navigation_service == null or not navigation_service.has_method("get_revision"):
+	var nav_service: Variant = _get_navigation_service()
+	if not is_instance_valid(nav_service) or not nav_service.has_method("get_revision"):
 		return false
 
-	var current_revision := int(navigation_service.call("get_revision"))
+	var current_revision := int(nav_service.call("get_revision"))
 	var built_revision := int(npc.get_meta(ROUTE_REVISION_META, -1))
 	if built_revision == current_revision:
 		return false
 	if built_revision < 0:
 		return true
 
-	if navigation_service.has_method("should_repair_route"):
+	if nav_service.has_method("should_repair_route"):
 		var should_repair := bool(
-			navigation_service.call(
+			nav_service.call(
 				"should_repair_route",
 				npc.global_position,
 				npc._movement_route,
@@ -113,8 +113,7 @@ func get_shelf_egress_queue_route(
 			[
 				npc._queue_entry_shelf,
 				npc.global_position,
-				queue_index,
-				npc
+				queue_index
 			]
 		)
 		if not layered_route.is_empty():
@@ -129,16 +128,13 @@ func get_shelf_egress_queue_route(
 func _get_local_avoidance_adjustment(
 	desired_target: Vector2
 ) -> Dictionary:
-	var navigation_service := _get_navigation_service()
-	if (
-		navigation_service == null
-		or not navigation_service.has_method(
-			"get_local_avoidance_adjustment"
-		)
-	):
+	var nav_service: Variant = _get_navigation_service()
+	if not is_instance_valid(nav_service):
+		return {"target": desired_target, "wait": false}
+	if not nav_service.has_method("get_local_avoidance_adjustment"):
 		return {"target": desired_target, "wait": false}
 
-	var result: Variant = navigation_service.call(
+	var result: Variant = nav_service.call(
 		"get_local_avoidance_adjustment",
 		npc,
 		desired_target
@@ -149,12 +145,12 @@ func _get_local_avoidance_adjustment(
 
 
 func _store_current_navigation_revision() -> void:
-	var navigation_service := _get_navigation_service()
-	if navigation_service == null or not navigation_service.has_method("get_revision"):
+	var nav_service: Variant = _get_navigation_service()
+	if not is_instance_valid(nav_service) or not nav_service.has_method("get_revision"):
 		return
 	npc.set_meta(
 		ROUTE_REVISION_META,
-		int(navigation_service.call("get_revision"))
+		int(nav_service.call("get_revision"))
 	)
 
 
