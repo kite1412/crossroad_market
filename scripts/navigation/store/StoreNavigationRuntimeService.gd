@@ -74,6 +74,15 @@ func refresh_dynamic_state() -> void:
 	_route_cache.invalidate_for_regions(_last_dirty_regions)
 
 
+func plan(request: StoreNavigationRequest) -> Array[Vector2]:
+	var route := super.plan(request)
+	# All macro planners participating in this request have now seen the latest
+	# dirty-node set. Later requests in the same revision can use the shared
+	# reverse-Dijkstra field instead of repeatedly performing incremental repair.
+	_last_changed_nodes.clear()
+	return route
+
+
 func get_revision() -> int:
 	refresh_dynamic_state()
 	return _obstacles.get_revision()
@@ -91,9 +100,6 @@ func plan_to_shelf(
 	request.npc = npc
 	request.allow_direct = true
 	request.force_semantic = false
-	# The access point itself was calculated against the target shelf shape. The
-	# final sample may touch that shape boundary, so only the final endpoint is
-	# permitted to ignore the target shelf.
 	request.ignore_goal_collision = true
 	return plan(request)
 
@@ -167,8 +173,14 @@ func _get_reachable_connectors(
 		false
 	)
 	var context := _make_planner_context(request)
-	context["ignore_start_collision"] = not is_goal
-	context["ignore_goal_collision"] = is_goal
+	# Connector discovery always travels from the supplied position toward a
+	# semantic node. When that position is a shelf goal, the target shelf is the
+	# source obstacle for this reversed probe.
+	context["ignore_start_collision"] = true
+	context["ignore_goal_collision"] = false
+	if is_goal and context.has("target_shelf"):
+		context["source_shelf"] = context["target_shelf"]
+		context.erase("target_shelf")
 
 	for node_id in candidates:
 		var node_position := _semantic.get_position(node_id)
@@ -287,8 +299,6 @@ func _get_macro_path(
 	planner_context["policy_signature"] = _policy.get_signature()
 	var blocked_signature := _get_blocked_edge_signature(planner_context)
 
-	# Stable shared goals use one reverse Dijkstra tree for every NPC. After a
-	# layout mutation, D* Lite repairs the existing semantic search values.
 	if (
 		request.use_shared_goal_cache
 		and _last_changed_nodes.is_empty()
