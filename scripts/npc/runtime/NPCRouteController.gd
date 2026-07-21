@@ -695,9 +695,22 @@ func get_shelf_egress_queue_route(
 					"destination": _format_vector(destination),
 					"entry_shelf_id": String(npc._queue_entry_shelf.get_shelf_id()),
 					"entry_shelf_revision": npc._queue_entry_shelf.get_revision(),
+					"raw_route_points": chain_route.size(),
+					"sanitized_route_points": chain_sanitized_route.size(),
 					"route_points": chain_sanitized_route.size()
 				})
 				return dedupe_route_points(chain_sanitized_route)
+
+			_record_route_probe(&"npc_shelf_egress_route", {
+				"reason": "sanitized_empty",
+				"queue_index": queue_index,
+				"destination": _format_vector(destination),
+				"entry_shelf_id": String(npc._queue_entry_shelf.get_shelf_id()),
+				"entry_shelf_revision": npc._queue_entry_shelf.get_revision(),
+				"raw_route_points": chain_route.size(),
+				"sanitized_route_points": 0
+			})
+			return []
 
 		_record_route_probe(&"npc_shelf_egress_route", {
 			"reason": "explicit_shelf_anchor_empty",
@@ -707,6 +720,7 @@ func get_shelf_egress_queue_route(
 			"entry_shelf_revision": npc._queue_entry_shelf.get_revision(),
 			"route_points": chain_route.size()
 		})
+		return []
 
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var egress_route := call_store_route(

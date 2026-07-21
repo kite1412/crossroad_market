@@ -1,6 +1,8 @@
 class_name StoreRouteSafety
 extends RefCounted
 
+const StoreRuntimeDebugProbeScript = preload("res://scripts/debug/StoreRuntimeDebugProbe.gd")
+
 const STANDING_SHAPE_SIZE := Vector2(21, 9)
 const STANDING_SHAPE_OFFSET := Vector2(0, -8)
 const ROUTE_SAMPLE_STEP: float = 6.0
@@ -24,6 +26,7 @@ func setup(npc_node: CharacterBody2D) -> void:
 func sanitize_store_route(route: Array[Vector2]) -> Array[Vector2]:
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var clean_route := _dedupe_route_points(route)
+	var raw_route_points := clean_route.size()
 
 	if npc == null or clean_route.is_empty():
 		return clean_route
@@ -38,6 +41,7 @@ func sanitize_store_route(route: Array[Vector2]) -> Array[Vector2]:
 		clean_route,
 		store
 	)
+	var after_marker_insert_points := clean_route.size()
 
 	# StorePathGraph already treats the selected shelf as the allowed endpoint
 	# obstacle. Preserve that behavior here: only the final approach may ignore
@@ -48,15 +52,26 @@ func sanitize_store_route(route: Array[Vector2]) -> Array[Vector2]:
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var endpoint_obstacle := _get_endpoint_obstacle()
 
-	if not _is_route_clear(
+	var reject_context := _get_route_reject_context(
 		npc.global_position,
 		clean_route,
 		store,
 		start_obstacle,
 		endpoint_obstacle
-	):
+	)
+	if not reject_context.is_empty():
+		reject_context["raw_route_points"] = raw_route_points
+		reject_context["after_marker_insert_points"] = after_marker_insert_points
+		reject_context["sanitized_route_points"] = 0
+		_record_safety_probe(&"npc_route_safety_reject", reject_context)
 		return []
 
+	_record_safety_probe(&"npc_route_safety_accept", {
+		"raw_route_points": raw_route_points,
+		"after_marker_insert_points": after_marker_insert_points,
+		"sanitized_route_points": clean_route.size(),
+		"has_origin_shelf": start_obstacle != null and is_instance_valid(start_obstacle)
+	})
 	return clean_route
 
 
@@ -211,6 +226,75 @@ func _is_route_clear(
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _get_route_reject_context(
+	start_position: Vector2,
+	route: Array[Vector2],
+	store: Node2D,
+	start_obstacle: Node = null,
+	endpoint_obstacle: Node = null
+) -> Dictionary:
+	var current := start_position
+	var start_obstacle_active := (
+		start_obstacle != null
+		and is_instance_valid(start_obstacle)
+	)
+
+	for index in range(route.size()):
+		var target := route[index]
+		var start_clearance := START_CLEARANCE if index == 0 else ENDPOINT_CLEARANCE
+		var allowed_obstacles: Array[Node] = []
+
+		if start_obstacle_active:
+			allowed_obstacles.append(start_obstacle)
+
+		if (
+			index == route.size() - 1
+			and endpoint_obstacle != null
+			and is_instance_valid(endpoint_obstacle)
+			and endpoint_obstacle not in allowed_obstacles
+		):
+			allowed_obstacles.append(endpoint_obstacle)
+
+		var segment_reject := _get_segment_reject_context(
+			current,
+			target,
+			store,
+			start_clearance,
+			allowed_obstacles
+		)
+		if not segment_reject.is_empty():
+			segment_reject["failed_segment_index"] = index
+			segment_reject["failed_from"] = _format_vector(current)
+			segment_reject["failed_to"] = _format_vector(target)
+			segment_reject["has_origin_shelf"] = (
+				start_obstacle != null
+				and is_instance_valid(start_obstacle)
+			)
+			segment_reject["start_obstacle_active"] = start_obstacle_active
+			segment_reject["allowed_origin_shelf_mismatch"] = (
+				start_obstacle_active
+				and start_obstacle != null
+				and is_instance_valid(start_obstacle)
+				and not _is_node_or_descendant_of_path(
+					str(segment_reject.get("collider_path", "")),
+					start_obstacle
+				)
+			)
+			return segment_reject
+
+		if (
+			start_obstacle_active
+			and target.distance_to(start_position)
+			>= START_OBSTACLE_RELEASE_DISTANCE
+		):
+			start_obstacle_active = false
+
+		current = target
+
+	return {}
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _is_segment_clear(
 	from_position: Vector2,
 	to_position: Vector2,
@@ -265,6 +349,57 @@ func _is_segment_clear(
 			return false
 
 	return true
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _get_segment_reject_context(
+	from_position: Vector2,
+	to_position: Vector2,
+	store: Node2D,
+	start_clearance: float,
+	allowed_obstacles: Array[Node] = []
+) -> Dictionary:
+	var distance := from_position.distance_to(to_position)
+	if distance <= start_clearance + ENDPOINT_CLEARANCE:
+		return {}
+
+	var direction := from_position.direction_to(to_position)
+	var sample_start := from_position + direction * start_clearance
+	var sample_end := to_position - direction * ENDPOINT_CLEARANCE
+	var sample_distance := sample_start.distance_to(sample_end)
+	var steps := maxi(1, int(ceil(sample_distance / ROUTE_SAMPLE_STEP)))
+	var shape := RectangleShape2D.new()
+	shape.size = STANDING_SHAPE_SIZE
+	var exclusions := _get_collision_exclusion_rids(store, allowed_obstacles)
+	var space_state := store.get_world_2d().direct_space_state
+
+	for index in range(steps + 1):
+		var progress := float(index) / float(steps)
+		var point := sample_start.lerp(sample_end, progress)
+		var query := PhysicsShapeQueryParameters2D.new()
+		query.shape = shape
+		query.transform = Transform2D(
+			0.0,
+			point + STANDING_SHAPE_OFFSET
+		)
+		query.collide_with_bodies = true
+		query.collide_with_areas = false
+		query.collision_mask = ALL_PHYSICS_LAYERS
+		query.exclude = exclusions
+
+		var hits := space_state.intersect_shape(query, 8)
+		if hits.is_empty():
+			continue
+
+		var collider := _get_first_collision_node(hits)
+		return {
+			"sample_point": _format_vector(point),
+			"collider_name": collider.name if collider != null else "",
+			"collider_path": str(collider.get_path()) if collider != null else "",
+			"collider_owner": _get_collision_owner_name(collider)
+		}
+
+	return {}
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -372,6 +507,69 @@ func _append_unique_point(
 	if not points.is_empty() and points.back().distance_to(point) <= POINT_EPSILON:
 		return
 	points.append(point)
+
+
+func _get_first_collision_node(hits: Array) -> Node:
+	for hit in hits:
+		if not (hit is Dictionary):
+			continue
+		var collider_variant: Variant = (hit as Dictionary).get("collider", null)
+		if collider_variant is Node:
+			return collider_variant as Node
+	return null
+
+
+func _get_collision_owner_name(collider: Node) -> String:
+	var current := collider
+	while current != null:
+		if current is Shelf:
+			return String(current.get_shelf_id())
+		if current.name != StringName():
+			var name_text := String(current.name)
+			if name_text.begins_with("Store") or name_text.begins_with("NPC"):
+				return name_text
+		current = current.get_parent()
+	return ""
+
+
+func _is_node_or_descendant_of_path(candidate_path: String, root: Node) -> bool:
+	if candidate_path == "" or root == null or not is_instance_valid(root):
+		return false
+	var root_path := str(root.get_path())
+	return candidate_path == root_path or candidate_path.begins_with(root_path + "/")
+
+
+func _record_safety_probe(label: StringName, extra_context: Dictionary) -> void:
+	if npc == null:
+		return
+
+	var target_variant: Variant = npc.get("target_position")
+	var route_variant: Variant = npc.get("_movement_route")
+
+	var context: Dictionary = {
+		"npc_id": npc.get_instance_id(),
+		"state": int(npc.get("current_state")),
+		"position": _format_vector(npc.global_position),
+		"target": _format_vector(
+			target_variant as Vector2
+			if target_variant is Vector2
+			else Vector2.INF
+		),
+		"current_route_points": (
+			(route_variant as Array).size()
+			if route_variant is Array
+			else 0
+		)
+	}
+
+	for key in extra_context:
+		context[key] = extra_context[key]
+
+	StoreRuntimeDebugProbeScript.record(label, 0.0, context, 0.0)
+
+
+func _format_vector(value: Vector2) -> String:
+	return "%.1f,%.1f" % [value.x, value.y]
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

@@ -17,6 +17,11 @@ const SINGLE_CUSTOMER_EXIT_ROUTE_MARKERS: Array[StringName] = [
 	&"StorePathAisleRight",
 	&"StorePathExit"
 ]
+const CHECKOUT_APPROACH_ROUTE_MARKERS: Array[StringName] = [
+	&"StorePathQueueFrontRight",
+	&"StorePathQueueFront",
+	&"StorePathCashier"
+]
 const CHECKOUT_GRAPH_REJOIN_MARKER: StringName = &"StorePathAisleRight"
 const CHECKOUT_ROUTE_RESUME_DISTANCE: float = 18.0
 
@@ -71,6 +76,12 @@ func get_npc_route_to_shelf_access(
 func get_npc_route_to_cashier_from(
 	from_position: Vector2
 ) -> Array[Vector2]:
+	var checkout_approach_route := _build_checkout_approach_route(
+		from_position
+	)
+	if not checkout_approach_route.is_empty():
+		return checkout_approach_route
+
 	return get_store_path_graph().get_route_to_cashier_from(from_position)
 
 
@@ -277,6 +288,35 @@ func _build_named_marker_route(
 		from_position,
 		route_markers
 	)
+	for index in range(start_index, route_markers.size()):
+		_append_unique_route_point(
+			route,
+			route_markers[index].global_position
+		)
+	return route
+
+
+func _build_checkout_approach_route(from_position: Vector2) -> Array[Vector2]:
+	var route_markers = _get_named_markers(CHECKOUT_APPROACH_ROUTE_MARKERS)
+	if route_markers.size() != CHECKOUT_APPROACH_ROUTE_MARKERS.size():
+		return []
+
+	var nearest_index := -1
+	var nearest_distance := INF
+	for index in range(route_markers.size()):
+		var distance := from_position.distance_to(
+			route_markers[index].global_position
+		)
+		if distance >= nearest_distance:
+			continue
+		nearest_distance = distance
+		nearest_index = index
+
+	var start_index := 0
+	if nearest_distance <= CHECKOUT_ROUTE_RESUME_DISTANCE:
+		start_index = mini(nearest_index + 1, route_markers.size() - 1)
+
+	var route: Array[Vector2] = []
 	for index in range(start_index, route_markers.size()):
 		_append_unique_route_point(
 			route,
