@@ -180,7 +180,7 @@ func try_checkout() -> void:
 
 	if _has_scanned_customer():
 		pass
-		if _cashier_panel != null and _cashier_panel.visible:
+		if _store_os_renderer.is_cashier_visible():
 			_show_notification("Use the cashier panel.", 0.8)
 		elif _scanned_total <= 0:
 			_show_scan_panel()
@@ -264,6 +264,11 @@ func _process_scan(npc: NPC) -> void:
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _process_paid() -> void:
 	_checkout_flow.process_paid()
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _process_free() -> void:
+	_checkout_flow.process_free()
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

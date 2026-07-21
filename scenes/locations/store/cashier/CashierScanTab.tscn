@@ -1,0 +1,39 @@
+[gd_scene format=3 uid="uid://b7w567u8higlo"]
+
+[ext_resource type="Texture2D" uid="uid://b5888a5cr0ouo" path="res://assets/cashier/main-frame.png" id="1_04lsu"]
+[ext_resource type="Texture2D" uid="uid://me5ayjwlc5j2" path="res://assets/cashier/list.png" id="2_y4s2q"]
+[ext_resource type="Texture2D" uid="uid://cxs24ek4jqxak" path="res://assets/cashier/side-bar-1.png" id="3_nioyn"]
+[ext_resource type="Texture2D" uid="uid://cbc5xr3fcov1u" path="res://assets/cashier/side-bar-2.png" id="4_ytwti"]
+[ext_resource type="Texture2D" uid="uid://cpeuj3ml4gynm" path="res://assets/cashier/screen.png" id="5_kafk0"]
+[ext_resource type="PackedScene" path="res://scenes/ui/PortraitAnimation.tscn" id="6_portrait"]
+
+[node name="StoreCashier" type="Node2D" unique_id=900483876]
+
+[node name="MainFrame" type="Sprite2D" parent="." unique_id=1187040639]
+position = Vector2(240, 135)
+texture = ExtResource("1_04lsu")
+
+[node name="List" type="Sprite2D" parent="." unique_id=816763099]
+position = Vector2(240, 135)
+texture = ExtResource("2_y4s2q")
+
+[node name="FirstTab" type="Sprite2D" parent="." unique_id=148675076]
+position = Vector2(240, 135)
+texture = ExtResource("3_nioyn")
+
+[node name="SecondTab" type="Sprite2D" parent="." unique_id=1078497879]
+position = Vector2(240, 135)
+texture = ExtResource("4_ytwti")
+
+[node name="Screen" type="Sprite2D" parent="." unique_id=126340900]
+position = Vector2(240, 135)
+texture = ExtResource("5_kafk0")
+
+[node name="PortraitAnimation" parent="." unique_id=13942968 instance=ExtResource("6_portrait")]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 407.0
+offset_top = 183.0
+offset_right = 407.0
+offset_bottom = 183.0
+scale = Vector2(0.78, 0.78)
