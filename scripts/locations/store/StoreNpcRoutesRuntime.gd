@@ -24,7 +24,12 @@ func _process(_delta: float) -> void:
 
 
 func get_store_path_graph() -> StorePathGraph:
-	if store == null:
+	var store_node := store as Node2D
+	if store_node == null:
+		return null
+
+	var marker_root := store.store_path_markers as Node2D
+	if marker_root == null:
 		return null
 
 	var needs_runtime_graph := (
@@ -33,14 +38,11 @@ func get_store_path_graph() -> StorePathGraph:
 	)
 	if needs_runtime_graph:
 		store._store_path_graph = StrictPathGraphScript.new(
-			store,
-			store.store_path_markers
+			store_node,
+			marker_root
 		)
 	else:
-		store._store_path_graph.setup(
-			store,
-			store.store_path_markers
-		)
+		store._store_path_graph.setup(store_node, marker_root)
 
 	if not _anchors_initialized:
 		_navigation_anchors = store._get_shelf_placement_grid_positions()
@@ -72,7 +74,11 @@ func _ensure_navigation_service(
 	graph: StorePathGraph,
 	anchors: Array[Vector2]
 ) -> void:
-	if store == null or graph == null:
+	var store_node := store as Node2D
+	if store_node == null or graph == null:
+		return
+	var marker_root := store.store_path_markers as Node2D
+	if marker_root == null:
 		return
 	if (
 		_navigation_service == null
@@ -80,8 +86,17 @@ func _ensure_navigation_service(
 	):
 		_navigation_service = StrictNavigationServiceScript.new()
 	_navigation_service.setup(
-		store,
-		store.store_path_markers,
+		store_node,
+		marker_root,
 		graph,
 		anchors
 	)
+
+
+func _ensure_shelf_access_coordinator(graph: StorePathGraph) -> void:
+	var store_node := store as Node2D
+	if store_node == null or graph == null:
+		return
+	if _shelf_access_coordinator == null:
+		_shelf_access_coordinator = ShelfAccessCoordinatorScript.new()
+	_shelf_access_coordinator.setup(store_node, graph)
