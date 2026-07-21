@@ -26,7 +26,7 @@
 [ext_resource type="Script" uid="uid://buelulwhe2nld" path="res://scripts/locations/store/StoreOpenCloseController.gd" id="30_open_close"]
 [ext_resource type="Script" uid="uid://graw0neyc5gu" path="res://scripts/locations/store/StoreDayRuntime.gd" id="31_day_runtime"]
 [ext_resource type="Script" uid="uid://b21eo20ciw08h" path="res://scripts/locations/store/StoreTaskCompletion.gd" id="32_task_completion"]
-[ext_resource type="Script" uid="uid://c8yp2nc8o1ilx" path="res://scripts/locations/store/StoreNpcRoutes.gd" id="33_npc_routes"]
+[ext_resource type="Script" path="res://scripts/locations/store/StoreNpcRoutesRuntime.gd" id="33_npc_routes"]
 [ext_resource type="Script" uid="uid://d22cxs4dwn38b" path="res://scripts/locations/store/StoreWorldStateController.gd" id="34_world_state"]
 [ext_resource type="Script" uid="uid://41gwmbg6y0iu" path="res://scripts/locations/store/StoreNpcInteractionRuntime.gd" id="35_npc_interaction"]
 
@@ -65,13 +65,13 @@ script = ExtResource("30_open_close")
 [node name="DayRuntime" type="Node" parent="." unique_id=801185795]
 script = ExtResource("31_day_runtime")
 
-[node name="TaskCompletion" type="Node" parent="." unique_id=1883893265]
+[node name="TaskCompletion" type="Node" parent="." unique_id=1883893266]
 script = ExtResource("32_task_completion")
 
 [node name="NpcRoutes" type="Node" parent="." unique_id=1993143645]
 script = ExtResource("33_npc_routes")
 
-[node name="WorldStateController" type="Node" parent="." unique_id=1264755951]
+[node name="WorldStateController" type="Node" parent="." unique_id=1264755954]
 script = ExtResource("34_world_state")
 
 [node name="NpcInteractionRuntime" type="Node" parent="." unique_id=1339569668]
