@@ -283,16 +283,15 @@ func _consume_pending_path_request(target: Vector2) -> bool:
 		npc._movement_route_destination = target
 		_pending_path_request.clear()
 		if npc._movement_route.is_empty() and uses_store_navigation_state():
-			_set_no_route_retry(target)
-			_increase_path_request_backoff(target)
+			_handle_empty_store_route(target)
 		else:
 			_reset_path_request_backoff()
+			_clear_target_shelf_route_failure()
 		return true
 
 	_pending_path_request.clear()
 	if uses_store_navigation_state():
-		_set_no_route_retry(target)
-		_increase_path_request_backoff(target)
+		_handle_empty_store_route(target)
 	return false
 
 
@@ -325,6 +324,45 @@ func _reset_path_request_backoff() -> void:
 	_last_path_request_destination = Vector2.INF
 	_next_path_request_msec = 0
 	_path_request_backoff_msec = PATH_REQUEST_RETRY_COOLDOWN_MSEC
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _handle_empty_store_route(target: Vector2) -> void:
+	_set_no_route_retry(target)
+	_increase_path_request_backoff(target)
+
+	if npc.current_state != NPC.State.WALK_TO_SHELF:
+		return
+
+	_mark_target_shelf_route_failed()
+	if try_recover_to_alternate_shelf():
+		return
+
+	abandon_purchase_and_exit()
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _mark_target_shelf_route_failed() -> void:
+	if npc._target_shelf == null or not is_instance_valid(npc._target_shelf):
+		return
+	if npc._shopping_flow == null:
+		return
+	if not npc._shopping_flow.has_method("mark_shelf_route_failed"):
+		return
+
+	npc._shopping_flow.mark_shelf_route_failed(npc._target_shelf)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _clear_target_shelf_route_failure() -> void:
+	if npc._target_shelf == null or not is_instance_valid(npc._target_shelf):
+		return
+	if npc._shopping_flow == null:
+		return
+	if not npc._shopping_flow.has_method("clear_shelf_route_failure"):
+		return
+
+	npc._shopping_flow.clear_shelf_route_failure(npc._target_shelf)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

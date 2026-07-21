@@ -3,7 +3,10 @@ extends RefCounted
 
 const ShelfItemIndexScript = preload("res://scripts/objects/shelf/ShelfItemIndex.gd")
 
+const SHELF_ROUTE_FAILURE_COOLDOWN_MSEC: int = 8000
+
 var npc = null
+var _shelf_route_retry_after_msec: Dictionary = {}
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -199,6 +202,9 @@ func _is_matching_shelf_candidate(shelf: Shelf, item: ItemData) -> bool:
 	if shelf == null:
 		return false
 
+	if _is_shelf_route_temporarily_failed(shelf):
+		return false
+
 	if shelf.get_lifecycle() != Shelf.LIFECYCLE_PLACED:
 		return false
 
@@ -209,6 +215,57 @@ func _is_matching_shelf_candidate(shelf: Shelf, item: ItemData) -> bool:
 		return false
 
 	return true
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func mark_shelf_route_failed(shelf: Shelf) -> void:
+	var failure_key := _get_shelf_route_failure_key(shelf)
+	if failure_key == StringName():
+		return
+
+	_shelf_route_retry_after_msec[failure_key] = (
+		Time.get_ticks_msec() + SHELF_ROUTE_FAILURE_COOLDOWN_MSEC
+	)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func clear_shelf_route_failure(shelf: Shelf) -> void:
+	var failure_key := _get_shelf_route_failure_key(shelf)
+	if failure_key == StringName():
+		return
+
+	_shelf_route_retry_after_msec.erase(failure_key)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _is_shelf_route_temporarily_failed(shelf: Shelf) -> bool:
+	var failure_key := _get_shelf_route_failure_key(shelf)
+	if failure_key == StringName():
+		return false
+
+	var retry_after_msec := int(_shelf_route_retry_after_msec.get(
+		failure_key,
+		0
+	))
+	if retry_after_msec <= 0:
+		return false
+
+	if Time.get_ticks_msec() >= retry_after_msec:
+		_shelf_route_retry_after_msec.erase(failure_key)
+		return false
+
+	return true
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _get_shelf_route_failure_key(shelf: Shelf) -> StringName:
+	if shelf == null or not is_instance_valid(shelf):
+		return StringName()
+
+	return StringName("%s:%d" % [
+		String(shelf.get_shelf_id()),
+		shelf.get_revision()
+	])
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
