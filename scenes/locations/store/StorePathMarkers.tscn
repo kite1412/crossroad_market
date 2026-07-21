@@ -19,6 +19,26 @@ metadata/store_path_role = "enter_store"
 position = Vector2(254, 238)
 metadata/store_path_role = "aisle_right"
 
+[node name="StorePathShelfQuadNW" type="Marker2D" parent="." unique_id=1814511190]
+position = Vector2(164.5, 162.5)
+metadata/store_path_role = "shelf_anchor"
+metadata/store_path_allow_shelf_anchor = true
+
+[node name="StorePathShelfQuadNE" type="Marker2D" parent="." unique_id=1814511191]
+position = Vector2(369.5, 162.5)
+metadata/store_path_role = "shelf_anchor"
+metadata/store_path_allow_shelf_anchor = true
+
+[node name="StorePathShelfQuadSW" type="Marker2D" parent="." unique_id=1814511192]
+position = Vector2(164.5, 237.5)
+metadata/store_path_role = "shelf_anchor"
+metadata/store_path_allow_shelf_anchor = true
+
+[node name="StorePathShelfQuadSE" type="Marker2D" parent="." unique_id=1814511193]
+position = Vector2(369.5, 237.5)
+metadata/store_path_role = "shelf_anchor"
+metadata/store_path_allow_shelf_anchor = true
+
 [node name="StorePathCashier" type="Marker2D" parent="." unique_id=1161307822]
 position = Vector2(254, 168)
 metadata/store_path_role = "cashier"

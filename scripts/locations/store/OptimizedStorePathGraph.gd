@@ -116,6 +116,7 @@ func _append_fast_marker_access_routes(
 		marker_nodes.append(aisle_node)
 	if shelf_graph_node != StringName() and shelf_graph_node not in marker_nodes:
 		marker_nodes.append(shelf_graph_node)
+	_append_nearest_shelf_anchor_nodes(marker_nodes, access_position)
 
 	for marker_node in marker_nodes:
 		var marker_position: Vector2 = _nav.get_marker_position(marker_node)
@@ -149,6 +150,38 @@ func _append_fast_marker_access_routes(
 						from_position,
 						candidate_route
 					)
+
+
+func _append_nearest_shelf_anchor_nodes(
+	marker_nodes: Array[StringName],
+	access_position: Vector2
+) -> void:
+	var anchor_nodes: Array[Dictionary] = []
+	for node_name in _nav.get_graph_node_names():
+		var marker: Marker2D = _nav.get_graph_marker(node_name)
+		if marker == null:
+			continue
+		if not bool(marker.get_meta(SHELF_ANCHOR_META, false)):
+			continue
+
+		anchor_nodes.append({
+			"node": node_name,
+			"distance": marker.global_position.distance_to(access_position)
+		})
+
+	anchor_nodes.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return float(a.get("distance", INF)) < float(b.get("distance", INF))
+	)
+
+	for anchor_entry in anchor_nodes:
+		if marker_nodes.size() >= LIVE_ACCESS_GRAPH_NODE_LIMIT:
+			return
+
+		var node_name := anchor_entry.get("node", StringName()) as StringName
+		if node_name == StringName() or node_name in marker_nodes:
+			continue
+
+		marker_nodes.append(node_name)
 
 
 func _find_fast_vertical_shelf_access(
