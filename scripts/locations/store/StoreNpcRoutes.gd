@@ -1,8 +1,8 @@
 class_name StoreNpcRoutes
 extends Node
 
-const OptimizedStorePathGraphScript = preload(
-	"res://scripts/locations/store/OptimizedStorePathGraph.gd"
+const StoreRuntimePathGraphScript = preload(
+	"res://scripts/locations/store/StoreRuntimePathGraph.gd"
 )
 const STORE_ENTRY_FALLBACK_POSITION := Vector2(240, 204)
 const CHECKOUT_RIGHT_ROUTE_MARKERS: Array[StringName] = [
@@ -73,8 +73,6 @@ func get_npc_route_to_shelf_access(
 func get_npc_route_to_cashier_from(
 	from_position: Vector2
 ) -> Array[Vector2]:
-	# The customer stands at QueueFront. StorePathCashier is inside the counter
-	# interaction area and is a facing target, not a CharacterBody2D destination.
 	return get_store_path_graph().get_route_to_queue_target_from(
 		from_position,
 		0
@@ -91,6 +89,24 @@ func get_npc_route_to_queue_target_from(
 	)
 
 
+func get_npc_route_from_shelf_to_queue_target(
+	shelf: Shelf,
+	from_position: Vector2,
+	queue_index: int
+) -> Array[Vector2]:
+	var graph := get_store_path_graph()
+	if not graph.has_method("get_route_from_shelf_to_queue_target"):
+		return []
+
+	var result: Variant = graph.call(
+		"get_route_from_shelf_to_queue_target",
+		shelf,
+		from_position,
+		queue_index
+	)
+	return _to_vector2_route(result)
+
+
 func get_npc_queue_target(
 	queue_index: int,
 	fallback_position: Vector2
@@ -102,7 +118,6 @@ func get_npc_queue_target(
 
 
 func get_npc_cashier_target(fallback_position: Vector2) -> Vector2:
-	# Service position: reachable customer-side marker.
 	return get_store_path_graph().get_queue_target_position(
 		0,
 		fallback_position
@@ -110,7 +125,6 @@ func get_npc_cashier_target(fallback_position: Vector2) -> Vector2:
 
 
 func get_npc_cashier_face_target(fallback_position: Vector2) -> Vector2:
-	# Facing position: actual cashier/counter marker.
 	return get_store_path_graph().get_cashier_target_position(
 		fallback_position
 	)
@@ -211,13 +225,13 @@ func get_npc_exit_route_from_cashier(
 
 
 func get_store_path_graph() -> StorePathGraph:
-	var needs_optimized_graph := (
+	var needs_runtime_graph := (
 		store._store_path_graph == null
-		or store._store_path_graph.get_script() != OptimizedStorePathGraphScript
+		or store._store_path_graph.get_script() != StoreRuntimePathGraphScript
 	)
 
-	if needs_optimized_graph:
-		store._store_path_graph = OptimizedStorePathGraphScript.new(
+	if needs_runtime_graph:
+		store._store_path_graph = StoreRuntimePathGraphScript.new(
 			store,
 			store.store_path_markers
 		)
@@ -229,7 +243,7 @@ func get_store_path_graph() -> StorePathGraph:
 
 	var layout_signature := _get_shelf_layout_signature()
 	if (
-		not needs_optimized_graph
+		not needs_runtime_graph
 		and _has_shelf_layout_signature
 		and layout_signature != _last_shelf_layout_signature
 		and store._store_path_graph.has_method("invalidate_dynamic_navigation")
@@ -284,6 +298,16 @@ func _is_descendant_of_store(node: Node) -> bool:
 			return true
 		current = current.get_parent()
 	return false
+
+
+func _to_vector2_route(route_variant: Variant) -> Array[Vector2]:
+	var route: Array[Vector2] = []
+	if not (route_variant is Array):
+		return route
+	for point_variant in route_variant:
+		if point_variant is Vector2:
+			_append_unique_route_point(route, point_variant as Vector2)
+	return route
 
 
 func _build_named_marker_route(
