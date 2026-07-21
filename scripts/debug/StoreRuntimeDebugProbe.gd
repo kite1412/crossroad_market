@@ -11,18 +11,18 @@ static var _events: Array[Dictionary] = []
 
 static func record(
 	label: StringName,
-	elapsed_msec: float,
+	duration_msec: float,
 	context: Dictionary = {},
 	threshold_msec: float = DEFAULT_THRESHOLD_MSEC
 ) -> void:
 	if not enabled:
 		return
-	if elapsed_msec < threshold_msec:
+	if duration_msec < threshold_msec:
 		return
 
 	_events.append({
 		"label": label,
-		"elapsed_msec": elapsed_msec,
+		"elapsed_msec": duration_msec,
 		"context": context.duplicate(true),
 		"time_msec": Time.get_ticks_msec()
 	})
@@ -32,6 +32,25 @@ static func record(
 
 static func get_events() -> Array[Dictionary]:
 	return _events.duplicate(true)
+
+
+static func get_summary() -> Dictionary:
+	var counts: Dictionary = {}
+	var max_elapsed: Dictionary = {}
+	for event in _events:
+		var label := StringName(str(event.get("label", &"unknown")))
+		counts[label] = int(counts.get(label, 0)) + 1
+		max_elapsed[label] = maxf(
+			float(max_elapsed.get(label, 0.0)),
+			float(event.get("elapsed_msec", 0.0))
+		)
+
+	return {
+		"enabled": enabled,
+		"event_count": _events.size(),
+		"counts": counts,
+		"max_elapsed_msec": max_elapsed
+	}
 
 
 static func clear() -> void:

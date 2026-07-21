@@ -275,6 +275,11 @@ func get_runtime_debug_events() -> Array[Dictionary]:
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func get_runtime_debug_summary() -> Dictionary:
+	return StoreRuntimeDebugProbeScript.get_summary()
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func mark_navigation_dirty(bounds: Rect2) -> void:
 	if not bounds.has_area():
 		return
