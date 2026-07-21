@@ -59,25 +59,16 @@ func get_shelf_egress_queue_route(
 	destination: Vector2
 ) -> Array[Vector2]:
 	# Queue membership is already resolved here. Prefer a route that knows the
-	# source shelf and the assigned queue slot, so its first segment may leave the
-	# shelf body safely without routing back customers through QueueFront.
+	# source shelf, assigned queue slot, and moving NPC collider.
 	var route_provider := _get_nested_route_provider(store)
 	if (
 		route_provider != null
-		and route_provider.has_method(
-			"get_npc_route_from_shelf_to_queue_target"
-		)
 		and npc._queue_entry_shelf != null
 		and is_instance_valid(npc._queue_entry_shelf)
 	):
-		var shelf_queue_route := call_store_route(
+		var shelf_queue_route := _call_shelf_queue_graph_route(
 			route_provider,
-			&"get_npc_route_from_shelf_to_queue_target",
-			[
-				npc._queue_entry_shelf,
-				npc.global_position,
-				queue_index
-			]
+			queue_index
 		)
 		if not shelf_queue_route.is_empty():
 			return _finish_queue_route(
@@ -105,6 +96,43 @@ func get_shelf_egress_queue_route(
 			destination
 		)
 	return []
+
+
+func _call_shelf_queue_graph_route(
+	route_provider: Node,
+	queue_index: int
+) -> Array[Vector2]:
+	if not route_provider.has_method("get_store_path_graph"):
+		return []
+
+	var graph_variant: Variant = route_provider.call(
+		"get_store_path_graph"
+	)
+	if not is_instance_valid(graph_variant):
+		return []
+	if not graph_variant.has_method(
+		"get_route_from_shelf_to_queue_target"
+	):
+		return []
+
+	var route_variant: Variant = graph_variant.call(
+		"get_route_from_shelf_to_queue_target",
+		npc._queue_entry_shelf,
+		npc.global_position,
+		queue_index,
+		npc
+	)
+	return _variant_to_route(route_variant)
+
+
+func _variant_to_route(route_variant: Variant) -> Array[Vector2]:
+	var route: Array[Vector2] = []
+	if not (route_variant is Array):
+		return route
+	for point_variant in route_variant:
+		if point_variant is Vector2:
+			route.append(point_variant as Vector2)
+	return dedupe_route_points(route)
 
 
 func _finish_queue_route(
