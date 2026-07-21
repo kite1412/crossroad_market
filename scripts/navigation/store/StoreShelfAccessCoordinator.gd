@@ -5,7 +5,9 @@ extends RefCounted
 ##
 ## Access metadata is intentionally computed through a small per-frame queue.
 ## Callers receive an explicit state and may wait/retry without performing a
-## synchronous path search inside a getter.
+## synchronous path search inside a getter. The legacy bounded resolver itself
+## is synchronous, so this coordinator dispatches at most one resolver job per
+## frame and prevents duplicate work for the same shelf/revision.
 
 const READY: StringName = &"ready"
 const PENDING: StringName = &"pending"
@@ -13,7 +15,7 @@ const UNREACHABLE: StringName = &"unreachable"
 const INVALID: StringName = &"invalid"
 
 const MAX_JOBS_PER_FRAME: int = 1
-const FRAME_BUDGET_USEC: int = 4000
+const FRAME_DISPATCH_BUDGET_USEC: int = 4000
 const FAILED_RETRY_MSEC: int = 1000
 const POSITION_EPSILON: float = 0.5
 
@@ -45,12 +47,13 @@ func request_access(
 	var shelf_id := shelf.get_instance_id()
 	var shelf_position := shelf.global_position
 	if _graph.has_cached_shelf_access_metadata(shelf):
+		var existing_record: Dictionary = _records.get(shelf_id, {})
 		_store_record(
 			shelf,
 			READY,
 			shelf_position,
 			0,
-			int(_records.get(shelf_id, {}).get("token", 0))
+			int(existing_record.get("token", 0))
 		)
 		return READY
 
@@ -106,7 +109,7 @@ func get_ready_position(shelf: Shelf) -> Vector2:
 
 func process_pending_jobs(
 	max_jobs: int = MAX_JOBS_PER_FRAME,
-	budget_usec: int = FRAME_BUDGET_USEC
+	dispatch_budget_usec: int = FRAME_DISPATCH_BUDGET_USEC
 ) -> void:
 	if _graph == null or _jobs.is_empty():
 		return
@@ -116,7 +119,8 @@ func process_pending_jobs(
 	while not _jobs.is_empty() and completed_jobs < maxi(1, max_jobs):
 		if (
 			completed_jobs > 0
-			and Time.get_ticks_usec() - started_usec >= maxi(1, budget_usec)
+			and Time.get_ticks_usec() - started_usec
+			>= maxi(1, dispatch_budget_usec)
 		):
 			break
 
