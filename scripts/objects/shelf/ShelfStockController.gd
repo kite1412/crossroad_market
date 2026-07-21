@@ -267,6 +267,23 @@ func cancel_npc_item_reservation(token: Dictionary) -> Dictionary:
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func cancel_all_npc_item_reservations() -> void:
+	for token_id in _item_reservations.keys():
+		var reservation: Dictionary = _item_reservations[token_id]
+		if StringName(str(reservation.get("status", &"active"))) == &"committed":
+			continue
+
+		var slot_index: int = int(reservation.get("slot_index", -1))
+		if slot_index >= 0 and slot_index < shelf._slot_reserved_quantities.size():
+			shelf._slot_reserved_quantities[slot_index] = maxi(
+				0,
+				shelf._slot_reserved_quantities[slot_index] - 1
+			)
+
+	_item_reservations.clear()
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_slot_content(slot_index: int) -> String:
 	if slot_index < 0 or slot_index >= shelf._slots.size():
 		return ""

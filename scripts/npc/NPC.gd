@@ -318,6 +318,28 @@ func _is_target_shelf_valid() -> bool:
 	if not _target_shelf.is_in_group("shelves"):
 		return false
 
+	if _target_shelf.get_lifecycle() != Shelf.LIFECYCLE_PLACED:
+		return false
+
+	if _shopping_job != null:
+		var target_shelf_id: StringName = StringName(
+			str(_shopping_job.target_shelf_id)
+		)
+		if (
+			target_shelf_id != StringName()
+			and target_shelf_id != _target_shelf.get_shelf_id()
+		):
+			return false
+
+		var expected_revision: int = int(
+			_shopping_job.expected_shelf_revision
+		)
+		if (
+			expected_revision >= 0
+			and expected_revision != _target_shelf.get_revision()
+		):
+			return false
+
 	if _target_shelf.has_meta("is_carried_storage_object") and bool(_target_shelf.get_meta("is_carried_storage_object")):
 		return false
 

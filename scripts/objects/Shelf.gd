@@ -158,6 +158,7 @@ func increment_revision() -> int:
 	_ensure_shelf_identity()
 	var old_revision: int = get_revision()
 	var new_revision: int = old_revision + 1
+	_stock_controller.cancel_all_npc_item_reservations()
 	set_meta(META_SHELF_REVISION, new_revision)
 	shelf_invalidated.emit(self, old_revision, new_revision)
 	return new_revision

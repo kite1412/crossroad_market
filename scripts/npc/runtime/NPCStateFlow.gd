@@ -24,6 +24,7 @@ func process_enter() -> void:
 		return
 
 	npc._choose_available_item_to_buy()
+	npc._shopping_job.wanted_item = npc.item_to_buy
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var target_shelf: Shelf = npc._find_reachable_matching_shelf()
 
@@ -143,6 +144,7 @@ func process_search_item(delta: float) -> void:
 
 		if stocked_shelf != npc._target_shelf:
 			npc._target_shelf = stocked_shelf
+			npc._shopping_job.set_target_shelf(stocked_shelf)
 			npc.target_position = visit_position
 			set_state(NPC.State.WALK_TO_SHELF)
 			return
@@ -347,6 +349,7 @@ func process_wait_for_shelf(delta: float) -> void:
 		)
 		if visit_position.is_finite():
 			npc._target_shelf = replacement_shelf
+			npc._shopping_job.set_target_shelf(replacement_shelf)
 			npc.target_position = visit_position
 			npc._waiting_for_shelf_return = false
 			npc._shelf_wait_timer = 0.0
@@ -430,6 +433,7 @@ func set_state(new_state: int) -> void:
 
 	if new_state == NPC.State.EXIT:
 		npc._target_shelf = null
+		npc._shopping_job.clear_target_shelf()
 
 	if new_state in [
 		NPC.State.WALK_TO_SHELF,

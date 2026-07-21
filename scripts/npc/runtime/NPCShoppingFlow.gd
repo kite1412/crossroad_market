@@ -149,6 +149,9 @@ func get_matching_shelf_candidates() -> Array[Shelf]:
 		if shelf == null:
 			continue
 
+		if shelf.get_lifecycle() != Shelf.LIFECYCLE_PLACED:
+			continue
+
 		if shelf.shelf_type != item.shelf_type:
 			continue
 
