@@ -140,12 +140,9 @@ func get_shelf_egress_route_to_queue_from(
 
 	var candidates: Array[Dictionary] = []
 	for horizontal_first in [true, false]:
-		var direct_anchor_route: Array[Vector2] = _build_route_leg(
+		var direct_anchor_route: Array[Vector2] = _routes.make_orthogonal_route(
 			from_position,
 			anchor_position,
-			shelf,
-			shelf.global_position,
-			npc_node,
 			horizontal_first
 		)
 		direct_anchor_route.append_array(queue_route)
@@ -275,13 +272,10 @@ func _get_anchor_route_to_queue_egress(
 		return []
 
 	var candidates: Array[Dictionary] = []
-	for horizontal_first in [false, true]:
-		var route: Array[Vector2] = _build_route_leg(
+	for horizontal_first in [true, false]:
+		var route: Array[Vector2] = _routes.make_orthogonal_route(
 			anchor_position,
 			approach_position,
-			null,
-			Vector2.INF,
-			null,
 			horizontal_first
 		)
 		if route.is_empty():

@@ -208,6 +208,8 @@ func process_shelf_egress_to_queue_lane(queue_index: int) -> void:
 		"queue_index": queue_index,
 		"queue_target": _format_vector(npc.target_position)
 	})
+	if queue_index == 0:
+		start_queue_to_cashier(queue_index)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
