@@ -220,6 +220,7 @@ func process_take_item() -> void:
 			npc._queue_egress_route_pending = true
 			npc._queue_egress_target_position = Vector2.INF
 
+		npc._take_item_pause_timer = 0.0
 		npc._enter_checkout_queue()
 		return
 

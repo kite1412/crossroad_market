@@ -108,7 +108,10 @@ func update_stuck_watchdog(delta: float) -> void:
 		reset_stuck_watchdog()
 		return
 
-	if npc._dialog_timer > 0.0 or npc._take_item_pause_timer > 0.0:
+	if (
+		npc.current_state == NPC.State.TAKE_ITEM
+		and (npc._dialog_timer > 0.0 or npc._take_item_pause_timer > 0.0)
+	):
 		reset_stuck_watchdog()
 		return
 
