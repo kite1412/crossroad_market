@@ -5,7 +5,7 @@ const StoreRuntimePathGraphScript = preload(
 	"res://scripts/locations/store/StoreRuntimePathGraph.gd"
 )
 const NavigationServiceScript = preload(
-	"res://scripts/navigation/store/StoreNavigationService.gd"
+	"res://scripts/navigation/store/StoreNavigationRuntimeService.gd"
 )
 const NavigationRequestScript = preload(
 	"res://scripts/navigation/store/StoreNavigationRequest.gd"
