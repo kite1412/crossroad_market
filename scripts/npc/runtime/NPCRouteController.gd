@@ -11,6 +11,7 @@ const StoreRuntimeDebugProbeScript = preload("res://scripts/debug/StoreRuntimeDe
 const NO_ROUTE_RETRY_COOLDOWN_MSEC: int = 450
 const PATH_REQUEST_RETRY_COOLDOWN_MSEC: int = 1500
 const PATH_REQUEST_BACKOFF_MAX_MSEC: int = 5000
+const ROUTE_REQUEST_PROBE_COOLDOWN_MSEC: int = 650
 
 var npc = null
 @warning_ignore("unused_private_class_variable")
@@ -21,6 +22,7 @@ var _last_path_request_destination: Vector2 = Vector2.INF
 var _next_path_request_msec: int = 0
 var _path_request_backoff_msec: int = PATH_REQUEST_RETRY_COOLDOWN_MSEC
 var _pending_path_request: Dictionary = {}
+var _next_route_request_probe_msec: int = 0
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -45,6 +47,14 @@ func move_to(target: Vector2, arrival_threshold: float = -1.0) -> bool:
 				npc.velocity = Vector2.ZERO
 				npc.move_and_slide()
 				_mark_waiting_for_path()
+				_record_route_request_probe(&"npc_route_request_state", {
+					"reason": "throttled",
+					"destination": _format_vector(target),
+					"retry_in_msec": maxi(
+						0,
+						_next_path_request_msec - Time.get_ticks_msec()
+					)
+				})
 				return false
 
 			_request_movement_route(target)
@@ -254,6 +264,11 @@ func _request_movement_route(target: Vector2) -> void:
 	npc._movement_route.clear()
 	npc._movement_route_destination = target
 	_mark_waiting_for_path()
+	_record_route_request_probe(&"npc_route_request_state", {
+		"reason": "requested",
+		"destination": _format_vector(target),
+		"request_id": int(_pending_path_request.get("id", -1))
+	})
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -275,6 +290,11 @@ func _consume_pending_path_request(target: Vector2) -> bool:
 		_mark_waiting_for_path()
 		npc.velocity = Vector2.ZERO
 		npc.move_and_slide()
+		_record_route_request_probe(&"npc_route_request_state", {
+			"reason": "pending",
+			"destination": _format_vector(target),
+			"request_id": int(_pending_path_request.get("id", -1))
+		})
 		return true
 
 	if status == NPCPathRequestServiceScript.STATUS_COMPLETED:
@@ -284,14 +304,27 @@ func _consume_pending_path_request(target: Vector2) -> bool:
 		npc._movement_route_destination = target
 		_pending_path_request.clear()
 		if npc._movement_route.is_empty() and uses_store_navigation_state():
+			_record_route_request_probe(&"npc_route_request_state", {
+				"reason": "completed_empty",
+				"destination": _format_vector(target)
+			})
 			_handle_empty_store_route(target)
 		else:
+			_record_route_request_probe(&"npc_route_request_state", {
+				"reason": "completed_route",
+				"destination": _format_vector(target),
+				"route_points": npc._movement_route.size()
+			})
 			_reset_path_request_backoff()
 			_clear_target_shelf_route_failure()
 		return true
 
 	_pending_path_request.clear()
 	if uses_store_navigation_state():
+		_record_route_request_probe(&"npc_route_request_state", {
+			"reason": "failed",
+			"destination": _format_vector(target)
+		})
 		_handle_empty_store_route(target)
 	return false
 
@@ -863,6 +896,19 @@ func _record_route_probe(label: StringName, extra_context: Dictionary) -> void:
 		context[key] = extra_context[key]
 
 	StoreRuntimeDebugProbeScript.record(label, 0.0, context, 0.0)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _record_route_request_probe(
+	label: StringName,
+	extra_context: Dictionary
+) -> void:
+	var now_msec := Time.get_ticks_msec()
+	if now_msec < _next_route_request_probe_msec:
+		return
+
+	_next_route_request_probe_msec = now_msec + ROUTE_REQUEST_PROBE_COOLDOWN_MSEC
+	_record_route_probe(label, extra_context)
 
 
 func _format_vector(value: Vector2) -> String:
