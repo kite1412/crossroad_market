@@ -3,12 +3,14 @@ class_name StorePathGraphSurfaceGrid
 
 ## Surface-grid implementation with stable row/column topology.
 ##
-## The previous cache builder compared every anchor with every other anchor and
-## performed physics queries while constructing the cache. With 525 placement
-## points this produced more than one million comparisons and could bake a
-## temporary NPC/player position into the cached graph. This implementation
-## groups anchors by row/column and connects only adjacent geometric neighbors.
-## Collision remains evaluated dynamically by _find_surface_anchor_path().
+## The previous implementation performed physics queries while constructing an
+## O(N²) neighbor cache and also queried all 525 anchors before selecting the two
+## nearest connectors. This version keeps topology geometric and collision-checks
+## only a bounded set of nearest connector candidates. Edge collision is still
+## evaluated dynamically during A* traversal.
+
+const MIN_CONNECTOR_SCAN_LIMIT: int = 24
+const MAX_CONNECTOR_SCAN_LIMIT: int = 64
 
 
 func _ensure_surface_neighbor_cache() -> void:
@@ -28,6 +30,56 @@ func _ensure_surface_neighbor_cache() -> void:
 	var column_buckets := _build_axis_buckets(false)
 	_connect_axis_buckets(row_buckets, true)
 	_connect_axis_buckets(column_buckets, false)
+
+
+func _get_nearest_surface_anchor_indices(
+	position: Vector2,
+	limit: int,
+	shelf_object: Node2D = null,
+	shelf_position: Vector2 = Vector2.INF
+) -> Array[int]:
+	var result: Array[int] = []
+	if not position.is_finite() or limit <= 0:
+		return result
+
+	# Distance calculations are cheap; physics shape queries are not. Sort every
+	# index geometrically, then inspect only the nearest bounded window until the
+	# requested number of clear connectors is found.
+	var ordered_indices: Array[int] = []
+	for index in range(_graph._shelf_access_points.size()):
+		ordered_indices.append(index)
+
+	ordered_indices.sort_custom(func(a: int, b: int) -> bool:
+		return (
+			_graph._shelf_access_points[a].distance_squared_to(position)
+			< _graph._shelf_access_points[b].distance_squared_to(position)
+		)
+	)
+
+	var scan_limit := mini(
+		ordered_indices.size(),
+		mini(
+			MAX_CONNECTOR_SCAN_LIMIT,
+			maxi(MIN_CONNECTOR_SCAN_LIMIT, limit * 8)
+		)
+	)
+	for ordered_index in range(scan_limit):
+		var anchor_index := ordered_indices[ordered_index]
+		var anchor_position: Vector2 = _graph._shelf_access_points[
+			anchor_index
+		]
+		if not _graph._clearance.is_npc_access_point_clear(
+			anchor_position,
+			shelf_object,
+			shelf_position
+		):
+			continue
+
+		result.append(anchor_index)
+		if result.size() >= limit:
+			break
+
+	return result
 
 
 func _build_axis_buckets(horizontal: bool) -> Dictionary:
