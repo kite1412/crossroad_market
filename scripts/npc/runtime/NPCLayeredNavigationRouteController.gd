@@ -54,9 +54,6 @@ func move_to(
 	if not reached_movement_target:
 		return false
 
-	# A temporary sidestep is not a completed route waypoint. Keep the original
-	# waypoint so the NPC converges back onto the planned path after passing the
-	# dynamic blocker.
 	if using_sidestep:
 		return false
 
@@ -132,18 +129,17 @@ func get_shelf_egress_queue_route(
 func _get_local_avoidance_adjustment(
 	desired_target: Vector2
 ) -> Dictionary:
-	var store := get_store_route_provider()
-	var route_provider := _get_nested_route_provider(store)
+	var navigation_service := _get_navigation_service()
 	if (
-		route_provider == null
-		or not route_provider.has_method(
-			"get_npc_local_avoidance_adjustment"
+		navigation_service == null
+		or not navigation_service.has_method(
+			"get_local_avoidance_adjustment"
 		)
 	):
 		return {"target": desired_target, "wait": false}
 
-	var result: Variant = route_provider.call(
-		"get_npc_local_avoidance_adjustment",
+	var result: Variant = navigation_service.call(
+		"get_local_avoidance_adjustment",
 		npc,
 		desired_target
 	)
@@ -165,10 +161,16 @@ func _store_current_navigation_revision() -> void:
 func _get_navigation_service():
 	var store := get_store_route_provider()
 	var route_provider := _get_nested_route_provider(store)
-	if (
-		route_provider == null
-		or not route_provider.has_method("get_navigation_service")
-	):
+	if route_provider == null:
+		return null
+
+	# StoreNpcRoutes creates the service during Store setup. Reading the cached
+	# instance avoids running compatibility graph synchronization every frame.
+	var cached_variant: Variant = route_provider.get("_navigation_service")
+	if is_instance_valid(cached_variant):
+		return cached_variant
+
+	if not route_provider.has_method("get_navigation_service"):
 		return null
 	var service_variant: Variant = route_provider.call("get_navigation_service")
 	if not is_instance_valid(service_variant):
