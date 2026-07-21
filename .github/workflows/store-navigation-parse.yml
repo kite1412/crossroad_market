@@ -30,6 +30,8 @@ jobs:
           unzip -q /tmp/godot.zip -d /tmp/godot
           chmod +x /tmp/godot/Godot_v4.7-stable_linux.x86_64
 
+      # Load every script resource so Godot catches static typing, dependency,
+      # class resolution, and override-signature errors—not grammar alone.
       - name: Compile every GDScript resource
         shell: bash
         run: |
