@@ -73,32 +73,20 @@ func get_route_travel_seconds(destination: Vector2) -> float:
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_route_travel_info(destination: Vector2) -> Dictionary:
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-	var route: Array[Vector2] = npc._build_movement_route(destination)
-	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var distance = 0.0
-	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-	var previous: Vector2 = npc.global_position
-
-	for point in route:
-		distance += previous.distance_to(point)
-		previous = point
-
-	if (
-		route.is_empty()
-		or previous.distance_to(destination) > npc.ARRIVAL_THRESHOLD
-	):
-		distance += previous.distance_to(destination)
+	if destination.is_finite():
+		distance = npc.global_position.distance_to(destination)
 
 	if npc.SPEED <= 0.0:
 		return {
 			"travel_seconds": 0.0,
-			"route_points": route.size(),
+			"route_points": 0,
 			"route_distance": distance
 		}
 
 	return {
 		"travel_seconds": distance / npc.SPEED,
-		"route_points": route.size(),
+		"route_points": 0,
 		"route_distance": distance
 	}
 

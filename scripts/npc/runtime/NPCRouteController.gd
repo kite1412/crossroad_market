@@ -4,6 +4,8 @@ extends RefCounted
 const StoreRouteSafetyScript = preload("res://scripts/npc/runtime/StoreRouteSafety.gd")
 const NPCMovementReservationSystemScript = preload("res://scripts/npc/runtime/NPCMovementReservationSystem.gd")
 const NPCQueueReservationControllerScript = preload("res://scripts/npc/runtime/NPCQueueReservationController.gd")
+const NPCPathRequestServiceScript = preload("res://scripts/npc/runtime/NPCPathRequestService.gd")
+const NPCShoppingJobScript = preload("res://scripts/npc/runtime/NPCShoppingJob.gd")
 
 const NO_ROUTE_RETRY_COOLDOWN_MSEC: int = 450
 
@@ -12,6 +14,7 @@ var npc = null
 var _route_safety = null
 var _no_route_retry_destination: Vector2 = Vector2.INF
 var _next_no_route_retry_msec: int = 0
+var _pending_path_request: Dictionary = {}
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -26,16 +29,19 @@ func setup(npc_node) -> void:
 func move_to(target: Vector2, arrival_threshold: float = -1.0) -> bool:
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var threshold: float = npc.ARRIVAL_THRESHOLD if arrival_threshold < 0.0 else arrival_threshold
-
-	if should_rebuild_movement_route(target):
+	if _consume_pending_path_request(target):
+		pass
+	elif should_rebuild_movement_route(target):
 		NPCMovementReservationSystemScript.release_for(npc)
+
+		if uses_store_navigation_state():
+			_request_movement_route(target)
+			npc.velocity = Vector2.ZERO
+			npc.move_and_slide()
+			return false
+
 		npc._movement_route = build_movement_route(target)
 		npc._movement_route_destination = target
-		if npc._movement_route.is_empty() and uses_store_navigation_state():
-			_no_route_retry_destination = target
-			_next_no_route_retry_msec = (
-				Time.get_ticks_msec() + NO_ROUTE_RETRY_COOLDOWN_MSEC
-			)
 
 	_trim_arrived_route_points(threshold)
 
@@ -169,6 +175,9 @@ func uses_store_navigation_state() -> bool:
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func reset_stuck_watchdog() -> void:
 	NPCMovementReservationSystemScript.release_for(npc)
+	if not _pending_path_request.is_empty():
+		NPCPathRequestServiceScript.cancel(_pending_path_request)
+	_pending_path_request.clear()
 	npc._last_watchdog_position = Vector2.INF
 	npc._stuck_watchdog_timer = 0.0
 	npc._stuck_watchdog_rebuilds = 0
@@ -194,6 +203,93 @@ func should_rebuild_movement_route(target: Vector2) -> bool:
 		return true
 
 	return not npc._movement_route_destination.is_equal_approx(target)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _request_movement_route(target: Vector2) -> void:
+	if not _pending_path_request.is_empty():
+		var pending_destination: Vector2 = _pending_path_request.get(
+			"destination",
+			Vector2.INF
+		) as Vector2
+		if pending_destination.is_equal_approx(target):
+			_mark_waiting_for_path()
+			return
+		NPCPathRequestServiceScript.cancel(_pending_path_request)
+
+	_pending_path_request = NPCPathRequestServiceScript.request_route(
+		npc,
+		target,
+		Callable(self, "build_movement_route").bind(target),
+		_get_path_request_priority()
+	)
+	npc._movement_route.clear()
+	npc._movement_route_destination = target
+	_mark_waiting_for_path()
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _consume_pending_path_request(target: Vector2) -> bool:
+	if _pending_path_request.is_empty():
+		return false
+
+	var destination: Vector2 = _pending_path_request.get(
+		"destination",
+		Vector2.INF
+	) as Vector2
+	if not destination.is_equal_approx(target):
+		NPCPathRequestServiceScript.cancel(_pending_path_request)
+		_pending_path_request.clear()
+		return false
+
+	var status := StringName(str(_pending_path_request.get("status", &"pending")))
+	if status == NPCPathRequestServiceScript.STATUS_PENDING:
+		_mark_waiting_for_path()
+		npc.velocity = Vector2.ZERO
+		npc.move_and_slide()
+		return true
+
+	if status == NPCPathRequestServiceScript.STATUS_COMPLETED:
+		npc._movement_route = _variant_route_to_vector2_array(
+			_pending_path_request.get("route", [])
+		)
+		npc._movement_route_destination = target
+		_pending_path_request.clear()
+		if npc._movement_route.is_empty() and uses_store_navigation_state():
+			_set_no_route_retry(target)
+		return true
+
+	_pending_path_request.clear()
+	if uses_store_navigation_state():
+		_set_no_route_retry(target)
+	return false
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _set_no_route_retry(target: Vector2) -> void:
+	_no_route_retry_destination = target
+	_next_no_route_retry_msec = (
+		Time.get_ticks_msec() + NO_ROUTE_RETRY_COOLDOWN_MSEC
+	)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _get_path_request_priority() -> int:
+	if npc.current_state == NPC.State.WAIT_IN_QUEUE:
+		return 10
+	if npc.current_state == NPC.State.WALK_TO_SHELF:
+		return 20
+	if npc.current_state == NPC.State.TAKE_ITEM:
+		return 30
+	if npc.current_state == NPC.State.EXIT:
+		return 40
+	return 100
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _mark_waiting_for_path() -> void:
+	if npc._shopping_job != null:
+		npc._shopping_job.set_state(NPCShoppingJobScript.STATE_WAITING_FOR_PATH)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -523,6 +619,20 @@ func dedupe_route_points(route: Array[Vector2]) -> Array[Vector2]:
 		deduped.append(point)
 
 	return deduped
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _variant_route_to_vector2_array(route_variant: Variant) -> Array[Vector2]:
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
+	var route: Array[Vector2] = []
+	if not route_variant is Array:
+		return route
+
+	for point_variant in route_variant:
+		if point_variant is Vector2:
+			route.append(point_variant as Vector2)
+
+	return dedupe_route_points(route)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

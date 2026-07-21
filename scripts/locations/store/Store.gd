@@ -3,6 +3,7 @@ extends Node2D
 
 
 const StoreSimulationSchedulerScript = preload("res://scripts/locations/store/StoreSimulationScheduler.gd")
+const NPCPathRequestServiceScript = preload("res://scripts/npc/runtime/NPCPathRequestService.gd")
 
 const SHELF_ACCESS_WARMUP_DELAY: float = 1.0
 const STORE_ENTRY_FALLBACK_POSITION := Vector2(240, 204)
@@ -237,6 +238,7 @@ func _process(_delta: float) -> void:
 	_update_end_day_tax_flow()
 	_flush_navigation_dirty_bounds()
 	_process_simulation_scheduler()
+	NPCPathRequestServiceScript.tick()
 
 	if world_state_controller != null:
 		world_state_controller.process_store_world(_delta)
