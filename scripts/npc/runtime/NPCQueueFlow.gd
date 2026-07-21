@@ -44,6 +44,10 @@ func process_wait_in_queue(delta: float) -> void:
 		process_queue_to_cashier(queue_index)
 		return
 
+	if npc._queue_egress_route_pending:
+		process_shelf_egress_to_queue_lane(queue_index)
+		return
+
 	npc.target_position = get_queue_target()
 	var has_shelf_egress_context: bool = (
 		npc._queue_egress_route_pending
@@ -118,6 +122,51 @@ func process_wait_in_queue(delta: float) -> void:
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func process_shelf_egress_to_queue_lane(queue_index: int) -> void:
+	var egress_target: Vector2 = npc._queue_egress_target_position
+	if not egress_target.is_finite():
+		egress_target = get_queue_target()
+
+	npc.target_position = egress_target
+	var arrived: bool = (
+		egress_target.is_finite()
+		and npc.global_position.distance_to(egress_target)
+		<= npc.QUEUE_SLOT_ARRIVAL_DISTANCE
+	)
+
+	if not arrived:
+		arrived = npc._move_to_with_arrival_threshold(
+			egress_target,
+			npc.QUEUE_SLOT_ARRIVAL_DISTANCE
+		)
+		_record_queue_move_probe(&"npc_queue_egress_wait", {
+			"queue_index": queue_index,
+			"arrived": arrived,
+			"target_kind": "queue_egress",
+			"distance": snappedf(
+				npc.global_position.distance_to(egress_target),
+				0.01
+			),
+			"egress_target": _format_vector(egress_target)
+		})
+
+	if not arrived:
+		return
+
+	npc.velocity = Vector2.ZERO
+	npc.move_and_slide()
+	_clear_queue_entry_shelf_obstacle()
+	npc.target_position = get_queue_target()
+	npc._movement_route.clear()
+	npc._movement_route_destination = Vector2.INF
+	npc.set_meta(&"path_possibly_invalid", true)
+	_record_queue_probe(&"npc_queue_egress_complete", {
+		"queue_index": queue_index,
+		"queue_target": _format_vector(npc.target_position)
+	})
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func join_queue() -> void:
 	NPCQueueReservationControllerScript.join(npc)
 
@@ -129,6 +178,7 @@ func leave_queue() -> void:
 	npc._is_moving_from_queue_to_cashier = false
 	npc._queue_entry_shelf = null
 	npc._queue_egress_route_pending = false
+	npc._queue_egress_target_position = Vector2.INF
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -207,6 +257,7 @@ func _clear_queue_entry_shelf_obstacle() -> void:
 		npc.remove_meta(EXIT_ORIGIN_SHELF_META)
 	npc._queue_entry_shelf = null
 	npc._queue_egress_route_pending = false
+	npc._queue_egress_target_position = Vector2.INF
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

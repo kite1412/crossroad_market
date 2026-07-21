@@ -548,11 +548,15 @@ func get_store_route_for_current_state(destination: Vector2) -> Array[Vector2]:
 				)
 
 				if not egress_queue_route.is_empty():
+					npc._queue_egress_target_position = egress_queue_route.back()
 					_record_route_probe(&"npc_queue_route_branch", {
 						"branch": "shelf_egress",
 						"queue_index": queue_index,
 						"route_points": egress_queue_route.size(),
-						"destination": _format_vector(destination)
+						"destination": _format_vector(destination),
+						"egress_target": _format_vector(
+							npc._queue_egress_target_position
+						)
 					})
 					return egress_queue_route
 

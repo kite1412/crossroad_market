@@ -218,6 +218,7 @@ func process_take_item() -> void:
 		if npc._target_shelf != null and is_instance_valid(npc._target_shelf):
 			npc._queue_entry_shelf = npc._target_shelf
 			npc._queue_egress_route_pending = true
+			npc._queue_egress_target_position = Vector2.INF
 
 		npc._enter_checkout_queue()
 		return

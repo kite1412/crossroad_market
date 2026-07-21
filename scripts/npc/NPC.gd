@@ -98,6 +98,8 @@ var _queue_entry_shelf: Shelf = null
 @warning_ignore("unused_private_class_variable")
 var _queue_egress_route_pending: bool = false
 @warning_ignore("unused_private_class_variable")
+var _queue_egress_target_position: Vector2 = Vector2.INF
+@warning_ignore("unused_private_class_variable")
 var _last_queue_index: int = -1
 @warning_ignore("unused_private_class_variable")
 var _last_watchdog_position: Vector2 = Vector2.INF
