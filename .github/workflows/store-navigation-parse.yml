@@ -1,35 +1,25 @@
-name: Godot 4.7 Compile Repair
+name: Godot 4.7 Compile
 
 on:
   pull_request:
-    branches:
-      - main
     paths:
       - "scripts/**"
-      - "tools/ci/apply_godot_47_compile_fixes.py"
-      - "tools/ci/apply_godot_47_compile_fixes_v2.py"
+      - "scenes/**"
+      - "project.godot"
       - ".github/workflows/store-navigation-parse.yml"
-      - ".github/workflows/apply-godot-47-compile-fixes.yml"
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  repair-and-compile:
-    if: github.head_ref == 'agent/fix-godot-47-navigation-compile-errors'
+  compile-gdscript:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
-      - name: Checkout repair branch
+      - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: agent/fix-godot-47-navigation-compile-errors
-          fetch-depth: 0
-
-      - name: Apply deterministic source fixes
-        run: python tools/ci/apply_godot_47_compile_fixes_v2.py
 
       - name: Install Godot 4.7 stable
         shell: bash
@@ -82,16 +72,3 @@ jobs:
           GDSCRIPT
           timeout 180s /tmp/godot/Godot_v4.7-stable_linux.x86_64 \
             --headless --path . --script /tmp/check_all_scripts.gd
-
-      - name: Commit verified source repairs
-        shell: bash
-        run: |
-          git restore .github/workflows/store-navigation-parse.yml
-          git restore .github/workflows/apply-godot-47-compile-fixes.yml
-          rm -f tools/ci/apply_godot_47_compile_fixes.py
-          rm -f tools/ci/apply_godot_47_compile_fixes_v2.py
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add scripts tools/ci
-          git commit -m "Fix Godot 4.7 navigation compile errors"
-          git push origin HEAD:agent/fix-godot-47-navigation-compile-errors
