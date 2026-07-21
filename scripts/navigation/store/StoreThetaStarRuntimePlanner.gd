@@ -22,7 +22,7 @@ func _is_segment_clear(
 	if _line_cache.has(cache_key):
 		return bool(_line_cache[cache_key])
 
-	var ignored_shelf := _get_segment_ignored_shelf(
+	var endpoint_shelf := _get_segment_endpoint_shelf(
 		context,
 		ignore_start,
 		ignore_endpoint
@@ -33,20 +33,22 @@ func _is_segment_clear(
 		and _obstacles.is_segment_blocked(
 			from_position,
 			to_position,
-			ignored_shelf,
+			endpoint_shelf,
 			agent_margin
 		)
 	):
 		_line_cache[cache_key] = false
 		return false
 
+	# The coarse rectangle check may omit the shelf attached to an exempt start or
+	# endpoint. Physics still keeps that shelf active for all intermediate samples,
+	# so a route can leave/arrive beside a shelf but can never pass through it.
 	var clear := _physics_segment_clear(
 		from_position,
 		to_position,
 		context,
 		ignore_start,
-		ignore_endpoint,
-		ignored_shelf
+		ignore_endpoint
 	)
 	_line_cache[cache_key] = clear
 	return clear
@@ -57,8 +59,7 @@ func _physics_segment_clear(
 	to_position: Vector2,
 	context: Dictionary,
 	ignore_start: bool,
-	ignore_endpoint: bool,
-	ignored_shelf: Shelf
+	ignore_endpoint: bool
 ) -> bool:
 	if _store == null or _store.get_world_2d() == null:
 		return false
@@ -95,8 +96,6 @@ func _physics_segment_clear(
 			var collider := collider_variant as Node
 			if collider == null:
 				continue
-			if ignored_shelf != null and _is_descendant_of(collider, ignored_shelf):
-				continue
 			if collider is NPC or collider.is_in_group("npcs"):
 				continue
 			if String(collider.name).to_lower().contains("player"):
@@ -105,7 +104,7 @@ func _physics_segment_clear(
 	return true
 
 
-func _get_segment_ignored_shelf(
+func _get_segment_endpoint_shelf(
 	context: Dictionary,
 	ignore_start: bool,
 	ignore_endpoint: bool
@@ -132,13 +131,13 @@ func _make_line_cache_key(
 	if _obstacles != null:
 		revision = _obstacles.get_revision()
 	var shelf_id := 0
-	var ignored_shelf := _get_segment_ignored_shelf(
+	var endpoint_shelf := _get_segment_endpoint_shelf(
 		context,
 		ignore_start,
 		ignore_endpoint
 	)
-	if ignored_shelf != null:
-		shelf_id = ignored_shelf.get_instance_id()
+	if endpoint_shelf != null:
+		shelf_id = endpoint_shelf.get_instance_id()
 	var radius_key := roundi(float(context.get("agent_radius", 10.5)) * 10.0)
 	return "%d:%d,%d:%d,%d:%d:%d:%d:r%d" % [
 		revision,
