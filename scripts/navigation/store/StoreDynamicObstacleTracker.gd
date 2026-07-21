@@ -260,7 +260,7 @@ func _trim_history() -> void:
 		revisions.append(int(revision_variant))
 	revisions.sort()
 	while revisions.size() > MAX_DIRTY_HISTORY:
-		var oldest := revisions.pop_front()
+		var oldest: int = int(revisions.pop_front())
 		_dirty_history.erase(oldest)
 
 

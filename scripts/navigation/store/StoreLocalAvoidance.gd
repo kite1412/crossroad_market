@@ -29,22 +29,22 @@ func get_adjustment(
 	if _store == null or _store.get_tree() == null:
 		return {"target": desired_target, "wait": false}
 
-	var desired_direction := npc.global_position.direction_to(desired_target)
+	var desired_direction: Vector2 = npc.global_position.direction_to(desired_target)
 	if desired_direction.is_zero_approx():
 		return {"target": desired_target, "wait": false}
 
 	var nearest_blocker: NPC = null
-	var nearest_distance := INF
+	var nearest_distance: float = INF
 	for other_variant in _store.get_tree().get_nodes_in_group("npcs"):
 		if not (other_variant is NPC):
 			continue
-		var other := other_variant as NPC
+		var other: NPC = other_variant as NPC
 		if other == npc or not is_instance_valid(other):
 			continue
 		if other.is_queued_for_deletion():
 			continue
-		var offset := other.global_position - npc.global_position
-		var distance := offset.length()
+		var offset: Vector2 = other.global_position - npc.global_position
+		var distance: float = offset.length()
 		if distance <= 0.001 or distance > NEIGHBOR_RADIUS:
 			continue
 		if desired_direction.dot(offset.normalized()) < AHEAD_DOT_THRESHOLD:
@@ -56,19 +56,20 @@ func get_adjustment(
 	if nearest_blocker == null:
 		return {"target": desired_target, "wait": false}
 
-	var relative := nearest_blocker.global_position - npc.global_position
-	var perpendicular := Vector2(-desired_direction.y, desired_direction.x)
-	var cross_sign := signf(desired_direction.cross(relative))
+	var relative: Vector2 = nearest_blocker.global_position - npc.global_position
+	var perpendicular: Vector2 = Vector2(-desired_direction.y, desired_direction.x)
+	var cross_sign: float = signf(desired_direction.cross(relative))
 	if is_zero_approx(cross_sign):
 		cross_sign = 1.0 if npc.get_instance_id() < nearest_blocker.get_instance_id() else -1.0
 
-	for side_sign in [cross_sign, -cross_sign]:
-		var sidestep_target := (
+	var side_signs: Array[float] = [cross_sign, -cross_sign]
+	for side_sign: float in side_signs:
+		var sidestep_target: Vector2 = (
 			npc.global_position
 			+ desired_direction * FORWARD_PROBE_DISTANCE
 			- perpendicular * side_sign * SIDE_STEP_DISTANCE
 		)
-		var context := {
+		var context: Dictionary = {
 			"npc": npc,
 			"agent_radius": 10.5,
 			"ignore_start_collision": true,

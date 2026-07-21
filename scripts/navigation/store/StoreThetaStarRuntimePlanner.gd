@@ -43,12 +43,13 @@ func _is_segment_clear(
 	# The coarse rectangle check may omit the shelf attached to an exempt start or
 	# endpoint. Physics still keeps that shelf active for all intermediate samples,
 	# so a route can leave/arrive beside a shelf but can never pass through it.
-	var clear := _physics_segment_clear(
+	var clear: bool = _physics_segment_clear(
 		from_position,
 		to_position,
 		context,
 		ignore_start,
-		ignore_endpoint
+		ignore_endpoint,
+		endpoint_shelf
 	)
 	_line_cache[cache_key] = clear
 	return clear
@@ -59,7 +60,8 @@ func _physics_segment_clear(
 	to_position: Vector2,
 	context: Dictionary,
 	ignore_start: bool,
-	ignore_endpoint: bool
+	ignore_endpoint: bool,
+	_ignored_shelf: Shelf
 ) -> bool:
 	if _store == null or _store.get_world_2d() == null:
 		return false

@@ -318,7 +318,7 @@ func get_npc_exit_route_from_shelf(
 	)
 	if legacy_route.is_empty():
 		return get_npc_exit_route_from(from_position, npc_node)
-	var route_end := legacy_route.back()
+	var route_end: Vector2 = legacy_route.back() as Vector2
 	var exit_route := get_npc_single_customer_exit_route(
 		route_end,
 		npc_node
@@ -377,7 +377,7 @@ func get_store_path_graph() -> StorePathGraph:
 	if store == null:
 		return null
 
-	var needs_runtime_graph := (
+	var needs_runtime_graph: bool = (
 		store._store_path_graph == null
 		or store._store_path_graph.get_script() != StoreRuntimePathGraphScript
 	)

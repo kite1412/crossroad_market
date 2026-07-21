@@ -218,8 +218,8 @@ func _get_neighbor_indices(index: int) -> Array[int]:
 	var result: Array[int] = []
 	if index < 0 or index >= _anchors.size():
 		return result
-	var key := _to_grid_key(_anchors[index])
-	for offset in [
+	var key: Vector2i = _to_grid_key(_anchors[index])
+	var neighbor_offsets: Array[Vector2i] = [
 		Vector2i(-1, -1),
 		Vector2i(0, -1),
 		Vector2i(1, -1),
@@ -228,8 +228,9 @@ func _get_neighbor_indices(index: int) -> Array[int]:
 		Vector2i(-1, 1),
 		Vector2i(0, 1),
 		Vector2i(1, 1)
-	]:
-		var neighbor_key := key + offset
+	]
+	for offset: Vector2i in neighbor_offsets:
+		var neighbor_key: Vector2i = key + offset
 		if not _anchor_index.has(neighbor_key):
 			continue
 		var neighbor_index := int(_anchor_index[neighbor_key])

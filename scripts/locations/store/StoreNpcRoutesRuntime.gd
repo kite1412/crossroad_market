@@ -24,15 +24,15 @@ func _process(_delta: float) -> void:
 
 
 func get_store_path_graph() -> StorePathGraph:
-	var store_node := store as Node2D
+	var store_node: Node2D = store as Node2D
 	if store_node == null:
 		return null
 
-	var marker_root := store.store_path_markers as Node2D
+	var marker_root: Node2D = store.store_path_markers as Node2D
 	if marker_root == null:
 		return null
 
-	var needs_runtime_graph := (
+	var needs_runtime_graph: bool = (
 		store._store_path_graph == null
 		or store._store_path_graph.get_script() != StrictPathGraphScript
 	)
@@ -49,8 +49,8 @@ func get_store_path_graph() -> StorePathGraph:
 		_anchors_initialized = true
 	store._store_path_graph.set_shelf_access_points(_navigation_anchors)
 
-	var layout_signature := _get_shelf_layout_signature()
-	var layout_changed := (
+	var layout_signature: String = _get_shelf_layout_signature()
+	var layout_changed: bool = (
 		_has_shelf_layout_signature
 		and layout_signature != _last_shelf_layout_signature
 	)
@@ -74,10 +74,10 @@ func _ensure_navigation_service(
 	graph: StorePathGraph,
 	anchors: Array[Vector2]
 ) -> void:
-	var store_node := store as Node2D
+	var store_node: Node2D = store as Node2D
 	if store_node == null or graph == null:
 		return
-	var marker_root := store.store_path_markers as Node2D
+	var marker_root: Node2D = store.store_path_markers as Node2D
 	if marker_root == null:
 		return
 	if (
@@ -94,7 +94,7 @@ func _ensure_navigation_service(
 
 
 func _ensure_shelf_access_coordinator(graph: StorePathGraph) -> void:
-	var store_node := store as Node2D
+	var store_node: Node2D = store as Node2D
 	if store_node == null or graph == null:
 		return
 	if _shelf_access_coordinator == null:
