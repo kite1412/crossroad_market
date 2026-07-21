@@ -1,21 +1,27 @@
 class_name StoreNpcRuntime
 extends Node
 
-const NPCResolvedExitRouteController = preload("res://scripts/npc/runtime/NPCResolvedExitRouteController.gd")
-const NPCLiveQueueStateFlow = preload("res://scripts/npc/runtime/NPCLiveQueueStateFlow.gd")
-const NPCReachableShelfShoppingFlow = preload("res://scripts/npc/runtime/NPCReachableShelfShoppingFlow.gd")
-const NPCCheckoutLaneQueueFlow = preload("res://scripts/npc/runtime/NPCCheckoutLaneQueueFlow.gd")
+const NPCLayeredNavigationRouteController = preload(
+	"res://scripts/npc/runtime/NPCLayeredNavigationRouteController.gd"
+)
+const NPCLiveQueueStateFlow = preload(
+	"res://scripts/npc/runtime/NPCLiveQueueStateFlow.gd"
+)
+const NPCReachableShelfShoppingFlow = preload(
+	"res://scripts/npc/runtime/NPCReachableShelfShoppingFlow.gd"
+)
+const NPCCheckoutLaneQueueFlow = preload(
+	"res://scripts/npc/runtime/NPCCheckoutLaneQueueFlow.gd"
+)
 const CUSTOMER_INTAKE_CLOSED_META: StringName = &"customer_intake_closed_today"
 
 var store: Node = null
 
 
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup(store_node: Node) -> void:
 	store = store_node
 
 
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup_static_data() -> void:
 	if store == null:
 		return
@@ -44,20 +50,11 @@ func setup_static_data() -> void:
 		NPC.store_path_position = Vector2.INF
 
 
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_npc_spawn_requested(npc_data: NPCData) -> void:
 	if store == null:
 		return
-
-	# Scheduler signals remain connected while the Store scene is suspended.
-	# Never instantiate a customer behind Storage, Yard, Home, or a fade
-	# transition because that NPC would not receive a valid visibility snapshot.
 	if not is_store_world_available_for_customer_spawn():
 		return
-
-	# Protect against scheduler requests emitted on the same frame the board
-	# is closed, and against reopening the board after the day's customer
-	# intake has already been finalized.
 	if (
 		not store._store_open
 		or bool(
@@ -69,7 +66,6 @@ func on_npc_spawn_requested(npc_data: NPCData) -> void:
 	):
 		return
 
-	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var npc := StoreNpcSpawner.spawn_npc(
 		store,
 		store.npc_scene,
@@ -78,21 +74,18 @@ func on_npc_spawn_requested(npc_data: NPCData) -> void:
 		Callable(self, "on_npc_purchase"),
 		Callable(self, "on_npc_exited")
 	)
+	if npc == null:
+		return
 
-	if npc != null:
-		install_shelf_arrival_controllers(npc)
-
-		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-		var route_ready_callable := Callable(
-			self,
-			"on_npc_shelf_route_ready"
-		)
-
-		if not npc.shelf_route_ready.is_connected(route_ready_callable):
-			npc.shelf_route_ready.connect(route_ready_callable)
+	install_shelf_arrival_controllers(npc)
+	var route_ready_callable := Callable(
+		self,
+		"on_npc_shelf_route_ready"
+	)
+	if not npc.shelf_route_ready.is_connected(route_ready_callable):
+		npc.shelf_route_ready.connect(route_ready_callable)
 
 
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func is_store_world_available_for_customer_spawn() -> bool:
 	return (
 		bool(store._is_store_world_active)
@@ -103,14 +96,11 @@ func is_store_world_available_for_customer_spawn() -> bool:
 	)
 
 
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func install_shelf_arrival_controllers(npc: NPC) -> void:
 	if npc == null or not is_instance_valid(npc):
 		return
 
-	# Install the store-specific movement, shelf-exit, live queue, and lazy
-	# shelf-access refresh behavior for every store customer.
-	npc._route_controller = NPCResolvedExitRouteController.new()
+	npc._route_controller = NPCLayeredNavigationRouteController.new()
 	npc._route_controller.setup(npc)
 	npc._state_flow = NPCLiveQueueStateFlow.new()
 	npc._state_flow.setup(npc)
@@ -120,24 +110,18 @@ func install_shelf_arrival_controllers(npc: NPC) -> void:
 	npc._queue_flow.setup(npc)
 
 
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_npc_spawn_marker() -> Marker2D:
 	if store == null:
 		return null
-
 	if store.npc_enter_store_marker != null:
 		return store.npc_enter_store_marker
-
 	if store.npc_entry_marker != null:
 		return store.npc_entry_marker
-
 	if store.npc_exit_marker != null:
 		return store.npc_exit_marker
-
 	return store.entrance_pos
 
 
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_npc_purchase(
 	_npc: NPC,
 	_item_id: String,
@@ -145,9 +129,7 @@ func on_npc_purchase(
 ) -> void:
 	if store == null:
 		return
-
 	EconomyManager.add_gold(price)
-
 	if price > 0:
 		store._show_task_complete_notice(
 			"normal_customer_served",
@@ -155,13 +137,11 @@ func on_npc_purchase(
 		)
 
 
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_npc_exited(_npc: NPC) -> void:
 	if store != null:
 		store._update_end_day_tax_flow()
 
 
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_npc_shelf_route_ready(
 	npc: NPC,
 	travel_seconds: float

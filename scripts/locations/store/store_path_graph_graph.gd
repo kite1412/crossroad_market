@@ -47,7 +47,7 @@ func get_graph_node_names() -> Array[StringName]:
 	if _graph == null or _graph._markers == null:
 		return node_names
 
-	var child_count = _graph._markers.get_child_count()
+	var child_count: int = _graph._markers.get_child_count()
 	if _graph._cached_graph_node_count == child_count:
 		return _graph._cached_graph_node_names.duplicate()
 
@@ -399,7 +399,11 @@ func find_nearest_reachable_graph_node_for_route(
 			continue
 
 		for horizontal_first in [true, false]:
+<<<<<<< HEAD
 			var entry_route = _graph._routes.make_orthogonal_route(
+=======
+			var entry_route: Array[Vector2] = _graph._routes.make_orthogonal_route(
+>>>>>>> master/main
 				position,
 				start_marker.global_position,
 				horizontal_first
@@ -410,7 +414,11 @@ func find_nearest_reachable_graph_node_for_route(
 			):
 				continue
 
+<<<<<<< HEAD
 			var complete_route = entry_route.duplicate()
+=======
+			var complete_route: Array[Vector2] = entry_route.duplicate()
+>>>>>>> master/main
 			complete_route.append_array(
 				_graph._routes.build_route_from_graph_path(graph_path)
 			)
@@ -431,7 +439,11 @@ func find_nearest_reachable_graph_node_for_route(
 			if not route_is_clear:
 				continue
 
+<<<<<<< HEAD
 			var route_distance = _graph._routes.get_route_distance(
+=======
+			var route_distance: float = _graph._routes.get_route_distance(
+>>>>>>> master/main
 				position,
 				complete_route
 			)
@@ -547,7 +559,11 @@ func _append_axis_neighbor(
 		):
 			continue
 
+<<<<<<< HEAD
 		var segment_route = _graph._routes.make_orthogonal_route(
+=======
+		var segment_route: Array[Vector2] = _graph._routes.make_orthogonal_route(
+>>>>>>> master/main
 			source_position,
 			candidate_position,
 			horizontal

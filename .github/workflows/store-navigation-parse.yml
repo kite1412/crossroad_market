@@ -1,0 +1,113 @@
+name: Store Navigation Parse
+
+on:
+  pull_request:
+    paths:
+      - "scripts/navigation/store/**"
+      - "scripts/locations/store/StoreNpcRoutes.gd"
+      - "scripts/locations/store/StoreNpcRuntime.gd"
+      - "scripts/locations/store/StoreRuntimePathGraph.gd"
+      - "scripts/npc/runtime/NPCLayeredNavigationRouteController.gd"
+      - "data/navigation/store_navigation_cost_policy.tres"
+      - ".github/workflows/store-navigation-parse.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  parse-gdscript:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install parser
+        run: python -m pip install "gdtoolkit==4.5.0"
+
+      - name: Parse Store navigation scripts
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from gdtoolkit.parser import parser
+          from lark.exceptions import UnexpectedInput
+
+          roots = [Path("scripts/navigation/store")]
+          files = []
+          for root in roots:
+              files.extend(sorted(root.rglob("*.gd")))
+
+          files.extend(
+              Path(path)
+              for path in [
+                  "scripts/locations/store/StoreNpcRoutes.gd",
+                  "scripts/locations/store/StoreNpcRuntime.gd",
+                  "scripts/locations/store/StoreRuntimePathGraph.gd",
+                  "scripts/npc/runtime/NPCLayeredNavigationRouteController.gd",
+              ]
+          )
+
+          failures = []
+          for path in files:
+              try:
+                  parser.parse(path.read_text(encoding="utf-8"))
+                  print(f"OK {path}")
+              except (UnexpectedInput, ValueError) as error:
+                  failures.append((path, error))
+                  print(f"ERROR {path}: {error}")
+
+          if failures:
+              raise SystemExit(
+                  f"Failed to parse {len(failures)} GDScript file(s)."
+              )
+          print(f"Parsed {len(files)} GDScript files successfully.")
+          PY
+
+      - name: Verify referenced navigation files exist
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          checked_roots = [
+              Path("scripts/navigation/store"),
+              Path("scripts/locations/store/StoreNpcRoutes.gd"),
+              Path("scripts/locations/store/StoreNpcRuntime.gd"),
+              Path("scripts/npc/runtime/NPCLayeredNavigationRouteController.gd"),
+              Path("data/navigation/store_navigation_cost_policy.tres"),
+          ]
+          files = []
+          for root in checked_roots:
+              if root.is_dir():
+                  files.extend(root.rglob("*"))
+              elif root.exists():
+                  files.append(root)
+
+          pattern = re.compile(r'"res://([^"\n]+)"')
+          missing = []
+          for path in files:
+              if not path.is_file():
+                  continue
+              text = path.read_text(encoding="utf-8")
+              for relative in pattern.findall(text):
+                  target = Path(relative)
+                  if not target.exists():
+                      missing.append((path, target))
+
+          for source, target in missing:
+              print(f"MISSING {target} referenced by {source}")
+          if missing:
+              raise SystemExit(
+                  f"Found {len(missing)} missing res:// reference(s)."
+              )
+          print("All checked res:// references exist.")
+          PY
