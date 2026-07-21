@@ -1,8 +1,15 @@
 [gd_scene format=3 uid="uid://dauvgwqeqn80k"]
 
-[ext_resource type="Script" path="res://scripts/ui/HUD.gd" id="1"]
+[ext_resource type="Script" uid="uid://dwm4go4nyknla" path="res://scripts/ui/HUD.gd" id="1"]
 [ext_resource type="PackedScene" uid="uid://cnvnuy02s2gg3" path="res://scenes/ui/InventoryUI.tscn" id="2"]
 [ext_resource type="PackedScene" uid="uid://bstxttr3xm7mf" path="res://scenes/ui/Dialog.tscn" id="3_dialog"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_s1uhu"]
+bg_color = Color(0.2901961, 0.16078432, 0.101960786, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [node name="HUD" type="CanvasLayer" unique_id=162570791 groups=["hud"]]
 layer = 10
@@ -79,13 +86,14 @@ offset_right = -10.0
 offset_bottom = 20.0
 grow_horizontal = 0
 
-[node name="SettingsButton" type="Button" parent="TopRightHUD"]
+[node name="SettingsButton" type="Button" parent="TopRightHUD" unique_id=1410318732]
 layout_mode = 0
-offset_left = 90.0
-offset_top = 0.0
+offset_left = 99.0
 offset_right = 120.0
-offset_bottom = 15.0
+offset_bottom = 20.0
+theme_override_colors/font_color = Color(0.98039216, 0.85882354, 0.78039217, 1)
 theme_override_font_sizes/font_size = 8
+theme_override_styles/normal = SubResource("StyleBoxFlat_s1uhu")
 text = "⚙"
 
 [node name="InventoryUI" parent="." unique_id=1582218282 instance=ExtResource("2")]
@@ -127,5 +135,5 @@ horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 3
 
-[node name="Dialog" parent="." instance=ExtResource("3_dialog")]
+[node name="Dialog" parent="." unique_id=149752294 instance=ExtResource("3_dialog")]
 visible = false
