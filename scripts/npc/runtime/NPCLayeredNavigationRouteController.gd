@@ -113,7 +113,8 @@ func get_shelf_egress_queue_route(
 			[
 				npc._queue_entry_shelf,
 				npc.global_position,
-				queue_index
+				queue_index,
+				npc
 			]
 		)
 		if not layered_route.is_empty():
