@@ -4,7 +4,7 @@ extends Node
 const OptimizedStorePathGraphScript = preload(
 	"res://scripts/locations/store/OptimizedStorePathGraph.gd"
 )
-const STORE_ENTRY_FALLBACK_POSITION := Vector2(240, 204)
+const STORE_ENTRY_FALLBACK_POSITION = Vector2(240, 204)
 const CHECKOUT_RIGHT_ROUTE_MARKERS: Array[StringName] = [
 	&"StorePathQueueFrontRight",
 	&"StorePathQueueBack1Right",
@@ -111,7 +111,7 @@ func get_npc_route_from_shelf_to_cashier(
 func get_npc_exit_route_from(
 	from_position: Vector2
 ) -> Array[Vector2]:
-	var exit_position := get_marker_position_or(
+	var exit_position = get_marker_position_or(
 		store.npc_exit_marker,
 		STORE_ENTRY_FALLBACK_POSITION
 	)
@@ -143,12 +143,12 @@ func get_npc_exit_route_from_shelf(
 
 	# Move away from the source shelf through the same collision-aware path used
 	# after shopping, then join the normal single-customer exit lane.
-	var route := get_npc_route_from_shelf_to_cashier(shelf)
+	var route = get_npc_route_from_shelf_to_cashier(shelf)
 	if route.is_empty():
 		return get_npc_exit_route_from(from_position)
 
 	var route_end: Vector2 = route.back()
-	var exit_route := get_npc_single_customer_exit_route(route_end)
+	var exit_route = get_npc_single_customer_exit_route(route_end)
 	if exit_route.is_empty():
 		exit_route = get_npc_exit_route_from(route_end)
 
@@ -160,20 +160,20 @@ func get_npc_exit_route_from_shelf(
 func get_npc_exit_route_from_cashier(
 	from_position: Vector2
 ) -> Array[Vector2]:
-	var mandatory_markers := _get_named_markers(
+	var mandatory_markers = _get_named_markers(
 		CHECKOUT_RIGHT_ROUTE_MARKERS
 	)
 	if mandatory_markers.size() != CHECKOUT_RIGHT_ROUTE_MARKERS.size():
 		return []
 
-	var rejoin_marker := store.store_path_markers.get_node_or_null(
+	var rejoin_marker = store.store_path_markers.get_node_or_null(
 		String(CHECKOUT_GRAPH_REJOIN_MARKER)
 	) as Marker2D
 	if rejoin_marker == null:
 		return []
 
 	var route: Array[Vector2] = []
-	var start_index := _get_checkout_route_start_index(
+	var start_index = _get_checkout_route_start_index(
 		from_position,
 		mandatory_markers
 	)
@@ -181,11 +181,11 @@ func get_npc_exit_route_from_cashier(
 		route.append(mandatory_markers[index].global_position)
 
 	_append_unique_route_point(route, rejoin_marker.global_position)
-	var exit_position := get_marker_position_or(
+	var exit_position = get_marker_position_or(
 		store.npc_exit_marker,
 		STORE_ENTRY_FALLBACK_POSITION
 	)
-	var graph_route := get_store_path_graph().get_exit_route_from(
+	var graph_route = get_store_path_graph().get_exit_route_from(
 		rejoin_marker.global_position,
 		exit_position
 	)
@@ -199,7 +199,7 @@ func get_npc_exit_route_from_cashier(
 
 
 func get_store_path_graph() -> StorePathGraph:
-	var needs_optimized_graph := (
+	var needs_optimized_graph = (
 		store._store_path_graph == null
 		or store._store_path_graph.get_script() != OptimizedStorePathGraphScript
 	)
@@ -234,12 +234,12 @@ func _build_named_marker_route(
 	from_position: Vector2,
 	marker_names: Array[StringName]
 ) -> Array[Vector2]:
-	var route_markers := _get_named_markers(marker_names)
+	var route_markers = _get_named_markers(marker_names)
 	if route_markers.size() != marker_names.size():
 		return []
 
 	var route: Array[Vector2] = []
-	var start_index := _get_checkout_route_start_index(
+	var start_index = _get_checkout_route_start_index(
 		from_position,
 		route_markers
 	)
@@ -259,7 +259,7 @@ func _get_named_markers(
 		return result
 
 	for marker_name in marker_names:
-		var route_marker := store.store_path_markers.get_node_or_null(
+		var route_marker = store.store_path_markers.get_node_or_null(
 			String(marker_name)
 		) as Marker2D
 		if route_marker == null:
@@ -276,10 +276,10 @@ func _get_checkout_route_start_index(
 	if from_position.y >= final_marker.global_position.y - 4.0:
 		return route_markers.size()
 
-	var nearest_index := -1
-	var nearest_distance := INF
+	var nearest_index = -1
+	var nearest_distance = INF
 	for index in range(route_markers.size()):
-		var distance := from_position.distance_to(
+		var distance = from_position.distance_to(
 			route_markers[index].global_position
 		)
 		if distance < nearest_distance:

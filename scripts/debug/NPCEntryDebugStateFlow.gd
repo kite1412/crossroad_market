@@ -7,16 +7,16 @@ const SLOW_ENTER_THRESHOLD_MSEC: float = 2.0
 func process_enter() -> void:
 	var state_before: int = npc.current_state
 	var pause_before: float = npc._enter_pause_timer
-	var started_usec := Time.get_ticks_usec()
+	var started_usec = Time.get_ticks_usec()
 
 	super.process_enter()
 
-	var elapsed_msec := float(Time.get_ticks_usec() - started_usec) / 1000.0
-	var crossed_enter_pause := (
+	var elapsed_msec = float(Time.get_ticks_usec() - started_usec) / 1000.0
+	var crossed_enter_pause = (
 		pause_before < npc.ENTER_PAUSE
 		and npc._enter_pause_timer >= npc.ENTER_PAUSE
 	)
-	var state_changed := npc.current_state != state_before
+	var state_changed = npc.current_state != state_before
 
 	if (
 		DEBUG_ENTER_PROFILE
@@ -26,7 +26,7 @@ func process_enter() -> void:
 			or elapsed_msec >= SLOW_ENTER_THRESHOLD_MSEC
 		)
 	):
-		var message := (
+		var message = (
 			"[NPC_ENTER_PROFILE] npc=%s elapsed_ms=%.3f state=%d->%d "
 			+ "item=%s target_shelf=%s target=%s"
 		) % [

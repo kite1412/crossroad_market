@@ -12,13 +12,13 @@ func get_npc_route_to_queue_target_from(
 	from_position: Vector2,
 	queue_index: int
 ) -> Array[Vector2]:
-	var started_usec := Time.get_ticks_usec()
-	var route := super.get_npc_route_to_queue_target_from(
+	var started_usec = Time.get_ticks_usec()
+	var route = super.get_npc_route_to_queue_target_from(
 		from_position,
 		queue_index
 	)
 	if DEBUG_STORE_ROUTE_PROFILE:
-		var message := (
+		var message = (
 			"[STORE_QUEUE_ROUTE] queue_index=%d elapsed_ms=%.3f from=%s "
 			+ "target=%s route=%s"
 		) % [
@@ -38,8 +38,8 @@ func get_npc_route_from_shelf_to_cashier(
 	if shelf == null or not is_instance_valid(shelf):
 		return []
 
-	var started_usec := Time.get_ticks_usec()
-	var route := super.get_npc_route_from_shelf_to_cashier(shelf)
+	var started_usec = Time.get_ticks_usec()
+	var route = super.get_npc_route_from_shelf_to_cashier(shelf)
 	if DEBUG_STORE_ROUTE_PROFILE:
 		print(
 			"[STORE_SHELF_EGRESS] shelf=%s elapsed_ms=%.3f route=%s"
@@ -53,8 +53,8 @@ func get_npc_route_from_shelf_to_cashier(
 
 
 func get_store_path_graph() -> StorePathGraph:
-	var total_started_usec := Time.get_ticks_usec()
-	var needs_debug_graph := (
+	var total_started_usec = Time.get_ticks_usec()
+	var needs_debug_graph = (
 		store._store_path_graph == null
 		or store._store_path_graph.get_script() != DebugStorePathGraphScript
 	)
@@ -70,18 +70,18 @@ func get_store_path_graph() -> StorePathGraph:
 			store.store_path_markers
 		)
 
-	var grid_started_usec := Time.get_ticks_usec()
+	var grid_started_usec = Time.get_ticks_usec()
 	var grid_points: Array[Vector2] = store._get_shelf_placement_grid_positions()
-	var grid_elapsed_msec := float(
+	var grid_elapsed_msec = float(
 		Time.get_ticks_usec() - grid_started_usec
 	) / 1000.0
 
-	var set_points_started_usec := Time.get_ticks_usec()
+	var set_points_started_usec = Time.get_ticks_usec()
 	store._store_path_graph.set_shelf_access_points(grid_points)
-	var set_points_elapsed_msec := float(
+	var set_points_elapsed_msec = float(
 		Time.get_ticks_usec() - set_points_started_usec
 	) / 1000.0
-	var total_elapsed_msec := float(
+	var total_elapsed_msec = float(
 		Time.get_ticks_usec() - total_started_usec
 	) / 1000.0
 
@@ -89,7 +89,7 @@ func get_store_path_graph() -> StorePathGraph:
 		DEBUG_STORE_ROUTE_PROFILE
 		and total_elapsed_msec >= SLOW_GRAPH_SETUP_THRESHOLD_MSEC
 	):
-		var message := (
+		var message = (
 			"[STORE_GRAPH_SETUP] new_graph=%s grid_points=%d grid_ms=%.3f "
 			+ "set_points_ms=%.3f total_ms=%.3f"
 		) % [
@@ -110,7 +110,7 @@ func _format_route(route: Array[Vector2]) -> String:
 
 	var formatted: Array[String] = []
 	for point in route:
-		var marker_name := _get_nearest_marker_name(point)
+		var marker_name = _get_nearest_marker_name(point)
 		if marker_name != "":
 			formatted.append("%s:%s" % [marker_name, str(point)])
 		else:
@@ -122,13 +122,13 @@ func _get_nearest_marker_name(point: Vector2) -> String:
 	if store == null or store.store_path_markers == null:
 		return ""
 
-	var nearest_name := ""
-	var nearest_distance := INF
+	var nearest_name = ""
+	var nearest_distance = INF
 	for child in store.store_path_markers.get_children():
 		if not (child is Marker2D):
 			continue
-		var marker := child as Marker2D
-		var distance := marker.global_position.distance_to(point)
+		var marker = child as Marker2D
+		var distance = marker.global_position.distance_to(point)
 		if distance < nearest_distance:
 			nearest_distance = distance
 			nearest_name = str(marker.name)

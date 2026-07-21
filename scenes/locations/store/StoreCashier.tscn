@@ -1,0 +1,45 @@
+[gd_scene format=3 uid="uid://b7w567u8higlo"]
+
+[ext_resource type="Texture2D" uid="uid://b5888a5cr0ouo" path="res://assets/cashier/main-frame.png" id="1_fysir"]
+[ext_resource type="Texture2D" uid="uid://me5ayjwlc5j2" path="res://assets/cashier/list.png" id="2_bckvs"]
+[ext_resource type="Texture2D" uid="uid://cxs24ek4jqxak" path="res://assets/cashier/side-bar-1.png" id="3_h4kxm"]
+[ext_resource type="Texture2D" uid="uid://cbc5xr3fcov1u" path="res://assets/cashier/side-bar-2.png" id="4_x1uqu"]
+[ext_resource type="Texture2D" uid="uid://cpeuj3ml4gynm" path="res://assets/cashier/screen.png" id="5_h4kxm"]
+[ext_resource type="Texture2D" uid="uid://vg6bpj3bgptx" path="res://assets/cashier/total-screen.png" id="6_x1uqu"]
+[ext_resource type="Script" uid="uid://b2v6i3xdbgh2f" path="res://scripts/ui/PortraitAnimation.gd" id="7_x1uqu"]
+
+[node name="StoreCashier" type="Node2D" unique_id=900483876]
+
+[node name="MainFrame" type="Sprite2D" parent="." unique_id=1187040639]
+position = Vector2(240, 135)
+texture = ExtResource("1_fysir")
+
+[node name="List" type="Sprite2D" parent="." unique_id=816763099]
+position = Vector2(240, 135)
+texture = ExtResource("2_bckvs")
+
+[node name="FirstTab" type="Sprite2D" parent="." unique_id=148675076]
+position = Vector2(240, 135)
+texture = ExtResource("3_h4kxm")
+
+[node name="SecondTab" type="Sprite2D" parent="." unique_id=1078497879]
+position = Vector2(240, 135)
+texture = ExtResource("4_x1uqu")
+
+[node name="Screen" type="Sprite2D" parent="." unique_id=126340900]
+position = Vector2(240, 135)
+texture = ExtResource("5_h4kxm")
+
+[node name="TotalExchange" type="Sprite2D" parent="." unique_id=159582137]
+position = Vector2(240, 135)
+texture = ExtResource("6_x1uqu")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1429541952]
+
+[node name="PortraitAnimation" type="Control" parent="CanvasLayer" unique_id=1973370276]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("7_x1uqu")
+metadata/_custom_type_script = "uid://b2v6i3xdbgh2f"

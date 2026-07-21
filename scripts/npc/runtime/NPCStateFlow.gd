@@ -48,7 +48,7 @@ func process_enter() -> void:
 	npc._target_shelf = target_shelf
 	npc.target_position = visit_position
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-	var route_info := get_route_travel_info(visit_position)
+	var route_info = get_route_travel_info(visit_position)
 	npc.shelf_route_ready.emit(
 		npc,
 		float(route_info.get("travel_seconds", 0.0))
@@ -71,7 +71,7 @@ func get_route_travel_info(destination: Vector2) -> Dictionary:
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var route: Array[Vector2] = npc._build_movement_route(destination)
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-	var distance := 0.0
+	var distance = 0.0
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var previous: Vector2 = npc.global_position
 
@@ -131,7 +131,7 @@ func process_search_item(delta: float) -> void:
 	npc._search_timer += delta
 
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-	var stocked_shelf := _find_reachable_stocked_shelf()
+	var stocked_shelf = _find_reachable_stocked_shelf()
 
 	if stocked_shelf != null:
 		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
@@ -302,7 +302,7 @@ func _begin_wait_for_shelf(_reason: String) -> void:
 	npc._waiting_for_shelf_return = true
 	npc._shelf_wait_timer = 0.0
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-	var store_provider := _get_store_provider()
+	var store_provider = _get_store_provider()
 
 	if (
 		store_provider == null
@@ -367,7 +367,7 @@ func _find_reachable_stocked_shelf() -> Shelf:
 			continue
 
 		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-		var has_requested_stock := false
+		var has_requested_stock = false
 		for item_id in requested_items:
 			if shelf.has_item(item_id):
 				has_requested_stock = true
