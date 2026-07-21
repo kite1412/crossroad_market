@@ -1,16 +1,59 @@
 class_name StoreRuntimePathGraph
 extends OptimizedStorePathGraph
 
-## Store-only route operations that depend on customer state semantics.
+## Store-only compatibility graph. Layered navigation owns movement planning;
+## this graph remains responsible for selecting and caching shelf access points.
 
 const QUEUE_GRAPH_START_NODE_LIMIT: int = 6
 const QUEUE_APPROACH_CONNECTOR_LIMIT: int = 4
+const DEFAULT_SHELF_SIZE := Vector2(64, 48)
+const LEGACY_DIRTY_MARGIN: float = 12.0
+
+var _last_shelf_records: Dictionary = {}
+
+
+func _init(
+	store_node: Node2D = null,
+	marker_root: Node2D = null
+) -> void:
+	super(store_node, marker_root)
+	_last_shelf_records = _collect_shelf_records()
+
+
+func setup(store_node: Node2D, marker_root: Node2D) -> void:
+	super.setup(store_node, marker_root)
+	if _last_shelf_records.is_empty():
+		_last_shelf_records = _collect_shelf_records()
+
+
+func invalidate_dynamic_navigation() -> void:
+	var next_records := _collect_shelf_records()
+	var dirty_regions := _get_dirty_regions(
+		_last_shelf_records,
+		next_records
+	)
+
+	_navigation_revision += 1
+	invalidate_surface_graph_cache()
+
+	for record_variant in next_records.values():
+		if not (record_variant is Dictionary):
+			continue
+		var record := record_variant as Dictionary
+		var shelf_variant: Variant = record.get("shelf", null)
+		if not is_instance_valid(shelf_variant) or not (shelf_variant is Shelf):
+			continue
+		var shelf := shelf_variant as Shelf
+		if _shelf_metadata_touches_dirty_region(shelf, dirty_regions):
+			clear_shelf_access_metadata(shelf)
+		elif super.has_cached_shelf_access_metadata(shelf):
+			# Preserve valid access metadata while advancing it to the new revision.
+			shelf.set_meta(ACCESS_NAV_REVISION_META, _navigation_revision)
+
+	_last_shelf_records = next_records
 
 
 func get_shelf_access_position(shelf: Shelf) -> Vector2:
-	# StorePathGraphBase falls back to the exhaustive planner when metadata is
-	# absent. Runtime reads must never trigger that synchronous fallback; metadata
-	# is produced explicitly by the bounded placement/warmup flow.
 	if shelf == null or not is_instance_valid(shelf):
 		return Vector2.INF
 	if not has_cached_shelf_access_metadata(shelf):
@@ -67,8 +110,6 @@ func get_route_from_shelf_to_queue_target(
 	if not direct_route.is_empty():
 		return direct_route
 
-	# Approach the assigned slot from its matching right-side marker. Back1/Back2
-	# customers therefore never need QueueFront as an intermediate waypoint.
 	var approach_node := _nav.get_queue_approach_node_name(queue_index)
 	if approach_node == StringName():
 		approach_node = _nav.get_queue_target_node_name(queue_index)
@@ -79,9 +120,6 @@ func get_route_from_shelf_to_queue_target(
 	if approach_marker == null:
 		return []
 
-	# Queue markers are intentionally excluded from normal graph edges. Connect
-	# the assigned approach marker to a few nearby non-queue graph nodes instead
-	# of asking A* to use the queue marker as a graph goal.
 	var approach_connectors := super._get_nearest_graph_node_names_for_access(
 		approach_marker.global_position,
 		StringName(),
@@ -171,11 +209,182 @@ func _is_shelf_queue_route_clear(
 	shelf: Shelf,
 	npc_node: Node
 ) -> bool:
-	# This variant ignores the source overlap, the assigned slot endpoint, the
-	# source shelf body, and the moving NPC's own collider.
 	return _clearance.is_route_to_access_clear(
 		from_position,
 		route,
 		shelf,
 		npc_node
+	)
+
+
+func _collect_shelf_records() -> Dictionary:
+	var records: Dictionary = {}
+	if _store == null or _store.get_tree() == null:
+		return records
+
+	for shelf_variant in _store.get_tree().get_nodes_in_group("shelves"):
+		if not (shelf_variant is Shelf):
+			continue
+		var shelf := shelf_variant as Shelf
+		if not is_instance_valid(shelf):
+			continue
+		if bool(shelf.get_meta("is_carried_storage_object", false)):
+			continue
+		records[shelf.get_instance_id()] = {
+			"shelf": shelf,
+			"position": shelf.global_position,
+			"rect": _get_shelf_rect(shelf)
+		}
+	return records
+
+
+func _get_dirty_regions(
+	previous_records: Dictionary,
+	next_records: Dictionary
+) -> Array[Rect2]:
+	var regions: Array[Rect2] = []
+	for instance_id_variant in next_records.keys():
+		var instance_id := int(instance_id_variant)
+		var next_record: Dictionary = next_records[instance_id]
+		var next_rect: Rect2 = next_record.get("rect", Rect2())
+		if not previous_records.has(instance_id):
+			regions.append(next_rect.grow(LEGACY_DIRTY_MARGIN))
+			continue
+		var previous_record: Dictionary = previous_records[instance_id]
+		var previous_position: Vector2 = previous_record.get(
+			"position",
+			Vector2.INF
+		)
+		var next_position: Vector2 = next_record.get(
+			"position",
+			Vector2.INF
+		)
+		if (
+			not previous_position.is_finite()
+			or not next_position.is_finite()
+			or not previous_position.is_equal_approx(next_position)
+		):
+			var previous_rect: Rect2 = previous_record.get("rect", Rect2())
+			regions.append(previous_rect.grow(LEGACY_DIRTY_MARGIN))
+			regions.append(next_rect.grow(LEGACY_DIRTY_MARGIN))
+
+	for instance_id_variant in previous_records.keys():
+		var instance_id := int(instance_id_variant)
+		if next_records.has(instance_id):
+			continue
+		var removed_record: Dictionary = previous_records[instance_id]
+		var removed_rect: Rect2 = removed_record.get("rect", Rect2())
+		regions.append(removed_rect.grow(LEGACY_DIRTY_MARGIN))
+	return regions
+
+
+func _shelf_metadata_touches_dirty_region(
+	shelf: Shelf,
+	regions: Array[Rect2]
+) -> bool:
+	if not super.has_cached_shelf_access_metadata(shelf):
+		return true
+	var stored_position: Variant = shelf.get_meta(
+		ACCESS_POSITION_REVISION_META,
+		Vector2.INF
+	)
+	if (
+		not (stored_position is Vector2)
+		or not (stored_position as Vector2).is_equal_approx(shelf.global_position)
+	):
+		return true
+	if regions.is_empty():
+		return false
+
+	var access_variant: Variant = shelf.get_meta(ACCESS_META, Vector2.INF)
+	var access_position := Vector2.INF
+	if access_variant is Vector2:
+		access_position = access_variant as Vector2
+	for region in regions:
+		if access_position.is_finite() and region.has_point(access_position):
+			return true
+		if region.intersects(_get_shelf_rect(shelf), true):
+			return true
+
+	var route := _metadata_route_to_vector2_array(
+		shelf.get_meta(ACCESS_ROUTE_META, [])
+	)
+	var route_start := access_position
+	var node_name := shelf.get_meta(
+		ACCESS_NODE_META,
+		StringName()
+	) as StringName
+	var node_marker: Marker2D = _nav.get_graph_marker(node_name)
+	if node_marker != null:
+		route_start = node_marker.global_position
+	return _route_intersects_regions(route_start, route, regions)
+
+
+func _metadata_route_to_vector2_array(value: Variant) -> Array[Vector2]:
+	var result: Array[Vector2] = []
+	if not (value is Array):
+		return result
+	for point_variant in value:
+		if point_variant is Vector2:
+			result.append(point_variant as Vector2)
+	return result
+
+
+func _route_intersects_regions(
+	start_position: Vector2,
+	route: Array[Vector2],
+	regions: Array[Rect2]
+) -> bool:
+	var previous := start_position
+	for point in route:
+		for region in regions:
+			if _segment_intersects_rect(previous, point, region):
+				return true
+		previous = point
+	return false
+
+
+func _segment_intersects_rect(
+	from_position: Vector2,
+	to_position: Vector2,
+	rect: Rect2
+) -> bool:
+	if rect.has_point(from_position) or rect.has_point(to_position):
+		return true
+	var corners := [
+		rect.position,
+		rect.position + Vector2(rect.size.x, 0.0),
+		rect.end,
+		rect.position + Vector2(0.0, rect.size.y)
+	]
+	for index in range(corners.size()):
+		var next_index := (index + 1) % corners.size()
+		if Geometry2D.segment_intersects_segment(
+			from_position,
+			to_position,
+			corners[index] as Vector2,
+			corners[next_index] as Vector2
+		) != null:
+			return true
+	return false
+
+
+func _get_shelf_rect(shelf: Shelf) -> Rect2:
+	var collision_shape := shelf.get_node_or_null(
+		"PhysicsBody/CollisionShape2D"
+	) as CollisionShape2D
+	if collision_shape == null or collision_shape.shape == null:
+		return Rect2(
+			shelf.global_position - DEFAULT_SHELF_SIZE * 0.5,
+			DEFAULT_SHELF_SIZE
+		)
+	var rectangle := collision_shape.shape as RectangleShape2D
+	if rectangle == null:
+		return Rect2(
+			shelf.global_position - DEFAULT_SHELF_SIZE * 0.5,
+			DEFAULT_SHELF_SIZE
+		)
+	return Rect2(
+		collision_shape.global_position - rectangle.size * 0.5,
+		rectangle.size
 	)
