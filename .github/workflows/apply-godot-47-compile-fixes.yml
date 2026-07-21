@@ -1,0 +1,311 @@
+name: Apply Godot 4.7 Compile Fixes
+
+on:
+  push:
+    branches:
+      - agent/fix-godot-47-navigation-compile-errors
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repair branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/fix-godot-47-navigation-compile-errors
+          fetch-depth: 0
+
+      - name: Apply strict typing and override fixes
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              file_path = Path(path)
+              text = file_path.read_text(encoding="utf-8")
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(
+                      f"Expected exactly one match in {path}, found {count}: {old!r}"
+                  )
+              file_path.write_text(text.replace(old, new), encoding="utf-8")
+
+          replace_once(
+              "scripts/locations/store/StoreNpcRoutes.gd",
+              "\tvar route_end := legacy_route.back()",
+              "\tvar route_end: Vector2 = legacy_route.back() as Vector2",
+          )
+          replace_once(
+              "scripts/locations/store/StoreNpcRoutes.gd",
+              "\tvar needs_runtime_graph := (",
+              "\tvar needs_runtime_graph: bool = (",
+          )
+
+          runtime_path = "scripts/locations/store/StoreNpcRoutesRuntime.gd"
+          replace_once(
+              runtime_path,
+              "\tvar store_node := store as Node2D",
+              "\tvar store_node: Node2D = store as Node2D",
+          )
+          replace_once(
+              runtime_path,
+              "\tvar marker_root := store.store_path_markers as Node2D",
+              "\tvar marker_root: Node2D = store.store_path_markers as Node2D",
+          )
+          replace_once(
+              runtime_path,
+              "\tvar needs_runtime_graph := (",
+              "\tvar needs_runtime_graph: bool = (",
+          )
+          replace_once(
+              runtime_path,
+              "\tvar layout_signature := _get_shelf_layout_signature()",
+              "\tvar layout_signature: String = _get_shelf_layout_signature()",
+          )
+          replace_once(
+              runtime_path,
+              "\tvar layout_changed := (",
+              "\tvar layout_changed: bool = (",
+          )
+
+          replace_once(
+              "scripts/navigation/store/StoreDynamicObstacleTracker.gd",
+              "\t\tvar oldest := revisions.pop_front()\n\t\t_dirty_history.erase(oldest)",
+              "\t\tvar oldest: int = int(revisions.pop_front())\n\t\t_dirty_history.erase(oldest)",
+          )
+
+          replace_once(
+              "scripts/navigation/store/StoreThetaStarPlanner.gd",
+              '''\tvar key := _to_grid_key(_anchors[index])
+\tfor offset in [
+\t\tVector2i(-1, -1),
+\t\tVector2i(0, -1),
+\t\tVector2i(1, -1),
+\t\tVector2i(-1, 0),
+\t\tVector2i(1, 0),
+\t\tVector2i(-1, 1),
+\t\tVector2i(0, 1),
+\t\tVector2i(1, 1)
+\t]:
+\t\tvar neighbor_key := key + offset''',
+              '''\tvar key: Vector2i = _to_grid_key(_anchors[index])
+\tvar neighbor_offsets: Array[Vector2i] = [
+\t\tVector2i(-1, -1),
+\t\tVector2i(0, -1),
+\t\tVector2i(1, -1),
+\t\tVector2i(-1, 0),
+\t\tVector2i(1, 0),
+\t\tVector2i(-1, 1),
+\t\tVector2i(0, 1),
+\t\tVector2i(1, 1)
+\t]
+\tfor offset: Vector2i in neighbor_offsets:
+\t\tvar neighbor_key: Vector2i = key + offset''',
+          )
+
+          local_avoidance = "scripts/navigation/store/StoreLocalAvoidance.gd"
+          replacements = [
+              ("\tvar desired_direction := npc.global_position.direction_to(desired_target)",
+               "\tvar desired_direction: Vector2 = npc.global_position.direction_to(desired_target)"),
+              ("\tvar nearest_distance := INF", "\tvar nearest_distance: float = INF"),
+              ("\t\tvar other := other_variant as NPC", "\t\tvar other: NPC = other_variant as NPC"),
+              ("\t\tvar offset := other.global_position - npc.global_position", "\t\tvar offset: Vector2 = other.global_position - npc.global_position"),
+              ("\t\tvar distance := offset.length()", "\t\tvar distance: float = offset.length()"),
+              ("\tvar relative := nearest_blocker.global_position - npc.global_position", "\tvar relative: Vector2 = nearest_blocker.global_position - npc.global_position"),
+              ("\tvar perpendicular := Vector2(-desired_direction.y, desired_direction.x)", "\tvar perpendicular: Vector2 = Vector2(-desired_direction.y, desired_direction.x)"),
+              ("\tvar cross_sign := signf(desired_direction.cross(relative))", "\tvar cross_sign: float = signf(desired_direction.cross(relative))"),
+              ('''\tfor side_sign in [cross_sign, -cross_sign]:
+\t\tvar sidestep_target := (''', '''\tvar side_signs: Array[float] = [cross_sign, -cross_sign]
+\tfor side_sign: float in side_signs:
+\t\tvar sidestep_target: Vector2 = ('''),
+              ("\t\tvar context := {", "\t\tvar context: Dictionary = {"),
+          ]
+          for old, new in replacements:
+              replace_once(local_avoidance, old, new)
+
+          runtime_theta = "scripts/navigation/store/StoreThetaStarRuntimePlanner.gd"
+          replace_once(
+              runtime_theta,
+              '''\tvar clear := _physics_segment_clear(
+\t\tfrom_position,
+\t\tto_position,
+\t\tcontext,
+\t\tignore_start,
+\t\tignore_endpoint
+\t)''',
+              '''\tvar clear: bool = _physics_segment_clear(
+\t\tfrom_position,
+\t\tto_position,
+\t\tcontext,
+\t\tignore_start,
+\t\tignore_endpoint,
+\t\tendpoint_shelf
+\t)''',
+          )
+          replace_once(
+              runtime_theta,
+              '''func _physics_segment_clear(
+\tfrom_position: Vector2,
+\tto_position: Vector2,
+\tcontext: Dictionary,
+\tignore_start: bool,
+\tignore_endpoint: bool
+) -> bool:''',
+              '''func _physics_segment_clear(
+\tfrom_position: Vector2,
+\tto_position: Vector2,
+\tcontext: Dictionary,
+\tignore_start: bool,
+\tignore_endpoint: bool,
+\t_ignored_shelf: Shelf
+) -> bool:''',
+          )
+
+          permanent_workflow = '''name: Godot 4.7 Compile
+
+on:
+  pull_request:
+    paths:
+      - "scripts/**"
+      - "scenes/**"
+      - "project.godot"
+      - ".github/workflows/godot-compile.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compile-gdscript:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Godot 4.7 stable
+        shell: bash
+        run: |
+          curl --fail --location --retry 3 \\
+            --output /tmp/godot.zip \\
+            https://github.com/godotengine/godot/releases/download/4.7-stable/Godot_v4.7-stable_linux.x86_64.zip
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          chmod +x /tmp/godot/Godot_v4.7-stable_linux.x86_64
+
+      - name: Compile every GDScript resource
+        shell: bash
+        run: |
+          cat > /tmp/check_all_scripts.gd <<'GDSCRIPT'
+          extends SceneTree
+
+          var failures: int = 0
+
+          func _init() -> void:
+              _scan_directory("res://")
+              if failures > 0:
+                  push_error("Failed to compile %d GDScript resource(s)." % failures)
+              quit(1 if failures > 0 else 0)
+
+          func _scan_directory(path: String) -> void:
+              var directory := DirAccess.open(path)
+              if directory == null:
+                  push_error("Cannot open %s" % path)
+                  failures += 1
+                  return
+              directory.list_dir_begin()
+              var entry := directory.get_next()
+              while entry != "":
+                  if entry == ".godot" or entry == ".git":
+                      entry = directory.get_next()
+                      continue
+                  var full_path := path.path_join(entry)
+                  if directory.current_is_dir():
+                      _scan_directory(full_path)
+                  elif entry.ends_with(".gd"):
+                      var script := ResourceLoader.load(
+                          full_path,
+                          "Script",
+                          ResourceLoader.CACHE_MODE_IGNORE
+                      )
+                      if script == null:
+                          failures += 1
+                  entry = directory.get_next()
+              directory.list_dir_end()
+          GDSCRIPT
+          timeout 180s /tmp/godot/Godot_v4.7-stable_linux.x86_64 \\
+            --headless --path . --script /tmp/check_all_scripts.gd
+'''
+          Path(".github/workflows/godot-compile.yml").write_text(
+              permanent_workflow,
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Install Godot 4.7 stable
+        shell: bash
+        run: |
+          curl --fail --location --retry 3 \
+            --output /tmp/godot.zip \
+            https://github.com/godotengine/godot/releases/download/4.7-stable/Godot_v4.7-stable_linux.x86_64.zip
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          chmod +x /tmp/godot/Godot_v4.7-stable_linux.x86_64
+
+      - name: Compile every GDScript resource
+        shell: bash
+        run: |
+          cat > /tmp/check_all_scripts.gd <<'GDSCRIPT'
+          extends SceneTree
+
+          var failures: int = 0
+
+          func _init() -> void:
+              _scan_directory("res://")
+              if failures > 0:
+                  push_error("Failed to compile %d GDScript resource(s)." % failures)
+              quit(1 if failures > 0 else 0)
+
+          func _scan_directory(path: String) -> void:
+              var directory := DirAccess.open(path)
+              if directory == null:
+                  push_error("Cannot open %s" % path)
+                  failures += 1
+                  return
+              directory.list_dir_begin()
+              var entry := directory.get_next()
+              while entry != "":
+                  if entry == ".godot" or entry == ".git":
+                      entry = directory.get_next()
+                      continue
+                  var full_path := path.path_join(entry)
+                  if directory.current_is_dir():
+                      _scan_directory(full_path)
+                  elif entry.ends_with(".gd"):
+                      var script := ResourceLoader.load(
+                          full_path,
+                          "Script",
+                          ResourceLoader.CACHE_MODE_IGNORE
+                      )
+                      if script == null:
+                          failures += 1
+                  entry = directory.get_next()
+              directory.list_dir_end()
+          GDSCRIPT
+          timeout 180s /tmp/godot/Godot_v4.7-stable_linux.x86_64 \
+            --headless --path . --script /tmp/check_all_scripts.gd
+
+      - name: Commit verified fixes
+        shell: bash
+        run: |
+          rm .github/workflows/apply-godot-47-compile-fixes.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Fix Godot 4.7 navigation compile errors"
+          git push origin HEAD:agent/fix-godot-47-navigation-compile-errors
