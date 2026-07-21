@@ -1,6 +1,7 @@
 class_name StoreSimulationScheduler
 extends RefCounted
 
+const StoreRuntimeDebugProbeScript = preload("res://scripts/debug/StoreRuntimeDebugProbe.gd")
 
 const PRIORITY_HIGH: StringName = &"high"
 const PRIORITY_NORMAL: StringName = &"normal"
@@ -55,6 +56,15 @@ func tick() -> void:
 		var job_elapsed_msec: float = _elapsed_msec(job_start_usec)
 		if job_elapsed_msec > budget_msec:
 			_record_spike(job, job_elapsed_msec)
+			StoreRuntimeDebugProbeScript.record(
+				StringName(str(job.get("label", &"job"))),
+				job_elapsed_msec,
+				{
+					"priority": StringName(str(job.get("priority", PRIORITY_NORMAL))),
+					"source": &"simulation_scheduler"
+				},
+				budget_msec
+			)
 
 		if not completed:
 			_requeue(job)

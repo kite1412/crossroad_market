@@ -4,6 +4,7 @@ extends Node2D
 
 const StoreSimulationSchedulerScript = preload("res://scripts/locations/store/StoreSimulationScheduler.gd")
 const NPCPathRequestServiceScript = preload("res://scripts/npc/runtime/NPCPathRequestService.gd")
+const StoreRuntimeDebugProbeScript = preload("res://scripts/debug/StoreRuntimeDebugProbe.gd")
 
 const SHELF_ACCESS_WARMUP_DELAY: float = 1.0
 const STORE_ENTRY_FALLBACK_POSITION := Vector2(240, 204)
@@ -266,6 +267,11 @@ func _process_simulation_scheduler() -> void:
 	if _simulation_scheduler == null:
 		return
 	_simulation_scheduler.tick()
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func get_runtime_debug_events() -> Array[Dictionary]:
+	return StoreRuntimeDebugProbeScript.get_events()
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

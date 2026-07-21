@@ -42,6 +42,14 @@ static func is_supply_box_shelf_ready(tree: SceneTree, available_items: Array) -
 
 		return true
 
+	var storage: Node = tree.get_first_node_in_group("storage") if tree != null else null
+	if storage != null:
+		for shelf_type in required_shelf_types.keys():
+			if not _is_storage_shelf_type_installed(storage, int(shelf_type)):
+				return false
+
+		return true
+
 	for shelf_type in required_shelf_types.keys():
 		if not has_installed_shelf_type(tree, int(shelf_type)):
 			return false
@@ -62,5 +70,18 @@ static func has_installed_shelf_type(tree: SceneTree, shelf_type: int) -> bool:
 
 		if shelf.shelf_type == shelf_type and is_shelf_installed_in_store(shelf):
 			return true
+
+	return false
+
+
+static func _is_storage_shelf_type_installed(
+	storage: Node,
+	shelf_type: int
+) -> bool:
+	match shelf_type:
+		ItemData.ShelfType.HUMAN:
+			return bool(storage.get("_human_shelf_installed"))
+		ItemData.ShelfType.GHOST:
+			return bool(storage.get("_ghost_shelf_installed"))
 
 	return false

@@ -134,6 +134,8 @@ func apply_normal_box_state() -> void:
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func apply_mystery_phase_state(animated: bool) -> void:
+	apply_shelf_install_state()
+
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var is_open: bool = storage._mystery_phase_unlocked
 

@@ -1,6 +1,7 @@
 class_name StoreShelfPlacementController
 extends Node
 
+const StoreRuntimeDebugProbeScript = preload("res://scripts/debug/StoreRuntimeDebugProbe.gd")
 
 const STORE_SHELF_PICKUP_DISTANCE: float = 60.0
 const CARRY_SHELF_CASHIER_BLOCKER_SIZE := Vector2(96, 36)
@@ -179,6 +180,7 @@ func is_player_carrying_shelf_named(shelf_name: String) -> bool:
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func drop_carried_shelf_in_store(object: Node2D) -> void:
+	var debug_start_usec: int = Time.get_ticks_usec()
 	if store.player == null:
 		return
 
@@ -233,6 +235,8 @@ func drop_carried_shelf_in_store(object: Node2D) -> void:
 		object.set_meta(NPC_PATH_PENDING_META, true)
 		object.set_meta("npc_path_ready", false)
 
+	store._register_installed_shelf(object)
+
 	if store.has_method("mark_navigation_dirty"):
 		store.call("mark_navigation_dirty", dirty_rect)
 
@@ -240,6 +244,15 @@ func drop_carried_shelf_in_store(object: Node2D) -> void:
 	schedule_post_shelf_drop_update(object, drop_position)
 	pass
 	set_customer_path_visual_visible(false)
+	StoreRuntimeDebugProbeScript.record(
+		&"store_drop_shelf",
+		StoreRuntimeDebugProbeScript.elapsed_msec(debug_start_usec),
+		{
+			"object": object.name,
+			"candidate": drop_position
+		},
+		2.0
+	)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -843,7 +856,14 @@ func execute_deferred_shelf_access_update(
 		return true
 
 	object.remove_meta(PENDING_ACCESS_UPDATE_META)
+	var access_start_usec: int = Time.get_ticks_usec()
 	store_shelf_access_metadata(object, drop_position)
+	StoreRuntimeDebugProbeScript.record(
+		&"shelf_access_metadata",
+		StoreRuntimeDebugProbeScript.elapsed_msec(access_start_usec),
+		{"object": object.name},
+		2.0
+	)
 	object.remove_meta(NPC_PATH_PENDING_META)
 
 	if object is Shelf and not bool(object.get_meta("npc_path_ready", false)):
@@ -853,8 +873,6 @@ func execute_deferred_shelf_access_update(
 			true
 		)
 		return true
-
-	store._register_installed_shelf(object)
 	return true
 
 

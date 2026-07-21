@@ -1,6 +1,7 @@
 class_name NPCPathRequestService
 extends RefCounted
 
+const StoreRuntimeDebugProbeScript = preload("res://scripts/debug/StoreRuntimeDebugProbe.gd")
 
 const STATUS_PENDING: StringName = &"pending"
 const STATUS_COMPLETED: StringName = &"completed"
@@ -57,7 +58,16 @@ static func tick(max_completed: int = MAX_COMPLETED_ROUTES_PER_TICK) -> void:
 			completed_count += 1
 			continue
 
+		var route_start_usec: int = Time.get_ticks_usec()
 		var route_variant: Variant = request.get("build_route", Callable()).call()
+		StoreRuntimeDebugProbeScript.record(
+			&"npc_path_request",
+			StoreRuntimeDebugProbeScript.elapsed_msec(route_start_usec),
+			{
+				"npc_id": int(request.get("npc_id", 0)),
+				"priority": int(request.get("priority", 100))
+			}
+		)
 		if route_variant is Array:
 			request["route"] = (route_variant as Array).duplicate()
 			request["status"] = STATUS_COMPLETED
