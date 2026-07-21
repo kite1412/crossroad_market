@@ -17,6 +17,7 @@ const LIVE_ACCESS_SHELF_ANCHOR_LIMIT: int = 2
 const SHELF_ENTRY_BLOCKER_META: StringName = &"store_path_blocks_shelf_entry"
 const SHELF_ENTRY_BLOCKER_RADIUS_META: StringName = &"store_path_shelf_entry_block_radius"
 const DEFAULT_SHELF_ENTRY_BLOCKER_RADIUS: float = 22.0
+const StoreRuntimeDebugProbeScript = preload("res://scripts/debug/StoreRuntimeDebugProbe.gd")
 
 
 func set_shelf_access_points(points: Array[Vector2]) -> void:
@@ -70,8 +71,27 @@ func get_route_to_shelf_access(
 		shelf,
 		npc_node
 	)
+	if candidates.is_empty():
+		_append_shelf_quad_access_fallback_routes(
+			candidates,
+			from_position,
+			access_position,
+			shelf,
+			npc_node
+		)
 
-	return _get_shortest_route(candidates)
+	var result := _get_shortest_route(candidates)
+	if result.is_empty():
+		_record_path_graph_probe(&"npc_shelf_access_route_empty", {
+			"from": _format_vector(from_position),
+			"access": _format_vector(access_position),
+			"shelf_id": String(shelf.get_shelf_id()),
+			"shelf_revision": shelf.get_revision(),
+			"shelf_graph_node": String(shelf_graph_node),
+			"candidate_count": candidates.size()
+		})
+
+	return result
 
 
 func get_shelf_egress_route_to_queue_from(
@@ -361,6 +381,86 @@ func _append_fast_marker_access_routes(
 					)
 
 
+func _append_shelf_quad_access_fallback_routes(
+	candidates: Array[Dictionary],
+	from_position: Vector2,
+	access_position: Vector2,
+	shelf: Shelf,
+	npc_node: Node
+) -> void:
+	var quad_marker := _get_nearest_shelf_quad_marker(access_position)
+	if quad_marker == null:
+		_record_path_graph_probe(&"npc_shelf_access_route_fallback", {
+			"reason": "missing_shelf_quad",
+			"from": _format_vector(from_position),
+			"access": _format_vector(access_position)
+		})
+		return
+
+	var before_count := candidates.size()
+	for first_leg_horizontal in [false, true]:
+		var route: Array[Vector2] = _routes.make_orthogonal_route(
+			from_position,
+			quad_marker.global_position,
+			first_leg_horizontal
+		)
+		for second_leg_horizontal in [false, true]:
+			var candidate_route: Array[Vector2] = route.duplicate()
+			candidate_route.append_array(
+				_routes.make_orthogonal_route(
+					quad_marker.global_position,
+					access_position,
+					second_leg_horizontal
+				)
+			)
+			candidate_route = _routes.dedupe_route_points(candidate_route)
+			if not _is_shelf_entry_route_allowed(from_position, candidate_route):
+				continue
+			if _clearance.is_route_to_access_clear(
+				from_position,
+				candidate_route,
+				shelf,
+				npc_node
+			):
+				_append_route_candidate(
+					candidates,
+					from_position,
+					candidate_route
+				)
+
+	_record_path_graph_probe(&"npc_shelf_access_route_fallback", {
+		"reason": "built",
+		"from": _format_vector(from_position),
+		"access": _format_vector(access_position),
+		"shelf_quad": String(quad_marker.name),
+		"shelf_quad_position": _format_vector(quad_marker.global_position),
+		"added_candidates": candidates.size() - before_count
+	})
+
+
+func _get_nearest_shelf_quad_marker(from_position: Vector2) -> Marker2D:
+	if _markers == null:
+		return null
+
+	var best_marker: Marker2D = null
+	var best_distance := INF
+	for child in _markers.get_children():
+		var marker := child as Marker2D
+		if marker == null:
+			continue
+		if not String(marker.name).begins_with("StorePathShelfQuad"):
+			continue
+
+		var distance := from_position.distance_to(marker.global_position)
+		if distance >= best_distance:
+			continue
+
+		best_marker = marker
+		best_distance = distance
+
+	return best_marker
+
+
 func _append_nearest_shelf_anchor_nodes(
 	marker_nodes: Array[StringName],
 	access_position: Vector2
@@ -537,6 +637,19 @@ func _find_fast_vertical_shelf_access(
 		}
 
 	return best_result
+
+
+func _record_path_graph_probe(
+	label: StringName,
+	context: Dictionary
+) -> void:
+	StoreRuntimeDebugProbeScript.record(label, 0.0, context, 0.0)
+
+
+func _format_vector(value: Vector2) -> String:
+	if not value.is_finite():
+		return "inf,inf"
+	return "%.1f,%.1f" % [value.x, value.y]
 
 
 func _find_fast_marker_port_access(

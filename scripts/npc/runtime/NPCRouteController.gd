@@ -416,7 +416,15 @@ func _handle_empty_store_route(target: Vector2) -> void:
 	if try_recover_to_alternate_shelf():
 		return
 
-	abandon_purchase_and_exit()
+	_record_route_probe(&"npc_shelf_route_empty_wait", {
+		"reason": "walk_to_shelf_route_empty",
+		"destination": _format_vector(target),
+		"backoff_msec": _path_request_backoff_msec
+	})
+	npc.velocity = Vector2.ZERO
+	npc.move_and_slide()
+	if npc._shopping_job != null:
+		npc._shopping_job.set_state(NPCShoppingJobScript.STATE_WAITING_FOR_PATH)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
