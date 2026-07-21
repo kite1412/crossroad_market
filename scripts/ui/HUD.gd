@@ -31,8 +31,12 @@ const CURSOR_HOVER_QUERY_LIMIT: int = 32
 const OBJECTIVE_TOAST_DURATION: float = 5.0
 const OBJECTIVE_ANIM_DURATION: float = 0.22
 
+const SETTINGS_LAYER: int = 100
+
 @warning_ignore("unused_private_class_variable")
 var _settings_menu: SettingsMenu = null
+@warning_ignore("unused_private_class_variable")
+var _settings_layer: CanvasLayer = null
 
 @warning_ignore("unused_private_class_variable")
 var _notify_timer: float = 0.0
@@ -113,6 +117,7 @@ var _objective_toast_flow: HUDObjectiveToast = HUDObjectiveToast.new()
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _ready() -> void:
 	add_to_group("hud")
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	_setup_hud_controllers()
 	notification_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	objective_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -154,6 +159,8 @@ func _setup_hud_controllers() -> void:
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _process(delta: float) -> void:
+	if get_tree().paused:
+		return
 	_objective_toast_flow.update_objective_toast(delta)
 	_cursor_tooltip_flow.update_cursor_hover_tooltip()
 	_hint_dialog_flow.update_hint_dialog_timer(delta)
@@ -423,15 +430,44 @@ func _update_target_label() -> void:
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_settings_pressed() -> void:
 	if _settings_menu != null and is_instance_valid(_settings_menu):
-		_settings_menu.queue_free()
-		_settings_menu = null
+		_free_settings_layer()
+		_resume_game()
 		return
 
+	_pause_game()
+	_settings_layer = CanvasLayer.new()
+	_settings_layer.name = "SettingsUILayer"
+	_settings_layer.layer = SETTINGS_LAYER
+	add_child(_settings_layer)
 	_settings_menu = SettingsMenu.new()
 	_settings_menu.closed.connect(_on_settings_menu_closed)
-	add_child(_settings_menu)
+	_settings_layer.add_child(_settings_menu)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _on_settings_menu_closed() -> void:
+	_free_settings_layer()
+	_resume_game()
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _free_settings_layer() -> void:
+	if _settings_layer != null and is_instance_valid(_settings_layer):
+		_settings_layer.queue_free()
+	_settings_layer = null
 	_settings_menu = null
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _pause_game() -> void:
+	get_tree().paused = true
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _resume_game() -> void:
+	get_tree().paused = false
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _exit_tree() -> void:
+	get_tree().paused = false
