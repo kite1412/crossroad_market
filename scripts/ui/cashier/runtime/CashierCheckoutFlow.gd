@@ -94,6 +94,24 @@ func process_paid() -> void:
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func process_free() -> void:
+	if not cashier._has_scanned_customer():
+		clear_scan()
+		return
+
+	var npc: NPC = cashier._scanned_npc
+	var item_label: String = cashier._scanned_item_label
+	if npc.has_method("complete_story_gift"):
+		npc.complete_story_gift("Thank you! That's very kind of you.")
+	else:
+		npc.complete_checkout()
+
+	add_history(npc, item_label, 0, "FREE")
+	cashier._show_notification("FREE | %s | +0G" % item_label, 1.5)
+	clear_scan()
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func process_gooby_gift() -> void:
 	if not cashier._has_scanned_customer():
 		clear_scan()

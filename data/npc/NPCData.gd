@@ -19,6 +19,10 @@ enum NPCCategory { STORY, GENERIC }
 # --- Items ---
 @export var favorite_items: Array[String] = []
 
+# The amount of cash this customer puts on the counter during checkout.
+# Leave this at 0 to use the cashier's sensible denomination fallback.
+@export_range(0, 9999, 1) var checkout_cash: int = 0
+
 # --- STORY NPC specific ---
 @export var dialogue_set_id: String = ""   # references a DialogueSet resource
 @export var event_set_id: String = ""    # references an event dialog set

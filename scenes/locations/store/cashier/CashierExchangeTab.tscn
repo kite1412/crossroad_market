@@ -1,0 +1,67 @@
+[gd_scene format=3 uid="uid://bwb0k6qicbyb1"]
+
+[ext_resource type="Texture2D" uid="uid://b5888a5cr0ouo" path="res://assets/cashier/main-frame.png" id="1_pvh45"]
+[ext_resource type="Texture2D" uid="uid://cxs24ek4jqxak" path="res://assets/cashier/side-bar-1.png" id="2_q8ap6"]
+[ext_resource type="Texture2D" uid="uid://cbc5xr3fcov1u" path="res://assets/cashier/side-bar-2.png" id="3_kf4st"]
+[ext_resource type="Texture2D" uid="uid://vg6bpj3bgptx" path="res://assets/cashier/total-screen.png" id="4_wfpe6"]
+[ext_resource type="Texture2D" uid="uid://n4tmgur0o5ir" path="res://assets/cashier/button.png" id="6_kf4st"]
+[ext_resource type="Texture2D" uid="uid://cpeuj3ml4gynm" path="res://assets/cashier/screen.png" id="7_wfpe6"]
+[ext_resource type="PackedScene" path="res://scenes/ui/PortraitAnimation.tscn" id="8_portrait"]
+
+[node name="CashierExchangeTab" type="Node2D" unique_id=1003639902]
+
+[node name="MainFrame" type="Sprite2D" parent="." unique_id=1370145577]
+position = Vector2(240, 135)
+texture = ExtResource("1_pvh45")
+
+[node name="FirstTab" type="Sprite2D" parent="." unique_id=374944836]
+modulate = Color(0.52, 0.52, 0.52, 1)
+position = Vector2(240, 135)
+texture = ExtResource("2_q8ap6")
+
+[node name="TabName" type="Label" parent="FirstTab" unique_id=1786059069]
+offset_left = -240.0
+offset_top = 42.0
+offset_right = -184.0
+offset_bottom = 57.0
+theme_override_colors/font_color = Color(0.13725491, 0.13725491, 0.13725491, 0.64705884)
+theme_override_font_sizes/font_size = 6
+text = "SCAN"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SecondTab" type="Sprite2D" parent="." unique_id=701567716]
+modulate = Color(1.18, 1.18, 1.18, 1)
+position = Vector2(240, 135)
+texture = ExtResource("3_kf4st")
+
+[node name="TabName" type="Label" parent="SecondTab" unique_id=1620754934]
+offset_left = -189.0
+offset_top = 42.0
+offset_right = -124.0
+offset_bottom = 56.0
+theme_override_colors/font_color = Color(0.13725491, 0.13725491, 0.13725491, 1)
+theme_override_font_sizes/font_size = 6
+text = "EXCHANGE"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TotalExchange" type="Sprite2D" parent="." unique_id=545938511]
+position = Vector2(240, 135)
+texture = ExtResource("4_wfpe6")
+
+[node name="Calc" type="Sprite2D" parent="." unique_id=1958034848]
+position = Vector2(240, 135)
+texture = ExtResource("6_kf4st")
+
+[node name="Screen" type="Sprite2D" parent="." unique_id=1621499675]
+position = Vector2(240, 135)
+texture = ExtResource("7_wfpe6")
+
+[node name="PortraitAnimation" parent="." unique_id=1346486137 instance=ExtResource("8_portrait")]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 401.0
+offset_top = 182.0
+offset_right = 480.0
+offset_bottom = 264.0
