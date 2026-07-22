@@ -1,0 +1,95 @@
+[gd_scene format=3 uid="uid://b7w567u8higlo"]
+
+[ext_resource type="Texture2D" uid="uid://b5888a5cr0ouo" path="res://assets/cashier/main-frame.png" id="1_04lsu"]
+[ext_resource type="Texture2D" uid="uid://me5ayjwlc5j2" path="res://assets/cashier/list.png" id="2_y4s2q"]
+[ext_resource type="Texture2D" uid="uid://cxs24ek4jqxak" path="res://assets/cashier/side-bar-1.png" id="3_nioyn"]
+[ext_resource type="Texture2D" uid="uid://cbc5xr3fcov1u" path="res://assets/cashier/side-bar-2.png" id="4_ytwti"]
+[ext_resource type="Texture2D" uid="uid://cpeuj3ml4gynm" path="res://assets/cashier/screen.png" id="5_kafk0"]
+[ext_resource type="Texture2D" uid="uid://mk0be64j5s74" path="res://assets/cashier/scrollbar-shadow.png" id="6_nioyn"]
+[ext_resource type="PackedScene" path="res://scenes/ui/PortraitAnimation.tscn" id="6_portrait"]
+[ext_resource type="Texture2D" uid="uid://cetfyouqru4oo" path="res://assets/cashier/item-card.png" id="7_ytwti"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_patience_background"]
+bg_color = Color(0.137255, 0.0784314, 0.0588235, 0.9)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_patience_fill"]
+bg_color = Color(1, 1, 1, 1)
+
+[node name="StoreScanTab" type="Node2D" unique_id=900483876]
+
+[node name="PatienceBar" type="ProgressBar" parent="." unique_id=144689174]
+visible = false
+offset_left = 2.0
+offset_top = 172.0
+offset_right = 106.0
+offset_bottom = 176.0
+mouse_filter = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_patience_background")
+theme_override_styles/fill = SubResource("StyleBoxFlat_patience_fill")
+max_value = 1.0
+value = 1.0
+show_percentage = false
+
+[node name="MainFrame" type="Sprite2D" parent="." unique_id=1187040639]
+position = Vector2(240, 135)
+texture = ExtResource("1_04lsu")
+
+[node name="List" type="Sprite2D" parent="." unique_id=816763099]
+visible = false
+position = Vector2(240, 135)
+texture = ExtResource("2_y4s2q")
+
+[node name="FirstTab" type="Sprite2D" parent="." unique_id=148675076]
+modulate = Color(1.18, 1.18, 1.18, 1)
+position = Vector2(240, 135)
+texture = ExtResource("3_nioyn")
+
+[node name="TabName" type="Label" parent="FirstTab" unique_id=551598024]
+offset_left = -240.0
+offset_top = 42.0
+offset_right = -186.0
+offset_bottom = 57.0
+theme_override_colors/font_color = Color(0.13725491, 0.13725491, 0.13725491, 1)
+theme_override_font_sizes/font_size = 6
+text = "SCAN"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SecondTab" type="Sprite2D" parent="." unique_id=1078497879]
+modulate = Color(0.52, 0.52, 0.52, 1)
+position = Vector2(240, 135)
+texture = ExtResource("4_ytwti")
+
+[node name="TabName" type="Label" parent="SecondTab" unique_id=957613949]
+offset_left = -189.0
+offset_top = 41.0
+offset_right = -124.0
+offset_bottom = 56.0
+theme_override_colors/font_color = Color(0.13725491, 0.13725491, 0.13725491, 0.64705884)
+theme_override_font_sizes/font_size = 6
+text = "EXCHANGE"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Screen" type="Sprite2D" parent="." unique_id=126340900]
+position = Vector2(240, 135)
+texture = ExtResource("5_kafk0")
+
+[node name="ScrollBarShadow" type="Sprite2D" parent="." unique_id=394576690]
+position = Vector2(103, 239)
+texture = ExtResource("6_nioyn")
+
+[node name="CustomerMoney" type="Sprite2D" parent="." unique_id=1873843339]
+position = Vector2(230, 257)
+scale = Vector2(0.8125, 0.8333333)
+texture = ExtResource("7_ytwti")
+
+[node name="Cards" type="Node2D" parent="." unique_id=1587971030]
+
+[node name="PortraitAnimation" parent="." unique_id=13942968 instance=ExtResource("6_portrait")]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 401.0
+offset_top = 182.0
+offset_right = 480.0
+offset_bottom = 264.0

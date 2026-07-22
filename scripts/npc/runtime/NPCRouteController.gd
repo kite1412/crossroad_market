@@ -259,13 +259,6 @@ func get_store_route_for_current_state(destination: Vector2) -> Array[Vector2]:
 				queue_index >= 0
 				and store.has_method("get_npc_route_to_queue_target_from")
 			):
-				if queue_index == 0 and NPC.current_queue.size() <= 1:
-					return call_store_route(
-						store,
-						&"get_npc_route_to_cashier_from",
-						[npc.global_position]
-					)
-
 				return call_store_route(
 					store,
 					&"get_npc_route_to_queue_target_from",
@@ -310,6 +303,23 @@ func get_shelf_egress_queue_route(
 		or not is_instance_valid(npc._queue_entry_shelf)
 	):
 		return []
+
+	# Queue membership is already known here, so prefer the actual assigned slot.
+	# Composing shelf -> checkout-front -> back-slot makes later customers walk to
+	# the head of the line and then reverse through the queue.
+	var assigned_queue_route := call_store_route(
+		store,
+		&"get_npc_route_to_queue_target_from",
+		[npc.global_position, queue_index]
+	)
+	if not assigned_queue_route.is_empty():
+		if (
+			destination.is_finite()
+			and assigned_queue_route.back().distance_to(destination)
+			> npc.ARRIVAL_THRESHOLD
+		):
+			assigned_queue_route.append(destination)
+		return dedupe_route_points(assigned_queue_route)
 
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var egress_route := call_store_route(

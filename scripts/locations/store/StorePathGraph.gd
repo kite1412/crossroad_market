@@ -283,13 +283,27 @@ func _get_connection_from_graph_node_to_access(
 
 func _get_shortest_checkout_route(
 	from_position: Vector2,
-	source_shelf: Shelf
+	source_shelf: Shelf,
+	target_role: StringName = StringName()
 ) -> Array[Vector2]:
 	if not from_position.is_finite():
 		return []
 
 	var candidates: Array[Dictionary] = []
 	var checkout_nodes := _nav.get_checkout_goal_node_names()
+	if target_role != StringName():
+		var fallback_node := (
+			CASHIER
+			if target_role == ROLE_CASHIER
+			else QUEUE_FRONT
+		)
+		var target_node := _nav.get_role_node_name(
+			target_role,
+			fallback_node
+		)
+		checkout_nodes.clear()
+		if target_node != StringName():
+			checkout_nodes.append(target_node)
 
 	for checkout_node in checkout_nodes:
 		var checkout_marker: Marker2D = _nav.get_graph_marker(checkout_node)

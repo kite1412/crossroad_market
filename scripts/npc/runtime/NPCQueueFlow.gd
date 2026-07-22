@@ -71,10 +71,6 @@ func process_wait_in_queue(delta: float) -> void:
 	if not arrived:
 		arrived = npc._move_to_with_arrival_threshold(npc.target_position, npc.QUEUE_SLOT_ARRIVAL_DISTANCE)
 
-	if queue_index == 0 and NPC.current_queue.size() <= 1 and not npc._is_moving_from_queue_to_cashier:
-		start_queue_to_cashier(queue_index)
-		return
-
 	if arrived and queue_index == 0:
 		pass
 		start_queue_to_cashier(queue_index)

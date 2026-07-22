@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://choofm6s8hy63"]
+
+[ext_resource type="PackedScene" uid="uid://b7w567u8higlo" path="res://scenes/locations/store/cashier/CashierScanTab.tscn" id="1_ycey8"]
+[ext_resource type="PackedScene" uid="uid://bwb0k6qicbyb1" path="res://scenes/locations/store/cashier/CashierExchangeTab.tscn" id="2_g8cy1"]
+[ext_resource type="Script" path="res://scripts/ui/cashier/StoreCashier.gd" id="3_store_cashier"]
+
+[node name="CashierManager" type="Node2D" unique_id=915813851]
+script = ExtResource("3_store_cashier")
+
+[node name="StoreCashier" parent="." unique_id=900483876 instance=ExtResource("1_ycey8")]
+
+[node name="CashierExchangeTab" parent="." unique_id=1003639902 instance=ExtResource("2_g8cy1")]

@@ -14,6 +14,11 @@ func load_character_assets() -> void:
 	if npc.npc_data == null or npc.npc_data.assets_path.strip_edges() == "":
 		return
 
+	# Portraits live beside the directional sprites. Cache the resolved texture
+	# on NPCData so every UI (including both cashier tabs) uses one reference.
+	if npc.npc_data.portrait == null:
+		npc.npc_data.portrait = load_portrait_texture(npc.npc_data.assets_path)
+
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var idle_sprite: CharacterSprite = npc.sprite_idle
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
@@ -81,6 +86,21 @@ func load_directional_textures(assets_path: String) -> Dictionary:
 			break
 
 	return textures
+
+
+static func load_portrait_texture(assets_path: String) -> Texture2D:
+	var normalized_path := assets_path.strip_edges().trim_prefix("/").trim_suffix("/")
+	if normalized_path.is_empty():
+		return null
+
+	var directory_path := "res://assets/characters/%s" % normalized_path
+	# monster2 currently uses the misspelled legacy filename; retain support so
+	# all existing NPC resources receive a portrait without data duplication.
+	for file_name in ["portrait.png", "portait.png"]:
+		var portrait_path := "%s/%s" % [directory_path, file_name]
+		if ResourceLoader.exists(portrait_path):
+			return load(portrait_path) as Texture2D
+	return null
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

@@ -41,7 +41,6 @@ func process_scan(npc: NPC) -> void:
 	cashier._pending_item_id = ""
 	cashier._ask_again_count = 0
 
-	show_customer_request_bubble()
 	cashier._show_scan_panel()
 	cashier._start_patience_timer()
 
@@ -90,6 +89,24 @@ func process_paid() -> void:
 		cashier._show_notification("PAID | %s | +%dG | Trust +%d" % [item_label, price, story_trust_gain], 1.8)
 	else:
 		cashier._show_notification("PAID | %s | +%dG" % [item_label, price], 1.4)
+	clear_scan()
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func process_free() -> void:
+	if not cashier._has_scanned_customer():
+		clear_scan()
+		return
+
+	var npc: NPC = cashier._scanned_npc
+	var item_label: String = cashier._scanned_item_label
+	if npc.has_method("complete_story_gift"):
+		npc.complete_story_gift("Thank you! That's very kind of you.")
+	else:
+		npc.complete_checkout()
+
+	add_history(npc, item_label, 0, "FREE")
+	cashier._show_notification("FREE | %s | +0G" % item_label, 1.5)
 	clear_scan()
 
 
