@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://cfsd74ienmlfs"]
 
 [ext_resource type="Texture2D" uid="uid://dv1uqukfcdn20" path="res://assets/yard/top-left-tree.png" id="1_jxwej"]
+[ext_resource type="Script" uid="uid://okgf6ipqbblp" path="res://scripts/locations/yard/YardTreeClusterDepth.gd" id="2_tree_depth"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ry2rs"]
 size = Vector2(45, 109)
@@ -13,6 +14,7 @@ size = Vector2(44.75, 174)
 
 [node name="LeftTrees" type="Node2D" unique_id=1511979151]
 y_sort_enabled = true
+script = ExtResource("2_tree_depth")
 
 [node name="TopTreeDepthAnchor" type="Node2D" parent="." unique_id=762180692]
 position = Vector2(0, 174)
@@ -24,25 +26,20 @@ centered = false
 region_enabled = true
 region_rect = Rect2(0, 0, 84, 169)
 
-[node name="LowerLeftTreeDepthAnchor" type="Node2D" parent="." unique_id=1518752481]
+[node name="LowerClusterDepthAnchor" type="Node2D" parent="." unique_id=1518752481]
 position = Vector2(0, 348)
+metadata/depth_points = PackedVector2Array(21.5, 293.5, 72.5, 300.25)
+metadata/depth_y_values = PackedFloat32Array(348, 321)
+metadata/depth_active_rect = Rect2(-40, 140, 220, 250)
+metadata/depth_default_index = 0
+metadata/visual_top_y = 169.0
 
-[node name="LowerLeftTreeVisual" type="Sprite2D" parent="LowerLeftTreeDepthAnchor" unique_id=1986628064]
+[node name="Visual" type="Sprite2D" parent="LowerClusterDepthAnchor" unique_id=1986628064]
 position = Vector2(0, -179)
 texture = ExtResource("1_jxwej")
 centered = false
 region_enabled = true
-region_rect = Rect2(0, 169, 53, 179)
-
-[node name="LowerRightTreeDepthAnchor" type="Node2D" parent="." unique_id=2071610431]
-position = Vector2(0, 321)
-
-[node name="LowerRightTreeVisual" type="Sprite2D" parent="LowerRightTreeDepthAnchor" unique_id=1151850487]
-position = Vector2(53, -152)
-texture = ExtResource("1_jxwej")
-centered = false
-region_enabled = true
-region_rect = Rect2(53, 169, 80, 179)
+region_rect = Rect2(0, 169, 133, 179)
 
 [node name="Collisions" type="Node2D" parent="." unique_id=1095874963]
 

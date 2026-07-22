@@ -4,6 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://b37kkeccotj33" path="res://assets/yard/grass.png" id="2_1m6w5"]
 [ext_resource type="Texture2D" uid="uid://b2upyhtlkpcdu" path="res://assets/yard/top-tree.png" id="4_7smw2"]
 [ext_resource type="Texture2D" uid="uid://c75w2fbjx2eeu" path="res://assets/yard/empty-house.png" id="5_72r58"]
+[ext_resource type="Script" path="res://scripts/locations/yard/YardTreeClusterDepth.gd" id="6_tree_depth"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_due37"]
 size = Vector2(285.5, 75)
@@ -45,8 +46,30 @@ texture = ExtResource("2_1m6w5")
 position = Vector2(0, 126)
 
 [node name="TopTrees" type="Sprite2D" parent="TopTreesDepthAnchor" unique_id=1259640681]
-position = Vector2(480, 144)
+position = Vector2(0, -126)
 texture = ExtResource("4_7smw2")
+centered = false
+region_enabled = true
+region_rect = Rect2(0, 0, 646, 126)
+
+[node name="TopRightTrees" type="Node2D" parent="."]
+y_sort_enabled = true
+script = ExtResource("6_tree_depth")
+
+[node name="ClusterDepthAnchor" type="Node2D" parent="TopRightTrees"]
+position = Vector2(0, 87)
+metadata/depth_points = PackedVector2Array(700, 69, 773.875, 27)
+metadata/depth_y_values = PackedFloat32Array(87, 54)
+metadata/depth_active_rect = Rect2(600, -20, 280, 180)
+metadata/depth_default_index = 0
+metadata/visual_top_y = 0.0
+
+[node name="Visual" type="Sprite2D" parent="TopRightTrees/ClusterDepthAnchor"]
+position = Vector2(646, -87)
+texture = ExtResource("4_7smw2")
+centered = false
+region_enabled = true
+region_rect = Rect2(646, 0, 180, 87)
 
 [node name="EmptyHouseDepth01" type="Node2D" parent="." unique_id=916092959]
 position = Vector2(0, 101)

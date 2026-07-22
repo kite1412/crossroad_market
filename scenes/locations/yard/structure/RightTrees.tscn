@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://by8my2qb1taou"]
 
 [ext_resource type="Texture2D" uid="uid://dgfvmfwru2yc3" path="res://assets/yard/right-mid-tree.png" id="1_jl8j8"]
+[ext_resource type="Script" path="res://scripts/locations/yard/YardTreeClusterDepth.gd" id="2_tree_depth"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ry2rs"]
 size = Vector2(35, 32.4375)
@@ -19,56 +20,37 @@ size = Vector2(37.5, 141.4375)
 
 [node name="RightTrees" type="Node2D" unique_id=1518412750]
 y_sort_enabled = true
+script = ExtResource("2_tree_depth")
 
-[node name="UpperLeftTreeDepthAnchor" type="Node2D" parent="."]
+[node name="UpperClusterDepthAnchor" type="Node2D" parent="."]
 position = Vector2(0, 298)
+metadata/depth_points = PackedVector2Array(873.75, 284.0625, 933.25, 191.71875)
+metadata/depth_y_values = PackedFloat32Array(298, 262)
+metadata/depth_active_rect = Rect2(760, 30, 240, 310)
+metadata/depth_default_index = 0
+metadata/visual_top_y = 71.0
 
-[node name="UpperLeftTreeVisual" type="Sprite2D" parent="UpperLeftTreeDepthAnchor" unique_id=688215650]
+[node name="Visual" type="Sprite2D" parent="UpperClusterDepthAnchor" unique_id=688215650]
 position = Vector2(820, -227)
 texture = ExtResource("1_jl8j8")
 centered = false
 region_enabled = true
-region_rect = Rect2(820, 71, 86, 226)
+region_rect = Rect2(820, 71, 140, 226)
 
-[node name="UpperRightTreeDepthAnchor" type="Node2D" parent="."]
-position = Vector2(0, 262)
-
-[node name="UpperRightTreeVisual" type="Sprite2D" parent="UpperRightTreeDepthAnchor"]
-position = Vector2(906, -191)
-texture = ExtResource("1_jl8j8")
-centered = false
-region_enabled = true
-region_rect = Rect2(906, 71, 54, 226)
-
-[node name="LowerLeftTreeDepthAnchor" type="Node2D" parent="."]
-position = Vector2(0, 479)
-
-[node name="LowerLeftTreeVisual" type="Sprite2D" parent="LowerLeftTreeDepthAnchor"]
-position = Vector2(751, -160)
-texture = ExtResource("1_jl8j8")
-centered = false
-region_enabled = true
-region_rect = Rect2(751, 319, 78, 187)
-
-[node name="LowerMiddleTreeDepthAnchor" type="Node2D" parent="."]
+[node name="LowerClusterDepthAnchor" type="Node2D" parent="."]
 position = Vector2(0, 506)
+metadata/depth_points = PackedVector2Array(800.5, 462.78125, 863.5, 490.875, 909, 421)
+metadata/depth_y_values = PackedFloat32Array(479, 506, 440)
+metadata/depth_active_rect = Rect2(700, 270, 300, 280)
+metadata/depth_default_index = 1
+metadata/visual_top_y = 319.0
 
-[node name="LowerMiddleTreeVisual" type="Sprite2D" parent="LowerMiddleTreeDepthAnchor"]
-position = Vector2(829, -187)
+[node name="Visual" type="Sprite2D" parent="LowerClusterDepthAnchor"]
+position = Vector2(751, -187)
 texture = ExtResource("1_jl8j8")
 centered = false
 region_enabled = true
-region_rect = Rect2(829, 319, 59, 187)
-
-[node name="LowerRightTreeDepthAnchor" type="Node2D" parent="."]
-position = Vector2(0, 440)
-
-[node name="LowerRightTreeVisual" type="Sprite2D" parent="LowerRightTreeDepthAnchor"]
-position = Vector2(888, -121)
-texture = ExtResource("1_jl8j8")
-centered = false
-region_enabled = true
-region_rect = Rect2(888, 319, 72, 187)
+region_rect = Rect2(751, 319, 209, 187)
 
 [node name="Collisions" type="Node2D" parent="." unique_id=803238978]
 
