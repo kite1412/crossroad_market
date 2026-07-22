@@ -33,9 +33,7 @@ func interact_with_supply_box(box: SupplyBox) -> void:
 		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var item: ItemData = ItemDatabase.get_item(item_id)
 
-		if box is MysterySupplyBox and item_id == PHANTOM_ICE_CREAM_ID:
-			player._show_notification("Took Phantom Ice Cream.", 0.8)
-		else:
+		if not (box is MysterySupplyBox and item_id == PHANTOM_ICE_CREAM_ID):
 			show_pickup_notification(item_id, item)
 
 		if not (box is MysterySupplyBox):

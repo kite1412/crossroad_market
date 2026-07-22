@@ -62,7 +62,6 @@ func show_yard_intro() -> void:
 func on_storage_mystery_discovered() -> void:
 	store._mystery_discovered = true
 	store._show_task_complete_notice("mystery_discovered", "Mystery corner discovered.")
-	update_objective()
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -72,19 +71,27 @@ func on_storage_mystery_item_taken(item_id: String) -> void:
 	if item_id != "" and item_id not in store._mystery_items_taken:
 		store._mystery_items_taken.append(item_id)
 
-	update_objective()
-
 	if item_id == PHANTOM_ICE_CREAM_ID and was_new_item:
+		var messages: Array[String] = [
+			"What is this...?",
+			"This box wasn’t in Grandma’s inventory list.",
+			"Why is it glowing... and why does it feel ice cold?"
+		]
+		await StoreDialogBridge.show_player_sequence(store, messages)
+
+		update_objective()
 		show_hint(
 			"phantom_return_store",
 			"Take the Phantom Ice Cream back to the store and try it on the Human Shelf."
 		)
+		return
+
+	update_objective()
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_storage_mystery_supply_depleted() -> void:
 	store._mystery_supply_depleted = true
-	update_objective()
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
