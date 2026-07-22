@@ -8,9 +8,11 @@ extends RefCounted
 const STORE_CASHIER_SCENE: PackedScene = preload(
 	"res://scenes/locations/store/cashier/StoreCashier.tscn"
 )
+const PLAYER_EXIT_DIALOG_DELAY: float = 0.35
 
 var cashier: Cashier = null
 var cashier_ui: StoreCashierUI = null
+var _player_exit_dialog_serial: int = 0
 
 
 func setup(cashier_node: Cashier) -> void:
@@ -83,6 +85,7 @@ func ensure_cashier_panel() -> void:
 	cashier_ui.free_requested.connect(_on_free_requested)
 	cashier_ui.checkout_cancelled.connect(_on_checkout_cancelled)
 	cashier_ui.checkout_conversation_started.connect(_on_checkout_conversation_started)
+	cashier_ui.player_exit_dialog_requested.connect(_on_player_exit_dialog_requested)
 
 
 func is_cashier_visible() -> bool:
@@ -135,6 +138,28 @@ func _on_checkout_conversation_started() -> void:
 	# The transaction is correct at this point; story dialogue should not consume
 	# the remaining customer patience while the player reads it.
 	cashier._stop_patience_timer()
+
+
+func _on_player_exit_dialog_requested(text: String) -> void:
+	_player_exit_dialog_serial += 1
+	_show_player_exit_dialog(text, _player_exit_dialog_serial)
+
+
+func _show_player_exit_dialog(text: String, dialog_serial: int) -> void:
+	var tree := cashier.get_tree()
+	if tree == null:
+		return
+
+	# Payment completion has already put the customer into EXIT. Let Irene take
+	# a few steps before opening the full Dialog.tscn player sequence.
+	await tree.create_timer(PLAYER_EXIT_DIALOG_DELAY).timeout
+	if dialog_serial != _player_exit_dialog_serial:
+		return
+
+	if cashier == null or not is_instance_valid(cashier):
+		return
+	var messages: Array[String] = [text]
+	await StoreDialogBridge.show_player_sequence(cashier, messages)
 
 
 func _apply_ui_selection(total: int, item_label: String, quantities: Dictionary) -> void:

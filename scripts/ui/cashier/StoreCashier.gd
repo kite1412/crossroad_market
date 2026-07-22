@@ -13,6 +13,7 @@ signal payment_requested(
 signal free_requested(total: int, item_label: String, quantities: Dictionary)
 signal checkout_cancelled()
 signal checkout_conversation_started()
+signal player_exit_dialog_requested(text: String)
 
 const UI_LAYER: int = 12
 const ITEM_CARD_SIZE := Vector2(48, 15)
@@ -718,8 +719,15 @@ func _advance_checkout_conversation() -> void:
 
 	_checkout_conversation_index += 1
 	if _checkout_conversation_index >= _checkout_conversation_lines.size():
+		var player_exit_dialogue := (
+			_cashier_conversation.player_exit_dialogue
+			if _cashier_conversation != null
+			else ""
+		)
 		_reset_checkout_conversation()
 		_emit_checkout_request(false, false)
+		if not player_exit_dialogue.strip_edges().is_empty():
+			player_exit_dialog_requested.emit(player_exit_dialogue)
 		return
 
 	var line := _checkout_conversation_lines[_checkout_conversation_index]
