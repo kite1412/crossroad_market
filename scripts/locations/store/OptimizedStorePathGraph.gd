@@ -121,10 +121,15 @@ func get_shelf_egress_route_to_queue_from(
 		if not anchor_position.is_finite():
 			continue
 
+		var cashier_axis_horizontal_first := _get_cashier_axis_horizontal_first(
+			anchor_node
+		)
 		var queue_route := _get_anchor_route_to_queue_egress(
 			anchor_position,
 			queue_index,
-			destination
+			destination,
+			cashier_axis_horizontal_first,
+			anchor_node
 		)
 		if queue_route.is_empty():
 			var queue_egress_target := get_queue_egress_target_position(
@@ -138,7 +143,7 @@ func get_shelf_egress_route_to_queue_from(
 			queue_route = _routes.make_orthogonal_route(
 				anchor_position,
 				queue_egress_target,
-				true
+				cashier_axis_horizontal_first
 			)
 
 		for horizontal_first in [true, false]:
@@ -272,7 +277,9 @@ func _get_anchor_route_to_queue_target(
 func _get_anchor_route_to_queue_egress(
 	anchor_position: Vector2,
 	queue_index: int,
-	destination: Vector2
+	destination: Vector2,
+	horizontal_first: bool = true,
+	anchor_node: StringName = StringName()
 ) -> Array[Vector2]:
 	if not anchor_position.is_finite():
 		return []
@@ -288,19 +295,38 @@ func _get_anchor_route_to_queue_egress(
 		return []
 
 	var candidates: Array[Dictionary] = []
-	for horizontal_first in [true, false]:
-		var route: Array[Vector2] = _routes.make_orthogonal_route(
+	var route: Array[Vector2] = _routes.make_orthogonal_route(
+		anchor_position,
+		approach_position,
+		horizontal_first
+	)
+	if route.is_empty():
+		route.append(approach_position)
+	route = _routes.dedupe_route_points(route)
+	if _clearance.is_queue_route_clear(anchor_position, route):
+		_append_route_candidate(candidates, anchor_position, route)
+
+	if candidates.is_empty():
+		var fallback_route: Array[Vector2] = _routes.make_orthogonal_route(
 			anchor_position,
 			approach_position,
-			horizontal_first
+			not horizontal_first
 		)
-		if route.is_empty():
-			route.append(approach_position)
-		route = _routes.dedupe_route_points(route)
-		if _clearance.is_queue_route_clear(anchor_position, route):
-			_append_route_candidate(candidates, anchor_position, route)
+		if fallback_route.is_empty():
+			fallback_route.append(approach_position)
+		fallback_route = _routes.dedupe_route_points(fallback_route)
+		if _clearance.is_queue_route_clear(anchor_position, fallback_route):
+			_append_route_candidate(candidates, anchor_position, fallback_route)
 
 	var result := _get_shortest_route(candidates)
+	_record_path_graph_probe(&"npc_cashier_axis_policy", {
+		"anchor": String(anchor_node),
+		"anchor_position": _format_vector(anchor_position),
+		"approach": _format_vector(approach_position),
+		"axis_order": "horizontal_first" if horizontal_first else "vertical_first",
+		"fallback_allowed": candidates.size() > 1,
+		"route_points": result.size()
+	})
 	_record_path_graph_probe(&"npc_queue_egress_anchor_route", {
 		"queue_index": queue_index,
 		"anchor": _format_vector(anchor_position),
@@ -621,6 +647,19 @@ func _get_ranked_shelf_anchor_nodes(access_position: Vector2) -> Array[StringNam
 			result.append(node_name)
 
 	return result
+
+
+func _get_cashier_axis_horizontal_first(anchor_node: StringName) -> bool:
+	var anchor_position := _nav.get_marker_position(anchor_node)
+	if not anchor_position.is_finite():
+		return true
+
+	var cashier_node := _nav.get_role_node_name(ROLE_CASHIER, CASHIER)
+	var cashier_position := _nav.get_marker_position(cashier_node)
+	if not cashier_position.is_finite():
+		return true
+
+	return anchor_position.y > cashier_position.y + 24.0
 
 
 func _is_shelf_entry_route_allowed(

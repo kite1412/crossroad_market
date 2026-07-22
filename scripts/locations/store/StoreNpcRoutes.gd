@@ -162,11 +162,14 @@ func get_npc_marker_lane_route_to_queue_egress(
 		shelf_quad.global_position,
 		false
 	)
+	var cashier_axis_horizontal_first := _get_cashier_axis_horizontal_first(
+		shelf_quad
+	)
 	current = _append_orthogonal_route_leg(
 		route,
 		current,
 		queue_marker.global_position,
-		true
+		cashier_axis_horizontal_first
 	)
 
 	if route.is_empty() and fallback_position.is_finite():
@@ -180,6 +183,23 @@ func get_npc_marker_lane_route_to_queue_egress(
 		"shelf_quad_position": _format_vector(shelf_quad.global_position),
 		"queue_marker": String(queue_marker.name),
 		"queue_position": _format_vector(queue_marker.global_position),
+		"axis_order": (
+			"horizontal_first"
+			if cashier_axis_horizontal_first
+			else "vertical_first"
+		),
+		"route_points": route.size()
+	})
+	_record_route_probe(&"npc_cashier_axis_policy", {
+		"source": "marker_lane_fallback",
+		"anchor": String(shelf_quad.name),
+		"anchor_position": _format_vector(shelf_quad.global_position),
+		"approach": _format_vector(queue_marker.global_position),
+		"axis_order": (
+			"horizontal_first"
+			if cashier_axis_horizontal_first
+			else "vertical_first"
+		),
 		"route_points": route.size()
 	})
 	return route
@@ -739,6 +759,17 @@ func _get_queue_slot_marker(queue_index: int) -> Marker2D:
 	if store == null or store.store_path_markers == null:
 		return null
 	return store.store_path_markers.get_node_or_null(String(marker_name)) as Marker2D
+
+
+func _get_cashier_axis_horizontal_first(shelf_quad: Marker2D) -> bool:
+	if shelf_quad == null:
+		return true
+
+	var cashier_marker := _get_named_marker(&"StorePathCashier")
+	if cashier_marker == null:
+		return true
+
+	return shelf_quad.global_position.y > cashier_marker.global_position.y + 24.0
 
 
 func _get_checkout_route_start_index(
