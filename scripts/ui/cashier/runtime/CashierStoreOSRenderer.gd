@@ -82,6 +82,7 @@ func ensure_cashier_panel() -> void:
 	cashier_ui.payment_requested.connect(_on_payment_requested)
 	cashier_ui.free_requested.connect(_on_free_requested)
 	cashier_ui.checkout_cancelled.connect(_on_checkout_cancelled)
+	cashier_ui.checkout_conversation_started.connect(_on_checkout_conversation_started)
 
 
 func is_cashier_visible() -> bool:
@@ -106,9 +107,14 @@ func set_store_os_app(app_id: StringName) -> void:
 	cashier._active_store_os_app = app_id
 
 
-func _on_payment_requested(total: int, item_label: String, quantities: Dictionary) -> void:
+func _on_payment_requested(
+	total: int,
+	item_label: String,
+	quantities: Dictionary,
+	show_customer_completion_dialog: bool
+) -> void:
 	_apply_ui_selection(total, item_label, quantities)
-	cashier._process_paid()
+	cashier._process_paid(show_customer_completion_dialog)
 
 
 func _on_free_requested(total: int, item_label: String, quantities: Dictionary) -> void:
@@ -123,6 +129,12 @@ func _on_checkout_cancelled() -> void:
 	# Closing the UI does not dismiss the queued customer. Interacting with the
 	# counter again resumes their checkout from the Scan tab.
 	cashier._unlock_player_actions()
+
+
+func _on_checkout_conversation_started() -> void:
+	# The transaction is correct at this point; story dialogue should not consume
+	# the remaining customer patience while the player reads it.
+	cashier._stop_patience_timer()
 
 
 func _apply_ui_selection(total: int, item_label: String, quantities: Dictionary) -> void:

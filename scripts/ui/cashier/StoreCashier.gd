@@ -4,9 +4,15 @@ extends Node2D
 ## The replacement cashier UI.  It is intentionally independent of Cashier.gd
 ## so the old checkout can remain active until this scene is swapped in.
 
-signal payment_requested(total: int, item_label: String, quantities: Dictionary)
+signal payment_requested(
+	total: int,
+	item_label: String,
+	quantities: Dictionary,
+	show_customer_completion_dialog: bool
+)
 signal free_requested(total: int, item_label: String, quantities: Dictionary)
 signal checkout_cancelled()
+signal checkout_conversation_started()
 
 const UI_LAYER: int = 12
 const ITEM_CARD_SIZE := Vector2(48, 15)
@@ -20,6 +26,7 @@ const CATALOG_TEXT_RECT := Rect2(12, 1, 32, 6)
 const SMALL_FONT_SIZE: int = 7
 const BODY_FONT_SIZE: int = 8
 const ITEM_CARD_TEXTURE: Texture2D = preload("res://assets/cashier/item-card.png")
+const PLAYER_PORTRAIT: Texture2D = preload("res://assets/characters/player/portrait.png")
 
 @onready var _scan_tab: Node2D = $StoreCashier
 @onready var _exchange_tab: Node2D = $CashierExchangeTab
@@ -46,6 +53,7 @@ var _exchange_hint: Label
 var _exchange_input: Label
 var _scan_dialog: Label
 var _exchange_dialog: Label
+var _exchange_dialog_next: Button
 var _scan_portrait: PortraitAnimation
 var _exchange_portrait: PortraitAnimation
 
@@ -61,6 +69,9 @@ var _action_lock_active: bool = false
 var _inventory_panel: CanvasItem
 var _inventory_was_visible: bool = true
 var _inventory_hidden_by_cashier: bool = false
+var _checkout_conversation_active: bool = false
+var _checkout_conversation_index: int = -1
+var _checkout_conversation_lines: Array[CashierDialogueLine] = []
 
 
 func _ready() -> void:
@@ -112,6 +123,7 @@ func begin_checkout(npc: NPC) -> bool:
 	_total = 0
 	_change_due = 0
 	_entered_change = ""
+	_reset_checkout_conversation()
 	# Checkout totals may be overridden for scripted customers. Always fund the
 	# customer against the actual prices of every item they are buying as well.
 	var minimum_cash: int = maxi(
@@ -134,6 +146,7 @@ func reset_runtime_ui() -> void:
 	_target_item_ids.clear()
 	_cart_quantities.clear()
 	_entered_change = ""
+	_reset_checkout_conversation()
 	_restore_inventory_panel()
 	_set_action_lock(false)
 
@@ -148,6 +161,30 @@ func has_active_checkout() -> bool:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not has_active_checkout():
+		return
+
+	if _checkout_conversation_active:
+		if (
+			event is InputEventKey
+			and event.pressed
+			and not event.echo
+			and (
+				event.is_action_pressed("interact")
+				or event.is_action_pressed("ui_accept")
+				or event.keycode in [KEY_SPACE, KEY_ENTER, KEY_KP_ENTER]
+			)
+		):
+			_advance_checkout_conversation()
+			get_viewport().set_input_as_handled()
+		elif (
+			event is InputEventKey
+			and event.pressed
+			and not event.echo
+			and event.keycode == KEY_ESCAPE
+		):
+			# Once payment is confirmed, keep the transaction pending until the
+			# authored conversation reaches its final line.
+			get_viewport().set_input_as_handled()
 		return
 
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
@@ -240,6 +277,16 @@ func _build_exchange_tab() -> void:
 	_exchange_hint = _exchange_tab.get_node("TotalExchange/Label") as Label
 	_exchange_dialog = _exchange_tab.get_node("Dialog") as Label
 	_exchange_portrait = _exchange_tab.get_node("PortraitAnimation") as PortraitAnimation
+	_exchange_dialog_next = _make_button(
+		"NEXT >",
+		Rect2(338, 242, 47, 14),
+		SMALL_FONT_SIZE
+	)
+	_exchange_dialog_next.tooltip_text = "Continue the conversation."
+	_exchange_dialog_next.visible = false
+	_exchange_dialog_next.z_index = 10
+	_exchange_dialog_next.pressed.connect(_advance_checkout_conversation)
+	_exchange_tab.add_child(_exchange_dialog_next)
 
 	var digit_nodes := {
 		"One": "1",
@@ -288,6 +335,9 @@ func _bind_exchange_control(control: Control, action: Callable, tooltip: String)
 
 
 func _on_exchange_control_input(event: InputEvent, action: Callable) -> void:
+	if _checkout_conversation_active:
+		get_viewport().set_input_as_handled()
+		return
 	var activated: bool = (
 		event is InputEventMouseButton
 		and event.button_index == MOUSE_BUTTON_LEFT
@@ -311,7 +361,12 @@ func _refresh_scan_tab() -> void:
 
 	_refresh_cart_displays()
 	_customer_cash_label.text = "%dG" % _customer_cash
-	_scan_dialog.text = _get_customer_dialogue()
+	_apply_dialogue_line(
+		_scan_dialog,
+		_scan_portrait,
+		CashierDialogueLine.Speaker.CUSTOMER,
+		_get_customer_request_text()
+	)
 	_scan_continue.disabled = _cart_quantities.is_empty()
 
 
@@ -418,6 +473,8 @@ func _make_cart_row(item_id: String, quantity: int, allow_decrement: bool) -> Co
 
 
 func _show_scan_tab() -> void:
+	if _checkout_conversation_active:
+		return
 	if _exchange_portrait != null and _scan_portrait != null and _portrait_texture != null:
 		_scan_portrait.set_portrait(_portrait_texture, _exchange_portrait.get_current_frame())
 	_scan_tab.visible = true
@@ -450,7 +507,13 @@ func _refresh_exchange_tab() -> void:
 	_change_due = max(_customer_cash - _total, 0)
 	_exchange_hint.text = "%dG" % _change_due
 	_exchange_input.text = ("[%sG]" % _entered_change) if not _entered_change.is_empty() else "[--G]"
-	_exchange_dialog.text = _get_customer_dialogue()
+	if not _checkout_conversation_active:
+		_apply_dialogue_line(
+			_exchange_dialog,
+			_exchange_portrait,
+			CashierDialogueLine.Speaker.CUSTOMER,
+			_get_customer_request_text()
+		)
 	_refresh_cart_displays()
 
 
@@ -548,6 +611,8 @@ func _on_scan_continue_pressed() -> void:
 
 
 func _on_digit_pressed(digit: String) -> void:
+	if _checkout_conversation_active:
+		return
 	if _entered_change.length() >= 6:
 		return
 	_entered_change += digit
@@ -555,6 +620,8 @@ func _on_digit_pressed(digit: String) -> void:
 
 
 func _on_delete_or_back_pressed() -> void:
+	if _checkout_conversation_active:
+		return
 	if _entered_change.is_empty():
 		_show_scan_tab()
 		return
@@ -563,6 +630,8 @@ func _on_delete_or_back_pressed() -> void:
 
 
 func _on_confirm_exchange_pressed() -> void:
+	if _checkout_conversation_active:
+		return
 	if _customer_cash < _total:
 		_show_notification(
 			"Customer needs %dG more to pay for these items." % (_total - _customer_cash)
@@ -577,6 +646,8 @@ func _on_confirm_exchange_pressed() -> void:
 
 
 func _on_free_pressed() -> void:
+	if _checkout_conversation_active:
+		return
 	if not _cart_matches_customer():
 		_show_notification("Scan the customer's requested items before giving them away.")
 		return
@@ -587,13 +658,84 @@ func _complete_checkout(is_free: bool) -> void:
 	if _customer == null or not is_instance_valid(_customer):
 		reset_runtime_ui()
 		return
+	if not is_free and _begin_post_payment_conversation():
+		return
+
+	_emit_checkout_request(is_free, true)
+
+
+func _emit_checkout_request(
+	is_free: bool,
+	show_customer_completion_dialog: bool
+) -> void:
+	if _customer == null or not is_instance_valid(_customer):
+		reset_runtime_ui()
+		return
 
 	var item_label := _get_selected_item_label()
 	var quantities := _cart_quantities.duplicate(true)
 	if is_free:
 		free_requested.emit(_total, item_label, quantities)
 	else:
-		payment_requested.emit(_total, item_label, quantities)
+		payment_requested.emit(
+			_total,
+			item_label,
+			quantities,
+			show_customer_completion_dialog
+		)
+
+
+func _begin_post_payment_conversation() -> bool:
+	if _customer.npc_data == null:
+		return false
+
+	_checkout_conversation_lines.clear()
+	for line in _customer.npc_data.checkout_post_payment_dialogue:
+		if line != null and not line.text.strip_edges().is_empty():
+			_checkout_conversation_lines.append(line)
+
+	if _checkout_conversation_lines.is_empty():
+		return false
+
+	_checkout_conversation_active = true
+	_checkout_conversation_index = -1
+	_exchange_dialog_next.visible = true
+	checkout_conversation_started.emit()
+	_advance_checkout_conversation()
+	return true
+
+
+func _advance_checkout_conversation() -> void:
+	if not _checkout_conversation_active:
+		return
+
+	_checkout_conversation_index += 1
+	if _checkout_conversation_index >= _checkout_conversation_lines.size():
+		_reset_checkout_conversation()
+		_emit_checkout_request(false, false)
+		return
+
+	var line := _checkout_conversation_lines[_checkout_conversation_index]
+	_apply_dialogue_line(
+		_exchange_dialog,
+		_exchange_portrait,
+		line.speaker,
+		line.text,
+		line.portrait_frame
+	)
+	_exchange_dialog_next.text = (
+		"FINISH" if _checkout_conversation_index == _checkout_conversation_lines.size() - 1
+		else "NEXT >"
+	)
+
+
+func _reset_checkout_conversation() -> void:
+	_checkout_conversation_active = false
+	_checkout_conversation_index = -1
+	_checkout_conversation_lines.clear()
+	if _exchange_dialog_next != null:
+		_exchange_dialog_next.visible = false
+		_exchange_dialog_next.text = "NEXT >"
 
 
 func _cart_matches_customer() -> bool:
@@ -651,27 +793,61 @@ func _get_customer_portrait(npc: NPC) -> Texture2D:
 
 
 func _apply_customer_presentation() -> void:
-	var dialogue := _get_customer_dialogue()
-	_scan_dialog.text = dialogue
-	_exchange_dialog.text = dialogue
-	if _portrait_texture != null:
-		_scan_portrait.visible = true
-		_exchange_portrait.visible = true
-		_scan_portrait.set_portrait(_portrait_texture)
-		_exchange_portrait.set_portrait(_portrait_texture)
-	else:
-		_scan_portrait.visible = false
-		_exchange_portrait.visible = false
+	var request_text := _get_customer_request_text()
+	_apply_dialogue_line(
+		_scan_dialog,
+		_scan_portrait,
+		CashierDialogueLine.Speaker.CUSTOMER,
+		request_text
+	)
+	_apply_dialogue_line(
+		_exchange_dialog,
+		_exchange_portrait,
+		CashierDialogueLine.Speaker.CUSTOMER,
+		request_text
+	)
 
 
-func _get_customer_dialogue() -> String:
+func _apply_dialogue_line(
+	dialog_label: Label,
+	portrait_view: PortraitAnimation,
+	speaker: CashierDialogueLine.Speaker,
+	text: String,
+	portrait_frame: int = 0
+) -> void:
+	var speaker_name := _get_customer_name()
+	var speaker_portrait := _portrait_texture
+	if speaker == CashierDialogueLine.Speaker.PLAYER:
+		speaker_name = "Player"
+		speaker_portrait = PLAYER_PORTRAIT
+
+	dialog_label.text = "%s\n%s" % [speaker_name, text]
+	if speaker_portrait == null:
+		portrait_view.visible = false
+		return
+	portrait_view.visible = true
+	portrait_view.set_portrait(speaker_portrait, portrait_frame)
+
+
+func _get_customer_name() -> String:
 	if _customer == null or not is_instance_valid(_customer):
-		return "Customer\nWaiting..."
+		return "Customer"
 	var customer_name := "Customer"
 	if _customer.npc_data != null and not _customer.npc_data.display_name.is_empty():
 		customer_name = _customer.npc_data.display_name
+	return customer_name
+
+
+func _get_customer_request_text() -> String:
+	if _customer == null or not is_instance_valid(_customer):
+		return "Waiting..."
+	if (
+		_customer.npc_data != null
+		and not _customer.npc_data.checkout_opening_line.strip_edges().is_empty()
+	):
+		return _customer.npc_data.checkout_opening_line
 	var request := _customer.get_checkout_item_label() if _customer.has_method("get_checkout_item_label") else "these items"
-	return "%s\nJust %s, please." % [customer_name, request]
+	return "Just %s, please." % request
 
 
 func _get_store_items() -> Array[ItemData]:

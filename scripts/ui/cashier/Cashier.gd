@@ -262,8 +262,8 @@ func _process_scan(npc: NPC) -> void:
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _process_paid() -> void:
-	_checkout_flow.process_paid()
+func _process_paid(show_customer_completion_dialog: bool = true) -> void:
+	_checkout_flow.process_paid(show_customer_completion_dialog)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

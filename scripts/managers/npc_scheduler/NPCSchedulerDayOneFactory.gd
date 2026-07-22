@@ -101,6 +101,15 @@ func make_day_one_customer(
 	data.visit_phase = visit_phase
 	data.assets_path = assets_path
 	data.patience_type = patience_type
+	# Day-one customers are constructed from gameplay overrides rather than the
+	# database resource. Preserve any authored cashier conversation for a named
+	# NPC so story checkout behavior is consistent on every visit.
+	var authored_data := scheduler._npc_database.get(npc_id) as NPCData
+	if authored_data != null:
+		data.checkout_opening_line = authored_data.checkout_opening_line
+		data.checkout_post_payment_dialogue = (
+			authored_data.checkout_post_payment_dialogue.duplicate(true)
+		)
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var typed_items: Array[String] = []
 	for item in shopping_items:

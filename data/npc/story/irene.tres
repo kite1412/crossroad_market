@@ -1,6 +1,21 @@
-[gd_resource type="Resource" script_class="NPCData" format=3]
+[gd_resource type="Resource" script_class="NPCData" load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://data/npc/NPCData.gd" id="1"]
+[ext_resource type="Script" path="res://data/npc/CashierDialogueLine.gd" id="2_cashier_line"]
+
+[sub_resource type="Resource" id="CashierDialogueLine_player_thanks"]
+script = ExtResource("2_cashier_line")
+speaker = 1
+text = "Thank you, come again!"
+
+[sub_resource type="Resource" id="CashierDialogueLine_irene_silence"]
+script = ExtResource("2_cashier_line")
+text = "..."
+
+[sub_resource type="Resource" id="CashierDialogueLine_player_strange"]
+script = ExtResource("2_cashier_line")
+speaker = 1
+text = "Huh, what a strange person."
 
 [resource]
 script = ExtResource("1")
@@ -10,6 +25,8 @@ npc_category = 0
 visit_phase = 1
 patience_type = 1
 favorite_items = PackedStringArray("hum_099")
+checkout_opening_line = "Just this, please."
+checkout_post_payment_dialogue = Array[ExtResource("2_cashier_line")]([SubResource("CashierDialogueLine_player_thanks"), SubResource("CashierDialogueLine_irene_silence"), SubResource("CashierDialogueLine_player_strange")])
 visit_days = PackedInt32Array(1, 2, 3, 4, 5, 6)
 spawn_order = 1
 dialogue_set_id = "irene_main"

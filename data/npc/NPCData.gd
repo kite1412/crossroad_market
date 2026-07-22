@@ -23,6 +23,12 @@ enum NPCCategory { STORY, GENERIC }
 # Leave this at 0 to use the cashier's sensible denomination fallback.
 @export_range(0, 9999, 1) var checkout_cash: int = 0
 
+# --- Cashier Conversation ---
+# Leave these empty for the standard request and immediate checkout behavior.
+# Post-payment lines support customer/player speaker swaps inside StoreCashier.
+@export_multiline var checkout_opening_line: String = ""
+@export var checkout_post_payment_dialogue: Array[CashierDialogueLine] = []
+
 # --- STORY NPC specific ---
 @export var dialogue_set_id: String = ""   # references a DialogueSet resource
 @export var event_set_id: String = ""    # references an event dialog set

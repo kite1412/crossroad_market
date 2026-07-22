@@ -46,7 +46,7 @@ func process_scan(npc: NPC) -> void:
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func process_paid() -> void:
+func process_paid(show_customer_completion_dialog: bool = true) -> void:
 	if not cashier._has_scanned_customer():
 		clear_scan()
 		return
@@ -67,7 +67,7 @@ func process_paid() -> void:
 
 	# Credit the exact item total confirmed by the cashier. Scripted NPC totals
 	# describe their request, but can differ from the current catalog prices.
-	npc.complete_checkout(price)
+	npc.complete_checkout(price, show_customer_completion_dialog)
 
 	if npc.checkout_outcome == "reject_return":
 		if cashier._is_gooby_npc(npc):
