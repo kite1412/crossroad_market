@@ -4,7 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://b37kkeccotj33" path="res://assets/yard/grass.png" id="2_1m6w5"]
 [ext_resource type="Texture2D" uid="uid://b2upyhtlkpcdu" path="res://assets/yard/top-tree.png" id="4_7smw2"]
 [ext_resource type="Texture2D" uid="uid://c75w2fbjx2eeu" path="res://assets/yard/empty-house.png" id="5_72r58"]
-[ext_resource type="Script" path="res://scripts/locations/yard/YardTreeClusterDepth.gd" id="6_tree_depth"]
+[ext_resource type="Script" uid="uid://okgf6ipqbblp" path="res://scripts/locations/yard/YardTreeClusterDepth.gd" id="6_tree_depth"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_due37"]
 size = Vector2(285.5, 75)
@@ -19,7 +19,8 @@ size = Vector2(44, 36)
 size = Vector2(42.25, 54)
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_ry2rs"]
-b = Vector2(101, 37)
+a = Vector2(2, 0)
+b = Vector2(99, 36)
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_7smw2"]
 a = Vector2(-7, 19)
@@ -52,11 +53,11 @@ centered = false
 region_enabled = true
 region_rect = Rect2(0, 0, 646, 126)
 
-[node name="TopRightTrees" type="Node2D" parent="."]
+[node name="TopRightTrees" type="Node2D" parent="." unique_id=1743531094]
 y_sort_enabled = true
 script = ExtResource("6_tree_depth")
 
-[node name="ClusterDepthAnchor" type="Node2D" parent="TopRightTrees"]
+[node name="ClusterDepthAnchor" type="Node2D" parent="TopRightTrees" unique_id=1346816912]
 position = Vector2(0, 87)
 metadata/depth_points = PackedVector2Array(700, 69, 773.875, 27)
 metadata/depth_y_values = PackedFloat32Array(87, 54)
@@ -64,7 +65,7 @@ metadata/depth_active_rect = Rect2(600, -20, 280, 180)
 metadata/depth_default_index = 0
 metadata/visual_top_y = 0.0
 
-[node name="Visual" type="Sprite2D" parent="TopRightTrees/ClusterDepthAnchor"]
+[node name="Visual" type="Sprite2D" parent="TopRightTrees/ClusterDepthAnchor" unique_id=492681820]
 position = Vector2(646, -87)
 texture = ExtResource("4_7smw2")
 centered = false
@@ -210,17 +211,17 @@ shape = SubResource("RectangleShape2D_72r58")
 [node name="EmptyHouseFront" type="StaticBody2D" parent="Collidables" unique_id=1191063515]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Collidables/EmptyHouseFront" unique_id=167571436]
-position = Vector2(776, 101)
+position = Vector2(776, 102)
 shape = SubResource("SegmentShape2D_ry2rs")
 
 [node name="EmptyHouseRight" type="StaticBody2D" parent="Collidables" unique_id=157580416]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Collidables/EmptyHouseRight" unique_id=1009143933]
-position = Vector2(881, 121)
+position = Vector2(881, 119)
 shape = SubResource("SegmentShape2D_7smw2")
 
 [node name="EmptyHouseLeft" type="StaticBody2D" parent="Collidables" unique_id=775570188]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Collidables/EmptyHouseLeft" unique_id=187056159]
-position = Vector2(782, 84)
+position = Vector2(785, 83)
 shape = SubResource("SegmentShape2D_72r58")
