@@ -17,7 +17,6 @@ signal tax_ignore_requested()
 @onready var objective_label: Label = $ObjectiveLabel
 @onready var dialog: Dialog = $Dialog
 @onready var settings_button: Button = $TopRightHUD/SettingsButton
-@onready var gooby_story_debug_button: Button = $GoobyStoryDebugButton
 
 const NOTIFY_DURATION: float = 2.0
 const MIN_NOTIFY_DURATION: float = 0.9
@@ -36,8 +35,6 @@ const STORY_NOTIFICATION_EXIT_DURATION: float = 0.12
 const STORY_NOTIFICATION_ENTER_OFFSET: float = 8.0
 
 const SETTINGS_LAYER: int = 100
-# TEMPORARY: Set this to false or remove the debug button after Day 1 testing.
-const ENABLE_GOOBY_STORY_DEBUG_BUTTON: bool = true
 
 @warning_ignore("unused_private_class_variable")
 var _settings_menu: SettingsMenu = null
@@ -151,10 +148,8 @@ func _ready() -> void:
 	TimeManager.day_started.connect(_on_day_started)
 
 	settings_button.pressed.connect(_on_settings_pressed)
-	gooby_story_debug_button.pressed.connect(_on_gooby_story_debug_pressed)
 
 	_update_all()
-	_update_gooby_story_debug_button()
 
 	notification_label.visible = false
 	notification_label.modulate.a = 0.0
@@ -181,7 +176,6 @@ func _setup_hud_controllers() -> void:
 func _process(delta: float) -> void:
 	if get_tree().paused:
 		return
-	_update_gooby_story_debug_button()
 	_objective_toast_flow.update_objective_toast(delta)
 	_cursor_tooltip_flow.update_cursor_hover_tooltip()
 	_hint_dialog_flow.update_hint_dialog_timer(delta)
@@ -601,45 +595,6 @@ func _on_settings_pressed() -> void:
 	_settings_menu = SettingsMenu.new()
 	_settings_menu.closed.connect(_on_settings_menu_closed)
 	_settings_layer.add_child(_settings_menu)
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _on_gooby_story_debug_pressed() -> void:
-	var store := get_tree().get_first_node_in_group("store")
-	if store == null:
-		return
-
-	var runtime: Node = store.get("story_runtime") as Node
-	if runtime == null or not runtime.has_method("request_day_one_story"):
-		return
-
-	gooby_story_debug_button.disabled = true
-	runtime.call("request_day_one_story")
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _update_gooby_story_debug_button() -> void:
-	if gooby_story_debug_button == null:
-		return
-
-	var store := get_tree().get_first_node_in_group("store")
-	var runtime: Node = store.get("story_runtime") as Node if store != null else null
-	var can_start := (
-		ENABLE_GOOBY_STORY_DEBUG_BUTTON
-		and TimeManager.current_day == 1
-		and store != null
-		and runtime != null
-		and bool(store.get("_is_store_world_active"))
-		and store.get("_current_storage") == null
-		and store.get("_current_yard") == null
-		and store.get("_current_home") == null
-		and not bool(store.get("_is_transitioning"))
-		and not _story_mode_controller.is_active()
-		and not bool(runtime.call("is_story_active"))
-		and not bool(runtime.call("is_story_complete"))
-	)
-	gooby_story_debug_button.visible = can_start
-	gooby_story_debug_button.disabled = not can_start
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
