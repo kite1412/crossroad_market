@@ -157,6 +157,13 @@ func trigger_shelf_guidance(shelf: Shelf) -> void:
 		return
 
 	if not player._is_shelf_installed_in_store(shelf):
+		if PlayerShelfInteraction.is_story_locked_ghost_shelf(player.get_tree(), shelf):
+			show_guided_hint_once(
+				"ghost_shelf_locked",
+				"Unable to pick up the shelf."
+			)
+			return
+
 		show_guided_hint_once(
 			"shelf_pickup",
 			"%s. Press E to pick it up, then press Q to place it." % shelf_name

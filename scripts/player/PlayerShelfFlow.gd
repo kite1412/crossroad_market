@@ -18,6 +18,10 @@ func interact_with_shelf(shelf: Shelf) -> void:
 		player._show_notification("Press Q to place the shelf first.", 0.8)
 		return
 
+	if PlayerShelfInteraction.is_story_locked_ghost_shelf(player.get_tree(), shelf):
+		player._show_notification("Unable to pick up the shelf.", 0.8)
+		return
+
 	if not is_shelf_installed_in_store(shelf):
 		if try_pickup_shelf(shelf):
 			return
@@ -47,7 +51,10 @@ func try_put() -> void:
 		return
 
 	if not is_shelf_installed_in_store(shelf):
-		player._show_notification("Press E to pick up this shelf first.", 0.8)
+		if PlayerShelfInteraction.is_story_locked_ghost_shelf(player.get_tree(), shelf):
+			player._show_notification("Unable to pick up the shelf.", 0.8)
+		else:
+			player._show_notification("Press E to pick up this shelf first.", 0.8)
 		return
 
 	put_item_on_shelf(shelf)

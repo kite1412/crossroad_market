@@ -16,6 +16,24 @@ static func is_shelf_installed_in_store(shelf: Shelf) -> bool:
 	return bool(shelf.get_meta("is_installed_in_store"))
 
 
+static func is_story_locked_ghost_shelf(tree: SceneTree, shelf: Shelf) -> bool:
+	if tree == null or shelf == null:
+		return false
+	if shelf.shelf_type != ItemData.ShelfType.GHOST:
+		return false
+
+	var storage: Node = tree.get_first_node_in_group("storage")
+	if storage == null or not storage.has_method("is_ghost_shelf_story_unlocked"):
+		return false
+	if (
+		storage.has_method("is_managed_storage_shelf")
+		and not bool(storage.call("is_managed_storage_shelf", shelf))
+	):
+		return false
+
+	return not bool(storage.call("is_ghost_shelf_story_unlocked"))
+
+
 static func is_supply_box_shelf_ready(tree: SceneTree, available_items: Array) -> bool:
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var required_shelf_types: Dictionary = {}
