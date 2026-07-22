@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://bvwob7mdgofp3" path="res://scenes/locations/yard/structure/StoreOutside.tscn" id="4_wf3cu"]
 
 [node name="YardObjects" type="Node2D" unique_id=733206462]
+y_sort_enabled = true
 
 [node name="PlayerHouse" parent="." unique_id=719157645 instance=ExtResource("1_wcfjr")]
 

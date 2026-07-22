@@ -3,22 +3,18 @@
 [ext_resource type="Script" uid="uid://dbej24xib71dn" path="res://scripts/locations/Yard.gd" id="1_yard"]
 [ext_resource type="Script" uid="uid://cy1gbklrdsunj" path="res://scripts/locations/yard/YardSceneFlow.gd" id="2_scene_flow"]
 [ext_resource type="Script" uid="uid://dgi7i2wwia6du" path="res://scripts/locations/yard/YardRestockFlow.gd" id="3_restock_flow"]
-[ext_resource type="PackedScene" path="res://scenes/locations/yard/YardGround.tscn" id="4_ground"]
-[ext_resource type="PackedScene" path="res://scenes/locations/yard/YardPlayerHomeArea.tscn" id="5_player_home"]
 [ext_resource type="PackedScene" path="res://scenes/locations/yard/YardRestockDropZone.tscn" id="6_restock_drop"]
-[ext_resource type="PackedScene" path="res://scenes/locations/yard/YardStoreFront.tscn" id="7_store_front"]
 [ext_resource type="PackedScene" path="res://scenes/locations/yard/YardPlayerSpawn.tscn" id="8_player_spawn"]
-[ext_resource type="PackedScene" path="res://scenes/locations/yard/YardBounds.tscn" id="9_bounds"]
 [ext_resource type="PackedScene" path="res://scenes/locations/yard/YardPresentation.tscn" id="10_presentation"]
 [ext_resource type="PackedScene" uid="uid://b2k2fky8ku7vk" path="res://scenes/locations/yard/structure/BaseYardStructure.tscn" id="11_7pkyr"]
 [ext_resource type="PackedScene" uid="uid://ckevplstr858k" path="res://scenes/locations/yard/YardReturnDoor.tscn" id="11_return_door"]
+[ext_resource type="PackedScene" uid="uid://by55pnjt6j7nx" path="res://scenes/locations/yard/structure/YardObjects.tscn" id="12_yard_objects"]
 
 [sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_ry2rs"]
 normal = Vector2(1, 0)
 distance = -1.0
 
 [sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_te610"]
-normal = Vector2(1, 0)
 
 [sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_due37"]
 normal = Vector2(-1, 0)
@@ -33,23 +29,11 @@ script = ExtResource("2_scene_flow")
 [node name="RestockFlow" type="Node" parent="." unique_id=1760143418]
 script = ExtResource("3_restock_flow")
 
-[node name="YardGround" parent="." unique_id=656367295 instance=ExtResource("4_ground")]
-visible = false
-
-[node name="PlayerHomeArea" parent="." unique_id=1870439781 instance=ExtResource("5_player_home")]
-visible = false
-
-[node name="ShopFront" parent="." unique_id=2068078388 instance=ExtResource("7_store_front")]
-visible = false
-metadata/_edit_use_anchors_ = true
-
-[node name="YardBounds" parent="." unique_id=649265890 instance=ExtResource("9_bounds")]
-visible = false
-position = Vector2(25, -117)
-
 [node name="YardPresentation" parent="." unique_id=1863124498 instance=ExtResource("10_presentation")]
 
 [node name="YardStructure" parent="." unique_id=1360511442 instance=ExtResource("11_7pkyr")]
+
+[node name="YardObjects" parent="." unique_id=733206462 instance=ExtResource("12_yard_objects")]
 
 [node name="RestockDropZone" parent="." unique_id=1411080129 instance=ExtResource("6_restock_drop")]
 position = Vector2(-133, -96)
@@ -62,19 +46,19 @@ position = Vector2(480, 354)
 
 [node name="Bounds" type="Node2D" parent="." unique_id=715615399]
 
-[node name="StaticBody2D" type="StaticBody2D" parent="Bounds" unique_id=2139461928]
+[node name="LeftBoundary" type="StaticBody2D" parent="Bounds" unique_id=2139461928]
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Bounds/StaticBody2D" unique_id=1770206333]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Bounds/LeftBoundary" unique_id=1770206333]
 shape = SubResource("WorldBoundaryShape2D_ry2rs")
 
-[node name="StaticBody2D2" type="StaticBody2D" parent="Bounds" unique_id=1378007408]
+[node name="BottomBoundary" type="StaticBody2D" parent="Bounds" unique_id=1378007408]
 position = Vector2(0, 540)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Bounds/StaticBody2D2" unique_id=270141921]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Bounds/BottomBoundary" unique_id=270141921]
 shape = SubResource("WorldBoundaryShape2D_te610")
 
-[node name="StaticBody2D3" type="StaticBody2D" parent="Bounds" unique_id=1294783047]
+[node name="RightBoundary" type="StaticBody2D" parent="Bounds" unique_id=1294783047]
 position = Vector2(960, 540)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Bounds/StaticBody2D3" unique_id=1889356402]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Bounds/RightBoundary" unique_id=1889356402]
 shape = SubResource("WorldBoundaryShape2D_due37")

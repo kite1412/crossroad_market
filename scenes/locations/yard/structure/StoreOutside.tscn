@@ -3,7 +3,7 @@
 [ext_resource type="Texture2D" uid="uid://bi08afvgg84cm" path="res://assets/yard/store.png" id="1_tia6a"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1dj2t"]
-size = Vector2(101, 157.5)
+size = Vector2(101, 144.75)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_um1m4"]
 size = Vector2(4, 12)
@@ -21,6 +21,7 @@ size = Vector2(21, 29.5)
 size = Vector2(390, 193.25)
 
 [node name="StoreOutside" type="Node2D" unique_id=1560459929]
+y_sort_enabled = true
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1866385348]
 position = Vector2(480, 270)
@@ -53,7 +54,7 @@ shape = SubResource("RectangleShape2D_due37")
 [node name="StaticBody2D" type="StaticBody2D" parent="Collisions/Right" unique_id=887953352]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Collisions/Right/StaticBody2D" unique_id=2100751163]
-position = Vector2(726.5, 206)
+position = Vector2(726.5, 212.375)
 shape = SubResource("RectangleShape2D_1dj2t")
 
 [node name="StaticBody2D2" type="StaticBody2D" parent="Collisions/Right" unique_id=266105984]

@@ -4,6 +4,7 @@ extends Node
 
 const STORE_ENTRY_FALLBACK_POSITION := Vector2(240, 204)
 const STORE_STORAGE_RETURN_FALLBACK_POSITION := Vector2(383, 76)
+const YARD_HOME_RETURN_FALLBACK_POSITION := Vector2(35, 525)
 
 var store: Node = null
 
@@ -417,9 +418,9 @@ func on_home_return_to_yard(_door_type: String) -> void:
 	store._update_store_status_board(false)
 
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-	var spawn_marker := store._current_yard.get_node_or_null("PlayerHomeArea/HomeReturnSpawn") as Node2D
+	var spawn_marker := store._current_yard.get_node_or_null("YardObjects/PlayerHouse/HomeReturnSpawn") as Node2D
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-	var spawn_position: Vector2 = spawn_marker.global_position if spawn_marker != null else Vector2(856, 144)
+	var spawn_position: Vector2 = spawn_marker.global_position if spawn_marker != null else YARD_HOME_RETURN_FALLBACK_POSITION
 
 	if store.player != null:
 		StoreTransitionController.prepare_player_for_location(store.player, store._current_yard, spawn_position)

@@ -29,22 +29,27 @@ a = Vector2(-7, 19)
 b = Vector2(112, -84)
 
 [node name="BaseYardStructure" type="Node2D" unique_id=1360511442]
+y_sort_enabled = true
 
 [node name="Path" type="Sprite2D" parent="." unique_id=487305046]
+z_index = -100
 position = Vector2(480, 270)
 texture = ExtResource("1_ghhkb")
 
 [node name="Grass" type="Sprite2D" parent="." unique_id=1368727717]
+z_index = -99
 position = Vector2(479.99997, 270)
 texture = ExtResource("2_1m6w5")
 
 [node name="TopTrees" type="Sprite2D" parent="." unique_id=1259640681]
 position = Vector2(480, 270)
+y_sort_origin = -144
 texture = ExtResource("4_7smw2")
 
 [node name="EmptyHouse" type="Sprite2D" parent="." unique_id=397226996]
 position = Vector2(480, 269.99997)
 scale = Vector2(1, 0.99999994)
+y_sort_origin = -130
 texture = ExtResource("5_72r58")
 
 [node name="Collidables" type="Node2D" parent="." unique_id=1033003499]
