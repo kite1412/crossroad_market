@@ -7,4 +7,5 @@ extends Resource
 @export var customer_id: String = ""
 @export_multiline var opening_line: String = ""
 @export var post_payment_dialogue: Array[CashierDialogueLine] = []
-@export_multiline var player_exit_dialogue: String = ""
+@export var player_exit_dialogue: Array[String] = []
+@export var wait_for_customer_exit: bool = false

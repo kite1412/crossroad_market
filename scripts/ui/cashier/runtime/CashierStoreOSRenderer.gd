@@ -140,25 +140,45 @@ func _on_checkout_conversation_started() -> void:
 	cashier._stop_patience_timer()
 
 
-func _on_player_exit_dialog_requested(text: String) -> void:
+func _on_player_exit_dialog_requested(
+	messages: Array[String],
+	customer: NPC,
+	wait_for_customer_exit: bool
+) -> void:
 	_player_exit_dialog_serial += 1
-	_show_player_exit_dialog(text, _player_exit_dialog_serial)
+	_show_player_exit_dialog(
+		messages,
+		customer,
+		wait_for_customer_exit,
+		_player_exit_dialog_serial
+	)
 
 
-func _show_player_exit_dialog(text: String, dialog_serial: int) -> void:
+func _show_player_exit_dialog(
+	messages: Array[String],
+	customer: NPC,
+	wait_for_customer_exit: bool,
+	dialog_serial: int
+) -> void:
 	var tree := cashier.get_tree()
 	if tree == null:
 		return
 
-	# Payment completion has already put the customer into EXIT. Let Irene take
-	# a few steps before opening the full Dialog.tscn player sequence.
-	await tree.create_timer(PLAYER_EXIT_DIALOG_DELAY).timeout
+	if (
+		wait_for_customer_exit
+		and customer != null
+		and is_instance_valid(customer)
+		and not customer.is_queued_for_deletion()
+	):
+		await customer.npc_exited
+	else:
+		# Irene's line intentionally begins while she is walking away.
+		await tree.create_timer(PLAYER_EXIT_DIALOG_DELAY).timeout
 	if dialog_serial != _player_exit_dialog_serial:
 		return
 
 	if cashier == null or not is_instance_valid(cashier):
 		return
-	var messages: Array[String] = [text]
 	await StoreDialogBridge.show_player_sequence(cashier, messages)
 
 

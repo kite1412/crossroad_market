@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="CashierConversationData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://data/cashier/conversations/CashierConversationData.gd" id="1_conversation"]
+[ext_resource type="Script" path="res://data/cashier/conversations/CashierDialogueLine.gd" id="2_line"]
+
+[sub_resource type="Resource" id="CashierDialogueLine_phantom_sale"]
+script = ExtResource("2_line")
+text = "Hey, you're actually selling that?"
+
+[sub_resource type="Resource" id="CashierDialogueLine_phantom_taste"]
+script = ExtResource("2_line")
+text = "Some people say that Phantom Ice Cream tastes amazing."
+
+[sub_resource type="Resource" id="CashierDialogueLine_phantom_touch"]
+script = ExtResource("2_line")
+text = "It's so weird... I can't even seem to touch the thing. Maybe they're just pulling my leg, or maybe... they aren't even human?"
+
+[resource]
+script = ExtResource("1_conversation")
+day = 1
+customer_id = "day1_water_customer"
+post_payment_dialogue = Array[ExtResource("2_line")]([SubResource("CashierDialogueLine_phantom_sale"), SubResource("CashierDialogueLine_phantom_taste"), SubResource("CashierDialogueLine_phantom_touch")])
+player_exit_dialogue = Array[String](["Can't touch it?", "That's weird, I didn't have any trouble moving the box earlier. People in this village have some strange jokes..."])
+wait_for_customer_exit = true

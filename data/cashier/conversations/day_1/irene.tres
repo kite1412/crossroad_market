@@ -18,4 +18,4 @@ day = 1
 customer_id = "irene"
 opening_line = "Just this, please."
 post_payment_dialogue = Array[ExtResource("2_line")]([SubResource("CashierDialogueLine_player_thanks"), SubResource("CashierDialogueLine_irene_silence")])
-player_exit_dialogue = "Huh, what a strange person."
+player_exit_dialogue = Array[String](["Huh, what a strange person."])

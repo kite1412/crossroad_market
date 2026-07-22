@@ -336,9 +336,6 @@ func get_current_objective_text() -> String:
 	if store._human_items_placed < NORMAL_STOCK_REQUIRED:
 		return "Stock the human shelf with normal items."
 
-	if not store._store_open:
-		return "Flip the OPEN board when ready."
-
 	if not store._mystery_phase_unlocked or not store._mystery_discovered:
 		return "Check the dark storage corner."
 
@@ -347,6 +344,9 @@ func get_current_objective_text() -> String:
 
 	if store.ghost_shelf == null or not store.ghost_shelf.has_stock():
 		return "Stock Phantom Ice Cream on ghost shelf."
+
+	if not store._store_open:
+		return "Flip the OPEN board when ready."
 
 	if not store._is_day_setup_complete():
 		return "Prepare the store for customers."

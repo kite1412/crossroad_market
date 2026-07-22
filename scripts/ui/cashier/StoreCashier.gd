@@ -13,7 +13,11 @@ signal payment_requested(
 signal free_requested(total: int, item_label: String, quantities: Dictionary)
 signal checkout_cancelled()
 signal checkout_conversation_started()
-signal player_exit_dialog_requested(text: String)
+signal player_exit_dialog_requested(
+	messages: Array[String],
+	customer: NPC,
+	wait_for_customer_exit: bool
+)
 
 const UI_LAYER: int = 12
 const ITEM_CARD_SIZE := Vector2(48, 15)
@@ -719,15 +723,22 @@ func _advance_checkout_conversation() -> void:
 
 	_checkout_conversation_index += 1
 	if _checkout_conversation_index >= _checkout_conversation_lines.size():
-		var player_exit_dialogue := (
-			_cashier_conversation.player_exit_dialogue
-			if _cashier_conversation != null
-			else ""
-		)
+		var player_exit_dialogue: Array[String] = []
+		var wait_for_customer_exit := false
+		if _cashier_conversation != null:
+			for message in _cashier_conversation.player_exit_dialogue:
+				if not message.strip_edges().is_empty():
+					player_exit_dialogue.append(message)
+			wait_for_customer_exit = _cashier_conversation.wait_for_customer_exit
+		var departing_customer := _customer
 		_reset_checkout_conversation()
 		_emit_checkout_request(false, false)
-		if not player_exit_dialogue.strip_edges().is_empty():
-			player_exit_dialog_requested.emit(player_exit_dialogue)
+		if not player_exit_dialogue.is_empty():
+			player_exit_dialog_requested.emit(
+				player_exit_dialogue,
+				departing_customer,
+				wait_for_customer_exit
+			)
 		return
 
 	var line := _checkout_conversation_lines[_checkout_conversation_index]
