@@ -11,6 +11,7 @@ const StoreRuntimeDebugProbeScript = preload("res://scripts/debug/StoreRuntimeDe
 const NO_ROUTE_RETRY_COOLDOWN_MSEC: int = 450
 const PATH_REQUEST_RETRY_COOLDOWN_MSEC: int = 1500
 const PATH_REQUEST_BACKOFF_MAX_MSEC: int = 5000
+const SAFETY_REJECT_RETRY_COOLDOWN_MSEC: int = 1200
 const ROUTE_REQUEST_PROBE_COOLDOWN_MSEC: int = 650
 const ROUTE_STEP_PROBE_COOLDOWN_MSEC: int = 650
 
@@ -25,6 +26,8 @@ var _path_request_backoff_msec: int = PATH_REQUEST_RETRY_COOLDOWN_MSEC
 var _pending_path_request: Dictionary = {}
 var _next_route_request_probe_msec: int = 0
 var _next_route_step_probe_msec: int = 0
+var _last_route_safety_reject_signature: String = ""
+var _route_safety_reject_repeat_count: int = 0
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -142,6 +145,10 @@ func update_stuck_watchdog(delta: float) -> void:
 		reset_stuck_watchdog()
 		return
 
+	if _is_queue_waiting_without_movement():
+		reset_stuck_watchdog()
+		return
+
 	if (
 		npc.current_state == NPC.State.EXIT
 		and npc.global_position.distance_to(npc.target_position)
@@ -221,6 +228,32 @@ func is_movement_state() -> bool:
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _is_queue_waiting_without_movement() -> bool:
+	if npc.current_state != NPC.State.WAIT_IN_QUEUE:
+		return false
+
+	if npc._is_moving_from_queue_to_cashier or npc._queue_egress_route_pending:
+		return false
+
+	if npc._queue_advance_delay_timer > 0.0:
+		return true
+
+	if (
+		npc._queue_advance_waiting_for_clear
+		and npc._queue_advance_clear_wait_timer > 0.0
+	):
+		return true
+
+	if not npc.target_position.is_finite():
+		return false
+
+	return (
+		npc.global_position.distance_to(npc.target_position)
+		<= npc.QUEUE_SLOT_ARRIVAL_DISTANCE
+	)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func uses_store_navigation_state() -> bool:
 	return npc.current_state in [
 		NPC.State.WALK_TO_SHELF,
@@ -245,6 +278,8 @@ func reset_stuck_watchdog() -> void:
 	_last_path_request_destination = Vector2.INF
 	_next_path_request_msec = 0
 	_path_request_backoff_msec = PATH_REQUEST_RETRY_COOLDOWN_MSEC
+	_last_route_safety_reject_signature = ""
+	_route_safety_reject_repeat_count = 0
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -402,6 +437,8 @@ func _reset_path_request_backoff() -> void:
 	_last_path_request_destination = Vector2.INF
 	_next_path_request_msec = 0
 	_path_request_backoff_msec = PATH_REQUEST_RETRY_COOLDOWN_MSEC
+	_last_route_safety_reject_signature = ""
+	_route_safety_reject_repeat_count = 0
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -550,7 +587,10 @@ func build_movement_route(destination: Vector2) -> Array[Vector2]:
 				"reason": "prevalidated_queue_egress"
 			})
 		elif _route_safety != null:
+			var raw_route_points := route.size()
 			route = _route_safety.sanitize_store_route(route)
+			if route.is_empty():
+				_handle_route_safety_empty(destination, raw_route_points)
 		return dedupe_route_points(route)
 
 	# Store movement must wait for a valid graph route. Falling back to a
@@ -560,6 +600,67 @@ func build_movement_route(destination: Vector2) -> Array[Vector2]:
 		return []
 
 	return build_direct_fallback(destination)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _handle_route_safety_empty(destination: Vector2, raw_route_points: int) -> void:
+	if _route_safety == null or not _route_safety.has_method("get_last_reject_context"):
+		return
+
+	var reject_context: Dictionary = _route_safety.get_last_reject_context()
+	if reject_context.is_empty():
+		return
+
+	var signature := _get_route_safety_reject_signature(destination, reject_context)
+	if signature == _last_route_safety_reject_signature:
+		_route_safety_reject_repeat_count += 1
+	else:
+		_last_route_safety_reject_signature = signature
+		_route_safety_reject_repeat_count = 1
+
+	var cooldown_msec := mini(
+		PATH_REQUEST_BACKOFF_MAX_MSEC,
+		SAFETY_REJECT_RETRY_COOLDOWN_MSEC * _route_safety_reject_repeat_count
+	)
+	_no_route_retry_destination = destination
+	_next_no_route_retry_msec = maxi(
+		_next_no_route_retry_msec,
+		Time.get_ticks_msec() + cooldown_msec
+	)
+	_next_path_request_msec = maxi(
+		_next_path_request_msec,
+		Time.get_ticks_msec() + cooldown_msec
+	)
+	_path_request_backoff_msec = maxi(
+		_path_request_backoff_msec,
+		cooldown_msec
+	)
+
+	var context: Dictionary = {
+		"reason": "sanitized_empty_backoff",
+		"destination": _format_vector(destination),
+		"raw_route_points": raw_route_points,
+		"repeat_count": _route_safety_reject_repeat_count,
+		"cooldown_msec": cooldown_msec,
+		"signature": signature
+	}
+	for key in reject_context:
+		context[key] = reject_context[key]
+	_record_route_request_probe(&"npc_route_safety_retry_backoff", context)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _get_route_safety_reject_signature(
+	destination: Vector2,
+	reject_context: Dictionary
+) -> String:
+	return "%s|%s|%s|%s|%s" % [
+		str(reject_context.get("collider_path", "")),
+		str(reject_context.get("failed_segment_index", -1)),
+		str(reject_context.get("failed_from", "")),
+		str(reject_context.get("failed_to", "")),
+		_format_vector(destination)
+	]
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

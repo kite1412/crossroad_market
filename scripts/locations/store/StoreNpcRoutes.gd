@@ -7,9 +7,15 @@ const OptimizedStorePathGraphScript = preload(
 const StoreRuntimeDebugProbeScript = preload("res://scripts/debug/StoreRuntimeDebugProbe.gd")
 const NPCQueueReservationControllerScript = preload("res://scripts/npc/runtime/NPCQueueReservationController.gd")
 const STORE_ENTRY_FALLBACK_POSITION = Vector2(240, 204)
+const QUEUE_SHELF_TRANSIT_FRONT: StringName = &"StorePathQueueFront"
 const QUEUE_SHELF_TRANSIT_BACK1: StringName = &"StorePathQueueBack1"
 const QUEUE_SHELF_TRANSIT_BACK2: StringName = &"StorePathQueueBack2"
 const QUEUE_SHELF_TRANSIT_FULL: StringName = &"StorepathParsenpc"
+const QUEUE_SHELF_TRANSIT_MARKERS: Array[StringName] = [
+	QUEUE_SHELF_TRANSIT_FRONT,
+	QUEUE_SHELF_TRANSIT_BACK1,
+	QUEUE_SHELF_TRANSIT_BACK2
+]
 const CHECKOUT_RIGHT_ROUTE_MARKERS: Array[StringName] = [
 	&"StorePathQueueFrontRight",
 	&"StorePathQueueBack1Right",
@@ -31,8 +37,10 @@ const CHECKOUT_APPROACH_ROUTE_MARKERS: Array[StringName] = [
 	&"StorePathQueueFront",
 	&"StorePathCashier"
 ]
+const CHECKOUT_EXIT_SAFE_START_MARKER: StringName = &"StorePathQueueFront"
 const CHECKOUT_GRAPH_REJOIN_MARKER: StringName = &"StorePathAisleRight"
 const CHECKOUT_ROUTE_RESUME_DISTANCE: float = 18.0
+const CHECKOUT_EXIT_BLOCK_DISTANCE: float = 22.0
 const SHELF_QUAD_MARKER_PREFIX: String = "StorePathShelfQuad"
 
 var store: Node = null
@@ -333,12 +341,6 @@ func get_npc_exit_route_from_cashier(
 		store.npc_exit_marker,
 		STORE_ENTRY_FALLBACK_POSITION
 	)
-	var center_exit_route := _build_exit_lane_route_if_centered(
-		from_position,
-		exit_position
-	)
-	if not center_exit_route.is_empty():
-		return center_exit_route
 
 	var mandatory_markers = _get_named_markers(
 		CHECKOUT_RIGHT_ROUTE_MARKERS
@@ -366,6 +368,16 @@ func get_npc_exit_route_from_cashier(
 		from_position,
 		mandatory_markers
 	)
+	var safe_start_marker := _get_named_marker(CHECKOUT_EXIT_SAFE_START_MARKER)
+	var used_safe_start := false
+	if start_index == 0 and safe_start_marker != null:
+		current = _append_orthogonal_route_leg(
+			route,
+			current,
+			safe_start_marker.global_position,
+			false
+		)
+		used_safe_start = true
 	for index in range(start_index, mandatory_markers.size()):
 		current = _append_orthogonal_route_leg(
 			route,
@@ -398,6 +410,31 @@ func get_npc_exit_route_from_cashier(
 			"checkout_right_empty"
 		)
 
+	_record_route_probe(&"npc_checkout_exit_route_plan", {
+		"from": _format_vector(from_position),
+		"exit": _format_vector(exit_position),
+		"start_index": start_index,
+		"mandatory_markers": _format_marker_names(mandatory_markers),
+		"safe_start_marker": (
+			String(safe_start_marker.name)
+			if safe_start_marker != null
+			else ""
+		),
+		"safe_start_position": _format_vector(
+			safe_start_marker.global_position
+			if safe_start_marker != null
+			else Vector2.INF
+		),
+		"used_safe_start": used_safe_start,
+		"rejoin_marker": String(rejoin_marker.name),
+		"rejoin_position": _format_vector(rejoin_marker.global_position),
+		"route_points": route.size(),
+		"first_point": _format_vector(route[0] if not route.is_empty() else Vector2.INF),
+		"second_point": _format_vector(route[1] if route.size() > 1 else Vector2.INF),
+		"first_segment_from": _format_vector(from_position),
+		"first_segment_to": _format_vector(route[0] if not route.is_empty() else Vector2.INF),
+		"graph_tail_points": graph_route.size()
+	})
 	_record_route_probe(&"npc_exit_route_select", {
 		"reason": "checkout_right_lane",
 		"from": _format_vector(from_position),
@@ -406,6 +443,74 @@ func get_npc_exit_route_from_cashier(
 		"graph_tail_points": graph_route.size()
 	})
 	return route
+
+
+func _format_marker_names(markers: Array[Marker2D]) -> String:
+	var names: Array[String] = []
+	for marker in markers:
+		if marker == null:
+			continue
+		names.append(String(marker.name))
+	return ",".join(names)
+
+
+func get_npc_checkout_exit_blocking_context(
+	waiting_npc: Node,
+	queue_index: int
+) -> Dictionary:
+	var lane_markers := _get_named_markers(CHECKOUT_RIGHT_ROUTE_MARKERS)
+	var cashier_marker := _get_named_marker(&"StorePathCashier")
+	if cashier_marker != null:
+		lane_markers.push_front(cashier_marker)
+
+	if lane_markers.is_empty():
+		return {"blocked": false, "reason": "missing_lane_markers"}
+
+	var route_points: Array[Vector2] = []
+	for marker in lane_markers:
+		route_points.append(marker.global_position)
+
+	var tree := store.get_tree() if store != null else null
+	if tree == null:
+		return {"blocked": false, "reason": "missing_tree"}
+
+	for node in tree.get_nodes_in_group("npcs"):
+		var other := node as NPC
+		if other == null:
+			continue
+		if other == waiting_npc:
+			continue
+		if not is_instance_valid(other) or other.is_queued_for_deletion():
+			continue
+		if other.current_state != NPC.State.EXIT:
+			continue
+		if not other._exit_after_checkout:
+			continue
+
+		var nearest_marker := ""
+		var nearest_distance := INF
+		for index in range(route_points.size()):
+			var distance := other.global_position.distance_to(route_points[index])
+			if distance >= nearest_distance:
+				continue
+			nearest_distance = distance
+			nearest_marker = String(lane_markers[index].name)
+
+		if nearest_distance > CHECKOUT_EXIT_BLOCK_DISTANCE:
+			continue
+
+		return {
+			"blocked": true,
+			"reason": "checkout_exit_lane_occupied",
+			"queue_index": queue_index,
+			"blocker_id": other.get_instance_id(),
+			"blocker_state": int(other.current_state),
+			"blocker_position": _format_vector(other.global_position),
+			"nearest_marker": nearest_marker,
+			"nearest_marker_distance": snappedf(nearest_distance, 0.01)
+		}
+
+	return {"blocked": false, "reason": "clear"}
 
 
 func get_store_path_graph() -> StorePathGraph:
@@ -616,17 +721,6 @@ func _build_queue_aware_shelf_transit_route(
 	if active_queue_size <= 0:
 		return []
 
-	var transit_marker := _get_queue_shelf_transit_marker(active_queue_size)
-	if transit_marker == null:
-		_record_route_probe(&"npc_transit_queue_bypass_select", {
-			"reason": "missing_transit_marker",
-			"queue_size": NPCQueueReservationControllerScript.size(),
-			"active_queue_size": active_queue_size,
-			"from": _format_vector(from_position),
-			"shelf_id": String(shelf.get_shelf_id())
-		})
-		return []
-
 	var graph := get_store_path_graph()
 	var access_position := graph.get_shelf_access_position(shelf)
 	if not access_position.is_finite():
@@ -634,38 +728,102 @@ func _build_queue_aware_shelf_transit_route(
 			"reason": "invalid_access",
 			"queue_size": NPCQueueReservationControllerScript.size(),
 			"active_queue_size": active_queue_size,
-			"chosen_bypass_marker": String(transit_marker.name),
 			"from": _format_vector(from_position),
 			"shelf_id": String(shelf.get_shelf_id())
 		})
 		return []
 
-	var route: Array[Vector2] = []
-	var current := from_position
-	current = _append_orthogonal_route_leg(
-		route,
-		current,
-		transit_marker.global_position,
-		true
+	var shelf_quad := _get_queue_transit_shelf_quad_marker(access_position)
+	if not _is_right_side_shelf_access(access_position, shelf_quad):
+		_record_route_probe(&"npc_shelf_transit_bridge_selected", {
+			"reason": "left_or_center_shelf_uses_normal_route",
+			"queue_size": NPCQueueReservationControllerScript.size(),
+			"active_queue_size": active_queue_size,
+			"from": _format_vector(from_position),
+			"access": _format_vector(access_position),
+			"shelf_quad": String(shelf_quad.name) if shelf_quad != null else "",
+			"shelf_id": String(shelf.get_shelf_id()),
+			"shelf_revision": shelf.get_revision()
+		})
+		return []
+
+	var bridge_result := _get_available_queue_shelf_transit_marker(npc_node)
+	var transit_marker := bridge_result.get("marker", null) as Marker2D
+	if transit_marker == null:
+		_record_route_probe(&"npc_shelf_transit_bridge_selected", {
+			"reason": "missing_transit_marker",
+			"queue_size": NPCQueueReservationControllerScript.size(),
+			"active_queue_size": active_queue_size,
+			"occupied_slots": str(bridge_result.get("occupied_slots", "")),
+			"from": _format_vector(from_position),
+			"access": _format_vector(access_position),
+			"shelf_quad": String(shelf_quad.name) if shelf_quad != null else "",
+			"shelf_id": String(shelf.get_shelf_id()),
+			"shelf_revision": shelf.get_revision()
+		})
+		return []
+
+	var candidates: Array[Dictionary] = []
+	if shelf_quad != null:
+		var transit_route := _build_shelf_access_candidate_route(
+			from_position,
+			[transit_marker.global_position],
+			shelf_quad,
+			access_position
+		)
+		_append_shelf_transit_candidate(
+			candidates,
+			&"queue_bridge_to_shelf_quad",
+			transit_route,
+			from_position,
+			-12.0,
+			{
+				"bridge_marker": String(transit_marker.name),
+				"bridge_position": _format_vector(
+					transit_marker.global_position
+				),
+				"bridge_reason": str(bridge_result.get("reason", "")),
+				"occupied_slots": str(bridge_result.get("occupied_slots", "")),
+				"shelf_quad": String(shelf_quad.name),
+				"shelf_quad_position": _format_vector(shelf_quad.global_position)
+			}
+		)
+
+	var transit_only_route := _build_shelf_access_candidate_route(
+		from_position,
+		[transit_marker.global_position],
+		null,
+		access_position
+	)
+	_append_shelf_transit_candidate(
+		candidates,
+		&"queue_bridge_to_access",
+		transit_only_route,
+		from_position,
+		6.0,
+		{
+			"bridge_marker": String(transit_marker.name),
+			"bridge_position": _format_vector(transit_marker.global_position),
+			"bridge_reason": str(bridge_result.get("reason", "")),
+			"occupied_slots": str(bridge_result.get("occupied_slots", ""))
+		}
 	)
 
-	var shelf_quad := _get_queue_transit_shelf_quad_marker(access_position)
-	if shelf_quad != null:
-		current = _append_orthogonal_route_leg(
-			route,
-			current,
-			shelf_quad.global_position,
-			false
-		)
-	current = _append_orthogonal_route_leg(route, current, access_position, true)
-
-	route = _dedupe_route_points(route)
-	_record_route_probe(&"npc_transit_queue_bypass_select", {
+	candidates.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return float(a.get("score", INF)) < float(b.get("score", INF))
+	)
+	var selected: Dictionary = candidates.front() if not candidates.is_empty() else {}
+	var route: Array[Vector2] = selected.get("route", []) as Array[Vector2]
+	_record_route_probe(&"npc_shelf_transit_bridge_selected", {
 		"reason": "built" if not route.is_empty() else "empty",
 		"queue_size": NPCQueueReservationControllerScript.size(),
 		"active_queue_size": active_queue_size,
-		"chosen_bypass_marker": String(transit_marker.name),
-		"chosen_bypass_position": _format_vector(transit_marker.global_position),
+		"selected_kind": StringName(str(selected.get("kind", &""))),
+		"selected_score": snappedf(float(selected.get("score", 0.0)), 0.01),
+		"bridge_marker": String(transit_marker.name),
+		"bridge_position": _format_vector(transit_marker.global_position),
+		"bridge_reason": str(bridge_result.get("reason", "")),
+		"occupied_slots": str(bridge_result.get("occupied_slots", "")),
 		"shelf_quad": String(shelf_quad.name) if shelf_quad != null else "",
 		"shelf_quad_position": _format_vector(
 			shelf_quad.global_position if shelf_quad != null else Vector2.INF
@@ -674,9 +832,72 @@ func _build_queue_aware_shelf_transit_route(
 		"access": _format_vector(access_position),
 		"shelf_id": String(shelf.get_shelf_id()),
 		"shelf_revision": shelf.get_revision(),
+		"candidate_count": candidates.size(),
 		"route_points": route.size()
 	})
 	return route
+
+
+func _build_shelf_access_candidate_route(
+	from_position: Vector2,
+	via_points: Array[Vector2],
+	shelf_quad: Marker2D,
+	access_position: Vector2
+) -> Array[Vector2]:
+	var route: Array[Vector2] = []
+	var current := from_position
+	for via_point in via_points:
+		current = _append_orthogonal_route_leg(route, current, via_point, true)
+
+	if shelf_quad != null:
+		current = _append_orthogonal_route_leg(
+			route,
+			current,
+			shelf_quad.global_position,
+			false
+		)
+
+	_append_orthogonal_route_leg(route, current, access_position, true)
+	return _dedupe_route_points(route)
+
+
+func _append_shelf_transit_candidate(
+	candidates: Array[Dictionary],
+	kind: StringName,
+	route: Array[Vector2],
+	from_position: Vector2,
+	score_bias: float,
+	context: Dictionary
+) -> void:
+	if route.is_empty():
+		context["kind"] = String(kind)
+		context["reason"] = "empty"
+		_record_route_probe(&"npc_transit_queue_candidate", context)
+		return
+
+	var route_distance := _get_route_distance(from_position, route)
+	var score := route_distance + score_bias
+	context["kind"] = String(kind)
+	context["reason"] = "accepted"
+	context["route_points"] = route.size()
+	context["route_distance"] = snappedf(route_distance, 0.01)
+	context["score"] = snappedf(score, 0.01)
+	_record_route_probe(&"npc_transit_queue_candidate", context)
+	candidates.append({
+		"kind": kind,
+		"route": route,
+		"score": score
+	})
+
+
+func _get_route_distance(from_position: Vector2, route: Array[Vector2]) -> float:
+	var distance := 0.0
+	var previous := from_position
+	for point in route:
+		if previous.is_finite():
+			distance += previous.distance_to(point)
+		previous = point
+	return distance
 
 
 func _get_active_shopping_queue_size(npc_node: Node) -> int:
@@ -700,16 +921,147 @@ func _get_active_shopping_queue_size(npc_node: Node) -> int:
 	return count
 
 
-func _get_queue_shelf_transit_marker(queue_size: int) -> Marker2D:
-	var marker_name := QUEUE_SHELF_TRANSIT_FULL
-	if queue_size <= 1:
-		marker_name = QUEUE_SHELF_TRANSIT_BACK1
-	elif queue_size <= 3:
-		marker_name = QUEUE_SHELF_TRANSIT_BACK2
+func _get_available_queue_shelf_transit_marker(npc_node: Node) -> Dictionary:
+	var occupied_slots := _get_occupied_normal_queue_transit_slots(npc_node)
+	for marker_name in QUEUE_SHELF_TRANSIT_MARKERS:
+		if bool(occupied_slots.get(marker_name, false)):
+			continue
 
-	if store == null or store.store_path_markers == null:
-		return null
-	return store.store_path_markers.get_node_or_null(String(marker_name)) as Marker2D
+		var marker := _get_named_marker(marker_name)
+		if marker == null:
+			continue
+
+		return {
+			"marker": marker,
+			"reason": "normal_queue_slot_available",
+			"occupied_slots": _format_queue_transit_occupancy(occupied_slots)
+		}
+
+	var fallback_marker := _get_named_marker(QUEUE_SHELF_TRANSIT_FULL)
+	return {
+		"marker": fallback_marker,
+		"reason": "normal_queue_slots_full",
+		"occupied_slots": _format_queue_transit_occupancy(occupied_slots)
+	}
+
+
+func _get_occupied_normal_queue_transit_slots(npc_node: Node) -> Dictionary:
+	var occupied: Dictionary = {}
+	for marker_name in QUEUE_SHELF_TRANSIT_MARKERS:
+		occupied[marker_name] = false
+
+	NPCQueueReservationControllerScript.prune_invalid()
+	for queue_index in range(NPC.current_queue.size()):
+		var queued_variant: Variant = NPC.current_queue[queue_index]
+		if not (queued_variant is NPC):
+			continue
+
+		var queued_npc := queued_variant as NPC
+		if queued_npc == npc_node:
+			continue
+		if not is_instance_valid(queued_npc):
+			continue
+		if queued_npc.is_queued_for_deletion():
+			continue
+		if queued_npc.current_state != NPC.State.WAIT_IN_QUEUE:
+			continue
+		if _queued_npc_is_at_checkout(queued_npc):
+			continue
+
+		var occupied_marker_name := _get_nearest_occupied_queue_transit_slot(
+			queued_npc
+		)
+		if occupied_marker_name == StringName():
+			occupied_marker_name = _get_queue_transit_slot_name_for_index(
+				queue_index
+			)
+		if occupied_marker_name == StringName():
+			continue
+		occupied[occupied_marker_name] = true
+
+	return occupied
+
+
+func _queued_npc_is_at_checkout(queued_npc: NPC) -> bool:
+	if queued_npc._is_moving_from_queue_to_cashier:
+		return true
+
+	var cashier_marker := _get_named_marker(&"StorePathCashier")
+	if cashier_marker == null:
+		return false
+
+	return queued_npc.global_position.distance_to(cashier_marker.global_position) <= (
+		CHECKOUT_EXIT_BLOCK_DISTANCE
+	)
+
+
+func _get_queue_transit_slot_name_for_index(queue_index: int) -> StringName:
+	if QUEUE_SHELF_TRANSIT_MARKERS.is_empty():
+		return StringName()
+	var marker_index := clampi(
+		queue_index,
+		0,
+		QUEUE_SHELF_TRANSIT_MARKERS.size() - 1
+	)
+	return QUEUE_SHELF_TRANSIT_MARKERS[marker_index]
+
+
+func _get_nearest_occupied_queue_transit_slot(queued_npc: NPC) -> StringName:
+	var best_marker_name := StringName()
+	var best_distance := INF
+	for marker_name in QUEUE_SHELF_TRANSIT_MARKERS:
+		var marker := _get_named_marker(marker_name)
+		if marker == null:
+			continue
+
+		var position_distance := queued_npc.global_position.distance_to(
+			marker.global_position
+		)
+		var target_distance := INF
+		if queued_npc.target_position.is_finite():
+			target_distance = queued_npc.target_position.distance_to(
+				marker.global_position
+			)
+		var distance := minf(position_distance, target_distance)
+		if distance >= best_distance:
+			continue
+
+		best_marker_name = marker_name
+		best_distance = distance
+
+	if best_distance > CHECKOUT_EXIT_BLOCK_DISTANCE:
+		return StringName()
+	return best_marker_name
+
+
+func _format_queue_transit_occupancy(occupied_slots: Dictionary) -> String:
+	var parts: Array[String] = []
+	for marker_name in QUEUE_SHELF_TRANSIT_MARKERS:
+		parts.append(
+			"%s=%s" % [
+				String(marker_name),
+				"1" if bool(occupied_slots.get(marker_name, false)) else "0"
+			]
+		)
+	return ",".join(parts)
+
+
+func _is_right_side_shelf_access(
+	access_position: Vector2,
+	shelf_quad: Marker2D
+) -> bool:
+	if shelf_quad != null:
+		var quad_name := String(shelf_quad.name)
+		if quad_name.ends_with("NE") or quad_name.ends_with("SE"):
+			return true
+		if quad_name.ends_with("NW") or quad_name.ends_with("SW"):
+			return false
+
+	var queue_front := _get_named_marker(QUEUE_SHELF_TRANSIT_FRONT)
+	if queue_front != null:
+		return access_position.x > queue_front.global_position.x + 32.0
+
+	return access_position.x > STORE_ENTRY_FALLBACK_POSITION.x + 32.0
 
 
 func _get_queue_transit_shelf_quad_marker(access_position: Vector2) -> Marker2D:

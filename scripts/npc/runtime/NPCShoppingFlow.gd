@@ -5,9 +5,12 @@ const ShelfItemIndexScript = preload("res://scripts/objects/shelf/ShelfItemIndex
 const StoreRuntimeDebugProbeScript = preload("res://scripts/debug/StoreRuntimeDebugProbe.gd")
 
 const SHELF_ROUTE_FAILURE_COOLDOWN_MSEC: int = 8000
+const SHELF_CANDIDATE_PROBE_COOLDOWN_MSEC: int = 900
+const SHELF_CANDIDATE_PROBE_LIMIT: int = 8
 
 var npc = null
 var _shelf_route_retry_after_msec: Dictionary = {}
+var _next_shelf_candidate_probe_msec: int = 0
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -124,6 +127,7 @@ func find_matching_shelf() -> Shelf:
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func find_reachable_matching_shelf() -> Shelf:
+	var selected_shelf: Shelf = null
 	for shelf in get_matching_shelf_candidates():
 		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var visit_position: Vector2 = get_shelf_visit_position(shelf)
@@ -131,9 +135,11 @@ func find_reachable_matching_shelf() -> Shelf:
 
 		if visit_position.is_finite():
 			pass
-			return shelf
+			selected_shelf = shelf
+			break
 
-	return null
+	_record_shelf_candidate_probe(selected_shelf)
+	return selected_shelf
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -216,6 +222,116 @@ func _is_matching_shelf_candidate(shelf: Shelf, item: ItemData) -> bool:
 		return false
 
 	return true
+
+
+func _record_shelf_candidate_probe(selected_shelf: Shelf) -> void:
+	if npc == null:
+		return
+
+	var now_msec := Time.get_ticks_msec()
+	if now_msec < _next_shelf_candidate_probe_msec:
+		return
+	_next_shelf_candidate_probe_msec = now_msec + SHELF_CANDIDATE_PROBE_COOLDOWN_MSEC
+
+	var item: ItemData = ItemDatabase.get_item(npc.item_to_buy)
+	var indexed_count := 0
+	var group_count := 0
+	var accepted_count := 0
+	var rejected_count := 0
+	var rejected_samples: Array[String] = []
+	if item != null:
+		for indexed_shelf in ShelfItemIndexScript.get_shelves_with_item(npc.item_to_buy):
+			indexed_count += 1
+			var reject_reason := _get_shelf_candidate_reject_reason(
+				indexed_shelf,
+				item
+			)
+			if reject_reason == "":
+				accepted_count += 1
+			else:
+				rejected_count += 1
+				if rejected_samples.size() < SHELF_CANDIDATE_PROBE_LIMIT:
+					rejected_samples.append(
+						_get_shelf_candidate_debug_text(
+							indexed_shelf,
+							reject_reason
+						)
+					)
+
+		for shelf_node in npc.get_tree().get_nodes_in_group("shelves"):
+			var shelf := shelf_node as Shelf
+			if shelf == null:
+				continue
+			group_count += 1
+			var reject_reason := _get_shelf_candidate_reject_reason(
+				shelf,
+				item
+			)
+			if reject_reason == "":
+				accepted_count += 1
+			else:
+				rejected_count += 1
+				if rejected_samples.size() < SHELF_CANDIDATE_PROBE_LIMIT:
+					rejected_samples.append(
+						_get_shelf_candidate_debug_text(shelf, reject_reason)
+					)
+
+	var context: Dictionary = {
+		"npc_id": npc.get_instance_id(),
+		"state": int(npc.current_state),
+		"item": npc.item_to_buy,
+		"position": _format_vector(npc.global_position),
+		"indexed_count": indexed_count,
+		"group_count": group_count,
+		"accepted_count": accepted_count,
+		"rejected_count": rejected_count,
+		"rejected_samples": " | ".join(rejected_samples),
+		"selected": selected_shelf != null
+	}
+	if selected_shelf != null and is_instance_valid(selected_shelf):
+		context["selected_shelf_id"] = String(selected_shelf.get_shelf_id())
+		context["selected_shelf_position"] = _format_vector(selected_shelf.global_position)
+		context["selected_shelf_revision"] = selected_shelf.get_revision()
+		context["selected_npc_path_ready"] = bool(
+			selected_shelf.get_meta("npc_path_ready", false)
+		)
+
+	StoreRuntimeDebugProbeScript.record(
+		&"npc_shelf_candidate_summary",
+		0.0,
+		context,
+		0.0
+	)
+
+
+func _get_shelf_candidate_reject_reason(shelf: Shelf, item: ItemData) -> String:
+	if shelf == null:
+		return "null"
+	if _is_shelf_route_temporarily_failed(shelf):
+		return "route_cooldown"
+	if shelf.get_lifecycle() != Shelf.LIFECYCLE_PLACED:
+		return "lifecycle_%s" % String(shelf.get_lifecycle())
+	if shelf.shelf_type != item.shelf_type:
+		return "shelf_type"
+	if not shelf.has_item(npc.item_to_buy):
+		return "missing_item"
+	if not shelf.has_meta("npc_path_ready"):
+		return "missing_path_meta"
+	if not bool(shelf.get_meta("npc_path_ready")):
+		return "path_not_ready"
+	return ""
+
+
+func _get_shelf_candidate_debug_text(shelf: Shelf, reason: String) -> String:
+	if shelf == null:
+		return "null:%s" % reason
+	return "%s@%s rev=%d ready=%s reason=%s" % [
+		String(shelf.get_shelf_id()),
+		_format_vector(shelf.global_position),
+		shelf.get_revision(),
+		str(bool(shelf.get_meta("npc_path_ready", false))),
+		reason
+	]
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

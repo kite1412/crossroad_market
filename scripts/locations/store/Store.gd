@@ -708,6 +708,22 @@ func get_npc_exit_route_from_cashier(from_position: Vector2) -> Array[Vector2]:
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func get_npc_checkout_exit_blocking_context(
+	waiting_npc: Node,
+	queue_index: int
+) -> Dictionary:
+	if npc_routes != null and npc_routes.has_method(
+		"get_npc_checkout_exit_blocking_context"
+	):
+		return npc_routes.get_npc_checkout_exit_blocking_context(
+			waiting_npc,
+			queue_index
+		)
+
+	return {"blocked": false, "reason": "unavailable"}
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_activity_board_guidance() -> Dictionary:
 	if progression_flow != null:
 		return progression_flow.get_activity_board_guidance()

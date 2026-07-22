@@ -81,15 +81,13 @@ func process_wait_in_queue(delta: float) -> void:
 			npc._queue_advance_waiting_for_clear = false
 		else:
 			npc._queue_advance_clear_wait_timer = maxf(0.0, npc._queue_advance_clear_wait_timer - delta)
+			npc._queue_advance_clear_wait_timer = npc.QUEUE_ADVANCE_CLEAR_WAIT
 
-		if npc._queue_advance_waiting_for_clear and npc._queue_advance_clear_wait_timer > 0.0:
+		if npc._queue_advance_waiting_for_clear:
 			npc.velocity = Vector2.ZERO
 			npc.move_and_slide()
 			face_queue_forward(queue_index, "waiting_path_clear")
 			return
-
-		if npc._queue_advance_waiting_for_clear:
-			npc._queue_advance_waiting_for_clear = false
 
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var arrived: bool = npc.global_position.distance_to(npc.target_position) <= npc.QUEUE_SLOT_ARRIVAL_DISTANCE
@@ -135,7 +133,7 @@ func process_wait_in_queue(delta: float) -> void:
 func process_shelf_egress_to_queue_lane(queue_index: int) -> void:
 	var queue_slot_target: Vector2 = get_queue_target()
 	if queue_index == 0 and NPCQueueReservationControllerScript.size() <= 1:
-		var solo_approach_marker: Vector2 = get_queue_egress_target(queue_index)
+		var solo_approach_marker: Vector2 = queue_slot_target
 		var solo_blocking_context := (
 			NPCMovementReservationSystemScript.get_blocking_context(
 				npc,
@@ -151,8 +149,21 @@ func process_shelf_egress_to_queue_lane(queue_index: int) -> void:
 			)
 			return
 
-		_begin_direct_cashier_from_shelf(queue_index, "solo_queue")
-		return
+		if (
+			not npc._queue_egress_target_position.is_finite()
+			or npc._queue_egress_target_position.distance_to(solo_approach_marker)
+			> 1.0
+		):
+			npc._queue_egress_target_position = solo_approach_marker
+			npc._movement_route.clear()
+			npc._movement_route_destination = Vector2.INF
+			npc.set_meta(&"path_possibly_invalid", true)
+			_record_queue_probe(&"npc_queue_solo_shelf_egress", {
+				"queue_index": queue_index,
+				"queue_size": NPCQueueReservationControllerScript.size(),
+				"queue_slot_target": _format_vector(queue_slot_target),
+				"queue_approach_marker": _format_vector(solo_approach_marker)
+			})
 
 	var egress_target: Vector2 = npc._queue_egress_target_position
 	var target_source: String = "cached"
@@ -405,7 +416,18 @@ func _record_queue_probe(
 		"state": int(npc.current_state),
 		"position": _format_vector(npc.global_position),
 		"target": _format_vector(npc.target_position),
-		"route_points": npc._movement_route.size()
+		"route_points": npc._movement_route.size(),
+		"route_destination": _format_vector(npc._movement_route_destination),
+		"next_route_point": _format_vector(
+			npc._movement_route[0]
+			if not npc._movement_route.is_empty()
+			else Vector2.INF
+		),
+		"queue_size": NPCQueueReservationControllerScript.size(),
+		"last_queue_index": npc._last_queue_index,
+		"egress_pending": npc._queue_egress_route_pending,
+		"egress_target": _format_vector(npc._queue_egress_target_position),
+		"moving_to_cashier": npc._is_moving_from_queue_to_cashier
 	}
 
 	if npc._queue_entry_shelf != null and is_instance_valid(npc._queue_entry_shelf):
@@ -575,6 +597,24 @@ func is_queue_advance_path_clear(queue_index: int) -> bool:
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var store: Node = npc._get_store_route_provider()
 
+	if (
+		store != null
+		and store.has_method("get_npc_checkout_exit_blocking_context")
+	):
+		var blocking_context: Variant = store.call(
+			"get_npc_checkout_exit_blocking_context",
+			npc,
+			queue_index
+		)
+		if blocking_context is Dictionary:
+			var context := blocking_context as Dictionary
+			if bool(context.get("blocked", false)):
+				_record_queue_move_probe(
+					&"npc_queue_advance_blocked",
+					context
+				)
+				return false
+
 	if store == null or not store.has_method("get_npc_route_to_queue_target_from"):
 		return true
 
@@ -582,8 +622,18 @@ func is_queue_advance_path_clear(queue_index: int) -> bool:
 	var route_variant: Variant = store.call("get_npc_route_to_queue_target_from", npc.global_position, queue_index)
 
 	if not (route_variant is Array):
+		_record_queue_move_probe(&"npc_queue_advance_blocked", {
+			"reason": "queue_route_invalid",
+			"queue_index": queue_index
+		})
 		return false
 
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var route := route_variant as Array
-	return not route.is_empty()
+	var is_clear := not route.is_empty()
+	if not is_clear:
+		_record_queue_move_probe(&"npc_queue_advance_blocked", {
+			"reason": "queue_route_empty",
+			"queue_index": queue_index
+		})
+	return is_clear
