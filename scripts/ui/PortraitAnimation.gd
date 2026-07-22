@@ -64,6 +64,11 @@ func get_frame_size() -> Vector2:
 	return Vector2(_get_frame_width(portrait), portrait.get_height())
 
 
+## Lets UI screens carry the same animation frame across a tab change.
+func get_current_frame() -> int:
+	return _current_frame
+
+
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _update_dimensions() -> void:
 	if portrait == null:

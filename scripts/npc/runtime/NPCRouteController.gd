@@ -790,12 +790,40 @@ func get_shelf_egress_queue_route(
 			"entry_shelf_revision": npc._queue_entry_shelf.get_revision(),
 			"route_points": chain_route.size()
 		})
-		return _get_marker_lane_egress_route(
-			store,
-			queue_index,
-			destination,
-			"explicit_empty"
-		)
+
+	# Queue membership is already known here, so prefer the actual assigned slot.
+	# Composing shelf -> checkout-front -> back-slot makes later customers walk to
+	# the head of the line and then reverse through the queue.
+	var assigned_queue_route := call_store_route(
+		store,
+		&"get_npc_route_to_queue_target_from",
+		[npc.global_position, queue_index]
+	)
+	if not assigned_queue_route.is_empty():
+		if (
+			destination.is_finite()
+			and assigned_queue_route.back().distance_to(destination)
+			> npc.ARRIVAL_THRESHOLD
+		):
+			assigned_queue_route.append(destination)
+		_record_route_probe(&"npc_shelf_egress_route", {
+			"reason": "assigned_queue_route",
+			"queue_index": queue_index,
+			"destination": _format_vector(destination),
+			"entry_shelf_id": String(npc._queue_entry_shelf.get_shelf_id()),
+			"entry_shelf_revision": npc._queue_entry_shelf.get_revision(),
+			"route_points": assigned_queue_route.size()
+		})
+		return dedupe_route_points(assigned_queue_route)
+
+	var marker_lane_route := _get_marker_lane_egress_route(
+		store,
+		queue_index,
+		destination,
+		"explicit_empty"
+	)
+	if not marker_lane_route.is_empty():
+		return marker_lane_route
 
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var egress_route := call_store_route(

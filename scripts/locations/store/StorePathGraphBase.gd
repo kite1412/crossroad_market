@@ -238,6 +238,20 @@ func get_route_to_shelf_access(
 	if not access_position.is_finite() or shelf_graph_node == StringName():
 		return []
 
+	# A clear straight segment is the globally shortest possible route. Return it
+	# immediately instead of still evaluating every nearby graph node and surface
+	# path candidate. Most customers enter through an unobstructed aisle, so the
+	# old exhaustive search needlessly spent hundreds of milliseconds proving
+	# that this already-valid route was optimal.
+	var direct_route: Array[Vector2] = [access_position]
+	if _clearance.is_route_to_access_clear(
+		from_position,
+		direct_route,
+		shelf,
+		npc_node
+	):
+		return direct_route
+
 	var candidates: Array[Dictionary] = []
 	_append_access_route_variants(
 		candidates,
@@ -246,6 +260,10 @@ func get_route_to_shelf_access(
 		shelf,
 		npc_node
 	)
+	# If a simple collision-free orthogonal route exists, it is already bounded
+	# and safe; graph/surface search is only needed when all local variants fail.
+	if not candidates.is_empty():
+		return _get_shortest_route(candidates)
 
 	for candidate_node in _get_nearest_graph_node_names_for_access(
 		access_position,
@@ -292,6 +310,8 @@ func get_route_to_shelf_access(
 						from_position,
 						fallback_route
 					)
+			if candidate_node == shelf_graph_node and not candidates.is_empty():
+				return _get_shortest_route(candidates)
 			continue
 
 		var complete_route: Array[Vector2] = route.duplicate()
@@ -308,12 +328,23 @@ func get_route_to_shelf_access(
 				from_position,
 				complete_route
 			)
+			# Shelf metadata already records the preferred reachable graph node.
+			# Once its route validates, avoid evaluating every less-preferred node.
+			if candidate_node == shelf_graph_node:
+				return complete_route
 
 	return _get_shortest_route(candidates)
 
 
 func get_route_to_cashier_from(from_position: Vector2) -> Array[Vector2]:
-	return _get_shortest_checkout_route(from_position, null)
+	# Queue-front is a valid goal while leaving a shelf, but the final approach
+	# must end at the cashier marker itself. Treating both markers as equivalent
+	# here can repeatedly rebuild a route that ends one slot short of service.
+	return _get_shortest_checkout_route(
+		from_position,
+		null,
+		ROLE_CASHIER
+	)
 
 
 func get_shelf_wait_position(index: int = 0) -> Vector2:
@@ -362,7 +393,13 @@ func get_route_from_shelf_to_cashier(shelf: Shelf) -> Array[Vector2]:
 	var access_position := get_shelf_access_position(shelf)
 	if not access_position.is_finite():
 		return []
-	return _get_shortest_checkout_route(access_position, shelf)
+	# This is the legacy shelf-egress API used while joining checkout. End at
+	# QueueFront rather than walking past it to the cashier and then doubling back.
+	return _get_shortest_checkout_route(
+		access_position,
+		shelf,
+		ROLE_QUEUE_FRONT
+	)
 
 
 func get_cashier_exit_route(
@@ -494,7 +531,8 @@ func _append_route_candidate(
 
 func _get_shortest_checkout_route(
 	_from_position: Vector2,
-	_source_shelf: Shelf
+	_source_shelf: Shelf,
+	_target_role: StringName = StringName()
 ) -> Array[Vector2]:
 	return []
 

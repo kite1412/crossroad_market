@@ -17,6 +17,12 @@ func handle_dialog_skip_input(event: InputEvent) -> void:
 	if hud.has_method("is_dialog_visible") and hud.is_dialog_visible():
 		return
 
+	# Payment mode is a modal CanvasLayer above the HUD. Do not let the global
+	# world-dialog skip consume its first click; Godot can then dispatch that
+	# same event to the authored cashier Control beneath the pointer.
+	if has_visible_overlay_named("CashierUILayer"):
+		return
+
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var skipped := false
 

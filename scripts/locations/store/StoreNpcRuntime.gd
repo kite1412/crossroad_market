@@ -1,9 +1,9 @@
 class_name StoreNpcRuntime
 extends Node
 
-const NPCResolvedExitRouteController = preload("res://scripts/npc/runtime/NPCRouteController.gd")
-const NPCLiveQueueStateFlow = preload("res://scripts/npc/runtime/NPCStateFlow.gd")
-const NPCReachableShelfShoppingFlow = preload("res://scripts/npc/runtime/NPCShoppingFlow.gd")
+const NPCResolvedExitRouteController = preload("res://scripts/npc/runtime/NPCResolvedExitRouteController.gd")
+const NPCLiveQueueStateFlow = preload("res://scripts/npc/runtime/NPCLiveQueueStateFlow.gd")
+const NPCReachableShelfShoppingFlow = preload("res://scripts/npc/runtime/NPCReachableShelfShoppingFlow.gd")
 const NPCCheckoutLaneQueueFlow = preload("res://scripts/npc/runtime/NPCCheckoutLaneQueueFlow.gd")
 const CUSTOMER_INTAKE_CLOSED_META: StringName = &"customer_intake_closed_today"
 const MAX_NPC_ACTIVATIONS_PER_FRAME: int = 2
@@ -112,7 +112,6 @@ func _spawn_admitted_npc(npc_data: NPCData) -> void:
 		Callable(self, "on_npc_purchase"),
 		Callable(self, "on_npc_exited")
 	)
-
 	if npc != null:
 		install_shelf_arrival_controllers(npc)
 
@@ -151,6 +150,8 @@ func install_shelf_arrival_controllers(npc: NPC) -> void:
 	if npc == null or not is_instance_valid(npc):
 		return
 
+	# Install the store-specific movement, shelf-exit, live queue, and lazy
+	# shelf-access refresh behavior for every store customer.
 	npc._route_controller = NPCResolvedExitRouteController.new()
 	npc._route_controller.setup(npc)
 	npc._state_flow = NPCLiveQueueStateFlow.new()
@@ -211,11 +212,3 @@ func on_npc_shelf_route_ready(
 		npc,
 		travel_seconds
 	)
-
-
-func _get_npc_data_label(npc_data: NPCData) -> String:
-	if npc_data == null:
-		return "<null>"
-	if npc_data.npc_id != "":
-		return npc_data.npc_id
-	return str(npc_data.resource_path)

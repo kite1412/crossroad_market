@@ -386,6 +386,53 @@ func find_nearest_reachable_graph_node_for_route(
 	if get_graph_marker(goal_node) == null:
 		return {"valid": false}
 
+	# Store customers normally start exactly on an entry/queue graph marker.
+	# Reuse that known start instead of testing routes from every marker back to
+	# the same position. Keep the exhaustive search below for off-graph callers.
+	for exact_start_node in get_graph_node_names():
+		var exact_start_marker := get_graph_marker(exact_start_node)
+		if exact_start_marker == null:
+			continue
+		if (
+			position.distance_to(exact_start_marker.global_position)
+			> _graph.MARKER_ALIGNMENT_EPSILON
+		):
+			continue
+
+		var exact_graph_path := find_graph_path(
+			exact_start_node,
+			goal_node
+		)
+		if exact_graph_path.is_empty():
+			continue
+
+		var exact_route: Array[Vector2] = _graph._routes.build_route_from_graph_path(
+			exact_graph_path
+		)
+		exact_route = _graph._routes.dedupe_route_points(exact_route)
+		var exact_route_is_clear := false
+		if is_queue_target_node(goal_node):
+			exact_route_is_clear = _graph._clearance.is_queue_route_clear_from_current_position(
+				position,
+				exact_route
+			)
+		else:
+			exact_route_is_clear = _graph._clearance.is_route_clear_from_current_position(
+				position,
+				exact_route
+			)
+
+		if exact_route_is_clear:
+			return {
+				"valid": true,
+				"node": exact_start_node,
+				"route": exact_route,
+				"distance": _graph._routes.get_route_distance(
+					position,
+					exact_route
+				)
+			}
+
 	var best_result: Dictionary = {"valid": false}
 	var best_route_distance = INF
 

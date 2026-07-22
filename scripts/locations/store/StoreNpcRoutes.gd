@@ -419,15 +419,12 @@ func get_store_path_graph() -> StorePathGraph:
 			store,
 			store.store_path_markers
 		)
-	else:
-		store._store_path_graph.setup(
-			store,
-			store.store_path_markers
+		# The placement surface is static for the lifetime of Store.tscn. Install
+		# its points once with the graph instead of rebuilding/comparing the same
+		# array on every NPC shelf and route query.
+		store._store_path_graph.set_shelf_access_points(
+			store._get_shelf_placement_grid_positions()
 		)
-
-	store._store_path_graph.set_shelf_access_points(
-		store._get_shelf_placement_grid_positions()
-	)
 	return store._store_path_graph
 
 
