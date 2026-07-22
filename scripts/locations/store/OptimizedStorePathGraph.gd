@@ -208,8 +208,8 @@ func _get_anchor_route_to_queue_target(
 	if not anchor_position.is_finite():
 		return []
 
-	var approach_node := _nav.get_queue_approach_node_name(queue_index)
 	var target_node := _nav.get_queue_target_node_name(queue_index)
+	var approach_node := target_node
 	var approach_position := _nav.get_marker_position(approach_node)
 	var target_position := _nav.get_marker_position(target_node)
 	if not target_position.is_finite():
@@ -277,7 +277,7 @@ func _get_anchor_route_to_queue_egress(
 	if not anchor_position.is_finite():
 		return []
 
-	var approach_node := _nav.get_queue_approach_node_name(queue_index)
+	var approach_node := _nav.get_queue_target_node_name(queue_index)
 	var approach_position := _nav.get_marker_position(approach_node)
 	if not approach_position.is_finite():
 		approach_position = get_queue_egress_target_position(
@@ -316,10 +316,6 @@ func get_queue_egress_target_position(
 	queue_index: int,
 	fallback_position: Vector2
 ) -> Vector2:
-	var approach_node := _nav.get_queue_approach_node_name(queue_index)
-	var approach_position := _nav.get_marker_position(approach_node)
-	if approach_position.is_finite():
-		return approach_position
 	return get_queue_target_position(queue_index, fallback_position)
 
 

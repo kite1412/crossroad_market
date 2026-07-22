@@ -28,7 +28,6 @@ const STORE_EXIT_LANE_MARKERS: Array[StringName] = [
 	&"StorePathExit"
 ]
 const CHECKOUT_APPROACH_ROUTE_MARKERS: Array[StringName] = [
-	&"StorePathQueueFrontRight",
 	&"StorePathQueueFront",
 	&"StorePathCashier"
 ]
@@ -144,14 +143,14 @@ func get_npc_marker_lane_route_to_queue_egress(
 		return []
 
 	var shelf_quad := _get_nearest_shelf_quad_marker(from_position)
-	var egress_marker := _get_queue_egress_marker(queue_index)
-	if shelf_quad == null or egress_marker == null:
+	var queue_marker := _get_queue_slot_marker(queue_index)
+	if shelf_quad == null or queue_marker == null:
 		_record_route_probe(&"npc_marker_lane_egress_route", {
 			"reason": "missing_marker",
 			"queue_index": queue_index,
 			"from": _format_vector(from_position),
 			"has_shelf_quad": shelf_quad != null,
-			"has_egress_marker": egress_marker != null
+			"has_queue_marker": queue_marker != null
 		})
 		return []
 
@@ -166,7 +165,7 @@ func get_npc_marker_lane_route_to_queue_egress(
 	current = _append_orthogonal_route_leg(
 		route,
 		current,
-		egress_marker.global_position,
+		queue_marker.global_position,
 		true
 	)
 
@@ -179,8 +178,8 @@ func get_npc_marker_lane_route_to_queue_egress(
 		"from": _format_vector(from_position),
 		"shelf_quad": String(shelf_quad.name),
 		"shelf_quad_position": _format_vector(shelf_quad.global_position),
-		"egress_marker": String(egress_marker.name),
-		"egress_position": _format_vector(egress_marker.global_position),
+		"queue_marker": String(queue_marker.name),
+		"queue_position": _format_vector(queue_marker.global_position),
 		"route_points": route.size()
 	})
 	return route
@@ -190,12 +189,6 @@ func get_npc_queue_egress_target(
 	queue_index: int,
 	fallback_position: Vector2
 ) -> Vector2:
-	var graph := get_store_path_graph()
-	if graph.has_method("get_queue_egress_target_position"):
-		return graph.get_queue_egress_target_position(
-			queue_index,
-			fallback_position
-		)
 	return get_npc_queue_target(queue_index, fallback_position)
 
 
@@ -735,11 +728,11 @@ func _get_queue_transit_shelf_quad_marker(access_position: Vector2) -> Marker2D:
 	return _get_nearest_shelf_quad_marker(access_position)
 
 
-func _get_queue_egress_marker(queue_index: int) -> Marker2D:
+func _get_queue_slot_marker(queue_index: int) -> Marker2D:
 	var marker_names: Array[StringName] = [
-		&"StorePathQueueFrontRight",
-		&"StorePathQueueBack1Right",
-		&"StorePathQueueBack2Right"
+		&"StorePathQueueFront",
+		&"StorePathQueueBack1",
+		&"StorePathQueueBack2"
 	]
 	var marker_index := clampi(queue_index, 0, marker_names.size() - 1)
 	var marker_name := marker_names[marker_index]
