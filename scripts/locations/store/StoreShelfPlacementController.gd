@@ -17,12 +17,18 @@ const RESTRICTED_DROP_MESSAGE_DURATION: float = 0.55
 const RESTRICTED_DANGER_LINE_CYCLES: int = 3
 const RESTRICTED_DANGER_LINE_CYCLE_DURATION: float = 1.5
 const RESTRICTED_DANGER_LINE_WIDTH: float = 3.0
+const SHELF_SPACING_WARNING_LINE_WIDTH: float = 1.0
+const SHELF_SPACING_WARNING_DURATION: float = 2.0
 const RESTRICTED_DANGER_LINE_COLOR := Color(1.0, 0.16, 0.08, 1.0)
 const DROP_REJECTION_NONE: StringName = &"none"
 const DROP_REJECTION_CASHIER_FLOW: StringName = &"cashier_flow"
 const DROP_REJECTION_COLLISION: StringName = &"collision"
+const DROP_REJECTION_SHELF_SPACING: StringName = &"shelf_spacing"
 const SHELF_DROP_FALLBACK_DISTANCE: float = 44.0
 const QUEUE_MARKER_DROP_BLOCK_SIZE := Vector2(56, 18)
+const SHELF_SPACING_AREA_NAME: String = "ShelfSpacingArea"
+const SHELF_SPACING_AREA_PATH: NodePath = NodePath("ShelfSpacingArea")
+const ALL_PHYSICS_LAYERS: int = 0x7FFFFFFF
 const PENDING_ACCESS_UPDATE_META: StringName = &"pending_shelf_access_update_token"
 const NPC_PATH_PENDING_META: StringName = &"npc_path_pending"
 const DEFERRED_ACCESS_DELAY_MSEC: int = 150
@@ -42,14 +48,18 @@ func make_drop_restriction(
 	rejection_type: StringName = DROP_REJECTION_NONE,
 	message: String = "",
 	warning_rect: Rect2 = Rect2(),
-	show_warning: bool = false
+	show_warning: bool = false,
+	warning_circle_center: Vector2 = Vector2.INF,
+	warning_circle_radius: float = 0.0
 ) -> Dictionary:
 	return {
 		"blocked": blocked,
 		"type": rejection_type,
 		"message": message,
 		"warning_rect": warning_rect,
-		"show_warning": show_warning
+		"show_warning": show_warning,
+		"warning_circle_center": warning_circle_center,
+		"warning_circle_radius": warning_circle_radius
 	}
 
 
@@ -128,6 +138,38 @@ func get_collision_shape_rect(collision_shape: CollisionShape2D) -> Rect2:
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func get_shelf_spacing_circle_at(object: Node2D, candidate: Vector2) -> Dictionary:
+	if object == null:
+		return {"valid": false}
+
+	var spacing_area := object.get_node_or_null(SHELF_SPACING_AREA_PATH) as Area2D
+	if spacing_area == null:
+		return {"valid": false}
+
+	var collision_shape := spacing_area.get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if collision_shape == null:
+		return {"valid": false}
+
+	var circle := collision_shape.shape as CircleShape2D
+	if circle == null:
+		return {"valid": false}
+
+	return {
+		"valid": true,
+		"center": candidate + spacing_area.position + collision_shape.position,
+		"radius": circle.radius
+	}
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func get_shelf_spacing_circle(object: Node2D) -> Dictionary:
+	if object == null:
+		return {"valid": false}
+
+	return get_shelf_spacing_circle_at(object, object.global_position)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_object_collision_shape(object: Node2D) -> CollisionShape2D:
 	if object == null:
 		return null
@@ -188,8 +230,18 @@ func drop_carried_shelf_in_store(object: Node2D) -> void:
 	var primary_drop_position := get_primary_shelf_drop_position()
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var primary_restriction := evaluate_shelf_drop_restriction(object, primary_drop_position)
+	record_shelf_drop_decision(
+		&"shelf_drop_primary_check",
+		object,
+		primary_drop_position,
+		primary_restriction,
+		"primary"
+	)
 
 	if primary_restriction.get("type", DROP_REJECTION_NONE) == DROP_REJECTION_CASHIER_FLOW:
+		show_drop_restriction_feedback(primary_restriction)
+		return
+	if primary_restriction.get("type", DROP_REJECTION_NONE) == DROP_REJECTION_SHELF_SPACING:
 		show_drop_restriction_feedback(primary_restriction)
 		return
 
@@ -201,6 +253,14 @@ func drop_carried_shelf_in_store(object: Node2D) -> void:
 	if bool(primary_restriction.get("blocked", false)):
 		drop_candidates = get_drop_candidates()
 		drop_position = find_safe_drop_position(object, drop_candidates)
+		record_shelf_drop_decision(
+			&"shelf_drop_fallback_select",
+			object,
+			drop_position,
+			primary_restriction,
+			"fallback",
+			drop_candidates.size()
+		)
 
 	if drop_position == Vector2.INF:
 		if not bool(primary_restriction.get("blocked", false)):
@@ -218,6 +278,14 @@ func drop_carried_shelf_in_store(object: Node2D) -> void:
 			)
 
 		show_drop_restriction_feedback(primary_restriction)
+		record_shelf_drop_decision(
+			&"shelf_drop_rejected",
+			object,
+			primary_drop_position,
+			primary_restriction,
+			"final",
+			drop_candidates.size()
+		)
 		return
 
 	if object is Shelf:
@@ -236,12 +304,21 @@ func drop_carried_shelf_in_store(object: Node2D) -> void:
 		object.set_meta("npc_path_ready", false)
 
 	store._register_installed_shelf(object)
+	record_shelf_spacing_accept(object, drop_position)
 
 	if store.has_method("mark_navigation_dirty"):
 		store.call("mark_navigation_dirty", dirty_rect)
 
 	store._show_passive_notification("Shelf placed in the store.", 2.0, true)
 	schedule_post_shelf_drop_update(object, drop_position)
+	record_shelf_drop_decision(
+		&"shelf_drop_committed",
+		object,
+		drop_position,
+		make_drop_restriction(),
+		"committed",
+		drop_candidates.size()
+	)
 	pass
 	set_customer_path_visual_visible(false)
 	StoreRuntimeDebugProbeScript.record(
@@ -570,6 +647,10 @@ func evaluate_shelf_drop_restriction(object: Node2D, candidate: Vector2) -> Dict
 
 	var object_rect: Rect2 = get_object_body_rect_at(object, candidate)
 
+	var spacing_restriction := get_shelf_spacing_restriction(object, candidate)
+	if bool(spacing_restriction.get("blocked", false)):
+		return spacing_restriction
+
 	if not is_drop_position_clear(object, candidate):
 		return make_drop_restriction(
 			true,
@@ -610,6 +691,289 @@ func evaluate_shelf_drop_restriction(object: Node2D, candidate: Vector2) -> Dict
 		)
 
 	return make_drop_restriction()
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func get_shelf_spacing_restriction(object: Node2D, candidate: Vector2) -> Dictionary:
+	var candidate_circle := get_shelf_spacing_circle_at(object, candidate)
+	if not bool(candidate_circle.get("valid", false)):
+		return make_drop_restriction()
+
+	var candidate_center := candidate_circle.get("center", Vector2.INF) as Vector2
+	var candidate_radius := float(candidate_circle.get("radius", 0.0))
+	if not candidate_center.is_finite() or candidate_radius <= 0.0:
+		return make_drop_restriction()
+
+	var physics_restriction := get_shelf_spacing_physics_restriction(
+		object,
+		candidate_center,
+		candidate_radius
+	)
+	if bool(physics_restriction.get("blocked", false)):
+		return physics_restriction
+
+	var shelves_checked := 0
+	for shelf in get_spacing_candidate_shelves(object):
+		var shelf_circle := get_shelf_spacing_circle(shelf)
+		if not bool(shelf_circle.get("valid", false)):
+			continue
+
+		var shelf_center := shelf_circle.get("center", Vector2.INF) as Vector2
+		var shelf_radius := float(shelf_circle.get("radius", 0.0))
+		if not shelf_center.is_finite() or shelf_radius <= 0.0:
+			continue
+
+		shelves_checked += 1
+		var distance := candidate_center.distance_to(shelf_center)
+		var required_distance := candidate_radius + shelf_radius
+		if distance >= required_distance:
+			continue
+
+		var restriction := make_drop_restriction(
+			true,
+			DROP_REJECTION_SHELF_SPACING,
+			"Leave space between shelves for customers.",
+			Rect2(),
+			true,
+			candidate_center,
+			candidate_radius
+		)
+		restriction["candidate_center"] = candidate_center
+		restriction["candidate_radius"] = candidate_radius
+		restriction["other_shelf"] = shelf.name
+		restriction["other_shelf_path"] = str(shelf.get_path())
+		restriction["other_center"] = shelf_center
+		restriction["other_radius"] = shelf_radius
+		restriction["distance"] = distance
+		restriction["required_distance"] = required_distance
+		restriction["shelves_checked"] = shelves_checked
+		return restriction
+
+	return make_drop_restriction()
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func get_shelf_spacing_physics_restriction(
+	object: Node2D,
+	candidate_center: Vector2,
+	candidate_radius: float
+) -> Dictionary:
+	if store == null or not candidate_center.is_finite() or candidate_radius <= 0.0:
+		return make_drop_restriction()
+
+	var circle := CircleShape2D.new()
+	circle.radius = candidate_radius
+
+	var query := PhysicsShapeQueryParameters2D.new()
+	query.shape = circle
+	query.transform = Transform2D(0.0, candidate_center)
+	query.collide_with_bodies = false
+	query.collide_with_areas = true
+	query.collision_mask = ALL_PHYSICS_LAYERS
+
+	var hits: Array[Dictionary] = store.get_world_2d().direct_space_state.intersect_shape(query, 32)
+	var spacing_hits := 0
+	for hit in hits:
+		if not (hit is Dictionary):
+			continue
+
+		var collider_variant: Variant = (hit as Dictionary).get("collider", null)
+		var collider := collider_variant as Node
+		if collider == null or not is_instance_valid(collider):
+			continue
+		if not _is_shelf_spacing_area(collider):
+			continue
+		if collider == object or StoreShelfController.is_descendant_of(collider, object):
+			continue
+
+		var shelf := _get_shelf_from_spacing_area(collider)
+		if shelf == null or not is_instance_valid(shelf):
+			continue
+		if shelf == object or StoreShelfController.is_descendant_of(shelf, object):
+			continue
+		if StoreShelfController.is_descendant_of(object, shelf):
+			continue
+		if not StoreShelfController.is_descendant_of(shelf, store):
+			continue
+
+		var shelf_circle := get_shelf_spacing_circle(shelf)
+		var shelf_center := shelf_circle.get("center", Vector2.INF) as Vector2
+		var shelf_radius := float(shelf_circle.get("radius", 0.0))
+		spacing_hits += 1
+
+		var distance := 0.0
+		if shelf_center.is_finite():
+			distance = candidate_center.distance_to(shelf_center)
+		var required_distance := candidate_radius + shelf_radius
+		var restriction := make_drop_restriction(
+			true,
+			DROP_REJECTION_SHELF_SPACING,
+			"Leave space between shelves for customers.",
+			Rect2(),
+			true,
+			candidate_center,
+			candidate_radius
+		)
+		restriction["candidate_center"] = candidate_center
+		restriction["candidate_radius"] = candidate_radius
+		restriction["other_shelf"] = shelf.name
+		restriction["other_shelf_path"] = str(shelf.get_path())
+		restriction["other_center"] = shelf_center
+		restriction["other_radius"] = shelf_radius
+		restriction["distance"] = distance
+		restriction["required_distance"] = required_distance
+		restriction["shelves_checked"] = spacing_hits
+		restriction["spacing_query_hits"] = hits.size()
+		restriction["source"] = "physics_area"
+		return restriction
+
+	return make_drop_restriction()
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func record_shelf_spacing_accept(object: Node2D, drop_position: Vector2) -> void:
+	var candidate_circle := get_shelf_spacing_circle_at(object, drop_position)
+	if not bool(candidate_circle.get("valid", false)):
+		StoreRuntimeDebugProbeScript.record(
+			&"shelf_spacing_accept",
+			0.0,
+			{
+				"object": _get_node_name_or_empty(object),
+				"reason": "candidate_circle_missing"
+			},
+			0.5
+		)
+		return
+
+	var candidate_center := candidate_circle.get("center", Vector2.INF) as Vector2
+	var candidate_radius := float(candidate_circle.get("radius", 0.0))
+	var nearest_gap := INF
+	var nearest_distance := INF
+	var nearest_required := 0.0
+	var nearest_shelf := ""
+	var nearest_shelf_path := ""
+	var shelves_checked := 0
+
+	for shelf in get_spacing_candidate_shelves(object):
+		var shelf_circle := get_shelf_spacing_circle(shelf)
+		if not bool(shelf_circle.get("valid", false)):
+			continue
+
+		var shelf_center := shelf_circle.get("center", Vector2.INF) as Vector2
+		var shelf_radius := float(shelf_circle.get("radius", 0.0))
+		if not candidate_center.is_finite() or not shelf_center.is_finite():
+			continue
+		if candidate_radius <= 0.0 or shelf_radius <= 0.0:
+			continue
+
+		shelves_checked += 1
+		var distance := candidate_center.distance_to(shelf_center)
+		var required_distance := candidate_radius + shelf_radius
+		var gap := distance - required_distance
+		if gap >= nearest_gap:
+			continue
+
+		nearest_gap = gap
+		nearest_distance = distance
+		nearest_required = required_distance
+		nearest_shelf = shelf.name
+		nearest_shelf_path = str(shelf.get_path())
+
+	StoreRuntimeDebugProbeScript.record(
+		&"shelf_spacing_accept",
+		0.0,
+		{
+			"object": _get_node_name_or_empty(object),
+			"center": _format_vector(candidate_center),
+			"radius": snappedf(candidate_radius, 0.01),
+			"shelves_checked": shelves_checked,
+			"nearest_shelf": nearest_shelf,
+			"nearest_shelf_path": nearest_shelf_path,
+			"nearest_distance": snappedf(nearest_distance, 0.01) if is_finite(nearest_distance) else -1.0,
+			"nearest_required_distance": snappedf(nearest_required, 0.01),
+			"nearest_gap": snappedf(nearest_gap, 0.01) if is_finite(nearest_gap) else -1.0,
+			"source": "accepted_after_spacing_checks"
+		},
+		0.5
+	)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func get_spacing_candidate_shelves(object: Node2D) -> Array[Node2D]:
+	var shelves: Array[Node2D] = []
+	var seen := {}
+
+	if store == null:
+		return shelves
+
+	for shelf_variant in store.get_tree().get_nodes_in_group("shelves"):
+		append_spacing_candidate_shelf(shelves, seen, shelf_variant, object)
+
+	append_spacing_candidate_shelves_from_tree(store, shelves, seen, object)
+	return shelves
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func append_spacing_candidate_shelves_from_tree(
+	root: Node,
+	shelves: Array[Node2D],
+	seen: Dictionary,
+	object: Node2D
+) -> void:
+	if root == null:
+		return
+
+	for child in root.get_children():
+		append_spacing_candidate_shelf(shelves, seen, child, object)
+		append_spacing_candidate_shelves_from_tree(child, shelves, seen, object)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func append_spacing_candidate_shelf(
+	shelves: Array[Node2D],
+	seen: Dictionary,
+	node: Variant,
+	object: Node2D
+) -> void:
+	var shelf := node as Node2D
+	if shelf == null or not is_instance_valid(shelf):
+		return
+	if shelf == object or StoreShelfController.is_descendant_of(shelf, object):
+		return
+	if StoreShelfController.is_descendant_of(object, shelf):
+		return
+	if not StoreShelfController.is_descendant_of(shelf, store):
+		return
+	if shelf.get_node_or_null(SHELF_SPACING_AREA_PATH) == null:
+		return
+
+	var instance_id := shelf.get_instance_id()
+	if seen.has(instance_id):
+		return
+
+	seen[instance_id] = true
+	shelves.append(shelf)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _is_shelf_spacing_area(node: Node) -> bool:
+	return node is Area2D and String(node.name) == SHELF_SPACING_AREA_NAME
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _get_shelf_from_spacing_area(node: Node) -> Node2D:
+	var current := node
+	while current != null:
+		if current is Shelf:
+			return current as Node2D
+		current = current.get_parent()
+	return null
+
+
+func _get_node_name_or_empty(node: Node) -> String:
+	if node == null:
+		return ""
+	return String(node.name)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -843,26 +1207,55 @@ func execute_deferred_shelf_access_update(
 		return false
 
 	if object == null or not is_instance_valid(object):
+		_record_deferred_shelf_access_update_skip(
+			object,
+			drop_position,
+			update_token,
+			"object_invalid"
+		)
 		return true
 
 	if not object.has_meta(PENDING_ACCESS_UPDATE_META):
+		_record_deferred_shelf_access_update_skip(
+			object,
+			drop_position,
+			update_token,
+			"pending_token_missing"
+		)
 		return true
 
 	if int(object.get_meta(PENDING_ACCESS_UPDATE_META)) != update_token:
+		_record_deferred_shelf_access_update_skip(
+			object,
+			drop_position,
+			update_token,
+			"pending_token_stale"
+		)
 		return true
 
 	if object.has_meta("is_carried_storage_object") and bool(object.get_meta("is_carried_storage_object")):
 		object.remove_meta(PENDING_ACCESS_UPDATE_META)
 		object.remove_meta(NPC_PATH_PENDING_META)
+		_record_deferred_shelf_access_update_skip(
+			object,
+			drop_position,
+			update_token,
+			"object_carried"
+		)
 		return true
 
 	object.remove_meta(PENDING_ACCESS_UPDATE_META)
 	var access_start_usec: int = Time.get_ticks_usec()
 	store_shelf_access_metadata(object, drop_position)
+	var access_context := _get_deferred_shelf_access_update_context(
+		object,
+		drop_position,
+		update_token
+	)
 	StoreRuntimeDebugProbeScript.record(
 		&"shelf_access_metadata",
 		StoreRuntimeDebugProbeScript.elapsed_msec(access_start_usec),
-		{"object": object.name},
+		access_context,
 		2.0
 	)
 	object.remove_meta(NPC_PATH_PENDING_META)
@@ -877,6 +1270,69 @@ func execute_deferred_shelf_access_update(
 	if object is Shelf:
 		_notify_npcs_shelf_access_changed(object as Shelf)
 	return true
+
+
+func _record_deferred_shelf_access_update_skip(
+	object: Node2D,
+	drop_position: Vector2,
+	update_token: int,
+	reason: String
+) -> void:
+	var context := _get_deferred_shelf_access_update_context(
+		object,
+		drop_position,
+		update_token
+	)
+	context["reason"] = reason
+	StoreRuntimeDebugProbeScript.record(
+		&"shelf_access_update_skip",
+		0.0,
+		context,
+		0.0
+	)
+
+
+func _get_deferred_shelf_access_update_context(
+	object: Node2D,
+	drop_position: Vector2,
+	update_token: int
+) -> Dictionary:
+	var object_name := ""
+	if object != null and is_instance_valid(object):
+		object_name = object.name
+
+	var context: Dictionary = {
+		"object": object_name,
+		"drop_position": _format_vector(drop_position),
+		"update_token": update_token
+	}
+	if object == null or not is_instance_valid(object):
+		return context
+
+	context["object_path"] = str(object.get_path())
+	context["position"] = _format_vector(object.global_position)
+	context["pending_access_update"] = object.has_meta(PENDING_ACCESS_UPDATE_META)
+	context["path_pending"] = bool(object.get_meta(NPC_PATH_PENDING_META, false))
+	context["npc_path_ready"] = bool(object.get_meta("npc_path_ready", false))
+	context["is_carried"] = bool(object.get_meta("is_carried_storage_object", false))
+
+	var access_point_variant: Variant = object.get_meta("npc_access_point", Vector2.INF)
+	if access_point_variant is Vector2:
+		context["npc_access_point"] = _format_vector(access_point_variant as Vector2)
+	var graph_node_variant: Variant = object.get_meta("npc_access_graph_node", Vector2.INF)
+	if graph_node_variant is Vector2:
+		context["npc_access_graph_node"] = _format_vector(graph_node_variant as Vector2)
+	context["npc_access_source"] = str(object.get_meta("npc_access_source", ""))
+	context["npc_access_port_id"] = str(object.get_meta("npc_access_port_id", ""))
+	context["npc_access_checkout_source"] = str(object.get_meta("npc_access_checkout_source", ""))
+
+	if object is Shelf:
+		var shelf := object as Shelf
+		context["shelf_id"] = String(shelf.get_shelf_id())
+		context["shelf_revision"] = shelf.get_revision()
+		context["lifecycle"] = String(shelf.get_lifecycle())
+
+	return context
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -1045,6 +1501,72 @@ func _record_shelf_move_probe(
 	StoreRuntimeDebugProbeScript.record(label, 0.0, context, 0.0)
 
 
+func record_shelf_drop_decision(
+	label: StringName,
+	object: Node2D,
+	candidate: Vector2,
+	restriction: Dictionary,
+	stage: String,
+	candidate_count: int = 0
+) -> void:
+	var context: Dictionary = {
+		"stage": stage,
+		"object": object.name if object != null else "",
+		"candidate": _format_vector(candidate),
+		"blocked": bool(restriction.get("blocked", false)),
+		"type": StringName(str(restriction.get("type", DROP_REJECTION_NONE))),
+		"message": str(restriction.get("message", "")),
+		"candidate_count": candidate_count
+	}
+	if object is Shelf:
+		var shelf := object as Shelf
+		context["shelf_id"] = String(shelf.get_shelf_id())
+		context["shelf_revision"] = shelf.get_revision()
+		context["shelf_position"] = _format_vector(shelf.global_position)
+		context["lifecycle"] = String(shelf.get_lifecycle())
+	if restriction.has("other_shelf"):
+		context["other_shelf"] = str(restriction.get("other_shelf", ""))
+	if restriction.has("other_shelf_path"):
+		context["other_shelf_path"] = str(restriction.get("other_shelf_path", ""))
+	if restriction.has("source"):
+		context["source"] = str(restriction.get("source", ""))
+	if restriction.has("object_rect"):
+		context["object_rect"] = str(restriction.get("object_rect", Rect2()))
+	if restriction.has("restricted_rect"):
+		context["restricted_rect"] = str(restriction.get("restricted_rect", Rect2()))
+	if restriction.has("candidate_center"):
+		var candidate_center_variant: Variant = restriction.get("candidate_center", Vector2.INF)
+		if candidate_center_variant is Vector2:
+			context["candidate_center"] = _format_vector(candidate_center_variant as Vector2)
+	if restriction.has("other_center"):
+		var other_center_variant: Variant = restriction.get("other_center", Vector2.INF)
+		if other_center_variant is Vector2:
+			context["other_center"] = _format_vector(other_center_variant as Vector2)
+	if restriction.has("distance"):
+		context["distance"] = snappedf(float(restriction.get("distance", 0.0)), 0.01)
+	if restriction.has("required_distance"):
+		context["required_distance"] = snappedf(
+			float(restriction.get("required_distance", 0.0)),
+			0.01
+		)
+	if restriction.has("candidate_radius"):
+		context["candidate_radius"] = snappedf(
+			float(restriction.get("candidate_radius", 0.0)),
+			0.01
+		)
+	if restriction.has("other_radius"):
+		context["other_radius"] = snappedf(
+			float(restriction.get("other_radius", 0.0)),
+			0.01
+		)
+	if restriction.has("shelves_checked"):
+		context["shelves_checked"] = int(restriction.get("shelves_checked", -1))
+	if restriction.has("spacing_query_hits"):
+		context["spacing_query_hits"] = int(restriction.get("spacing_query_hits", -1))
+
+	StoreRuntimeDebugProbeScript.record(label, 0.0, context, 0.0)
+
+
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _get_shelf_move_context(shelf: Shelf) -> Dictionary:
 	var context: Dictionary = {}
@@ -1061,6 +1583,8 @@ func _get_shelf_move_context(shelf: Shelf) -> Dictionary:
 
 
 func _format_vector(value: Vector2) -> String:
+	if not value.is_finite():
+		return "inf,inf"
 	return "%.1f,%.1f" % [value.x, value.y]
 
 
@@ -1199,8 +1723,42 @@ func show_restricted_drop_feedback(restriction: Dictionary) -> void:
 	var message := str(restriction.get("message", "Keep this area clear for customers."))
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var warning_rect := get_warning_rect_from_restriction(restriction)
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
+	var warning_circle := get_warning_circle_from_restriction(restriction)
+	if restriction.get("type", DROP_REJECTION_NONE) == DROP_REJECTION_SHELF_SPACING:
+		var other_center := restriction.get("other_center", Vector2.INF) as Vector2
+		var candidate_center := restriction.get("candidate_center", Vector2.INF) as Vector2
+		StoreRuntimeDebugProbeScript.record(
+			&"shelf_spacing_reject",
+			0.0,
+			{
+				"center": _format_vector(
+					warning_circle.get("center", Vector2.INF) as Vector2
+				),
+				"candidate_center": _format_vector(candidate_center),
+				"radius": snappedf(
+					float(warning_circle.get("radius", 0.0)),
+					0.01
+				),
+				"other_shelf": str(restriction.get("other_shelf", "")),
+				"other_shelf_path": str(restriction.get("other_shelf_path", "")),
+				"other_center": _format_vector(other_center),
+				"distance": snappedf(float(restriction.get("distance", 0.0)), 0.01),
+				"required_distance": snappedf(float(restriction.get("required_distance", 0.0)), 0.01),
+				"shelves_checked": int(restriction.get("shelves_checked", 0)),
+				"spacing_query_hits": int(restriction.get("spacing_query_hits", -1)),
+				"source": str(restriction.get("source", "node_scan"))
+			},
+			0.5
+		)
 
-	play_restricted_placement_warning(warning_rect)
+	if bool(warning_circle.get("valid", false)):
+		play_restricted_placement_warning_circle(
+			warning_circle.get("center", Vector2.INF) as Vector2,
+			float(warning_circle.get("radius", 0.0))
+		)
+	else:
+		play_restricted_placement_warning(warning_rect)
 
 	for i in RESTRICTED_DROP_MESSAGE_COUNT:
 		if feedback_token != store._restricted_drop_feedback_token:
@@ -1219,6 +1777,17 @@ func get_warning_rect_from_restriction(restriction: Dictionary) -> Rect2:
 		return rect_variant as Rect2
 
 	return Rect2()
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func get_warning_circle_from_restriction(restriction: Dictionary) -> Dictionary:
+	var center := restriction.get("warning_circle_center", Vector2.INF) as Vector2
+	var radius := float(restriction.get("warning_circle_radius", 0.0))
+	return {
+		"valid": center.is_finite() and radius > 0.0,
+		"center": center,
+		"radius": radius
+	}
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -1265,11 +1834,66 @@ func play_restricted_placement_warning(rect: Rect2) -> void:
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func play_restricted_placement_warning_circle(center: Vector2, radius: float) -> void:
+	if store._current_storage != null or store._current_yard != null or store._is_transitioning:
+		hide_restricted_placement_warning()
+		return
+
+	if store._restricted_placement_warning == null:
+		return
+
+	if store._restricted_placement_warning_tween != null and store._restricted_placement_warning_tween.is_valid():
+		store._restricted_placement_warning_tween.kill()
+	store._restricted_placement_warning_tween = null
+
+	if not center.is_finite() or radius <= 0.0:
+		hide_restricted_placement_warning()
+		return
+
+	if store._restricted_placement_warning_line != null:
+		store._restricted_placement_warning_line.width = SHELF_SPACING_WARNING_LINE_WIDTH
+
+	sync_restricted_placement_warning_circle(center, radius)
+	store._restricted_placement_warning.visible = true
+	store._restricted_placement_warning.modulate.a = 0.0
+	store._restricted_placement_warning_tween = store.create_tween()
+	store._restricted_placement_warning_tween.tween_property(
+		store._restricted_placement_warning,
+		"modulate:a",
+		1.0,
+		SHELF_SPACING_WARNING_DURATION * 0.5
+	)
+	store._restricted_placement_warning_tween.tween_property(
+		store._restricted_placement_warning,
+		"modulate:a",
+		0.0,
+		SHELF_SPACING_WARNING_DURATION * 0.5
+	)
+	store._restricted_placement_warning_tween.tween_callback(func() -> void:
+		store._restricted_placement_warning_tween = null
+		hide_restricted_placement_warning()
+	)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func sync_restricted_placement_warning(rect: Rect2) -> void:
 	if store._restricted_placement_warning_line == null:
 		return
 
+	store._restricted_placement_warning_line.width = RESTRICTED_DANGER_LINE_WIDTH
 	sync_restricted_warning_line_to_rect(store._restricted_placement_warning_line, rect)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func sync_restricted_placement_warning_circle(center: Vector2, radius: float) -> void:
+	if store._restricted_placement_warning_line == null:
+		return
+
+	sync_restricted_warning_line_to_circle(
+		store._restricted_placement_warning_line,
+		center,
+		radius
+	)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -1308,6 +1932,27 @@ func sync_restricted_warning_line_to_rect(line: Line2D, rect: Rect2) -> void:
 		store.to_local(rect.position + rect.size),
 		store.to_local(rect.position + Vector2(0.0, rect.size.y))
 	])
+	line.points = points
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func sync_restricted_warning_line_to_circle(
+	line: Line2D,
+	center: Vector2,
+	radius: float
+) -> void:
+	if line == null:
+		return
+
+	line.visible = true
+	line.closed = true
+
+	var points := PackedVector2Array()
+	var segment_count := 48
+	for index in range(segment_count):
+		var angle := TAU * float(index) / float(segment_count)
+		var world_point := center + Vector2(cos(angle), sin(angle)) * radius
+		points.append(store.to_local(world_point))
 	line.points = points
 
 

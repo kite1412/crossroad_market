@@ -26,6 +26,9 @@ size = Vector2(21.3333, 24)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_kuack"]
 size = Vector2(21.3333, 24)
 
+[sub_resource type="CircleShape2D" id="CircleShape2D_upm7j"]
+radius = 25.019993
+
 [node name="Shelf" type="Node2D" unique_id=1353709811]
 script = ExtResource("1_nf23d")
 
@@ -53,6 +56,7 @@ position = Vector2(0, -12)
 shape = SubResource("RectangleShape2D_body")
 
 [node name="NPCApproachPorts" type="Node2D" parent="." unique_id=1680307821]
+position = Vector2(0, -24)
 
 [node name="Front" type="Marker2D" parent="NPCApproachPorts" unique_id=1648812168]
 position = Vector2(0, 43)
@@ -65,12 +69,12 @@ metadata/npc_shelf_port_id = "back"
 metadata/npc_shelf_port_facing = "down"
 
 [node name="Left" type="Marker2D" parent="NPCApproachPorts" unique_id=1253710488]
-position = Vector2(-48, -12)
+position = Vector2(-48, 0)
 metadata/npc_shelf_port_id = "left"
 metadata/npc_shelf_port_facing = "right"
 
 [node name="Right" type="Marker2D" parent="NPCApproachPorts" unique_id=1438612184]
-position = Vector2(48, -12)
+position = Vector2(48, 0)
 metadata/npc_shelf_port_id = "right"
 metadata/npc_shelf_port_facing = "left"
 
@@ -111,3 +115,10 @@ position = Vector2(21.3333, -12)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Slots/Slot5" unique_id=614442495]
 shape = SubResource("RectangleShape2D_kuack")
+
+[node name="ShelfSpacingArea" type="Area2D" parent="." unique_id=562077947]
+position = Vector2(0, -30)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ShelfSpacingArea" unique_id=2067800981]
+position = Vector2(0, 7)
+shape = SubResource("CircleShape2D_upm7j")

@@ -30,13 +30,17 @@ func evaluate_shelf_drop_restriction(
 	)
 
 	if rect_has_area(entrance_restricted_rect):
-		return make_drop_restriction(
+		var restriction := make_drop_restriction(
 			true,
 			DROP_REJECTION_CASHIER_FLOW,
 			"Keep the store entrance clear.",
 			entrance_restricted_rect,
 			true
 		)
+		restriction["source"] = "entry_marker"
+		restriction["object_rect"] = object_rect
+		restriction["restricted_rect"] = entrance_restricted_rect
+		return restriction
 
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var queue_restricted_rect := get_queue_marker_drop_restricted_rect(
@@ -44,22 +48,34 @@ func evaluate_shelf_drop_restriction(
 	)
 
 	if rect_has_area(queue_restricted_rect):
-		return make_drop_restriction(
+		var restriction := make_drop_restriction(
 			true,
 			DROP_REJECTION_CASHIER_FLOW,
 			"Keep the customer queue path clear.",
 			queue_restricted_rect,
 			true
 		)
+		restriction["source"] = "queue_marker"
+		restriction["object_rect"] = object_rect
+		restriction["restricted_rect"] = queue_restricted_rect
+		return restriction
+
+	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
+	var spacing_restriction := get_shelf_spacing_restriction(object, candidate)
+	if bool(spacing_restriction.get("blocked", false)):
+		return spacing_restriction
 
 	if not is_drop_position_clear(object, candidate):
-		return make_drop_restriction(
+		var restriction := make_drop_restriction(
 			true,
 			DROP_REJECTION_COLLISION,
 			"I can't place the shelf on another object.",
 			object_rect,
 			false
 		)
+		restriction["source"] = "physics_collision"
+		restriction["object_rect"] = object_rect
+		return restriction
 
 	return make_drop_restriction()
 
