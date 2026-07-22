@@ -128,6 +128,13 @@ func _spawn_customer_instance(npc_data: NPCData) -> NPC:
 	)
 	if npc != null:
 		install_shelf_arrival_controllers(npc)
+		# Re-enter through the freshly installed store-specific controllers.
+		# This keeps forced story follow-ups on the exact same shopping flow as
+		# scheduled customers and guarantees physics was not inherited disabled.
+		npc.velocity = Vector2.ZERO
+		npc.set_process(true)
+		npc.set_physics_process(true)
+		npc._set_state(NPC.State.ENTER)
 
 		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var route_ready_callable := Callable(

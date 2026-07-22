@@ -355,7 +355,7 @@ func get_current_objective_text() -> String:
 		return ""
 
 	if store._gooby_resolved:
-		return "Wait for the next strange customer."
+		return ""
 
 	if TimeManager.current_phase == TimeManager.Phase.NIGHT and store._customer_spawning_unlocked:
 		return "Serve Gooby at the cashier."

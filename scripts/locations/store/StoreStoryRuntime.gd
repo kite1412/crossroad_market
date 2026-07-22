@@ -11,7 +11,8 @@ const GIVE_CHOICE_INDEX: int = 0
 const REJECT_CHOICE_INDEX: int = 1
 const GOOBY_TRUST_GAIN: int = 20
 const FAST_FADE_DURATION: float = 0.13
-const NIGHT_REVEAL_DURATION: float = 0.65
+const STORY_PHASE_FADE_DURATION: float = 0.55
+const FOLLOW_UP_SHELF_READY_ATTEMPTS: int = 30
 const SPARKLE_CANVAS_LAYER: int = 1001
 const PLAYER_CASHIER_OFFSET := Vector2(-24, 42)
 const GOOBY_PLAYER_OFFSET := Vector2(52, 0)
@@ -112,18 +113,26 @@ func _run_day_one_story() -> void:
 		hud.call("begin_story_mode")
 
 	_clear_cashier_runtime()
-	await store._fade_to_black()
+	await StoreTransitionController.fade_to(
+		store,
+		store._fade_rect,
+		1.0,
+		STORY_PHASE_FADE_DURATION
+	)
 	TimeManager.transition_to_night()
 	TimeManager.pause()
 	_clear_remaining_day_customers()
 	await get_tree().process_frame
 	_place_player_at_cashier()
 	_take_phantom_ice_cream()
-	await store._fade_from_black()
+	await StoreTransitionController.fade_to(
+		store,
+		store._fade_rect,
+		0.0,
+		STORY_PHASE_FADE_DURATION
+	)
 
-	# Give the player a moment to register the night-time store before the
-	# apparition begins. The sparkles themselves play over the black screen.
-	await get_tree().create_timer(NIGHT_REVEAL_DURATION).timeout
+	await _show_night_notification()
 	await StoreTransitionController.fade_to(store, store._fade_rect, 1.0, FAST_FADE_DURATION)
 	await _play_purple_sparkles()
 	_spawn_cinematic_gooby()
@@ -177,6 +186,13 @@ func _show_dialogue_sequence(dialogues: Array[Dictionary]) -> void:
 	if hud == null or not hud.has_method("show_dialog_sequence"):
 		return
 	await hud.call("show_dialog_sequence", dialogues)
+
+
+func _show_night_notification() -> void:
+	var hud := _get_hud()
+	if hud == null or not hud.has_method("show_story_notification"):
+		return
+	await hud.call("show_story_notification", "The night has come.")
 
 
 func _make_dialogue(
@@ -355,6 +371,8 @@ func _spawn_rejected_slime_follow_up() -> void:
 	await get_tree().create_timer(0.25).timeout
 	if store == null or not is_instance_valid(store) or store.npc_runtime == null:
 		return
+	if not await _prepare_rejected_slime_shelf():
+		return
 
 	var slime_data := SLIME_DATA.duplicate(true) as NPCData
 	slime_data.favorite_items = [PHANTOM_ICE_CREAM_ID]
@@ -363,6 +381,41 @@ func _spawn_rejected_slime_follow_up() -> void:
 	slime_data.set_meta("checkout_outcome", "paid")
 	if store.npc_runtime.has_method("spawn_story_customer"):
 		store.npc_runtime.call("spawn_story_customer", slime_data)
+
+
+func _prepare_rejected_slime_shelf() -> bool:
+	if store.ghost_shelf == null or not is_instance_valid(store.ghost_shelf):
+		return false
+	if not store.ghost_shelf.has_item(PHANTOM_ICE_CREAM_ID):
+		store.ghost_shelf.stock_item_direct(PHANTOM_ICE_CREAM_ID)
+
+	for _attempt in FOLLOW_UP_SHELF_READY_ATTEMPTS:
+		_refresh_ghost_shelf_access()
+		if (
+			store.ghost_shelf.has_item(PHANTOM_ICE_CREAM_ID)
+			and bool(store.ghost_shelf.get_meta("npc_path_ready", false))
+		):
+			store._setup_npc_static_data()
+			return true
+		await get_tree().physics_frame
+
+	return false
+
+
+func _refresh_ghost_shelf_access() -> void:
+	if store == null or store.ghost_shelf == null:
+		return
+	if not store.has_method("_get_store_path_graph"):
+		return
+
+	var graph_variant: Variant = store.call("_get_store_path_graph")
+	if not (graph_variant is StorePathGraph):
+		return
+	var graph := graph_variant as StorePathGraph
+	graph.store_shelf_access_metadata(
+		store.ghost_shelf,
+		store.ghost_shelf.global_position
+	)
 
 
 func _get_gooby_portrait() -> Texture2D:
