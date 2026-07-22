@@ -2,12 +2,31 @@
 
 [ext_resource type="Texture2D" uid="uid://bdc4aj2ay83ps" path="res://assets/yard/path.png" id="1_ghhkb"]
 [ext_resource type="Texture2D" uid="uid://b37kkeccotj33" path="res://assets/yard/grass.png" id="2_1m6w5"]
-[ext_resource type="Texture2D" uid="uid://dv1uqukfcdn20" path="res://assets/yard/top-left-tree.png" id="3_grlf6"]
 [ext_resource type="Texture2D" uid="uid://b2upyhtlkpcdu" path="res://assets/yard/top-tree.png" id="4_7smw2"]
-[ext_resource type="Texture2D" uid="uid://dgfvmfwru2yc3" path="res://assets/yard/right-mid-tree.png" id="5_7smw2"]
 [ext_resource type="Texture2D" uid="uid://c75w2fbjx2eeu" path="res://assets/yard/empty-house.png" id="5_72r58"]
-[ext_resource type="Texture2D" uid="uid://bi08afvgg84cm" path="res://assets/yard/store.png" id="7_h3qsw"]
-[ext_resource type="Texture2D" uid="uid://dy5suse0wlqi0" path="res://assets/yard/player-house.png" id="8_5lhgd"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_due37"]
+size = Vector2(143, 33)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_grlf6"]
+size = Vector2(144, 29)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_7smw2"]
+size = Vector2(21, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_72r58"]
+size = Vector2(36.5, 20)
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_ry2rs"]
+b = Vector2(50, 18)
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_7smw2"]
+a = Vector2(-7, 19)
+b = Vector2(18, -5)
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_72r58"]
+a = Vector2(-7, 19)
+b = Vector2(18, -5)
 
 [node name="YardStructure" type="Node2D" unique_id=1360511442]
 
@@ -21,11 +40,6 @@ position = Vector2(239.99998, 135.00002)
 scale = Vector2(0.50000006, 0.50000006)
 texture = ExtResource("2_1m6w5")
 
-[node name="LeftTrees" type="Sprite2D" parent="." unique_id=483439040]
-position = Vector2(240, 135)
-scale = Vector2(0.5, 0.5)
-texture = ExtResource("3_grlf6")
-
 [node name="TopTrees" type="Sprite2D" parent="." unique_id=1259640681]
 position = Vector2(240, 135.00002)
 scale = Vector2(0.5, 0.5)
@@ -36,17 +50,46 @@ position = Vector2(239.99998, 135)
 scale = Vector2(0.49999997, 0.5)
 texture = ExtResource("5_72r58")
 
-[node name="RightTrees" type="Sprite2D" parent="." unique_id=1872738843]
-position = Vector2(240, 135)
-scale = Vector2(0.49999997, 0.49999997)
-texture = ExtResource("5_7smw2")
+[node name="Collidables" type="Node2D" parent="." unique_id=1033003499]
 
-[node name="Store" type="Sprite2D" parent="." unique_id=2013045991]
-position = Vector2(239.99998, 135)
-scale = Vector2(0.5, 0.5)
-texture = ExtResource("7_h3qsw")
+[node name="TopTrees1" type="StaticBody2D" parent="Collidables" unique_id=316617611]
 
-[node name="PlayerHouse" type="Sprite2D" parent="." unique_id=1698761564]
-position = Vector2(240, 135)
-scale = Vector2(0.5, 0.5)
-texture = ExtResource("8_5lhgd")
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Collidables/TopTrees1" unique_id=629326981]
+position = Vector2(144.5, 45.5)
+shape = SubResource("RectangleShape2D_due37")
+
+[node name="TopTrees2" type="StaticBody2D" parent="Collidables" unique_id=52396166]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Collidables/TopTrees2" unique_id=1990228315]
+position = Vector2(138, 14.5)
+shape = SubResource("RectangleShape2D_grlf6")
+
+[node name="TopTrees3" type="StaticBody2D" parent="Collidables" unique_id=1035905486]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Collidables/TopTrees3" unique_id=1322833497]
+position = Vector2(349.5, 33)
+shape = SubResource("RectangleShape2D_7smw2")
+
+[node name="TopTrees4" type="StaticBody2D" parent="Collidables" unique_id=732793839]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Collidables/TopTrees4" unique_id=137434266]
+position = Vector2(394.75, 16)
+shape = SubResource("RectangleShape2D_72r58")
+
+[node name="EmptyHouseFront" type="StaticBody2D" parent="Collidables" unique_id=1191063515]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Collidables/EmptyHouseFront" unique_id=167571436]
+position = Vector2(388, 51)
+shape = SubResource("SegmentShape2D_ry2rs")
+
+[node name="EmptyHouseRight" type="StaticBody2D" parent="Collidables" unique_id=157580416]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Collidables/EmptyHouseRight" unique_id=1009143933]
+position = Vector2(444, 49)
+shape = SubResource("SegmentShape2D_7smw2")
+
+[node name="EmptyHouseLeft" type="StaticBody2D" parent="Collidables" unique_id=775570188]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Collidables/EmptyHouseLeft" unique_id=187056159]
+position = Vector2(396, 32)
+shape = SubResource("SegmentShape2D_72r58")

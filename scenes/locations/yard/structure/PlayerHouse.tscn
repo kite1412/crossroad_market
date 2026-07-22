@@ -1,0 +1,19 @@
+[gd_scene format=3 uid="uid://dch5ut0rs61t7"]
+
+[ext_resource type="Texture2D" uid="uid://dy5suse0wlqi0" path="res://assets/yard/player-house.png" id="1_rmg5u"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pul2j"]
+size = Vector2(109, 58)
+
+[node name="PlayerHouse" type="Node2D" unique_id=719157645]
+
+[node name="PlayerHouse" type="Sprite2D" parent="." unique_id=2077419717]
+position = Vector2(240, 135)
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("1_rmg5u")
+
+[node name="PlayerHouse2" type="StaticBody2D" parent="." unique_id=1840217544]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PlayerHouse2" unique_id=3381346]
+position = Vector2(54.5, 222)
+shape = SubResource("RectangleShape2D_pul2j")
