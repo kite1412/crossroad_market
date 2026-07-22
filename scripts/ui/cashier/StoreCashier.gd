@@ -112,7 +112,13 @@ func begin_checkout(npc: NPC) -> bool:
 	_total = 0
 	_change_due = 0
 	_entered_change = ""
-	_customer_cash = _get_customer_cash(npc, _get_target_total())
+	# Checkout totals may be overridden for scripted customers. Always fund the
+	# customer against the actual prices of every item they are buying as well.
+	var minimum_cash: int = maxi(
+		_get_target_total(),
+		CashierCheckoutService.calculate_total(_target_item_ids)
+	)
+	_customer_cash = _get_customer_cash(npc, minimum_cash)
 	_portrait_texture = _get_customer_portrait(npc)
 	_apply_customer_presentation()
 	_refresh_scan_tab()
@@ -557,6 +563,12 @@ func _on_delete_or_back_pressed() -> void:
 
 
 func _on_confirm_exchange_pressed() -> void:
+	if _customer_cash < _total:
+		_show_notification(
+			"Customer needs %dG more to pay for these items." % (_total - _customer_cash)
+		)
+		_flash_exchange_input()
+		return
 	if _entered_change.is_empty() or int(_entered_change) != _change_due:
 		_show_notification("Return exactly %dG in change." % _change_due)
 		_flash_exchange_input()
@@ -619,12 +631,13 @@ func _get_target_total() -> int:
 
 func _get_customer_cash(npc: NPC, target_total: int) -> int:
 	if npc.npc_data != null and npc.npc_data.checkout_cash > 0:
-		return max(npc.npc_data.checkout_cash, target_total)
+		return maxi(npc.npc_data.checkout_cash, target_total)
 
-	for denomination in [10, 20, 25, 50, 100, 200, 500, 1000]:
-		if denomination >= target_total:
-			return denomination
-	return ceili(float(target_total) / 100.0) * 100
+	# Give regular customers varied amounts instead of always selecting the next
+	# fixed denomination. The possible overpayment grows with the purchase, while
+	# remaining bounded so the required change stays reasonable.
+	var extra_cash_limit: int = clampi(roundi(float(target_total) * 0.5), 20, 200)
+	return target_total + randi_range(0, extra_cash_limit)
 
 
 func _get_customer_portrait(npc: NPC) -> Texture2D:
