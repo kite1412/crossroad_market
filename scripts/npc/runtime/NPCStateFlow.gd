@@ -505,6 +505,8 @@ func finish_checkout_and_exit() -> void:
 	npc._dialog_timer = npc.DIALOG_DURATION
 	npc._target_shelf = null
 	npc._shopping_job.clear_target_shelf()
+	if npc in NPC.current_queue:
+		npc._leave_queue()
 	npc._exit_after_checkout = true
 	npc.target_position = npc._get_exit_position()
 	set_state(NPC.State.EXIT)

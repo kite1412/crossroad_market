@@ -232,7 +232,17 @@ func get_npc_exit_route_from(
 
 
 func get_npc_shelf_wait_position(index: int = 0) -> Vector2:
-	return get_store_path_graph().get_shelf_wait_position(index)
+	var wait_position := get_store_path_graph().get_shelf_wait_position(index)
+	if wait_position.is_finite():
+		return wait_position
+
+	var aisle_marker := _get_named_marker(CHECKOUT_GRAPH_REJOIN_MARKER)
+	if aisle_marker != null:
+		return aisle_marker.global_position
+
+	if store != null and store.npc_exit_marker != null:
+		return store.npc_exit_marker.global_position
+	return STORE_ENTRY_FALLBACK_POSITION
 
 
 func get_npc_single_customer_exit_route(
@@ -424,6 +434,12 @@ func _get_named_markers(
 	return result
 
 
+func _get_named_marker(marker_name: StringName) -> Marker2D:
+	if store == null or store.store_path_markers == null:
+		return null
+	return store.store_path_markers.get_node_or_null(String(marker_name)) as Marker2D
+
+
 func _get_nearest_shelf_quad_marker(from_position: Vector2) -> Marker2D:
 	if store == null or store.store_path_markers == null:
 		return null
@@ -459,15 +475,16 @@ func _build_queue_aware_shelf_transit_route(
 	if npc_node == null or not is_instance_valid(npc_node):
 		return []
 
-	var queue_size := NPCQueueReservationControllerScript.size()
-	if queue_size <= 0:
+	var active_queue_size := _get_active_shopping_queue_size(npc_node)
+	if active_queue_size <= 0:
 		return []
 
-	var transit_marker := _get_queue_shelf_transit_marker(queue_size)
+	var transit_marker := _get_queue_shelf_transit_marker(active_queue_size)
 	if transit_marker == null:
 		_record_route_probe(&"npc_transit_queue_bypass_select", {
 			"reason": "missing_transit_marker",
-			"queue_size": queue_size,
+			"queue_size": NPCQueueReservationControllerScript.size(),
+			"active_queue_size": active_queue_size,
 			"from": _format_vector(from_position),
 			"shelf_id": String(shelf.get_shelf_id())
 		})
@@ -478,7 +495,8 @@ func _build_queue_aware_shelf_transit_route(
 	if not access_position.is_finite():
 		_record_route_probe(&"npc_transit_queue_bypass_select", {
 			"reason": "invalid_access",
-			"queue_size": queue_size,
+			"queue_size": NPCQueueReservationControllerScript.size(),
+			"active_queue_size": active_queue_size,
 			"chosen_bypass_marker": String(transit_marker.name),
 			"from": _format_vector(from_position),
 			"shelf_id": String(shelf.get_shelf_id())
@@ -507,7 +525,8 @@ func _build_queue_aware_shelf_transit_route(
 	route = _dedupe_route_points(route)
 	_record_route_probe(&"npc_transit_queue_bypass_select", {
 		"reason": "built" if not route.is_empty() else "empty",
-		"queue_size": queue_size,
+		"queue_size": NPCQueueReservationControllerScript.size(),
+		"active_queue_size": active_queue_size,
 		"chosen_bypass_marker": String(transit_marker.name),
 		"chosen_bypass_position": _format_vector(transit_marker.global_position),
 		"shelf_quad": String(shelf_quad.name) if shelf_quad != null else "",
@@ -521,6 +540,27 @@ func _build_queue_aware_shelf_transit_route(
 		"route_points": route.size()
 	})
 	return route
+
+
+func _get_active_shopping_queue_size(npc_node: Node) -> int:
+	NPCQueueReservationControllerScript.prune_invalid()
+	var count := 0
+	for queued_variant in NPC.current_queue:
+		if not (queued_variant is NPC):
+			continue
+
+		var queued_npc := queued_variant as NPC
+		if queued_npc == npc_node:
+			continue
+		if not is_instance_valid(queued_npc):
+			continue
+		if queued_npc.is_queued_for_deletion():
+			continue
+		if queued_npc.current_state != NPC.State.WAIT_IN_QUEUE:
+			continue
+
+		count += 1
+	return count
 
 
 func _get_queue_shelf_transit_marker(queue_size: int) -> Marker2D:
