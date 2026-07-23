@@ -83,13 +83,21 @@ var _restock_selected_label: Label = null
 @warning_ignore("unused_private_class_variable")
 var _restock_guide_label: Label = null
 @warning_ignore("unused_private_class_variable")
+var _restock_action_row: Container = null
+@warning_ignore("unused_private_class_variable")
 var _restock_purchase_button: Button = null
 @warning_ignore("unused_private_class_variable")
 var _restock_close_button: Button = null
 @warning_ignore("unused_private_class_variable")
+var _restock_add_button: Button = null
+@warning_ignore("unused_private_class_variable")
+var _restock_delete_button: Button = null
+@warning_ignore("unused_private_class_variable")
 var _restock_scrollbar_sprite: Sprite2D = null
 @warning_ignore("unused_private_class_variable")
 var _restock_scrollbar_hitbox: Control = null
+@warning_ignore("unused_private_class_variable")
+var _restock_scrollbar_thumb: ColorRect = null
 @warning_ignore("unused_private_class_variable")
 var _restock_scrollbar_dragging: bool = false
 @warning_ignore("unused_private_class_variable")

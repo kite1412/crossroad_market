@@ -7,7 +7,6 @@ pivot_offset = Vector2(17.2, 15.15)
 mouse_filter = 0
 focus_mode = 0
 text = ""
-tooltip_text = ""
 flat = true
 clip_text = true
 
@@ -24,7 +23,6 @@ offset_right = 32.4
 offset_bottom = 30.3
 theme_override_colors/font_color = Color(0.235294, 0.145098, 0.105882, 1)
 theme_override_font_sizes/font_size = 7
-mouse_filter = 2
 horizontal_alignment = 1
 vertical_alignment = 1
 clip_text = true

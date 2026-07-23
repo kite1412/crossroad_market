@@ -177,8 +177,42 @@ func get_interaction_ports() -> Array[Dictionary]:
 	if not marker_ports.is_empty():
 		return marker_ports
 
-	push_error("Shelf scene missing required NPCApproachPorts markers: %s" % name)
-	return []
+	var body_rect: Rect2 = _get_body_rect()
+	var standing_margin: float = 18.0
+	var shelf_id: StringName = get_shelf_id()
+	var revision: int = get_revision()
+	var center: Vector2 = body_rect.get_center()
+
+	return [
+		_make_interaction_port(
+			&"front",
+			Vector2(center.x, body_rect.position.y + body_rect.size.y + standing_margin),
+			CharacterSprite.Direction.UP,
+			shelf_id,
+			revision
+		),
+		_make_interaction_port(
+			&"back",
+			Vector2(center.x, body_rect.position.y - standing_margin),
+			CharacterSprite.Direction.DOWN,
+			shelf_id,
+			revision
+		),
+		_make_interaction_port(
+			&"left",
+			Vector2(body_rect.position.x - standing_margin, center.y),
+			CharacterSprite.Direction.RIGHT,
+			shelf_id,
+			revision
+		),
+		_make_interaction_port(
+			&"right",
+			Vector2(body_rect.position.x + body_rect.size.x + standing_margin, center.y),
+			CharacterSprite.Direction.LEFT,
+			shelf_id,
+			revision
+		)
+	]
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -186,15 +220,8 @@ func _get_marker_interaction_ports() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	var port_root := get_node_or_null(NPC_APPROACH_PORTS_PATH) as Node2D
 	if port_root == null:
-		push_error("Shelf scene missing required Node2D node: NPCApproachPorts on %s" % name)
 		return result
 
-	var required_ports: Dictionary[StringName, bool] = {
-		&"Front": false,
-		&"Back": false,
-		&"Left": false,
-		&"Right": false
-	}
 	var shelf_id: StringName = get_shelf_id()
 	var revision: int = get_revision()
 	var body_rect := _get_body_rect()
@@ -219,8 +246,6 @@ func _get_marker_interaction_ports() -> Array[Dictionary]:
 			shelf_id,
 			revision
 		)
-		if required_ports.has(marker.name):
-			required_ports[marker.name] = true
 		port["raw_marker_position"] = raw_marker_position
 		port["raw_marker_body_distance"] = _get_body_rect_distance_to(
 			body_rect,
@@ -233,14 +258,6 @@ func _get_marker_interaction_ports() -> Array[Dictionary]:
 		port["fitted_from_marker"] = false
 		port["marker_fit_distance"] = 0.0
 		result.append(port)
-
-	for required_name in required_ports:
-		if not bool(required_ports[required_name]):
-			push_error("Shelf scene missing required NPCApproachPorts/%s marker on %s" % [
-				String(required_name),
-				name
-			])
-			return []
 
 	return result
 

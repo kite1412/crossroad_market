@@ -9,6 +9,7 @@ const RESTOCK_ITEM_HOVER_DURATION: float = 0.12
 const RESTOCK_BUTTON_HOVER_MODULATE := Color(1.18, 1.1, 0.96, 1.0)
 const RESTOCK_BUTTON_NORMAL_MODULATE := Color(1, 1, 1, 1)
 const RESTOCK_BUTTON_HOVER_DURATION: float = 0.12
+const RESTOCK_SCROLL_THUMB_MIN_HEIGHT: float = 6.0
 const RESTOCK_SCROLLBAR_SCENE_POSITION_META: StringName = &"restock_scene_position"
 const RESTOCK_ITEM_ROW_SCENE: PackedScene = preload(
 	"res://scenes/locations/storage/restock/ListRestockPanel.tscn"
@@ -47,8 +48,11 @@ func ensure_restock_panel() -> void:
 	storage._restock_wallet_label = panel_nodes["wallet_label"] as Label
 	storage._restock_selected_label = panel_nodes["selected_label"] as Label
 	storage._restock_guide_label = panel_nodes["guide_label"] as Label
+	storage._restock_action_row = panel_nodes["action_row"] as Container
 	storage._restock_purchase_button = panel_nodes["purchase_button"] as Button
 	storage._restock_close_button = panel_nodes["close_button"] as Button
+	storage._restock_add_button = panel_nodes["add_button"] as Button
+	storage._restock_delete_button = panel_nodes["delete_button"] as Button
 	storage._restock_scrollbar_sprite = panel_nodes["scrollbar_sprite"] as Sprite2D
 	_setup_scene_action_buttons()
 	_setup_scene_scrollbar()
@@ -64,6 +68,7 @@ func render_restock_panel() -> void:
 
 	storage._restock_panel.visible = true
 	StorageRestockPanel.clear_container(storage._restock_item_list)
+	StorageRestockPanel.clear_container(storage._restock_action_row)
 	update_restock_wallet()
 
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
@@ -119,6 +124,7 @@ func create_restock_item_row(item: ItemData) -> Control:
 	price_label.text = "%dG" % get_item_buy_cost(item)
 	qty_label.text = str(get_restock_cart_quantity(item.item_id))
 
+	_configure_sprite_hitbox_button(select_button)
 	select_button.pressed.connect(func() -> void:
 		storage._selected_restock_item_id = item.item_id
 		render_restock_panel()
@@ -126,12 +132,14 @@ func create_restock_item_row(item: ItemData) -> Control:
 	connect_restock_scroll_forwarding(select_button)
 	_connect_restock_row_hover(row, select_button)
 
+	_configure_sprite_hitbox_button(minus_button)
 	minus_button.pressed.connect(func() -> void:
 		add_restock_cart_quantity(item.item_id, 1)
 	)
 	connect_restock_scroll_forwarding(minus_button)
 	_connect_restock_row_hover(row, minus_button)
 
+	_configure_sprite_hitbox_button(plus_button)
 	plus_button.pressed.connect(func() -> void:
 		add_restock_cart_quantity(item.item_id, -1)
 	)
@@ -254,12 +262,14 @@ func _tween_restock_button_modulate(target: CanvasItem, target_modulate: Color) 
 
 func _setup_scene_action_buttons() -> void:
 	if storage._restock_purchase_button != null:
+		_configure_sprite_hitbox_button(storage._restock_purchase_button)
 		_connect_restock_button_hover(storage._restock_purchase_button)
 		var checkout_callable := Callable(self, "checkout_restock_cart")
 		if not storage._restock_purchase_button.pressed.is_connected(checkout_callable):
 			storage._restock_purchase_button.pressed.connect(checkout_callable)
 
 	if storage._restock_close_button != null:
+		_configure_sprite_hitbox_button(storage._restock_close_button)
 		_connect_restock_button_hover(storage._restock_close_button)
 		var close_callable := Callable(self, "hide_restock_panel")
 		if not storage._restock_close_button.pressed.is_connected(close_callable):
@@ -279,15 +289,16 @@ func _setup_scene_scrollbar() -> void:
 			storage._restock_panel.find_child("RestockScrollHitbox", true, false)
 			as Control
 		)
-	if storage._restock_scrollbar_hitbox == null:
-		push_error("StorageRestockPanel scene missing required Control node: RestockScrollHitbox")
-		return
+		if storage._restock_scrollbar_hitbox == null:
+			push_error("StorageRestockPanel scene missing required Control node: RestockScrollHitbox")
+			return
+		storage._restock_scrollbar_hitbox.mouse_filter = Control.MOUSE_FILTER_STOP
+		storage._restock_scrollbar_hitbox.z_index = 20
 
-	if storage._restock_scrollbar_sprite == null:
-		push_error("StorageRestockPanel scene missing required Sprite2D node: ScrollBar")
-		return
-
-	if not storage._restock_scrollbar_sprite.has_meta(RESTOCK_SCROLLBAR_SCENE_POSITION_META):
+	if (
+		storage._restock_scrollbar_sprite != null
+		and not storage._restock_scrollbar_sprite.has_meta(RESTOCK_SCROLLBAR_SCENE_POSITION_META)
+	):
 		storage._restock_scrollbar_sprite.set_meta(
 			RESTOCK_SCROLLBAR_SCENE_POSITION_META,
 			storage._restock_scrollbar_sprite.position
@@ -297,7 +308,25 @@ func _setup_scene_scrollbar() -> void:
 	if not storage._restock_scrollbar_hitbox.gui_input.is_connected(scrollbar_input):
 		storage._restock_scrollbar_hitbox.gui_input.connect(scrollbar_input)
 
+	if storage._restock_scrollbar_thumb == null:
+		storage._restock_scrollbar_thumb = ColorRect.new()
+		storage._restock_scrollbar_thumb.name = "Thumb"
+		storage._restock_scrollbar_thumb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		storage._restock_scrollbar_hitbox.add_child(storage._restock_scrollbar_thumb)
+
+		var thumb_color := Color("ad673c")
+		if storage._restock_scrollbar_sprite != null:
+			thumb_color = Color(1, 1, 1, 0)
+		storage._restock_scrollbar_thumb.color = thumb_color
 	_update_restock_scroll_metrics.call_deferred()
+
+
+func _configure_sprite_hitbox_button(button: Button) -> void:
+	if button == null:
+		return
+	button.mouse_filter = Control.MOUSE_FILTER_STOP
+	button.focus_mode = Control.FOCUS_ALL
+	button.tooltip_text = ""
 
 
 func _update_scene_action_buttons() -> void:
@@ -308,15 +337,32 @@ func _update_scene_action_buttons() -> void:
 		storage._restock_close_button.disabled = false
 
 
+func _get_restock_scrollbar_rect() -> Rect2:
+	if (
+		storage._restock_scrollbar_hitbox != null
+		and is_instance_valid(storage._restock_scrollbar_hitbox)
+		and storage._restock_scrollbar_hitbox.size.x > 0.0
+		and storage._restock_scrollbar_hitbox.size.y > 0.0
+	):
+		return Rect2(
+			storage._restock_scrollbar_hitbox.position,
+			storage._restock_scrollbar_hitbox.size
+		)
+
+	push_error("StorageRestockPanel scene RestockScrollHitbox must have a non-zero size.")
+	return Rect2()
+
+
 func _update_restock_scroll_metrics() -> void:
 	if (
 		storage._restock_item_scroll == null
 		or storage._restock_item_list == null
 		or storage._restock_scrollbar_hitbox == null
-		or storage._restock_scrollbar_sprite == null
+		or storage._restock_scrollbar_thumb == null
 	):
 		return
 
+	var track_rect := _get_restock_scrollbar_rect()
 	var content_height := maxf(
 		storage._restock_item_list.get_combined_minimum_size().y,
 		storage._restock_item_list.size.y
@@ -332,29 +378,27 @@ func _update_restock_scroll_metrics() -> void:
 		storage._restock_item_scroll.scroll_vertical = 0
 		return
 
+	if storage._restock_scrollbar_sprite != null:
+		storage._restock_scrollbar_thumb.size = _get_restock_scrollbar_sprite_size()
+	else:
+		var visible_ratio := clampf(view_height / maxf(content_height, 1.0), 0.0, 1.0)
+		storage._restock_scrollbar_thumb.size = Vector2(
+			track_rect.size.x,
+			maxf(roundf(track_rect.size.y * visible_ratio), RESTOCK_SCROLL_THUMB_MIN_HEIGHT)
+		)
 	_set_restock_scroll(float(storage._restock_item_scroll.scroll_vertical))
 
 
 func _get_restock_scrollbar_sprite_size() -> Vector2:
 	if storage._restock_scrollbar_sprite == null:
-		return Vector2.ONE
+		return Vector2(1.0, RESTOCK_SCROLL_THUMB_MIN_HEIGHT)
 
 	var sprite_rect: Rect2 = storage._restock_scrollbar_sprite.get_rect()
 	var sprite_scale: Vector2 = storage._restock_scrollbar_sprite.scale
 	return Vector2(
 		maxf(absf(sprite_rect.size.x * sprite_scale.x), 1.0),
-		maxf(absf(sprite_rect.size.y * sprite_scale.y), 1.0)
+		maxf(absf(sprite_rect.size.y * sprite_scale.y), RESTOCK_SCROLL_THUMB_MIN_HEIGHT)
 	)
-
-
-func _get_restock_scrollbar_sprite_hitbox_rect() -> Rect2:
-	if storage._restock_scrollbar_sprite == null or storage._restock_scrollbar_hitbox == null:
-		return Rect2()
-
-	var parent_inverse: Transform2D = storage._restock_scrollbar_hitbox.get_global_transform_with_canvas().affine_inverse()
-	var sprite_center: Vector2 = parent_inverse * storage._restock_scrollbar_sprite.global_position
-	var sprite_size: Vector2 = _get_restock_scrollbar_sprite_size()
-	return Rect2(sprite_center - sprite_size * 0.5, sprite_size)
 
 
 func _set_restock_scroll(value: float) -> void:
@@ -364,21 +408,39 @@ func _set_restock_scroll(value: float) -> void:
 	var scroll_value := clampf(value, 0.0, storage._restock_scroll_max)
 	storage._restock_item_scroll.scroll_vertical = roundi(scroll_value)
 
-	if storage._restock_scrollbar_hitbox == null or storage._restock_scrollbar_sprite == null:
+	if storage._restock_scrollbar_hitbox == null or storage._restock_scrollbar_thumb == null:
 		return
 
 	var scroll_ratio := 0.0
 	if storage._restock_scroll_max > 0.0:
 		scroll_ratio = scroll_value / storage._restock_scroll_max
 
-	var scene_position := _get_restock_scrollbar_scene_position()
-	var bottom_position := _get_restock_scrollbar_scene_bottom_position(
-		scene_position
+	if storage._restock_scrollbar_sprite != null:
+		var scene_position := _get_restock_scrollbar_scene_position()
+		var bottom_position := _get_restock_scrollbar_scene_bottom_position(
+			scene_position
+		)
+		storage._restock_scrollbar_sprite.position = scene_position.lerp(
+			bottom_position,
+			scroll_ratio
+		)
+		var parent_inverse: Transform2D = (
+			storage._restock_scrollbar_hitbox
+			.get_global_transform_with_canvas()
+			.affine_inverse()
+		)
+		storage._restock_scrollbar_thumb.position = (
+			parent_inverse
+			* storage._restock_scrollbar_sprite.global_position
+			- storage._restock_scrollbar_thumb.size * 0.5
+		)
+		return
+
+	var thumb_travel: float = (
+		storage._restock_scrollbar_hitbox.size.y
+		- storage._restock_scrollbar_thumb.size.y
 	)
-	storage._restock_scrollbar_sprite.position = scene_position.lerp(
-		bottom_position,
-		scroll_ratio
-	)
+	storage._restock_scrollbar_thumb.position.y = roundf(thumb_travel * scroll_ratio)
 
 
 func _get_restock_scrollbar_scene_position() -> Vector2:
@@ -416,20 +478,23 @@ func _on_restock_item_scroll_gui_input(event: InputEvent) -> void:
 
 
 func _on_restock_scrollbar_gui_input(event: InputEvent) -> void:
-	if storage._restock_scrollbar_sprite == null or storage._restock_scrollbar_hitbox == null:
+	if storage._restock_scrollbar_thumb == null or storage._restock_scrollbar_hitbox == null:
 		return
 
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
-			var thumb_rect := _get_restock_scrollbar_sprite_hitbox_rect()
+			var thumb_rect := Rect2(
+				storage._restock_scrollbar_thumb.position,
+				storage._restock_scrollbar_thumb.size
+			)
 			if thumb_rect.has_point(event.position):
 				storage._restock_scrollbar_drag_offset = (
 					event.position.y
-					- thumb_rect.position.y
+					- storage._restock_scrollbar_thumb.position.y
 				)
 			else:
 				storage._restock_scrollbar_drag_offset = (
-					thumb_rect.size.y
+					storage._restock_scrollbar_thumb.size.y
 					* 0.5
 				)
 				_set_restock_scroll_from_thumb(event.position.y - storage._restock_scrollbar_drag_offset)
@@ -449,13 +514,12 @@ func _on_restock_scrollbar_gui_input(event: InputEvent) -> void:
 
 
 func _set_restock_scroll_from_thumb(thumb_y: float) -> void:
-	if storage._restock_scrollbar_hitbox == null or storage._restock_scrollbar_sprite == null:
+	if storage._restock_scrollbar_hitbox == null or storage._restock_scrollbar_thumb == null:
 		return
 
-	var thumb_size := _get_restock_scrollbar_sprite_size()
 	var thumb_travel: float = (
 		storage._restock_scrollbar_hitbox.size.y
-		- thumb_size.y
+		- storage._restock_scrollbar_thumb.size.y
 	)
 	if thumb_travel <= 0.0:
 		_set_restock_scroll(0.0)
@@ -482,6 +546,8 @@ func _get_scroll_delta(event: InputEvent) -> float:
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func render_restock_detail() -> void:
+	StorageRestockPanel.clear_container(storage._restock_action_row)
+
 	if storage._restock_wallet_label != null:
 		storage._restock_wallet_label.visible = false
 	if storage._restock_guide_label != null:
