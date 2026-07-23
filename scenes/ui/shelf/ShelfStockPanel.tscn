@@ -16,10 +16,14 @@ script = ExtResource("1_shelf_stock_panel")
 layout_mode = 0
 offset_right = 142.0
 offset_bottom = 202.0
+pivot_offset = Vector2(71, 101)
 mouse_filter = 0
 
 [node name="PanelArtwork" parent="PanelRoot" instance=ExtResource("2_list_stock")]
 position = Vector2(-31, -42)
+
+[node name="IconListStockItem" parent="PanelRoot/PanelArtwork" index="1"]
+visible = false
 
 [node name="GridViewport" type="Control" parent="PanelRoot"]
 clip_contents = true

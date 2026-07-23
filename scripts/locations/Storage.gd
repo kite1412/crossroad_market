@@ -83,8 +83,6 @@ var _restock_selected_label: Label = null
 @warning_ignore("unused_private_class_variable")
 var _restock_guide_label: Label = null
 @warning_ignore("unused_private_class_variable")
-var _restock_action_row: Container = null
-@warning_ignore("unused_private_class_variable")
 var _restock_purchase_button: Button = null
 @warning_ignore("unused_private_class_variable")
 var _restock_close_button: Button = null

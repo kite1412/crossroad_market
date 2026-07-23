@@ -174,45 +174,9 @@ func get_interaction_ports() -> Array[Dictionary]:
 		return []
 
 	var marker_ports := _get_marker_interaction_ports()
-	if not marker_ports.is_empty():
-		return marker_ports
-
-	var body_rect: Rect2 = _get_body_rect()
-	var standing_margin: float = 18.0
-	var shelf_id: StringName = get_shelf_id()
-	var revision: int = get_revision()
-	var center: Vector2 = body_rect.get_center()
-
-	return [
-		_make_interaction_port(
-			&"front",
-			Vector2(center.x, body_rect.position.y + body_rect.size.y + standing_margin),
-			CharacterSprite.Direction.UP,
-			shelf_id,
-			revision
-		),
-		_make_interaction_port(
-			&"back",
-			Vector2(center.x, body_rect.position.y - standing_margin),
-			CharacterSprite.Direction.DOWN,
-			shelf_id,
-			revision
-		),
-		_make_interaction_port(
-			&"left",
-			Vector2(body_rect.position.x - standing_margin, center.y),
-			CharacterSprite.Direction.RIGHT,
-			shelf_id,
-			revision
-		),
-		_make_interaction_port(
-			&"right",
-			Vector2(body_rect.position.x + body_rect.size.x + standing_margin, center.y),
-			CharacterSprite.Direction.LEFT,
-			shelf_id,
-			revision
-		)
-	]
+	if marker_ports.is_empty():
+		push_error("Shelf scene missing required NPCApproachPorts markers: %s" % name)
+	return marker_ports
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -220,11 +184,18 @@ func _get_marker_interaction_ports() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	var port_root := get_node_or_null(NPC_APPROACH_PORTS_PATH) as Node2D
 	if port_root == null:
+		push_error("Shelf scene missing required Node2D: %s/%s" % [name, NPC_APPROACH_PORTS_PATH])
 		return result
 
 	var shelf_id: StringName = get_shelf_id()
 	var revision: int = get_revision()
 	var body_rect := _get_body_rect()
+	var required_ports := {
+		&"front": false,
+		&"back": false,
+		&"left": false,
+		&"right": false
+	}
 	for child in port_root.get_children():
 		var marker := child as Marker2D
 		if marker == null:
@@ -236,6 +207,8 @@ func _get_marker_interaction_ports() -> Array[Dictionary]:
 		)))
 		if port_id == StringName():
 			continue
+		if required_ports.has(port_id):
+			required_ports[port_id] = true
 
 		var raw_marker_position := marker.global_position
 		var standing_position := raw_marker_position
@@ -258,6 +231,10 @@ func _get_marker_interaction_ports() -> Array[Dictionary]:
 		port["fitted_from_marker"] = false
 		port["marker_fit_distance"] = 0.0
 		result.append(port)
+
+	for port_id in required_ports.keys():
+		if not bool(required_ports[port_id]):
+			push_error("Shelf scene missing required NPCApproachPorts/%s marker: %s" % [port_id, name])
 
 	return result
 

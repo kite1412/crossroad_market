@@ -25,8 +25,6 @@ var _panel_size := Vector2.ZERO
 
 
 func _ready() -> void:
-	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_bind_scene_nodes()
 	_set_panel_visible(false, true)
@@ -90,13 +88,9 @@ func _bind_scene_nodes() -> void:
 		return
 
 	_panel_size = _get_control_size(_panel_root)
-	_panel_root.pivot_offset = _panel_size * 0.5
-	_panel_root.mouse_filter = Control.MOUSE_FILTER_STOP
-	_grid_viewport.mouse_filter = Control.MOUSE_FILTER_STOP
 	if not _grid_viewport.gui_input.is_connected(_on_grid_gui_input):
 		_grid_viewport.gui_input.connect(_on_grid_gui_input)
 
-	_hide_list_stock_toggle_art(_panel_art)
 	_position_panel()
 
 
@@ -115,14 +109,6 @@ func _get_control_size(control: Control) -> Vector2:
 	if control_size.x <= 0.0 or control_size.y <= 0.0:
 		control_size = control.custom_minimum_size
 	return control_size
-
-
-func _hide_list_stock_toggle_art(root: Node) -> void:
-	if root == null:
-		return
-	var icon := root.get_node_or_null("IconListStockItem") as CanvasItem
-	if icon != null:
-		icon.visible = false
 
 
 func _refresh() -> void:
@@ -182,11 +168,6 @@ func _make_stock_card(item_id: String, quantity: int) -> Control:
 		card.queue_free()
 		return null
 
-	card.mouse_filter = Control.MOUSE_FILTER_STOP
-	card.focus_mode = Control.FOCUS_NONE
-	card.text = ""
-	card.tooltip_text = ""
-	card.pivot_offset = _get_control_size(card) * 0.5
 	if not card.gui_input.is_connected(_on_grid_gui_input):
 		card.gui_input.connect(_on_grid_gui_input)
 
@@ -203,7 +184,6 @@ func _make_stock_card(item_id: String, quantity: int) -> Control:
 	if quantity > 0:
 		label_color = TEXT_DARK
 	label.add_theme_color_override("font_color", label_color)
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	card.mouse_entered.connect(func() -> void:
 		_tween_card(card, icon, Vector2(1.05, 1.05), HOVER_MODULATE)
