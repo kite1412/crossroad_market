@@ -1,0 +1,93 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Texture2D" uid="uid://dpnoc5cm6phxf" path="res://assets/cashier/item-card.png" id="1_item_card"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_clear"]
+bg_color = Color(0, 0, 0, 0)
+border_color = Color(0, 0, 0, 0)
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_hover"]
+bg_color = Color(0.305882, 0.188235, 0.145098, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.85098, 0.54902, 0.345098, 1)
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_pressed"]
+bg_color = Color(0.168627, 0.0901961, 0.0784314, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.941176, 0.627451, 1)
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_disabled"]
+bg_color = Color(0, 0, 0, 0)
+border_color = Color(0, 0, 0, 0)
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+
+[node name="CashierCatalogCard" type="Button"]
+custom_minimum_size = Vector2(48, 15)
+layout_mode = 2
+mouse_filter = 0
+focus_mode = 0
+theme_override_styles/normal = SubResource("StyleBoxFlat_button_clear")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_button_disabled")
+theme_override_styles/focus = SubResource("StyleBoxFlat_button_clear")
+text = ""
+tooltip_text = ""
+flat = true
+
+[node name="CardTexture" type="TextureRect" parent="."]
+layout_mode = 0
+offset_right = 48.0
+offset_bottom = 15.0
+mouse_filter = 2
+texture = ExtResource("1_item_card")
+expand_mode = 1
+stretch_mode = 3
+
+[node name="IconSprite" type="Sprite2D" parent="."]
+position = Vector2(7, 7.5)
+scale = Vector2(0.45, 0.45)
+texture_filter = 1
+
+[node name="NameLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 1.0
+offset_right = 44.0
+offset_bottom = 7.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.678431, 0.403922, 0.235294, 1)
+theme_override_font_sizes/font_size = 4
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="PriceLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 5.0
+offset_right = 44.0
+offset_bottom = 11.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.917647, 0.823529, 0.635294, 1)
+theme_override_font_sizes/font_size = 4

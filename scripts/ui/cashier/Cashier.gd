@@ -4,13 +4,6 @@ extends StaticBody2D
 
 const GOOBY_ID: String = "gooby"
 const STORY_INTERACTION_TRUST_GAIN: int = 20
-const CASHIER_BUTTON_FONT_SIZE: int = 8
-const CASHIER_BUTTON_MIN_HEIGHT: float = 20.0
-const CASHIER_PRIMARY_BUTTON_WIDTH: float = 118.0
-const CASHIER_SECONDARY_BUTTON_WIDTH: float = 96.0
-const CASHIER_CLOSE_BUTTON_WIDTH: float = 64.0
-const ITEM_SWATCH_SIZE := Vector2(10, 16)
-const STORE_OS_APP_POS: StringName = &"pos"
 
 @onready var interaction_area: Area2D = $InteractionArea
 
@@ -34,37 +27,9 @@ var _target_item_ids: Array[String] = []
 @warning_ignore("unused_private_class_variable")
 var _cart_quantities: Dictionary = {}
 @warning_ignore("unused_private_class_variable")
-var _pending_item_id: String = ""
-@warning_ignore("unused_private_class_variable")
 var _ask_again_count: int = 0
 @warning_ignore("unused_private_class_variable")
-var _cashier_layer: CanvasLayer = null
-@warning_ignore("unused_private_class_variable")
-var _cashier_panel: ColorRect = null
-@warning_ignore("unused_private_class_variable")
-var _panel_title: Label = null
-@warning_ignore("unused_private_class_variable")
-var _customer_label: Label = null
-@warning_ignore("unused_private_class_variable")
-var _request_label: Label = null
-@warning_ignore("unused_private_class_variable")
-var _selected_label: Label = null
-@warning_ignore("unused_private_class_variable")
-var _guide_label: Label = null
-@warning_ignore("unused_private_class_variable")
-var _item_title: Label = null
-@warning_ignore("unused_private_class_variable")
-var _item_list: VBoxContainer = null
-@warning_ignore("unused_private_class_variable")
-var _item_scroll: ScrollContainer = null
-@warning_ignore("unused_private_class_variable")
-var _action_row: Container = null
-@warning_ignore("unused_private_class_variable")
 var _cashier_lock_active: bool = false
-@warning_ignore("unused_private_class_variable")
-var _seen_panel_guidance: Dictionary = {}
-@warning_ignore("unused_private_class_variable")
-var _active_store_os_app: StringName = STORE_OS_APP_POS
 @warning_ignore("unused_private_class_variable")
 var _patience_bar: ProgressBar = null
 @warning_ignore("unused_private_class_variable")
@@ -80,8 +45,6 @@ var _customer_detector: CashierCustomerDetector = CashierCustomerDetector.new()
 var _checkout_flow: CashierCheckoutFlow = CashierCheckoutFlow.new()
 @warning_ignore("unused_private_class_variable")
 var _store_os_renderer: CashierStoreOSRenderer = CashierStoreOSRenderer.new()
-@warning_ignore("unused_private_class_variable")
-var _cart_controller: CashierCartController = CashierCartController.new()
 @warning_ignore("unused_private_class_variable")
 var _story_flow: CashierStoryFlow = CashierStoryFlow.new()
 @warning_ignore("unused_private_class_variable")
@@ -162,7 +125,6 @@ func _setup_cashier_controllers() -> void:
 		_customer_detector,
 		_checkout_flow,
 		_store_os_renderer,
-		_cart_controller,
 		_story_flow,
 		_hud_bridge
 	]:
@@ -213,7 +175,7 @@ func try_checkout() -> void:
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _unhandled_input(event: InputEvent) -> void:
-	if _cashier_panel == null or not _cashier_panel.visible:
+	if not _store_os_renderer.is_cashier_visible():
 		return
 	if (
 		_hud_bridge.is_dialog_visible()
@@ -235,21 +197,6 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	if event.keycode == KEY_ESCAPE:
 		_hide_cashier_panel()
-		get_viewport().set_input_as_handled()
-		return
-
-	if event.is_action_pressed("interact") or event.is_action_pressed("ui_accept") or event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER:
-		if _active_store_os_app != STORE_OS_APP_POS:
-			get_viewport().set_input_as_handled()
-			return
-
-		if _scanned_total > 0:
-			if _is_story_gift_checkout():
-				_show_notification("Choose whether to give the item or refuse Gooby.", 1.0)
-			else:
-				_process_paid()
-		else:
-			_on_confirm_scan_pressed()
 		get_viewport().set_input_as_handled()
 
 
@@ -332,16 +279,6 @@ func _show_scan_panel() -> void:
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _add_cart_rows_to_panel() -> void:
-	_store_os_renderer.add_cart_rows_to_panel()
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _create_cart_row(item_id: String) -> Control:
-	return _store_os_renderer.create_cart_row(item_id)
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _show_paid_panel() -> void:
 	_store_os_renderer.show_paid_panel()
 
@@ -349,36 +286,6 @@ func _show_paid_panel() -> void:
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _show_gooby_choice_panel() -> void:
 	_store_os_renderer.show_gooby_choice_panel()
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _on_scan_item_pressed(item_id: String) -> void:
-	_cart_controller.on_scan_item_pressed(item_id)
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _on_add_item_pressed() -> void:
-	_cart_controller.on_add_item_pressed()
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _on_increment_cart_item_pressed(item_id: String) -> void:
-	_cart_controller.on_increment_cart_item_pressed(item_id)
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _on_decrement_cart_item_pressed(item_id: String) -> void:
-	_cart_controller.on_decrement_cart_item_pressed(item_id)
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _on_delete_cart_item_pressed(item_id: String) -> void:
-	_cart_controller.on_delete_cart_item_pressed(item_id)
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _on_confirm_scan_pressed() -> void:
-	_cart_controller.on_confirm_scan_pressed()
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -407,118 +314,13 @@ func _show_customer_request_bubble() -> void:
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _set_store_os_app(app_id: StringName) -> void:
-	_store_os_renderer.set_store_os_app(app_id)
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _set_item_title(text: String) -> void:
-	_store_os_renderer.set_item_title(text)
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _refresh_cashier_item_scroll() -> void:
-	_store_os_renderer.refresh_cashier_item_scroll()
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _render_empty_pos_app() -> void:
 	_store_os_renderer.render_empty_pos_app()
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _create_scan_item_row(item: ItemData) -> Control:
-	return _store_os_renderer.create_scan_item_row(item)
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _create_catalog_item_row(item: ItemData) -> Control:
-	return _store_os_renderer.create_catalog_item_row(item)
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _add_app_navigation_buttons() -> void:
-	_store_os_renderer.add_app_navigation_buttons()
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _close_store_os() -> void:
 	_store_os_renderer.close_store_os()
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _selection_matches_customer() -> bool:
-	return _cart_controller.selection_matches_customer()
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _calculate_selected_total() -> int:
-	return _cart_controller.calculate_selected_total()
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _get_selected_item_label() -> String:
-	return _cart_controller.get_selected_item_label()
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _get_pending_item_label() -> String:
-	return _cart_controller.get_pending_item_label()
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _get_item_display_label(item_id: String) -> String:
-	return _cart_controller.get_item_display_label(item_id)
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _get_store_items() -> Array[ItemData]:
-	return _cart_controller.get_store_items()
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _get_item_shelf_color(item: ItemData) -> Color:
-	return _cart_controller.get_item_shelf_color(item)
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _get_item_name(item_id: String) -> String:
-	return _cart_controller.get_item_name(item_id)
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _get_item_unit_price(item_id: String) -> int:
-	return _cart_controller.get_item_unit_price(item_id)
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _get_cart_item_ids_ordered() -> Array[String]:
-	return _cart_controller.get_cart_item_ids_ordered()
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _get_cart_item_ids_expanded() -> Array[String]:
-	return _cart_controller.get_cart_item_ids_expanded()
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _get_cart_row_label(item_id: String) -> String:
-	return _cart_controller.get_cart_row_label(item_id)
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _get_cart_summary_label() -> String:
-	return _cart_controller.get_cart_summary_label()
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _increment_cart_item(item_id: String) -> void:
-	_cart_controller.increment_cart_item(item_id)
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _update_selected_label() -> void:
-	_cart_controller.update_selected_label()
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -552,28 +354,8 @@ func _ensure_cashier_panel() -> void:
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _set_panel_guidance_once(key: String, text: String) -> void:
-	_store_os_renderer.set_panel_guidance_once(key, text)
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _configure_button_guidance(button: Button, tooltip: String) -> void:
-	_store_os_renderer.configure_button_guidance(button, tooltip)
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _add_cashier_action_button(text: String, width: float, tooltip: String, pressed: Callable) -> Button:
-	return _store_os_renderer.add_cashier_action_button(text, width, tooltip, pressed)
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _hide_cashier_panel() -> void:
 	_store_os_renderer.hide_cashier_panel()
-
-
-@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _clear_container(container: Container) -> void:
-	_store_os_renderer.clear_container(container)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

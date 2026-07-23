@@ -42,7 +42,6 @@ func process_scan(npc: NPC) -> void:
 	else:
 		cashier._target_item_ids.append(item_id)
 	cashier._cart_quantities.clear()
-	cashier._pending_item_id = ""
 	cashier._ask_again_count = 0
 
 	cashier._show_scan_panel()
@@ -184,7 +183,6 @@ func clear_scan() -> void:
 	cashier._scanned_total = 0
 	cashier._target_item_ids.clear()
 	cashier._cart_quantities.clear()
-	cashier._pending_item_id = ""
 	cashier._ask_again_count = 0
 	cashier._hide_cashier_panel()
 

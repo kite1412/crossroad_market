@@ -2,8 +2,8 @@ class_name CashierStoreOSRenderer
 extends RefCounted
 
 ## Adapter between the existing cashier gameplay controllers and the authored
-## StoreCashier scene. The old generated CashierPanel payment UI is no longer
-## created by this renderer.
+## StoreCashier scene. Cashier runtime UI is authored in scene files; this
+## renderer only opens/closes it and bridges checkout gameplay signals.
 
 const STORE_CASHIER_SCENE: PackedScene = preload(
 	"res://scenes/locations/store/cashier/StoreCashier.tscn"
@@ -45,7 +45,6 @@ func show_scan_panel() -> void:
 	if cashier_ui == null or not cashier._has_scanned_customer():
 		return
 
-	cashier._set_store_os_app(cashier.STORE_OS_APP_POS)
 	if cashier_ui.has_active_checkout():
 		cashier_ui.show_scan_tab()
 	else:
@@ -113,10 +112,6 @@ func hide_cashier_panel() -> void:
 
 func close_store_os() -> void:
 	hide_cashier_panel()
-
-
-func set_store_os_app(app_id: StringName) -> void:
-	cashier._active_store_os_app = app_id
 
 
 func _on_payment_requested(
@@ -205,62 +200,3 @@ func _apply_ui_selection(total: int, item_label: String, quantities: Dictionary)
 	cashier._scanned_total = total
 	cashier._scanned_item_label = item_label
 	cashier._cart_quantities = quantities.duplicate(true)
-
-
-# Compatibility shims for the old Cashier.gd façade. These can be removed when
-# the legacy generated-panel methods are pruned from Cashier.gd.
-func add_cart_rows_to_panel() -> void:
-	pass
-
-
-func create_cart_row(_item_id: String) -> Control:
-	return Control.new()
-
-
-func set_item_title(_text: String) -> void:
-	pass
-
-
-func refresh_cashier_item_scroll() -> void:
-	pass
-
-
-func create_scan_item_row(_item: ItemData) -> Control:
-	return Control.new()
-
-
-func create_catalog_item_row(_item: ItemData) -> Control:
-	return Control.new()
-
-
-func add_app_navigation_buttons() -> void:
-	pass
-
-
-func set_panel_guidance_once(_key: String, _text: String) -> void:
-	pass
-
-
-func configure_button_guidance(button: Button, tooltip: String) -> void:
-	if button != null:
-		button.tooltip_text = tooltip
-
-
-func add_cashier_action_button(
-	text: String,
-	width: float,
-	tooltip: String,
-	pressed: Callable
-) -> Button:
-	var button := Button.new()
-	button.text = text
-	button.custom_minimum_size.x = width
-	button.tooltip_text = tooltip
-	if pressed.is_valid():
-		button.pressed.connect(pressed)
-	return button
-
-
-func clear_container(container: Container) -> void:
-	if container != null:
-		CashierPanel.clear_container(container)

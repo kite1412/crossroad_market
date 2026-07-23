@@ -15,6 +15,38 @@ bg_color = Color(0.137255, 0.0784314, 0.0588235, 0.9)
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_patience_fill"]
 bg_color = Color(1, 1, 1, 1)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_clear"]
+content_margin_left = 1.0
+content_margin_right = 1.0
+bg_color = Color(0, 0, 0, 0)
+border_color = Color(0, 0, 0, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_pressed"]
+content_margin_left = 1.0
+content_margin_right = 1.0
+bg_color = Color(0.168627, 0.0901961, 0.0784314, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.941176, 0.627451, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_hover"]
+content_margin_left = 1.0
+content_margin_right = 1.0
+bg_color = Color(0.305882, 0.188235, 0.145098, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.85098, 0.54902, 0.345098, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_disabled"]
+content_margin_left = 1.0
+content_margin_right = 1.0
+bg_color = Color(0, 0, 0, 0)
+border_color = Color(0, 0, 0, 0)
+
 [node name="StoreScanTab" type="Node2D" unique_id=900483876]
 
 [node name="PatienceBar" type="ProgressBar" parent="." unique_id=144689174]
@@ -35,6 +67,7 @@ position = Vector2(240, 135)
 texture = ExtResource("1_04lsu")
 
 [node name="List" type="Sprite2D" parent="." unique_id=816763099]
+visible = false
 position = Vector2(240, 135)
 texture = ExtResource("2_y4s2q")
 
@@ -83,7 +116,106 @@ position = Vector2(234, 255.625)
 scale = Vector2(0.9999999, 1.0166676)
 texture = ExtResource("7_ytwti")
 
+[node name="CashLabel" type="Label" parent="CustomerMoney" unique_id=1484725474]
+offset_left = -24.0
+offset_top = -8.065582
+offset_right = 24.0
+offset_bottom = 5.9344177
+theme_override_colors/font_color = Color(0.678431, 0.403922, 0.235294, 1)
+theme_override_font_sizes/font_size = 8
+text = "0G"
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="Cards" type="Node2D" parent="." unique_id=1587971030]
+
+[node name="CardViewport" type="Control" parent="Cards" unique_id=1146444421]
+clip_contents = true
+layout_mode = 3
+anchors_preset = 0
+offset_left = 2.0
+offset_top = 211.0
+offset_right = 99.0
+offset_bottom = 266.0
+
+[node name="ItemGrid" type="GridContainer" parent="Cards/CardViewport" unique_id=342937072]
+layout_mode = 0
+offset_right = 97.0
+theme_override_constants/h_separation = 1
+theme_override_constants/v_separation = 1
+columns = 2
+
+[node name="CatalogScrollTrack" type="Control" parent="." unique_id=973170297]
+z_index = 5
+layout_mode = 3
+anchors_preset = 0
+offset_left = 100.5
+offset_top = 211.5
+offset_right = 105.5
+offset_bottom = 266.5
+
+[node name="Thumb" type="ColorRect" parent="CatalogScrollTrack" unique_id=232918788]
+layout_mode = 0
+offset_left = 1.0
+offset_top = -0.5
+offset_right = 3.5
+offset_bottom = 53.5
+mouse_filter = 2
+color = Color(0.678431, 0.403922, 0.235294, 1)
+
+[node name="SelectedItems" type="ScrollContainer" parent="." unique_id=827527370]
+offset_left = 113.0
+offset_top = 214.0
+offset_right = 185.0
+offset_bottom = 248.0
+mouse_filter = 0
+horizontal_scroll_mode = 0
+
+[node name="Rows" type="VBoxContainer" parent="SelectedItems" unique_id=65120514]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 0
+
+[node name="EmptyLabel" type="Label" parent="SelectedItems" unique_id=888378674]
+custom_minimum_size = Vector2(72, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.235294, 0.145098, 0.105882, 1)
+theme_override_font_sizes/font_size = 7
+text = "Select items"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Total" type="Label" parent="." unique_id=569465281]
+offset_left = 109.0
+offset_top = 192.0
+offset_right = 189.0
+offset_bottom = 208.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 8
+text = "TOTAL 0G"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ContinueButton" type="Button" parent="." unique_id=1151489531]
+offset_left = 169.0
+offset_top = 250.0
+offset_right = 185.0
+offset_bottom = 261.0
+tooltip_text = "Check the scanned items and enter the customer's change."
+focus_mode = 0
+theme_override_colors/font_color = Color(0.960784, 0.87451, 0.776471, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.941176, 0.627451, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 8
+theme_override_styles/normal = SubResource("StyleBoxFlat_button_clear")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_button_disabled")
+theme_override_styles/focus = SubResource("StyleBoxFlat_button_clear")
+
+[node name="ArrowIcon" type="Polygon2D" parent="ContinueButton" unique_id=1484919405]
+polygon = PackedVector2Array(2, 3, 9, 3, 9, 1, 14, 5.5, 9, 10, 9, 8, 2, 8)
 
 [node name="Dialog" type="Label" parent="." unique_id=1518682977]
 offset_left = 211.0
