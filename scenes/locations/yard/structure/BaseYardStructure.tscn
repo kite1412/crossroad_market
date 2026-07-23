@@ -1,0 +1,227 @@
+[gd_scene format=3 uid="uid://b2k2fky8ku7vk"]
+
+[ext_resource type="Texture2D" uid="uid://bdc4aj2ay83ps" path="res://assets/yard/path.png" id="1_ghhkb"]
+[ext_resource type="Texture2D" uid="uid://b37kkeccotj33" path="res://assets/yard/grass.png" id="2_1m6w5"]
+[ext_resource type="Texture2D" uid="uid://b2upyhtlkpcdu" path="res://assets/yard/top-tree.png" id="4_7smw2"]
+[ext_resource type="Texture2D" uid="uid://c75w2fbjx2eeu" path="res://assets/yard/empty-house.png" id="5_72r58"]
+[ext_resource type="Script" uid="uid://okgf6ipqbblp" path="res://scripts/locations/yard/YardTreeClusterDepth.gd" id="6_tree_depth"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_due37"]
+size = Vector2(285.5, 75)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_grlf6"]
+size = Vector2(305, 49.5)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_7smw2"]
+size = Vector2(44, 36)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_72r58"]
+size = Vector2(42.25, 54)
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_ry2rs"]
+a = Vector2(2, 0)
+b = Vector2(99, 36)
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_7smw2"]
+a = Vector2(-7, 19)
+b = Vector2(77, -63)
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_72r58"]
+a = Vector2(-7, 19)
+b = Vector2(112, -84)
+
+[node name="BaseYardStructure" type="Node2D" unique_id=1360511442]
+y_sort_enabled = true
+
+[node name="Path" type="Sprite2D" parent="." unique_id=487305046]
+z_index = -100
+position = Vector2(480, 270)
+texture = ExtResource("1_ghhkb")
+
+[node name="Grass" type="Sprite2D" parent="." unique_id=1368727717]
+z_index = -99
+position = Vector2(479.99997, 270)
+texture = ExtResource("2_1m6w5")
+
+[node name="TopTreesDepthAnchor" type="Node2D" parent="." unique_id=1784322319]
+position = Vector2(0, 126)
+
+[node name="TopTrees" type="Sprite2D" parent="TopTreesDepthAnchor" unique_id=1259640681]
+position = Vector2(0, -126)
+texture = ExtResource("4_7smw2")
+centered = false
+region_enabled = true
+region_rect = Rect2(0, 0, 646, 126)
+
+[node name="TopRightTrees" type="Node2D" parent="." unique_id=1743531094]
+y_sort_enabled = true
+script = ExtResource("6_tree_depth")
+
+[node name="ClusterDepthAnchor" type="Node2D" parent="TopRightTrees" unique_id=1346816912]
+position = Vector2(0, 87)
+metadata/depth_points = PackedVector2Array(700, 69, 773.875, 27)
+metadata/depth_y_values = PackedFloat32Array(87, 54)
+metadata/depth_active_rect = Rect2(600, -20, 280, 180)
+metadata/depth_default_index = 0
+metadata/visual_top_y = 0.0
+
+[node name="Visual" type="Sprite2D" parent="TopRightTrees/ClusterDepthAnchor" unique_id=492681820]
+position = Vector2(646, -87)
+texture = ExtResource("4_7smw2")
+centered = false
+region_enabled = true
+region_rect = Rect2(646, 0, 180, 87)
+
+[node name="EmptyHouseDepth01" type="Node2D" parent="." unique_id=916092959]
+position = Vector2(0, 101)
+
+[node name="Visual" type="Sprite2D" parent="EmptyHouseDepth01" unique_id=397226996]
+position = Vector2(768, -101)
+texture = ExtResource("5_72r58")
+centered = false
+region_enabled = true
+region_rect = Rect2(768, 0, 16, 140)
+
+[node name="EmptyHouseDepth02" type="Node2D" parent="." unique_id=1275388498]
+position = Vector2(0, 107)
+
+[node name="Visual" type="Sprite2D" parent="EmptyHouseDepth02" unique_id=1850593460]
+position = Vector2(784, -107)
+texture = ExtResource("5_72r58")
+centered = false
+region_enabled = true
+region_rect = Rect2(784, 0, 16, 140)
+
+[node name="EmptyHouseDepth03" type="Node2D" parent="." unique_id=1224345287]
+position = Vector2(0, 113)
+
+[node name="Visual" type="Sprite2D" parent="EmptyHouseDepth03" unique_id=842603580]
+position = Vector2(800, -113)
+texture = ExtResource("5_72r58")
+centered = false
+region_enabled = true
+region_rect = Rect2(800, 0, 16, 140)
+
+[node name="EmptyHouseDepth04" type="Node2D" parent="." unique_id=2011790549]
+position = Vector2(0, 119)
+
+[node name="Visual" type="Sprite2D" parent="EmptyHouseDepth04" unique_id=107122921]
+position = Vector2(816, -119)
+texture = ExtResource("5_72r58")
+centered = false
+region_enabled = true
+region_rect = Rect2(816, 0, 16, 140)
+
+[node name="EmptyHouseDepth05" type="Node2D" parent="." unique_id=2051292946]
+position = Vector2(0, 124)
+
+[node name="Visual" type="Sprite2D" parent="EmptyHouseDepth05" unique_id=759874192]
+position = Vector2(832, -124)
+texture = ExtResource("5_72r58")
+centered = false
+region_enabled = true
+region_rect = Rect2(832, 0, 16, 140)
+
+[node name="EmptyHouseDepth06" type="Node2D" parent="." unique_id=1161332940]
+position = Vector2(0, 130)
+
+[node name="Visual" type="Sprite2D" parent="EmptyHouseDepth06" unique_id=897074826]
+position = Vector2(848, -130)
+texture = ExtResource("5_72r58")
+centered = false
+region_enabled = true
+region_rect = Rect2(848, 0, 16, 140)
+
+[node name="EmptyHouseDepth07" type="Node2D" parent="." unique_id=2121796027]
+position = Vector2(0, 136)
+
+[node name="Visual" type="Sprite2D" parent="EmptyHouseDepth07" unique_id=1715907438]
+position = Vector2(864, -136)
+texture = ExtResource("5_72r58")
+centered = false
+region_enabled = true
+region_rect = Rect2(864, 0, 16, 140)
+
+[node name="EmptyHouseDepth08" type="Node2D" parent="." unique_id=2023150719]
+position = Vector2(0, 127)
+
+[node name="Visual" type="Sprite2D" parent="EmptyHouseDepth08" unique_id=18125674]
+position = Vector2(880, -127)
+texture = ExtResource("5_72r58")
+centered = false
+region_enabled = true
+region_rect = Rect2(880, 0, 16, 140)
+
+[node name="EmptyHouseDepth09" type="Node2D" parent="." unique_id=1328324027]
+position = Vector2(0, 111)
+
+[node name="Visual" type="Sprite2D" parent="EmptyHouseDepth09" unique_id=24196429]
+position = Vector2(896, -111)
+texture = ExtResource("5_72r58")
+centered = false
+region_enabled = true
+region_rect = Rect2(896, 0, 16, 140)
+
+[node name="EmptyHouseDepth10" type="Node2D" parent="." unique_id=821175887]
+position = Vector2(0, 96)
+
+[node name="Visual" type="Sprite2D" parent="EmptyHouseDepth10" unique_id=496358424]
+position = Vector2(912, -96)
+texture = ExtResource("5_72r58")
+centered = false
+region_enabled = true
+region_rect = Rect2(912, 0, 16, 140)
+
+[node name="EmptyHouseDepth11" type="Node2D" parent="." unique_id=2009292872]
+position = Vector2(0, 86)
+
+[node name="Visual" type="Sprite2D" parent="EmptyHouseDepth11" unique_id=1415482695]
+position = Vector2(928, -86)
+texture = ExtResource("5_72r58")
+centered = false
+region_enabled = true
+region_rect = Rect2(928, 0, 4, 140)
+
+[node name="Collidables" type="Node2D" parent="." unique_id=1033003499]
+
+[node name="TopTrees1" type="StaticBody2D" parent="Collidables" unique_id=316617611]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Collidables/TopTrees1" unique_id=629326981]
+position = Vector2(288.25, 87.5)
+shape = SubResource("RectangleShape2D_due37")
+
+[node name="TopTrees2" type="StaticBody2D" parent="Collidables" unique_id=52396166]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Collidables/TopTrees2" unique_id=1990228315]
+position = Vector2(261.5, 25.25)
+shape = SubResource("RectangleShape2D_grlf6")
+
+[node name="TopTrees3" type="StaticBody2D" parent="Collidables" unique_id=1035905486]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Collidables/TopTrees3" unique_id=1322833497]
+position = Vector2(700, 69)
+shape = SubResource("RectangleShape2D_7smw2")
+
+[node name="TopTrees4" type="StaticBody2D" parent="Collidables" unique_id=732793839]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Collidables/TopTrees4" unique_id=137434266]
+position = Vector2(773.875, 27)
+shape = SubResource("RectangleShape2D_72r58")
+
+[node name="EmptyHouseFront" type="StaticBody2D" parent="Collidables" unique_id=1191063515]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Collidables/EmptyHouseFront" unique_id=167571436]
+position = Vector2(776, 102)
+shape = SubResource("SegmentShape2D_ry2rs")
+
+[node name="EmptyHouseRight" type="StaticBody2D" parent="Collidables" unique_id=157580416]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Collidables/EmptyHouseRight" unique_id=1009143933]
+position = Vector2(881, 119)
+shape = SubResource("SegmentShape2D_7smw2")
+
+[node name="EmptyHouseLeft" type="StaticBody2D" parent="Collidables" unique_id=775570188]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Collidables/EmptyHouseLeft" unique_id=187056159]
+position = Vector2(785, 83)
+shape = SubResource("SegmentShape2D_72r58")

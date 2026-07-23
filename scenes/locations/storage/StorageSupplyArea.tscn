@@ -20,7 +20,7 @@ position = Vector2(374, 218)
 script = ExtResource("2_mystery_box")
 trigger_area_path = NodePath("Area2D")
 auto_place_on_ghost_shelf = false
-items_to_give = Array[String](["phantom_ice_cream", "fresh_tombstone", "mandrake_root", "dewdrop_honey", "potion_bottle_empty"])
+items_to_give = Array[String](["phantom_ice_cream"])
 
 [node name="PlaceholderRect" parent="Mystery/VisualRoot" index="1"]
 color = Color(0.22, 0.18, 0.34, 1)

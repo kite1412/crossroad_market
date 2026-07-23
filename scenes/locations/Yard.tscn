@@ -1,39 +1,73 @@
-[gd_scene load_steps=12 format=3 uid="uid://b3lvay4upsxqy"]
+[gd_scene format=3 uid="uid://b3lvay4upsxqy"]
 
-[ext_resource type="Script" uid="uid://cla6db5iibcno" path="res://scripts/locations/Yard.gd" id="1_yard"]
-[ext_resource type="Script" path="res://scripts/locations/yard/YardSceneFlow.gd" id="2_scene_flow"]
-[ext_resource type="Script" path="res://scripts/locations/yard/YardRestockFlow.gd" id="3_restock_flow"]
-[ext_resource type="PackedScene" path="res://scenes/locations/yard/YardGround.tscn" id="4_ground"]
-[ext_resource type="PackedScene" path="res://scenes/locations/yard/YardPlayerHomeArea.tscn" id="5_player_home"]
+[ext_resource type="Script" uid="uid://dbej24xib71dn" path="res://scripts/locations/Yard.gd" id="1_yard"]
+[ext_resource type="Script" uid="uid://cy1gbklrdsunj" path="res://scripts/locations/yard/YardSceneFlow.gd" id="2_scene_flow"]
+[ext_resource type="Script" uid="uid://dgi7i2wwia6du" path="res://scripts/locations/yard/YardRestockFlow.gd" id="3_restock_flow"]
 [ext_resource type="PackedScene" path="res://scenes/locations/yard/YardRestockDropZone.tscn" id="6_restock_drop"]
-[ext_resource type="PackedScene" path="res://scenes/locations/yard/YardStoreFront.tscn" id="7_store_front"]
 [ext_resource type="PackedScene" path="res://scenes/locations/yard/YardPlayerSpawn.tscn" id="8_player_spawn"]
-[ext_resource type="PackedScene" path="res://scenes/locations/yard/YardBounds.tscn" id="9_bounds"]
 [ext_resource type="PackedScene" path="res://scenes/locations/yard/YardPresentation.tscn" id="10_presentation"]
-[ext_resource type="PackedScene" path="res://scenes/locations/yard/YardReturnDoor.tscn" id="11_return_door"]
+[ext_resource type="PackedScene" uid="uid://b2k2fky8ku7vk" path="res://scenes/locations/yard/structure/BaseYardStructure.tscn" id="11_7pkyr"]
+[ext_resource type="PackedScene" uid="uid://ckevplstr858k" path="res://scenes/locations/yard/YardReturnDoor.tscn" id="11_return_door"]
+[ext_resource type="PackedScene" uid="uid://by55pnjt6j7nx" path="res://scenes/locations/yard/structure/YardObjects.tscn" id="12_yard_objects"]
+
+[sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_ry2rs"]
+normal = Vector2(1, 0)
+distance = -1.0
+
+[sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_te610"]
+
+[sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_due37"]
+normal = Vector2(-1, 0)
+
+[sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_top"]
+normal = Vector2(0, 1)
 
 [node name="Yard" type="Node2D" unique_id=1319554124]
 y_sort_enabled = true
 script = ExtResource("1_yard")
 
-[node name="SceneFlow" type="Node" parent="."]
+[node name="SceneFlow" type="Node" parent="." unique_id=14516084]
 script = ExtResource("2_scene_flow")
 
-[node name="RestockFlow" type="Node" parent="."]
+[node name="RestockFlow" type="Node" parent="." unique_id=1760143418]
 script = ExtResource("3_restock_flow")
 
-[node name="YardGround" parent="." instance=ExtResource("4_ground")]
+[node name="YardPresentation" parent="." unique_id=1863124498 instance=ExtResource("10_presentation")]
 
-[node name="PlayerHomeArea" parent="." instance=ExtResource("5_player_home")]
+[node name="YardStructure" parent="." unique_id=1360511442 instance=ExtResource("11_7pkyr")]
 
-[node name="RestockDropZone" parent="." instance=ExtResource("6_restock_drop")]
+[node name="YardObjects" parent="." unique_id=733206462 instance=ExtResource("12_yard_objects")]
 
-[node name="ShopFront" parent="." instance=ExtResource("7_store_front")]
+[node name="RestockDropZone" parent="." unique_id=1411080129 instance=ExtResource("6_restock_drop")]
 
-[node name="ReturnDoor" parent="." instance=ExtResource("11_return_door")]
+[node name="ReturnDoor" parent="." unique_id=2017965161 instance=ExtResource("11_return_door")]
+position = Vector2(449, 313)
 
-[node name="PlayerSpawn" parent="." instance=ExtResource("8_player_spawn")]
+[node name="PlayerSpawn" parent="." unique_id=85179524 instance=ExtResource("8_player_spawn")]
+position = Vector2(480, 354)
 
-[node name="YardBounds" parent="." instance=ExtResource("9_bounds")]
+[node name="Bounds" type="Node2D" parent="." unique_id=715615399]
 
-[node name="YardPresentation" parent="." instance=ExtResource("10_presentation")]
+[node name="LeftBoundary" type="StaticBody2D" parent="Bounds" unique_id=2139461928]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Bounds/LeftBoundary" unique_id=1770206333]
+position = Vector2(1, 0)
+shape = SubResource("WorldBoundaryShape2D_ry2rs")
+
+[node name="BottomBoundary" type="StaticBody2D" parent="Bounds" unique_id=1378007408]
+position = Vector2(0, 540)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Bounds/BottomBoundary" unique_id=270141921]
+shape = SubResource("WorldBoundaryShape2D_te610")
+
+[node name="RightBoundary" type="StaticBody2D" parent="Bounds" unique_id=1294783047]
+position = Vector2(960, 540)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Bounds/RightBoundary" unique_id=1889356402]
+shape = SubResource("WorldBoundaryShape2D_due37")
+
+[node name="TopBoundary" type="StaticBody2D" parent="Bounds" unique_id=354975145]
+position = Vector2(960, 0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Bounds/TopBoundary" unique_id=1447595910]
+shape = SubResource("WorldBoundaryShape2D_top")

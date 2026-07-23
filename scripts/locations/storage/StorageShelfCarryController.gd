@@ -137,6 +137,13 @@ func request_pickup_shelf(shelf: Shelf) -> bool:
 	if not shelf.visible:
 		return false
 
+	if (
+		shelf.shelf_type == ItemData.ShelfType.GHOST
+		and storage.has_method("is_ghost_shelf_story_unlocked")
+		and not bool(storage.call("is_ghost_shelf_story_unlocked"))
+	):
+		return false
+
 	if shelf.has_meta("is_carryable_storage_object") and not bool(shelf.get_meta("is_carryable_storage_object")):
 		return false
 

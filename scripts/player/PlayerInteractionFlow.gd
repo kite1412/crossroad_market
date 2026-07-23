@@ -3,6 +3,7 @@ extends RefCounted
 
 const STORY_INTERACTION_TRUST_GAIN: int = 20
 const GOOBY_ID: String = "gooby"
+const IRENE_ID: String = "irene"
 
 var player = null
 
@@ -159,6 +160,8 @@ func apply_story_npc_interaction_trust(npc: NPC) -> String:
 		return ""
 
 	if npc.npc_data.npc_id == GOOBY_ID:
+		return ""
+	if TimeManager.current_day == 1 and npc.npc_data.npc_id == IRENE_ID:
 		return ""
 
 	RelationshipManager.add_trust(npc.npc_data.npc_id, STORY_INTERACTION_TRUST_GAIN)

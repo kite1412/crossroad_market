@@ -20,9 +20,8 @@ func show_discovery_dialog() -> void:
 		return
 
 	await hud.call("show_dialog_sequence", _build_player_dialogues([
-		"What is this...?",
-		"This box wasn’t in Grandma’s inventory list.",
-		"Why is it glowing... and why does it feel ice cold?"
+		"Huh, what's this box?",
+		"It's giving off a strange vibe."
 	]))
 
 

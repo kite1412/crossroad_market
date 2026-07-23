@@ -1,6 +1,8 @@
 class_name PlayerSupplyFlow
 extends RefCounted
 
+const PHANTOM_ICE_CREAM_ID: String = "phantom_ice_cream"
+
 var player = null
 
 
@@ -18,7 +20,7 @@ func interact_with_supply_box(box: SupplyBox) -> void:
 		player._show_notification("This box is already empty.")
 		return
 
-	if not is_supply_box_shelf_ready(available):
+	if not (box is MysterySupplyBox) and not is_supply_box_shelf_ready(available):
 		player._show_notification("maybe I should move the shelf out first")
 		return
 
@@ -31,7 +33,8 @@ func interact_with_supply_box(box: SupplyBox) -> void:
 		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var item: ItemData = ItemDatabase.get_item(item_id)
 
-		show_pickup_notification(item_id, item)
+		if not (box is MysterySupplyBox and item_id == PHANTOM_ICE_CREAM_ID):
+			show_pickup_notification(item_id, item)
 
 		if not (box is MysterySupplyBox):
 			notify_mystery_taken()

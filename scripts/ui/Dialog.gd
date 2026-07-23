@@ -1,6 +1,8 @@
 class_name Dialog
 extends Control
 
+const PORTRAIT_PANEL_OVERLAP: float = 2.0
+
 ## Reusable story dialog overlay.
 ##
 ## Assign `character_name`, `content`, and `portrait` in the inspector, or use
@@ -121,7 +123,7 @@ func _layout_portrait() -> void:
 	portrait_view.anchor_bottom = 0.0
 	portrait_view.position = Vector2(
 		dialog_panel.position.x + dialog_panel.size.x - portrait_view.size.x,
-		dialog_panel.position.y - portrait_view.size.y
+		dialog_panel.position.y - portrait_view.size.y + PORTRAIT_PANEL_OVERLAP
 	)
 
 

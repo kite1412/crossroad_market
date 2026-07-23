@@ -103,6 +103,20 @@ func _spawn_admitted_npc(npc_data: NPCData) -> void:
 	):
 		return
 
+	_spawn_customer_instance(npc_data)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func spawn_story_customer(npc_data: NPCData) -> NPC:
+	if store == null or npc_data == null:
+		return null
+	if not is_store_world_available_for_customer_spawn():
+		return null
+	return _spawn_customer_instance(npc_data)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _spawn_customer_instance(npc_data: NPCData) -> NPC:
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var npc := StoreNpcSpawner.spawn_npc(
 		store,
@@ -114,6 +128,13 @@ func _spawn_admitted_npc(npc_data: NPCData) -> void:
 	)
 	if npc != null:
 		install_shelf_arrival_controllers(npc)
+		# Re-enter through the freshly installed store-specific controllers.
+		# This keeps forced story follow-ups on the exact same shopping flow as
+		# scheduled customers and guarantees physics was not inherited disabled.
+		npc.velocity = Vector2.ZERO
+		npc.set_process(true)
+		npc.set_physics_process(true)
+		npc._set_state(NPC.State.ENTER)
 
 		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var route_ready_callable := Callable(
@@ -123,6 +144,8 @@ func _spawn_admitted_npc(npc_data: NPCData) -> void:
 
 		if not npc.shelf_route_ready.is_connected(route_ready_callable):
 			npc.shelf_route_ready.connect(route_ready_callable)
+
+	return npc
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

@@ -68,6 +68,11 @@ func start_day_phase() -> void:
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func transition_to_night() -> void:
+	_phase_flow.set_phase(Phase.NIGHT)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func start_clock() -> void:
 	_runtime.start_clock()
 

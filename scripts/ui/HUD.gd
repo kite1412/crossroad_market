@@ -30,6 +30,9 @@ const CURSOR_TOOLTIP_PADDING := Vector2(12, 8)
 const CURSOR_HOVER_QUERY_LIMIT: int = 32
 const OBJECTIVE_TOAST_DURATION: float = 5.0
 const OBJECTIVE_ANIM_DURATION: float = 0.22
+const STORY_NOTIFICATION_ENTER_DURATION: float = 0.18
+const STORY_NOTIFICATION_EXIT_DURATION: float = 0.12
+const STORY_NOTIFICATION_ENTER_OFFSET: float = 8.0
 
 const SETTINGS_LAYER: int = 100
 
@@ -52,6 +55,14 @@ var _action_lock_timer: float = 0.0
 var _action_lock_sessions: int = 0
 @warning_ignore("unused_private_class_variable")
 var _notification_finished_emitted: bool = true
+@warning_ignore("unused_private_class_variable")
+var _story_notification_pending: bool = false
+@warning_ignore("unused_private_class_variable")
+var _story_notification_dismissing: bool = false
+@warning_ignore("unused_private_class_variable")
+var _story_notification_tween: Tween = null
+@warning_ignore("unused_private_class_variable")
+var _story_notification_base_position: Vector2 = Vector2.ZERO
 @warning_ignore("unused_private_class_variable")
 var _hint_dialog: ColorRect = null
 @warning_ignore("unused_private_class_variable")
@@ -112,6 +123,8 @@ var _hint_dialog_flow: HUDHintDialog = HUDHintDialog.new()
 var _cursor_tooltip_flow: HUDCursorTooltip = HUDCursorTooltip.new()
 @warning_ignore("unused_private_class_variable")
 var _objective_toast_flow: HUDObjectiveToast = HUDObjectiveToast.new()
+@warning_ignore("unused_private_class_variable")
+var _story_mode_controller: HUDStoryModeController = HUDStoryModeController.new()
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -121,6 +134,7 @@ func _ready() -> void:
 	_setup_hud_controllers()
 	notification_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	objective_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_story_notification_base_position = notification_label.position
 	_objective_base_position = objective_label.position
 	objective_label.visible = false
 	objective_label.modulate.a = 0.0
@@ -152,7 +166,8 @@ func _setup_hud_controllers() -> void:
 		_tax_panel_flow,
 		_hint_dialog_flow,
 		_cursor_tooltip_flow,
-		_objective_toast_flow
+		_objective_toast_flow,
+		_story_mode_controller
 	]:
 		controller.setup(self)
 
@@ -164,16 +179,21 @@ func _process(delta: float) -> void:
 	_objective_toast_flow.update_objective_toast(delta)
 	_cursor_tooltip_flow.update_cursor_hover_tooltip()
 	_hint_dialog_flow.update_hint_dialog_timer(delta)
-	_notification_flow.process(delta)
+	if not _story_notification_pending:
+		_notification_flow.process(delta)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _input(event: InputEvent) -> void:
+	if _try_dismiss_story_notification(event):
+		return
 	_handle_dialog_skip_input(event)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _unhandled_input(event: InputEvent) -> void:
+	if _try_dismiss_story_notification(event):
+		return
 	_handle_dialog_skip_input(event)
 
 
@@ -219,7 +239,104 @@ func show_notification(
 	blocks_actions: bool = true,
 	instant_text: bool = false
 ) -> void:
+	if _story_mode_controller.is_active():
+		return
 	_notification_flow.show_notification(text, duration, blocks_actions, instant_text)
+
+
+func show_story_notification(text: String) -> void:
+	_story_notification_pending = true
+	_story_notification_dismissing = false
+	_notification_flow.show_notification(text, NOTIFY_DURATION, false, true)
+
+	if _story_notification_tween != null and _story_notification_tween.is_valid():
+		_story_notification_tween.kill()
+	notification_label.pivot_offset = notification_label.size * 0.5
+	notification_label.position = (
+		_story_notification_base_position + Vector2(0.0, STORY_NOTIFICATION_ENTER_OFFSET)
+	)
+	notification_label.scale = Vector2(0.98, 0.98)
+	notification_label.modulate.a = 0.0
+	_story_notification_tween = create_tween()
+	_story_notification_tween.set_parallel(true)
+	_story_notification_tween.tween_property(
+		notification_label,
+		"modulate:a",
+		1.0,
+		STORY_NOTIFICATION_ENTER_DURATION
+	)
+	_story_notification_tween.tween_property(
+		notification_label,
+		"position",
+		_story_notification_base_position,
+		STORY_NOTIFICATION_ENTER_DURATION
+	)
+	_story_notification_tween.tween_property(
+		notification_label,
+		"scale",
+		Vector2.ONE,
+		STORY_NOTIFICATION_ENTER_DURATION
+	)
+
+	await _notification_flow.wait_for_notification_finished()
+	_story_notification_pending = false
+	_story_notification_dismissing = false
+
+
+func _try_dismiss_story_notification(event: InputEvent) -> bool:
+	if (
+		not _story_notification_pending
+		or _story_notification_dismissing
+		or not event.is_pressed()
+	):
+		return false
+
+	var should_dismiss := (
+		event.is_action_pressed("interact")
+		or event.is_action_pressed("ui_accept")
+	)
+	if event is InputEventMouseButton:
+		should_dismiss = (
+			should_dismiss
+			or (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT
+		)
+	elif event is InputEventScreenTouch:
+		should_dismiss = true
+	elif event is InputEventKey:
+		var key_event := event as InputEventKey
+		should_dismiss = (
+			not key_event.echo
+			and (
+				should_dismiss
+				or key_event.keycode == KEY_SPACE
+				or key_event.keycode == KEY_ENTER
+				or key_event.keycode == KEY_KP_ENTER
+			)
+		)
+
+	if not should_dismiss:
+		return false
+
+	_dismiss_story_notification()
+	get_viewport().set_input_as_handled()
+	return true
+
+
+func _dismiss_story_notification() -> void:
+	_story_notification_dismissing = true
+	if _story_notification_tween != null and _story_notification_tween.is_valid():
+		_story_notification_tween.kill()
+	_story_notification_tween = create_tween()
+	_story_notification_tween.tween_property(
+		notification_label,
+		"modulate:a",
+		0.0,
+		STORY_NOTIFICATION_EXIT_DURATION
+	)
+	await _story_notification_tween.finished
+	notification_label.position = _story_notification_base_position
+	notification_label.scale = Vector2.ONE
+	_notification_flow.finish_notification()
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -259,11 +376,15 @@ func hide_tax_notice() -> void:
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func show_hint_dialog(key: String, text: String) -> void:
+	if _story_mode_controller.is_active():
+		return
 	_hint_dialog_flow.show_hint_dialog(key, text)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func show_cursor_tooltip(text: String) -> void:
+	if _story_mode_controller.is_active():
+		return
 	_cursor_tooltip_flow.show_cursor_tooltip(text)
 
 
@@ -304,7 +425,39 @@ func _get_hover_target_priority(target: Node) -> int:
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_objective(text: String) -> void:
+	if _story_mode_controller.is_active():
+		return
 	_objective_toast_flow.set_objective(text)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func begin_story_mode() -> void:
+	_story_mode_controller.begin_story_mode()
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func end_story_mode() -> void:
+	_story_mode_controller.end_story_mode()
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func is_story_mode_active() -> bool:
+	return _story_mode_controller.is_active()
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func show_story_choice(prompt: String, options: Array[String]) -> int:
+	return await _story_mode_controller.show_choice(prompt, options)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func has_pending_story_choice() -> bool:
+	return _story_mode_controller.has_pending_choice()
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func select_story_choice(index: int) -> void:
+	_story_mode_controller.select_choice(index)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

@@ -55,6 +55,7 @@ var home_scene: PackedScene = preload("res://scenes/locations/Home.tscn")
 @onready var npc_routes: Node = get_node_or_null("NpcRoutes")
 @onready var world_state_controller: Node = get_node_or_null("WorldStateController")
 @onready var npc_interaction_runtime: Node = get_node_or_null("NpcInteractionRuntime")
+@onready var story_runtime: Node = get_node_or_null("StoryRuntime")
 
 @warning_ignore("unused_private_class_variable")
 var _current_storage: Node2D = null
@@ -130,6 +131,8 @@ var _mystery_discovered: bool = false
 var _mystery_supply_depleted: bool = false
 @warning_ignore("unused_private_class_variable")
 var _mystery_items_taken: Array[String] = []
+@warning_ignore("unused_private_class_variable")
+var _phantom_human_shelf_attempted: bool = false
 @warning_ignore("unused_private_class_variable")
 var _human_shelf_installed: bool = false
 @warning_ignore("unused_private_class_variable")
@@ -240,7 +243,8 @@ func _setup_store_controllers() -> void:
 		task_completion,
 		npc_routes,
 		world_state_controller,
-		npc_interaction_runtime
+		npc_interaction_runtime,
+		story_runtime
 	]:
 		if controller != null and controller.has_method("setup"):
 			controller.call("setup", self)
@@ -785,6 +789,11 @@ func _connect_hud_signals() -> void:
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _connect_scene_signals() -> void:
+	if cashier != null and cashier.has_signal("player_exit_dialog_finished"):
+		var exit_dialog_callable := Callable(self, "_on_cashier_player_exit_dialog_finished")
+		if not cashier.is_connected("player_exit_dialog_finished", exit_dialog_callable):
+			cashier.connect("player_exit_dialog_finished", exit_dialog_callable)
+
 	if storage_door == null:
 		pass
 	else:
@@ -892,6 +901,20 @@ func _on_storage_mystery_item_taken(item_id: String) -> void:
 func _on_storage_mystery_supply_depleted() -> void:
 	if progression_flow != null:
 		progression_flow.on_storage_mystery_supply_depleted()
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _should_prioritize_phantom_for_human_shelf() -> bool:
+	return (
+		progression_flow != null
+		and progression_flow.should_prioritize_phantom_for_human_shelf()
+	)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _on_phantom_human_shelf_attempted() -> void:
+	if progression_flow != null:
+		await progression_flow.on_phantom_human_shelf_attempted()
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -1327,6 +1350,12 @@ func _on_npc_purchase(_npc: NPC, _item_id: String, price: int) -> void:
 func _on_npc_exited(_npc: NPC) -> void:
 	if npc_runtime != null:
 		npc_runtime.on_npc_exited(_npc)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _on_cashier_player_exit_dialog_finished(customer_id: String) -> void:
+	if story_runtime != null and story_runtime.has_method("on_player_exit_dialog_finished"):
+		story_runtime.call("on_player_exit_dialog_finished", customer_id)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

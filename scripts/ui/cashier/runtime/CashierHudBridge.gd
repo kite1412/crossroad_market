@@ -52,6 +52,17 @@ func show_notification(text: String, duration: float = 2.0) -> void:
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func is_dialog_visible() -> bool:
+	var hud_node := cashier.get_tree().get_first_node_in_group("hud")
+	if hud_node == null:
+		return false
+	if hud_node.has_method("is_dialog_visible"):
+		return bool(hud_node.call("is_dialog_visible"))
+	var dialog := hud_node.get_node_or_null("Dialog") as CanvasItem
+	return dialog != null and dialog.visible
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func setup_cursor_hover() -> void:
 	if cashier.interaction_area == null:
 		return

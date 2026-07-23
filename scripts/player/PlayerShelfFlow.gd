@@ -2,6 +2,7 @@ class_name PlayerShelfFlow
 extends RefCounted
 
 const MAX_WRONG_ATTEMPTS: int = 1
+const PHANTOM_ICE_CREAM_ID: String = "phantom_ice_cream"
 
 var player = null
 
@@ -15,6 +16,10 @@ func setup(player_node) -> void:
 func interact_with_shelf(shelf: Shelf) -> void:
 	if shelf.has_meta("is_carried_storage_object") and bool(shelf.get_meta("is_carried_storage_object")):
 		player._show_notification("Press Q to place the shelf first.", 0.8)
+		return
+
+	if PlayerShelfInteraction.is_story_locked_ghost_shelf(player.get_tree(), shelf):
+		player._show_notification("Unable to pick up the shelf.", 0.8)
 		return
 
 	if not is_shelf_installed_in_store(shelf):
@@ -46,7 +51,10 @@ func try_put() -> void:
 		return
 
 	if not is_shelf_installed_in_store(shelf):
-		player._show_notification("Press E to pick up this shelf first.", 0.8)
+		if PlayerShelfInteraction.is_story_locked_ghost_shelf(player.get_tree(), shelf):
+			player._show_notification("Unable to pick up the shelf.", 0.8)
+		else:
+			player._show_notification("Press E to pick up this shelf first.", 0.8)
 		return
 
 	put_item_on_shelf(shelf)
@@ -62,7 +70,7 @@ func put_item_on_shelf(shelf: Shelf) -> void:
 		return
 
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-	var item_id: String = str(inventory_items.keys()[0])
+	var item_id: String = get_item_to_place(inventory_items, shelf)
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var item: ItemData = ItemDatabase.get_item(item_id)
 
@@ -136,6 +144,20 @@ func handle_wrong_shelf_attempt(
 	item: ItemData,
 	shelf: Shelf
 ) -> void:
+	if (
+		item_id == PHANTOM_ICE_CREAM_ID
+		and shelf.shelf_type == ItemData.ShelfType.HUMAN
+	):
+		var store: Node = player.get_tree().get_first_node_in_group("store")
+		if (
+			store != null
+			and store.has_method("_should_prioritize_phantom_for_human_shelf")
+			and bool(store.call("_should_prioritize_phantom_for_human_shelf"))
+			and store.has_method("_on_phantom_human_shelf_attempted")
+		):
+			await store.call("_on_phantom_human_shelf_attempted")
+			return
+
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var attempt_key: String = get_wrong_shelf_key(item_id, shelf)
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
@@ -179,6 +201,23 @@ func get_shelf_type_label(shelf_type: ItemData.ShelfType) -> String:
 			return "ghost"
 
 	return "matching"
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func get_item_to_place(inventory_items: Dictionary, shelf: Shelf) -> String:
+	if shelf.shelf_type == ItemData.ShelfType.GHOST and inventory_items.has(PHANTOM_ICE_CREAM_ID):
+		return PHANTOM_ICE_CREAM_ID
+
+	if shelf.shelf_type == ItemData.ShelfType.HUMAN and inventory_items.has(PHANTOM_ICE_CREAM_ID):
+		var store: Node = player.get_tree().get_first_node_in_group("store")
+		if (
+			store != null
+			and store.has_method("_should_prioritize_phantom_for_human_shelf")
+			and bool(store.call("_should_prioritize_phantom_for_human_shelf"))
+		):
+			return PHANTOM_ICE_CREAM_ID
+
+	return str(inventory_items.keys()[0])
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

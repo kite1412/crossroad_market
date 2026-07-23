@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="CashierConversationData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://data/cashier/conversations/CashierConversationData.gd" id="1_conversation"]
+[ext_resource type="Script" path="res://data/cashier/conversations/CashierDialogueLine.gd" id="2_line"]
+
+[sub_resource type="Resource" id="CashierDialogueLine_player_thanks"]
+script = ExtResource("2_line")
+speaker = 1
+text = "Thank you, come again!"
+
+[sub_resource type="Resource" id="CashierDialogueLine_irene_silence"]
+script = ExtResource("2_line")
+text = "..."
+
+[resource]
+script = ExtResource("1_conversation")
+day = 1
+customer_id = "irene"
+opening_line = "Just this, please."
+post_payment_dialogue = Array[ExtResource("2_line")]([SubResource("CashierDialogueLine_player_thanks"), SubResource("CashierDialogueLine_irene_silence")])
+player_exit_dialogue = Array[String](["Huh, what a strange person."])

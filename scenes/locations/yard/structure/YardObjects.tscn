@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://by55pnjt6j7nx"]
+
+[ext_resource type="PackedScene" uid="uid://dch5ut0rs61t7" path="res://scenes/locations/yard/structure/PlayerHouse.tscn" id="1_wcfjr"]
+[ext_resource type="PackedScene" uid="uid://cfsd74ienmlfs" path="res://scenes/locations/yard/structure/LeftTrees.tscn" id="2_ma28p"]
+[ext_resource type="PackedScene" uid="uid://by8my2qb1taou" path="res://scenes/locations/yard/structure/RightTrees.tscn" id="3_fou56"]
+[ext_resource type="PackedScene" uid="uid://bvwob7mdgofp3" path="res://scenes/locations/yard/structure/StoreOutside.tscn" id="4_wf3cu"]
+
+[node name="YardObjects" type="Node2D" unique_id=733206462]
+y_sort_enabled = true
+
+[node name="PlayerHouse" parent="." unique_id=719157645 instance=ExtResource("1_wcfjr")]
+
+[node name="LeftTrees" parent="." unique_id=1511979151 instance=ExtResource("2_ma28p")]
+
+[node name="RightTrees" parent="." unique_id=1518412750 instance=ExtResource("3_fou56")]
+
+[node name="StoreOutside" parent="." unique_id=1560459929 instance=ExtResource("4_wf3cu")]

@@ -1,9 +1,10 @@
 class_name Storage
 extends Node2D
 ## Backroom for Day 1 restocking.
-## Human and ghost shelves start here. Ghost shelf and mystery box are locked
-## behind the dark storage section until the human shelf has been installed
-## and stocked in the store.
+## Human and ghost shelves start here. The mystery box is locked behind the
+## dark storage section until the human shelf has been installed and stocked.
+## The ghost shelf remains gated until the Phantom Ice Cream has been examined,
+## taken, and unsuccessfully tried on the human shelf.
 
 @warning_ignore("unused_signal")
 signal return_to_store(door_type: String)
@@ -53,6 +54,8 @@ var _mystery_phase_unlocked: bool = false
 var _mystery_discovered: bool = false
 @warning_ignore("unused_private_class_variable")
 var _mystery_supply_depleted: bool = false
+@warning_ignore("unused_private_class_variable")
+var _phantom_human_shelf_attempted: bool = false
 @warning_ignore("unused_private_class_variable")
 var _human_shelf_installed: bool = false
 @warning_ignore("unused_private_class_variable")
@@ -162,6 +165,12 @@ func set_mystery_supply_depleted(is_depleted: bool) -> void:
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func set_phantom_human_shelf_attempted(was_attempted: bool) -> void:
+	if mystery_flow != null:
+		mystery_flow.set_phantom_human_shelf_attempted(was_attempted)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func set_mystery_items_taken(item_ids: Array[String]) -> void:
 	if mystery_flow != null:
 		mystery_flow.set_mystery_items_taken(item_ids)
@@ -201,6 +210,14 @@ func open_restock_panel() -> void:
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func request_pickup_shelf(shelf: Shelf) -> bool:
 	return shelf_carry_controller != null and shelf_carry_controller.request_pickup_shelf(shelf)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func is_ghost_shelf_story_unlocked() -> bool:
+	return (
+		mystery_flow != null
+		and mystery_flow.is_ghost_shelf_story_unlocked()
+	)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

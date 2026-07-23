@@ -1,0 +1,62 @@
+[gd_scene format=3 uid="uid://cfsd74ienmlfs"]
+
+[ext_resource type="Texture2D" uid="uid://dv1uqukfcdn20" path="res://assets/yard/top-left-tree.png" id="1_jxwej"]
+[ext_resource type="Script" uid="uid://okgf6ipqbblp" path="res://scripts/locations/yard/YardTreeClusterDepth.gd" id="2_tree_depth"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ry2rs"]
+size = Vector2(45, 109)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_geg3u"]
+size = Vector2(57, 40.5)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_46b7d"]
+size = Vector2(44.75, 174)
+
+[node name="LeftTrees" type="Node2D" unique_id=1511979151]
+y_sort_enabled = true
+script = ExtResource("2_tree_depth")
+
+[node name="TopTreeDepthAnchor" type="Node2D" parent="." unique_id=762180692]
+position = Vector2(0, 174)
+
+[node name="TopTreeVisual" type="Sprite2D" parent="TopTreeDepthAnchor" unique_id=1595130733]
+position = Vector2(0, -174)
+texture = ExtResource("1_jxwej")
+centered = false
+region_enabled = true
+region_rect = Rect2(0, 0, 84, 169)
+
+[node name="LowerClusterDepthAnchor" type="Node2D" parent="." unique_id=1518752481]
+position = Vector2(0, 348)
+metadata/depth_points = PackedVector2Array(21.5, 293.5, 72.5, 300.25)
+metadata/depth_y_values = PackedFloat32Array(348, 321)
+metadata/depth_active_rect = Rect2(-40, 140, 220, 250)
+metadata/depth_default_index = 0
+metadata/visual_top_y = 169.0
+
+[node name="Visual" type="Sprite2D" parent="LowerClusterDepthAnchor" unique_id=1986628064]
+position = Vector2(0, -179)
+texture = ExtResource("1_jxwej")
+centered = false
+region_enabled = true
+region_rect = Rect2(0, 169, 133, 179)
+
+[node name="Collisions" type="Node2D" parent="." unique_id=1095874963]
+
+[node name="StaticBody2D" type="StaticBody2D" parent="Collisions" unique_id=831561642]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Collisions/StaticBody2D" unique_id=1152020200]
+position = Vector2(21.5, 293.5)
+shape = SubResource("RectangleShape2D_ry2rs")
+
+[node name="StaticBody2D2" type="StaticBody2D" parent="Collisions" unique_id=517005306]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Collisions/StaticBody2D2" unique_id=449294694]
+position = Vector2(72.5, 300.25)
+shape = SubResource("RectangleShape2D_geg3u")
+
+[node name="StaticBody2D3" type="StaticBody2D" parent="Collisions" unique_id=1981779664]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Collisions/StaticBody2D3" unique_id=888437167]
+position = Vector2(29.625, 87)
+shape = SubResource("RectangleShape2D_46b7d")

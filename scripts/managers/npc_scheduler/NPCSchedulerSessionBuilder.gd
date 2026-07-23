@@ -42,6 +42,8 @@ func generate_customer_sessions_for_day(day: int) -> void:
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var human_pool := build_customer_session_pool(day, human_blueprint)
 	human_pool = expand_customer_pool(human_pool, int(human_blueprint.get("customer_count", 0)), day)
+	if day == 1:
+		human_pool = move_customer_to_end(human_pool, "irene")
 	scheduler._customer_sessions[scheduler.SESSION_HUMAN] = make_customer_session(human_blueprint, human_pool)
 
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
@@ -79,9 +81,6 @@ func get_customer_session_blueprint(day: int, session_name: StringName) -> Dicti
 	for npc in scheduler._day_schedule:
 		if npc.visit_phase == visit_phase and not scheduler._is_day_one_follow_up_story_npc(day, npc):
 			customer_count += 1
-
-	if session_name == scheduler.SESSION_NIGHT and day == 1 and scheduler._npc_database.has("gooby"):
-		customer_count += 1
 
 	return {
 		"customer_count": customer_count,
@@ -136,13 +135,6 @@ func build_customer_session_pool(day: int, blueprint: Dictionary) -> Array[NPCDa
 	if visit_phase == NPCData.VisitPhase.NIGHT:
 		pool = scheduler._align_night_customer_items(pool)
 	pool.shuffle()
-
-	if visit_phase == NPCData.VisitPhase.NIGHT and day == 1:
-		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-		var gooby := scheduler._npc_database.get("gooby") as NPCData
-
-		if gooby != null:
-			pool.push_front(scheduler._make_day_one_customer_from_data(gooby, "phantom_ice_cream"))
 
 	return pool
 
@@ -253,6 +245,21 @@ func expand_customer_pool(source_pool: Array[NPCData], desired_count: int, day: 
 	for story_npc in story_customers:
 		if result.size() >= desired_count:
 			break
-		result.append(story_npc)
+		var story_visit := story_npc.duplicate(true) as NPCData
+		story_visit.spawn_order = result.size()
+		result.append(story_visit)
+
+	return result
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func move_customer_to_end(pool: Array[NPCData], npc_id: String) -> Array[NPCData]:
+	var result: Array[NPCData] = pool.duplicate()
+	for index in range(result.size() - 1, -1, -1):
+		var npc_data: NPCData = result[index]
+		if npc_data != null and npc_data.npc_id == npc_id:
+			result.remove_at(index)
+			result.append(npc_data)
+			break
 
 	return result

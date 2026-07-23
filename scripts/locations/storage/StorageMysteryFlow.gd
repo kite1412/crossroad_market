@@ -2,6 +2,7 @@ class_name StorageMysteryFlow
 extends Node
 
 const STORED_IN_STORAGE_META: StringName = &"stored_in_storage"
+const GHOST_SHELF_LOCKED_MODULATE: Color = Color(0.42, 0.38, 0.52, 0.72)
 
 var storage: Node = null
 
@@ -47,6 +48,13 @@ func set_mystery_discovered(is_discovered: bool) -> void:
 func set_mystery_supply_depleted(is_depleted: bool) -> void:
 	storage._mystery_supply_depleted = is_depleted
 	apply_mystery_box_item_state()
+	apply_ghost_shelf_access_state()
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func set_phantom_human_shelf_attempted(was_attempted: bool) -> void:
+	storage._phantom_human_shelf_attempted = was_attempted
+	apply_ghost_shelf_access_state()
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -154,8 +162,7 @@ func apply_mystery_phase_state(animated: bool) -> void:
 	if is_instance_valid(ghost_variant) and ghost_variant is Shelf:
 		var ghost_shelf := ghost_variant as Shelf
 		ghost_shelf.visible = is_open
-		storage._set_node_enabled_recursive(ghost_shelf, is_open)
-		ghost_shelf.set_meta("is_carryable_storage_object", is_open)
+		apply_ghost_shelf_access_state()
 
 		if is_open:
 			ghost_shelf.apply_ghost_glow(true)
@@ -186,6 +193,7 @@ func apply_mystery_phase_state(animated: bool) -> void:
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_mystery_box_discovered() -> void:
 	storage._mystery_discovered = true
+	apply_ghost_shelf_access_state()
 	storage.mystery_discovered.emit()
 
 
@@ -195,6 +203,7 @@ func on_mystery_box_item_taken(item_id: String) -> void:
 
 	if storage.mystery_box != null and storage.mystery_box.is_empty():
 		storage._mystery_supply_depleted = true
+		apply_ghost_shelf_access_state()
 		storage.mystery_supply_depleted.emit()
 
 
@@ -213,3 +222,71 @@ func apply_mystery_box_item_state() -> void:
 
 	if storage.mystery_box.has_method("mark_all_taken_without_inventory"):
 		storage.mystery_box.mark_all_taken_without_inventory()
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func apply_ghost_shelf_access_state() -> void:
+	var ghost_variant: Variant = storage.shelf_ghost
+	if not is_instance_valid(ghost_variant) or not (ghost_variant is Shelf):
+		return
+
+	var ghost_shelf := ghost_variant as Shelf
+	var can_pick_up: bool = is_ghost_shelf_story_unlocked()
+
+	set_ghost_shelf_physics_enabled(
+		ghost_shelf,
+		storage._mystery_phase_unlocked
+	)
+	set_ghost_shelf_interaction_enabled(ghost_shelf, can_pick_up)
+	apply_ghost_shelf_locked_style(
+		ghost_shelf,
+		storage._mystery_phase_unlocked and not can_pick_up
+	)
+	ghost_shelf.set_meta("is_carryable_storage_object", can_pick_up)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func is_ghost_shelf_story_unlocked() -> bool:
+	return (
+		storage._mystery_phase_unlocked
+		and storage._mystery_discovered
+		and storage._mystery_supply_depleted
+		and storage._phantom_human_shelf_attempted
+	)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func set_ghost_shelf_physics_enabled(ghost_shelf: Shelf, enabled: bool) -> void:
+	var physics_shape := ghost_shelf.get_node_or_null(
+		"PhysicsBody/CollisionShape2D"
+	) as CollisionShape2D
+	if physics_shape != null:
+		physics_shape.disabled = not enabled
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func set_ghost_shelf_interaction_enabled(ghost_shelf: Shelf, enabled: bool) -> void:
+	var interaction_area := ghost_shelf.get_node_or_null("InteractionArea") as Area2D
+	if interaction_area == null:
+		return
+
+	interaction_area.monitoring = enabled
+	interaction_area.monitorable = enabled
+
+	var interaction_shape := interaction_area.get_node_or_null(
+		"CollisionShape2D"
+	) as CollisionShape2D
+	if interaction_shape != null:
+		interaction_shape.disabled = not enabled
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func apply_ghost_shelf_locked_style(ghost_shelf: Shelf, locked: bool) -> void:
+	var visual_root := ghost_shelf.get_node_or_null("VisualRoot") as CanvasItem
+	if visual_root != null:
+		visual_root.modulate = GHOST_SHELF_LOCKED_MODULATE if locked else Color.WHITE
+
+	# Clean up badges created by earlier builds; the dimmed shelf is enough.
+	var obsolete_badge := ghost_shelf.get_node_or_null("StoryLockBadge")
+	if obsolete_badge != null:
+		obsolete_badge.queue_free()

@@ -16,6 +16,8 @@ const STORE_OS_APP_POS: StringName = &"pos"
 
 @warning_ignore("unused_signal")
 signal checkout_done(npc: NPC, item_id: String, price: int)
+@warning_ignore("unused_signal")
+signal player_exit_dialog_finished(customer_id: String)
 
 @warning_ignore("unused_private_class_variable")
 var _scanned_npc: NPC = null
@@ -174,6 +176,11 @@ func reset_runtime_ui() -> void:
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func try_checkout() -> void:
+	if (
+		_hud_bridge.is_dialog_visible()
+		or _store_os_renderer.is_player_exit_dialog_pending()
+	):
+		return
 	if not _is_player_nearby():
 		pass
 		return
@@ -207,6 +214,11 @@ func try_checkout() -> void:
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _unhandled_input(event: InputEvent) -> void:
 	if _cashier_panel == null or not _cashier_panel.visible:
+		return
+	if (
+		_hud_bridge.is_dialog_visible()
+		or _store_os_renderer.is_player_exit_dialog_pending()
+	):
 		return
 
 	if event is InputEventMouseButton and event.pressed:
@@ -262,8 +274,8 @@ func _process_scan(npc: NPC) -> void:
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _process_paid() -> void:
-	_checkout_flow.process_paid()
+func _process_paid(show_customer_completion_dialog: bool = true) -> void:
+	_checkout_flow.process_paid(show_customer_completion_dialog)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

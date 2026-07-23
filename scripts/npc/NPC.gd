@@ -256,9 +256,12 @@ func _ensure_npc_controllers() -> void:
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func complete_checkout() -> void:
+func complete_checkout(
+	paid_total: int = -1,
+	show_completion_dialog: bool = true
+) -> void:
 	_ensure_npc_controllers()
-	_checkout_flow.complete_checkout()
+	_checkout_flow.complete_checkout(paid_total, show_completion_dialog)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

@@ -28,7 +28,7 @@ func request_toggle_store_open() -> void:
 
 	if not store._store_opened_today and not is_day_setup_complete():
 		store._show_notification(
-			"Set up the shelf and stock items before opening.",
+			get_day_setup_block_message(),
 			1.5
 		)
 		update_store_status_board()
@@ -42,7 +42,21 @@ func is_day_setup_complete() -> bool:
 	return (
 		store._human_shelf_installed
 		and store._human_items_placed >= NORMAL_STOCK_REQUIRED
+		and store._ghost_shelf_installed
+		and store.ghost_shelf != null
+		and store.ghost_shelf.has_stock()
 	)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func get_day_setup_block_message() -> String:
+	if not store._human_shelf_installed or store._human_items_placed < NORMAL_STOCK_REQUIRED:
+		return "Set up the human shelf and stock items before opening."
+	if not store._ghost_shelf_installed or store.ghost_shelf == null:
+		return "Place the ghost shelf in the store before opening."
+	if not store.ghost_shelf.has_stock():
+		return "Stock Phantom Ice Cream on the ghost shelf before opening."
+	return ""
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -52,6 +66,11 @@ func open_store() -> void:
 			"The store is closed for today.",
 			1.5
 		)
+		return
+
+	if not store._store_opened_today and not is_day_setup_complete():
+		store._show_notification(get_day_setup_block_message(), 1.5)
+		update_store_status_board()
 		return
 
 	store._store_open = true

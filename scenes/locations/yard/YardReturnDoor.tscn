@@ -1,27 +1,12 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://ckevplstr858k"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_door"]
-size = Vector2(70, 41)
+size = Vector2(86, 46)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_door_body"]
-size = Vector2(48, 28)
-
-[node name="ReturnDoor" type="Area2D"]
+[node name="ReturnDoor" type="Area2D" unique_id=1689211926]
 y_sort_enabled = true
 position = Vector2(240, 86)
 
-[node name="DoorVisual" type="ColorRect" parent="."]
-offset_left = -24.0
-offset_top = -28.0
-offset_right = 24.0
-color = Color(0.2, 0.12, 0.08, 1)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, 0.5)
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=990627997]
+position = Vector2(30, -5)
 shape = SubResource("RectangleShape2D_door")
-
-[node name="StaticBody2D" type="StaticBody2D" parent="."]
-
-[node name="NotPassable" type="CollisionShape2D" parent="StaticBody2D"]
-position = Vector2(0, -14)
-shape = SubResource("RectangleShape2D_door_body")

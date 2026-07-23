@@ -3,6 +3,7 @@ extends Node
 
 
 const NORMAL_STOCK_REQUIRED: int = 4
+const PHANTOM_ICE_CREAM_ID: String = "phantom_ice_cream"
 
 var store: Node = null
 
@@ -61,13 +62,29 @@ func show_yard_intro() -> void:
 func on_storage_mystery_discovered() -> void:
 	store._mystery_discovered = true
 	store._show_task_complete_notice("mystery_discovered", "Mystery corner discovered.")
-	update_objective()
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_storage_mystery_item_taken(item_id: String) -> void:
+	var was_new_item: bool = item_id != "" and item_id not in store._mystery_items_taken
+
 	if item_id != "" and item_id not in store._mystery_items_taken:
 		store._mystery_items_taken.append(item_id)
+
+	if item_id == PHANTOM_ICE_CREAM_ID and was_new_item:
+		var messages: Array[String] = [
+			"What is this...?",
+			"This box wasn’t in Grandma’s inventory list.",
+			"Why is it glowing... and why does it feel ice cold?"
+		]
+		await StoreDialogBridge.show_player_sequence(store, messages)
+
+		update_objective()
+		show_hint(
+			"phantom_return_store",
+			"Take the Phantom Ice Cream back to the store and try it on the Human Shelf."
+		)
+		return
 
 	update_objective()
 
@@ -75,7 +92,34 @@ func on_storage_mystery_item_taken(item_id: String) -> void:
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_storage_mystery_supply_depleted() -> void:
 	store._mystery_supply_depleted = true
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func should_prioritize_phantom_for_human_shelf() -> bool:
+	return (
+		not store._phantom_human_shelf_attempted
+		and PHANTOM_ICE_CREAM_ID in store._mystery_items_taken
+		and Inventory.has_item(PHANTOM_ICE_CREAM_ID)
+	)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func on_phantom_human_shelf_attempted() -> void:
+	if store._phantom_human_shelf_attempted:
+		return
+
+	store._phantom_human_shelf_attempted = true
 	update_objective()
+
+	var messages: Array[String] = [
+		"Huh? It keeps falling off from the shelf..."
+	]
+	await StoreDialogBridge.show_player_sequence(store, messages)
+
+	show_hint(
+		"phantom_return_storage",
+		"Return to the storage and bring the strange Ghost Shelf to the store."
+	)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -121,10 +165,9 @@ func on_ghost_shelf_item_placed(_slot_index: int, item_id: String) -> void:
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var messages: Array[String] = [
 		"Huh... so it only stays on this shelf?",
-		"This shelf looks different too...",
-		"What was Grandma keeping here?"
+		"This shelf looks different too... What was Grandma keeping here?"
 	]
-	await store._show_notification_sequence(messages)
+	await StoreDialogBridge.show_player_sequence(store, messages)
 
 	if became_ready:
 		show_customer_open_notification()
@@ -273,7 +316,9 @@ func get_activity_board_guidance() -> Dictionary:
 	var activities := [
 		{"text": "Pick the Human Shelf at the Storage, and bring it to the Store", "done": store._human_shelf_installed},
 		{"text": "Take stock from the Storage and bring it to the Human Shelf", "done": store._completed_task_notices.has("human_shelf_stocked")},
-		{"text": "Check the dark corner inside the Storage", "done": store._mystery_discovered},
+		{"text": "Investigate the glowing box in the Storage", "done": store._mystery_discovered},
+		{"text": "Take the Phantom Ice Cream from the box", "done": PHANTOM_ICE_CREAM_ID in store._mystery_items_taken},
+		{"text": "Try the Phantom Ice Cream on the Human Shelf", "done": store._phantom_human_shelf_attempted},
 		{"text": "Pick the Ghost Shelf at the Storage, and bring it to the Store", "done": store._completed_task_notices.has("ghost_shelf_placed")},
 		{"text": "Stock the Ghost Shelf", "done": store._completed_task_notices.has("ghost_shelf_stocked")},
 		{"text": "Flip the Open Sign outside the Store", "done": store._store_opened_today},
@@ -310,7 +355,7 @@ func get_current_objective_text() -> String:
 		return ""
 
 	if store._gooby_resolved:
-		return "Wait for the next strange customer."
+		return ""
 
 	if TimeManager.current_phase == TimeManager.Phase.NIGHT and store._customer_spawning_unlocked:
 		return "Serve Gooby at the cashier."
@@ -320,10 +365,16 @@ func get_current_objective_text() -> String:
 			return "Flip the OPEN board when ready."
 
 		if not store._mystery_phase_unlocked or not store._mystery_discovered:
-			return "Check the dark storage corner."
+			return "Investigate the glowing box in the dark storage corner."
+
+		if PHANTOM_ICE_CREAM_ID not in store._mystery_items_taken:
+			return "Take the Phantom Ice Cream from the glowing box."
+
+		if not store._phantom_human_shelf_attempted:
+			return "Try the Phantom Ice Cream on the Human Shelf."
 
 		if not store._ghost_shelf_installed:
-			return "Place the ghost shelf in the store."
+			return "Return to storage and bring the Ghost Shelf to the store."
 
 		if store.ghost_shelf == null or not store.ghost_shelf.has_stock():
 			return "Stock Phantom Ice Cream on ghost shelf."
@@ -336,19 +387,32 @@ func get_current_objective_text() -> String:
 	if store._human_items_placed < NORMAL_STOCK_REQUIRED:
 		return "Stock the human shelf with normal items."
 
-	if not store._store_open:
-		return "Flip the OPEN board when ready."
-
 	if not store._mystery_phase_unlocked or not store._mystery_discovered:
-		return "Check the dark storage corner."
+		return "Investigate the glowing box in the dark storage corner."
+
+	if PHANTOM_ICE_CREAM_ID not in store._mystery_items_taken:
+		return "Take the Phantom Ice Cream from the glowing box."
+
+	if not store._phantom_human_shelf_attempted:
+		return "Try the Phantom Ice Cream on the Human Shelf."
 
 	if not store._ghost_shelf_installed:
-		return "Place the ghost shelf in the store."
+		return "Return to storage and bring the Ghost Shelf to the store."
 
 	if store.ghost_shelf == null or not store.ghost_shelf.has_stock():
 		return "Stock Phantom Ice Cream on ghost shelf."
+
+	if not store._store_open:
+		return "Flip the OPEN board when ready."
 
 	if not store._is_day_setup_complete():
 		return "Prepare the store for customers."
 
 	return "Serve customers at the cashier."
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func show_hint(key: String, text: String) -> void:
+	var hud: Node = store.get_tree().get_first_node_in_group("hud")
+	if hud != null and hud.has_method("show_hint_dialog"):
+		hud.call("show_hint_dialog", key, text)

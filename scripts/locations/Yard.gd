@@ -9,7 +9,7 @@ signal enter_home()
 signal restock_delivery_collected(delivery_id: int)
 
 @onready var return_door: Area2D = get_node_or_null("ReturnDoor") as Area2D
-@onready var home_door: Area2D = get_node_or_null("PlayerHomeArea/HomeDoor") as Area2D
+@onready var home_door: Area2D = get_node_or_null("YardObjects/PlayerHouse/HomeDoor") as Area2D
 @onready var restock_drop_zone: Node2D = get_node_or_null("RestockDropZone") as Node2D
 @onready var scene_flow: Node = get_node_or_null("SceneFlow")
 @onready var restock_flow: Node = get_node_or_null("RestockFlow")

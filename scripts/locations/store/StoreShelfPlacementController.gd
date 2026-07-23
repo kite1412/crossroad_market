@@ -184,6 +184,9 @@ func get_carried_object_from_player() -> Node2D:
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func request_drop_carried_shelf() -> bool:
+	if not store._is_store_world_active:
+		return false
+
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var carried_object := get_carried_object_from_player()
 
@@ -197,6 +200,8 @@ func request_drop_carried_shelf() -> bool:
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func request_pickup_shelf(shelf: Shelf) -> bool:
 	if shelf == null or store.player == null:
+		return false
+	if not store._is_store_world_active:
 		return false
 
 	if not StoreShelfController.is_descendant_of(shelf, store):
