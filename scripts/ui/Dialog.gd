@@ -28,7 +28,7 @@ signal dialog_finished
 @export var close_on_escape: bool = false
 
 @onready var portrait_view: PortraitAnimation = $Portrait
-@onready var dialog_panel: Panel = $DialogPanel
+@onready var dialog_panel: TextureRect = $DialogPanel
 @onready var name_label: Label = $DialogPanel/NameLabel
 @onready var content_label: RichTextLabel = $DialogPanel/ContentLabel
 @onready var next_button: Button = $DialogPanel/NextButton
