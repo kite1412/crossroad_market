@@ -109,9 +109,10 @@ func _process(_delta: float) -> void:
 	if _scan_patience_bar == null or _exchange_patience_bar == null:
 		return
 	_exchange_patience_bar.value = _scan_patience_bar.value
-	_exchange_patience_bar.visible = (
-		false if _checkout_conversation_active else _scan_patience_bar.visible
-	)
+	if _checkout_conversation_active:
+		_exchange_patience_bar.visible = false
+	else:
+		_exchange_patience_bar.visible = _scan_patience_bar.visible
 	_exchange_patience_bar.modulate = _scan_patience_bar.modulate
 
 
@@ -128,7 +129,11 @@ func begin_checkout(npc: NPC) -> bool:
 		return false
 
 	_customer = npc
-	_target_item_ids = npc.get_cart_item_ids() if npc.has_method("get_cart_item_ids") else [npc.item_to_buy]
+	_target_item_ids.clear()
+	if npc.has_method("get_cart_item_ids"):
+		_target_item_ids.assign(npc.get_cart_item_ids())
+	else:
+		_target_item_ids.append(npc.item_to_buy)
 	var valid_target_item_ids: Array[String] = []
 	for item_id in _target_item_ids:
 		if not item_id.is_empty():
@@ -462,9 +467,11 @@ func _make_cart_row(item_id: String, quantity: int, allow_decrement: bool) -> Co
 	row.custom_minimum_size = Vector2(72, 10)
 	row.add_theme_constant_override("separation", 1)
 	var item: ItemData = ItemDatabase.get_item(item_id)
-	var name := item.display_name if item != null else item_id
+	var item_name := item_id
 	var price := item.sell_price if item != null else 0
-	var text := _make_label("%s x%d" % [name, quantity], SMALL_FONT_SIZE)
+	if item != null:
+		item_name = item.display_name
+	var text := _make_label("%s x%d" % [item_name, quantity], SMALL_FONT_SIZE)
 	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	text.clip_text = true
 	text.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -838,9 +845,14 @@ func _get_selected_item_label() -> String:
 	var labels: Array[String] = []
 	for item_id in _cart_quantities:
 		var item: ItemData = ItemDatabase.get_item(item_id)
-		var item_name := item.display_name if item != null else item_id
+		var item_name := item_id
+		if item != null:
+			item_name = item.display_name
 		var quantity := _cart_quantities[item_id]
-		labels.append("%s x%d" % [item_name, quantity] if quantity > 1 else item_name)
+		if quantity > 1:
+			labels.append("%s x%d" % [item_name, quantity])
+		else:
+			labels.append(item_name)
 	return ", ".join(labels)
 
 
@@ -925,7 +937,9 @@ func _get_customer_request_text() -> String:
 		and not _cashier_conversation.opening_line.strip_edges().is_empty()
 	):
 		return _cashier_conversation.opening_line
-	var request := _customer.get_checkout_item_label() if _customer.has_method("get_checkout_item_label") else "these items"
+	var request := "these items"
+	if _customer.has_method("get_checkout_item_label"):
+		request = _customer.get_checkout_item_label()
 	return "Just %s, please." % request
 
 

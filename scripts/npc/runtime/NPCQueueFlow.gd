@@ -6,6 +6,7 @@ const NPCMovementReservationSystemScript = preload("res://scripts/npc/runtime/NP
 const StoreRuntimeDebugProbeScript = preload("res://scripts/debug/StoreRuntimeDebugProbe.gd")
 const EXIT_ORIGIN_SHELF_META: StringName = &"exit_origin_shelf"
 const QUEUE_MOVE_PROBE_COOLDOWN_MSEC: int = 650
+const QUEUE_EGRESS_TARGET_TOLERANCE: float = 3.0
 
 var npc = null
 var _next_queue_move_probe_msec: int = 0
@@ -141,7 +142,7 @@ func process_shelf_egress_to_queue_lane(queue_index: int) -> void:
 			)
 		)
 		if bool(solo_blocking_context.get("blocked", false)):
-			_redirect_blocked_approach_to_queue_slot(
+			_wait_for_blocked_queue_egress(
 				queue_index,
 				queue_slot_target,
 				solo_approach_marker,
@@ -152,7 +153,7 @@ func process_shelf_egress_to_queue_lane(queue_index: int) -> void:
 		if (
 			not npc._queue_egress_target_position.is_finite()
 			or npc._queue_egress_target_position.distance_to(solo_approach_marker)
-			> 1.0
+			> QUEUE_EGRESS_TARGET_TOLERANCE
 		):
 			npc._queue_egress_target_position = solo_approach_marker
 			npc._movement_route.clear()
@@ -172,7 +173,8 @@ func process_shelf_egress_to_queue_lane(queue_index: int) -> void:
 		not egress_target.is_finite()
 		or (
 			resolved_egress_target.is_finite()
-			and egress_target.distance_to(resolved_egress_target) > 1.0
+			and egress_target.distance_to(resolved_egress_target)
+			> QUEUE_EGRESS_TARGET_TOLERANCE
 		)
 	):
 		var old_egress_target := egress_target
@@ -208,7 +210,7 @@ func process_shelf_egress_to_queue_lane(queue_index: int) -> void:
 		)
 	)
 	if bool(blocking_context.get("blocked", false)):
-		_redirect_blocked_approach_to_queue_slot(
+		_wait_for_blocked_queue_egress(
 			queue_index,
 			queue_slot_target,
 			egress_target,
@@ -313,10 +315,10 @@ func is_ready_for_checkout_service() -> bool:
 
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var cashier_target := get_cashier_target()
-	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-	var ready: bool = npc.global_position.distance_to(cashier_target) <= npc.QUEUE_ACTION_DISTANCE
-	pass
-	return ready
+	return (
+		npc.global_position.distance_to(cashier_target)
+		<= _get_cashier_arrival_distance()
+	)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -347,7 +349,9 @@ func start_queue_to_cashier(queue_index: int) -> void:
 		"cashier_target": _format_vector(npc.target_position),
 		"cashier_face_target": _format_vector(get_cashier_face_target())
 	})
-	pass
+	if is_ready_for_checkout_service():
+		mark_checkout_ready()
+		return
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -395,6 +399,30 @@ func _redirect_blocked_approach_to_queue_slot(
 	for key in blocking_context:
 		context["blocking_%s" % String(key)] = blocking_context[key]
 	_record_queue_probe(&"npc_queue_approach_blocked", context)
+
+
+func _wait_for_blocked_queue_egress(
+	queue_index: int,
+	queue_slot_target: Vector2,
+	queue_approach_marker: Vector2,
+	blocking_context: Dictionary
+) -> void:
+	npc.velocity = Vector2.ZERO
+	npc.move_and_slide()
+	npc.target_position = queue_approach_marker
+	npc._queue_egress_route_pending = true
+	npc._queue_egress_target_position = queue_approach_marker
+
+	var context: Dictionary = {
+		"queue_index": queue_index,
+		"queue_size": NPCQueueReservationControllerScript.size(),
+		"action": "wait_for_queue_egress_clear",
+		"queue_slot_target": _format_vector(queue_slot_target),
+		"queue_approach_marker": _format_vector(queue_approach_marker)
+	}
+	for key in blocking_context:
+		context["blocking_%s" % String(key)] = blocking_context[key]
+	_record_queue_probe(&"npc_queue_egress_blocked_wait", context)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -462,12 +490,19 @@ func process_queue_to_cashier(queue_index: int) -> void:
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var cashier_target := get_cashier_target()
 	npc.target_position = cashier_target
+	var cashier_arrival_distance := _get_cashier_arrival_distance()
 
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-	var arrived: bool = npc.global_position.distance_to(cashier_target) <= npc.QUEUE_SLOT_ARRIVAL_DISTANCE
+	var arrived: bool = (
+		npc.global_position.distance_to(cashier_target)
+		<= cashier_arrival_distance
+	)
 
 	if not arrived:
-		arrived = npc._move_to_with_arrival_threshold(cashier_target, npc.QUEUE_SLOT_ARRIVAL_DISTANCE)
+		arrived = npc._move_to_with_arrival_threshold(
+			cashier_target,
+			cashier_arrival_distance
+		)
 		_record_queue_move_probe(&"npc_queue_move_wait", {
 			"queue_index": queue_index,
 			"arrived": arrived,
@@ -490,9 +525,11 @@ func process_queue_to_cashier(queue_index: int) -> void:
 		npc.move_and_slide()
 		_clear_queue_entry_shelf_obstacle()
 		face_queue_forward(queue_index, "arrived_cashier")
-		npc._is_moving_from_queue_to_cashier = false
-		pass
-		npc._set_state(NPC.State.CHECKOUT)
+		mark_checkout_ready()
+
+
+func _get_cashier_arrival_distance() -> float:
+	return maxf(npc.QUEUE_ACTION_DISTANCE, npc.QUEUE_SLOT_ARRIVAL_DISTANCE)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

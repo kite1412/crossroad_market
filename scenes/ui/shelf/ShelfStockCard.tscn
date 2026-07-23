@@ -1,0 +1,31 @@
+[gd_scene format=3]
+
+[node name="ShelfStockCard" type="Button"]
+custom_minimum_size = Vector2(34.4, 30.3)
+layout_mode = 2
+pivot_offset = Vector2(17.2, 15.15)
+mouse_filter = 0
+focus_mode = 0
+text = ""
+tooltip_text = ""
+flat = true
+clip_text = true
+
+[node name="IconSprite" type="Sprite2D" parent="."]
+position = Vector2(17.2, 10.0)
+scale = Vector2(0.65, 0.65)
+texture_filter = 1
+
+[node name="NameLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 2.0
+offset_top = 17.6
+offset_right = 32.4
+offset_bottom = 30.3
+theme_override_colors/font_color = Color(0.235294, 0.145098, 0.105882, 1)
+theme_override_font_sizes/font_size = 7
+mouse_filter = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+text_overrun_behavior = 3

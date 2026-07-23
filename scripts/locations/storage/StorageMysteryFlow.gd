@@ -250,7 +250,6 @@ func is_ghost_shelf_story_unlocked() -> bool:
 	return (
 		storage._mystery_phase_unlocked
 		and storage._mystery_discovered
-		and storage._mystery_supply_depleted
 		and storage._phantom_human_shelf_attempted
 	)
 

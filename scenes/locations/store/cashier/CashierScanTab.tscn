@@ -5,9 +5,9 @@
 [ext_resource type="Texture2D" uid="uid://cxs24ek4jqxak" path="res://assets/cashier/side-bar-1.png" id="3_nioyn"]
 [ext_resource type="Texture2D" uid="uid://cbc5xr3fcov1u" path="res://assets/cashier/side-bar-2.png" id="4_ytwti"]
 [ext_resource type="Texture2D" uid="uid://cpeuj3ml4gynm" path="res://assets/cashier/screen.png" id="5_kafk0"]
-[ext_resource type="Texture2D" uid="uid://mk0be64j5s74" path="res://assets/cashier/scrollbar-shadow.png" id="6_nioyn"]
+[ext_resource type="Texture2D" uid="uid://u2x6cpvhoogn" path="res://assets/cashier/scrollbar-shadow.png" id="6_nioyn"]
 [ext_resource type="PackedScene" path="res://scenes/ui/PortraitAnimation.tscn" id="6_portrait"]
-[ext_resource type="Texture2D" uid="uid://cetfyouqru4oo" path="res://assets/cashier/item-card.png" id="7_ytwti"]
+[ext_resource type="Texture2D" uid="uid://dpnoc5cm6phxf" path="res://assets/cashier/item-card.png" id="7_ytwti"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_patience_background"]
 bg_color = Color(0.137255, 0.0784314, 0.0588235, 0.9)
@@ -35,7 +35,6 @@ position = Vector2(240, 135)
 texture = ExtResource("1_04lsu")
 
 [node name="List" type="Sprite2D" parent="." unique_id=816763099]
-visible = false
 position = Vector2(240, 135)
 texture = ExtResource("2_y4s2q")
 
@@ -80,8 +79,8 @@ position = Vector2(103, 239)
 texture = ExtResource("6_nioyn")
 
 [node name="CustomerMoney" type="Sprite2D" parent="." unique_id=1873843339]
-position = Vector2(230, 257)
-scale = Vector2(0.8125, 0.8333333)
+position = Vector2(234, 255.625)
+scale = Vector2(0.9999999, 1.0166676)
 texture = ExtResource("7_ytwti")
 
 [node name="Cards" type="Node2D" parent="." unique_id=1587971030]

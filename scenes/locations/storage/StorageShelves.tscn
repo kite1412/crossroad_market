@@ -61,29 +61,59 @@ shape = SubResource("RectangleShape2D_human_interaction")
 position = Vector2(0, 7.125)
 shape = SubResource("RectangleShape2D_human_body")
 
+[node name="Front" parent="ShelfHuman/NPCApproachPorts" index="0"]
+position = Vector2(0, 38.25)
+
+[node name="Back" parent="ShelfHuman/NPCApproachPorts" index="1"]
+position = Vector2(0, 0)
+
+[node name="Left" parent="ShelfHuman/NPCApproachPorts" index="2"]
+position = Vector2(-27, 19.125)
+
+[node name="Right" parent="ShelfHuman/NPCApproachPorts" index="3"]
+position = Vector2(27, 19.125)
+
 [node name="CollisionShape2D" parent="ShelfHuman/Slots/Slot0" index="0"]
 position = Vector2(11.333298, 29)
 shape = SubResource("RectangleShape2D_slot_h0")
+
+[node name="ItemSprite" parent="ShelfHuman/Slots/Slot0" index="1"]
+position = Vector2(11.333298, 29)
 
 [node name="CollisionShape2D" parent="ShelfHuman/Slots/Slot1" index="0"]
 position = Vector2(0, 29)
 shape = SubResource("RectangleShape2D_slot_h1")
 
+[node name="ItemSprite" parent="ShelfHuman/Slots/Slot1" index="1"]
+position = Vector2(0, 29)
+
 [node name="CollisionShape2D" parent="ShelfHuman/Slots/Slot2" index="0"]
 position = Vector2(-11.333298, 29)
 shape = SubResource("RectangleShape2D_slot_h2")
+
+[node name="ItemSprite" parent="ShelfHuman/Slots/Slot2" index="1"]
+position = Vector2(-11.333298, 29)
 
 [node name="CollisionShape2D" parent="ShelfHuman/Slots/Slot3" index="0"]
 position = Vector2(11.333298, 13)
 shape = SubResource("RectangleShape2D_slot_h3")
 
+[node name="ItemSprite" parent="ShelfHuman/Slots/Slot3" index="1"]
+position = Vector2(11.333298, 13)
+
 [node name="CollisionShape2D" parent="ShelfHuman/Slots/Slot4" index="0"]
 position = Vector2(0, 13)
 shape = SubResource("RectangleShape2D_slot_h4")
 
+[node name="ItemSprite" parent="ShelfHuman/Slots/Slot4" index="1"]
+position = Vector2(0, 13)
+
 [node name="CollisionShape2D" parent="ShelfHuman/Slots/Slot5" index="0"]
 position = Vector2(-11.333298, 13)
 shape = SubResource("RectangleShape2D_slot_h5")
+
+[node name="ItemSprite" parent="ShelfHuman/Slots/Slot5" index="1"]
+position = Vector2(-11.333298, 13)
 
 [node name="Slot6" type="Area2D" parent="ShelfHuman/Slots" index="6"]
 
@@ -91,17 +121,35 @@ shape = SubResource("RectangleShape2D_slot_h5")
 position = Vector2(-10, 9)
 shape = SubResource("RectangleShape2D_slot_h678")
 
+[node name="ItemSprite" type="Sprite2D" parent="ShelfHuman/Slots/Slot6"]
+position = Vector2(-10, 9)
+scale = Vector2(0.5, 0.5)
+texture_filter = 1
+z_index = 1
+
 [node name="Slot7" type="Area2D" parent="ShelfHuman/Slots" index="7"]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="ShelfHuman/Slots/Slot7"]
 position = Vector2(0, 9)
 shape = SubResource("RectangleShape2D_slot_h678")
 
+[node name="ItemSprite" type="Sprite2D" parent="ShelfHuman/Slots/Slot7"]
+position = Vector2(0, 9)
+scale = Vector2(0.5, 0.5)
+texture_filter = 1
+z_index = 1
+
 [node name="Slot8" type="Area2D" parent="ShelfHuman/Slots" index="8"]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="ShelfHuman/Slots/Slot8"]
 position = Vector2(10, 9)
 shape = SubResource("RectangleShape2D_slot_h678")
+
+[node name="ItemSprite" type="Sprite2D" parent="ShelfHuman/Slots/Slot8"]
+position = Vector2(10, 9)
+scale = Vector2(0.5, 0.5)
+texture_filter = 1
+z_index = 1
 
 [node name="ShelfGhost" parent="." instance=ExtResource("1_shelf")]
 position = Vector2(365, 118)
@@ -123,29 +171,59 @@ shape = SubResource("RectangleShape2D_ghost_interaction")
 position = Vector2(0, 7.5)
 shape = SubResource("RectangleShape2D_ghost_body")
 
+[node name="Front" parent="ShelfGhost/NPCApproachPorts" index="0"]
+position = Vector2(0, 39)
+
+[node name="Back" parent="ShelfGhost/NPCApproachPorts" index="1"]
+position = Vector2(0, 0)
+
+[node name="Left" parent="ShelfGhost/NPCApproachPorts" index="2"]
+position = Vector2(-28, 19.5)
+
+[node name="Right" parent="ShelfGhost/NPCApproachPorts" index="3"]
+position = Vector2(28, 19.5)
+
 [node name="CollisionShape2D" parent="ShelfGhost/Slots/Slot0" index="0"]
 position = Vector2(11.333313, 30)
 shape = SubResource("RectangleShape2D_slot_g")
+
+[node name="ItemSprite" parent="ShelfGhost/Slots/Slot0" index="1"]
+position = Vector2(11.333313, 30)
 
 [node name="CollisionShape2D" parent="ShelfGhost/Slots/Slot1" index="0"]
 position = Vector2(0, 30)
 shape = SubResource("RectangleShape2D_slot_g")
 
+[node name="ItemSprite" parent="ShelfGhost/Slots/Slot1" index="1"]
+position = Vector2(0, 30)
+
 [node name="CollisionShape2D" parent="ShelfGhost/Slots/Slot2" index="0"]
 position = Vector2(-11.333313, 30)
 shape = SubResource("RectangleShape2D_slot_g")
+
+[node name="ItemSprite" parent="ShelfGhost/Slots/Slot2" index="1"]
+position = Vector2(-11.333313, 30)
 
 [node name="CollisionShape2D" parent="ShelfGhost/Slots/Slot3" index="0"]
 position = Vector2(11.333313, 14)
 shape = SubResource("RectangleShape2D_slot_g")
 
+[node name="ItemSprite" parent="ShelfGhost/Slots/Slot3" index="1"]
+position = Vector2(11.333313, 14)
+
 [node name="CollisionShape2D" parent="ShelfGhost/Slots/Slot4" index="0"]
 position = Vector2(0, 14)
 shape = SubResource("RectangleShape2D_slot_g")
 
+[node name="ItemSprite" parent="ShelfGhost/Slots/Slot4" index="1"]
+position = Vector2(0, 14)
+
 [node name="CollisionShape2D" parent="ShelfGhost/Slots/Slot5" index="0"]
 position = Vector2(-11.333313, 14)
 shape = SubResource("RectangleShape2D_slot_g")
+
+[node name="ItemSprite" parent="ShelfGhost/Slots/Slot5" index="1"]
+position = Vector2(-11.333313, 14)
 
 [node name="Slot6" type="Area2D" parent="ShelfGhost/Slots" index="6"]
 position = Vector2(21.3333, -12)
@@ -154,6 +232,12 @@ position = Vector2(21.3333, -12)
 position = Vector2(-31.333313, 22)
 shape = SubResource("RectangleShape2D_slot_g")
 
+[node name="ItemSprite" type="Sprite2D" parent="ShelfGhost/Slots/Slot6"]
+position = Vector2(-31.333313, 22)
+scale = Vector2(0.5, 0.5)
+texture_filter = 1
+z_index = 1
+
 [node name="Slot7" type="Area2D" parent="ShelfGhost/Slots" index="7"]
 position = Vector2(21.3333, -12)
 
@@ -161,12 +245,24 @@ position = Vector2(21.3333, -12)
 position = Vector2(-21.333313, 22)
 shape = SubResource("RectangleShape2D_slot_g")
 
+[node name="ItemSprite" type="Sprite2D" parent="ShelfGhost/Slots/Slot7"]
+position = Vector2(-21.333313, 22)
+scale = Vector2(0.5, 0.5)
+texture_filter = 1
+z_index = 1
+
 [node name="Slot8" type="Area2D" parent="ShelfGhost/Slots" index="8"]
 position = Vector2(21.3333, -12)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="ShelfGhost/Slots/Slot8"]
 position = Vector2(-11.333313, 22)
 shape = SubResource("RectangleShape2D_slot_g")
+
+[node name="ItemSprite" type="Sprite2D" parent="ShelfGhost/Slots/Slot8"]
+position = Vector2(-11.333313, 22)
+scale = Vector2(0.5, 0.5)
+texture_filter = 1
+z_index = 1
 
 [editable path="ShelfHuman"]
 [editable path="ShelfGhost"]

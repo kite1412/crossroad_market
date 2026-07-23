@@ -1,0 +1,54 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/shelf/ShelfStockPanel.gd" id="1_shelf_stock_panel"]
+[ext_resource type="PackedScene" uid="uid://ctmiisgaf8w8d" path="res://scenes/locations/storage/restock/ListStock.tscn" id="2_list_stock"]
+
+[node name="ShelfStockPanel" type="Control"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_shelf_stock_panel")
+
+[node name="PanelRoot" type="Control" parent="."]
+layout_mode = 0
+offset_right = 142.0
+offset_bottom = 202.0
+pivot_offset = Vector2(71, 101)
+mouse_filter = 0
+
+[node name="PanelArtwork" parent="PanelRoot" instance=ExtResource("2_list_stock")]
+position = Vector2(-31, -42)
+
+[node name="IconListStockItem" parent="PanelRoot/PanelArtwork" index="1"]
+visible = false
+
+[node name="GridViewport" type="Control" parent="PanelRoot"]
+clip_contents = true
+layout_mode = 0
+offset_left = 11.4
+offset_top = 40.4
+offset_right = 130.6
+offset_bottom = 185.8
+mouse_filter = 0
+
+[node name="ShelfStockGrid" type="GridContainer" parent="PanelRoot/GridViewport"]
+layout_mode = 0
+offset_right = 119.2
+offset_bottom = 145.4
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+columns = 3
+
+[node name="EmptyLabel" type="Label" parent="PanelRoot/GridViewport"]
+visible = false
+layout_mode = 0
+offset_right = 119.2
+offset_bottom = 145.4
+theme_override_colors/font_color = Color(0.678431, 0.403922, 0.235294, 1)
+theme_override_font_sizes/font_size = 12
+text = "(empty)"
+horizontal_alignment = 1
+vertical_alignment = 1

@@ -180,16 +180,24 @@ func _get_connector_candidates(
 			):
 				continue
 
-			var distance: float = _graph._routes.get_route_distance(
-				clear_start,
-				route
-			)
-			ranked.append({
-				"index": index,
-				"route": route if not reverse_route else [anchor],
-				"route_to_target": route if reverse_route else [],
-				"distance": distance + _manhattan(position, anchor)
-			})
+				var distance: float = _graph._routes.get_route_distance(
+					clear_start,
+					route
+				)
+				var route_from_start: Array[Vector2] = []
+				var route_to_target: Array[Vector2] = []
+				if reverse_route:
+					route_to_target.assign(route)
+					route_from_start.append(anchor)
+				else:
+					route_from_start.assign(route)
+
+				ranked.append({
+					"index": index,
+					"route": route_from_start,
+					"route_to_target": route_to_target,
+					"distance": distance + _manhattan(position, anchor)
+				})
 
 	ranked.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		return float(a.get("distance", INF)) < float(b.get("distance", INF))

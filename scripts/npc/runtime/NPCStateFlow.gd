@@ -8,9 +8,14 @@ const OUT_OF_STOCK_WARNING_SECONDS: float = 10.0
 const OUT_OF_STOCK_EXIT_SECONDS: float = 15.0
 const SHELF_APPROACH_PROBE_COOLDOWN_MSEC: int = 650
 const SHELF_APPROACH_ARRIVAL_DISTANCE: float = 6.0
+const SHELF_BODY_ADJACENCY_DISTANCE: float = 18.0
+const SHELF_TAKE_ACCESS_ARRIVAL_DISTANCE: float = 1.0
+const SHELF_FINAL_ACCESS_MICRO_MOVE_DISTANCE: float = 8.0
+const ENTER_STAGING_PROBE_COOLDOWN_MSEC: int = 650
 
 var npc = null
 var _next_shelf_approach_probe_msec: int = 0
+var _next_enter_staging_probe_msec: int = 0
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -25,6 +30,9 @@ func process_enter() -> void:
 	npc._enter_pause_timer += npc.get_process_delta_time()
 
 	if npc._enter_pause_timer < npc.ENTER_PAUSE:
+		return
+
+	if _move_to_store_entry_staging():
 		return
 
 	npc._choose_available_item_to_buy()
@@ -62,6 +70,25 @@ func process_enter() -> void:
 		float(route_info.get("travel_seconds", 0.0))
 	)
 	set_state(NPC.State.WALK_TO_SHELF)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _move_to_store_entry_staging() -> bool:
+	var staging_position: Vector2 = npc._get_store_path_position()
+	if not staging_position.is_finite():
+		return false
+
+	var distance: float = npc.global_position.distance_to(staging_position)
+	if distance <= npc.ARRIVAL_THRESHOLD:
+		return false
+
+	npc.target_position = staging_position
+	var arrived: bool = npc._move_to_with_arrival_threshold(
+		staging_position,
+		npc.ARRIVAL_THRESHOLD
+	)
+	_record_enter_staging_probe(arrived, staging_position, distance)
+	return not arrived
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -105,7 +132,10 @@ func process_walk_to_shelf() -> void:
 		if _handle_shelf_wait_or_leave("walk_shelf_lost"):
 			return
 
-	var shelf_arrival_distance: float = _get_shelf_approach_arrival_distance()
+	var shelf_arrival_distance: float = _get_shelf_approach_access_arrival_distance()
+	var shelf_access_position := _get_shelf_take_access_position()
+	if shelf_access_position.is_finite():
+		npc.target_position = shelf_access_position
 	if (
 		npc.global_position.distance_to(npc.target_position)
 		<= shelf_arrival_distance
@@ -120,10 +150,52 @@ func process_walk_to_shelf() -> void:
 		npc.target_position,
 		shelf_arrival_distance
 	)
+	if not arrived and _can_micro_move_to_shelf_access():
+		_record_shelf_probe(
+			&"npc_shelf_final_access_blocked_by_empty_route",
+			_get_shelf_final_access_context({
+				"movement_block_reason": "empty_store_route",
+				"movement_phase": "walk_to_shelf"
+			})
+		)
+		var final_access_result := _micro_move_to_shelf_access(
+			shelf_arrival_distance
+		)
+		arrived = bool(final_access_result.get("arrived", false))
+		if (
+			not arrived
+			and _is_shelf_take_body_adjacent()
+			and bool(final_access_result.get("blocked_by_target_shelf", false))
+		):
+			arrived = true
 	_record_shelf_approach_probe(arrived)
 	if arrived:
 		npc._face_target_shelf()
 		set_state(NPC.State.SEARCH_ITEM)
+
+
+func _record_enter_staging_probe(
+	arrived: bool,
+	staging_position: Vector2,
+	distance: float
+) -> void:
+	var now_msec: int = Time.get_ticks_msec()
+	if now_msec < _next_enter_staging_probe_msec:
+		return
+
+	_next_enter_staging_probe_msec = now_msec + ENTER_STAGING_PROBE_COOLDOWN_MSEC
+	StoreRuntimeDebugProbeScript.record(
+		&"npc_enter_staging_move",
+		0.0,
+		{
+			"arrived": arrived,
+			"npc_id": npc.get_instance_id(),
+			"position": _format_vector(npc.global_position),
+			"staging_position": _format_vector(staging_position),
+			"distance": snappedf(distance, 0.01)
+		},
+		0.0
+	)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -224,19 +296,69 @@ func process_take_item() -> void:
 		npc._enter_checkout_queue()
 		return
 
-	var shelf_action_distance: float = _get_shelf_approach_arrival_distance()
+	var shelf_action_distance: float = _get_shelf_take_arrival_distance()
+	var shelf_take_arrival_distance: float = _get_shelf_take_access_arrival_distance()
+	var shelf_access_position := _get_shelf_take_access_position()
+	if shelf_access_position.is_finite():
+		npc.target_position = shelf_access_position
+
+	_record_shelf_take_range_probe(shelf_action_distance)
 	if (
-		npc.global_position.distance_to(npc.target_position)
-		> shelf_action_distance
-		and not npc._move_to_with_arrival_threshold(
-			npc.target_position,
-			shelf_action_distance
-		)
+		not _is_shelf_take_position_valid(shelf_take_arrival_distance)
+		or not _is_shelf_take_body_adjacent()
 	):
-		_record_shelf_probe(&"npc_shelf_take_waiting_for_range", {
-			"action_distance": shelf_action_distance
-		})
-		return
+		var moved_to_access := false
+		var final_access_result: Dictionary = {}
+		if npc.target_position.is_finite():
+			moved_to_access = npc._move_to_with_arrival_threshold(
+				npc.target_position,
+				shelf_take_arrival_distance
+			)
+			if (
+				not moved_to_access
+				and _can_micro_move_to_shelf_access()
+			):
+				_record_shelf_probe(
+					&"npc_shelf_final_access_blocked_by_empty_route",
+					_get_shelf_final_access_context({
+						"movement_block_reason": "empty_store_route"
+					})
+				)
+				final_access_result = _micro_move_to_shelf_access(
+					shelf_take_arrival_distance
+				)
+				moved_to_access = bool(final_access_result.get("arrived", false))
+
+		var body_adjacent := _is_shelf_take_body_adjacent()
+		var position_valid := _is_shelf_take_position_valid(
+			shelf_take_arrival_distance
+		)
+		var reached_by_collision := (
+			body_adjacent
+			and bool(final_access_result.get("blocked_by_target_shelf", false))
+		)
+		if (
+			not body_adjacent
+			or (not position_valid and not reached_by_collision)
+		):
+			var wait_context := _get_shelf_final_access_context({
+				"action_distance": shelf_action_distance,
+				"take_arrival_distance": shelf_take_arrival_distance,
+				"access_target": _format_vector(npc.target_position),
+				"moved_to_access": moved_to_access,
+				"body_distance": snappedf(_get_shelf_body_distance(), 0.01),
+				"distance_to_access": snappedf(
+					npc.global_position.distance_to(npc.target_position),
+					0.01
+				),
+				"position_valid": position_valid,
+				"body_adjacent": body_adjacent,
+				"reached_by_collision": reached_by_collision
+			})
+			for key in final_access_result:
+				wait_context[key] = final_access_result[key]
+			_record_shelf_probe(&"npc_shelf_take_waiting_for_range", wait_context)
+			return
 
 	npc._face_target_shelf()
 
@@ -328,6 +450,216 @@ func _record_shelf_probe(
 	StoreRuntimeDebugProbeScript.record(label, 0.0, context, 0.0)
 
 
+func _get_shelf_final_access_context(extra_context: Dictionary = {}) -> Dictionary:
+	var context: Dictionary = {
+		"distance_to_access": snappedf(
+			npc.global_position.distance_to(_get_shelf_take_access_position()),
+			0.01
+		),
+		"body_distance": snappedf(_get_shelf_body_distance(), 0.01),
+		"body_adjacent": _is_shelf_take_body_adjacent(),
+		"route_points": npc._movement_route.size(),
+		"movement_block_reason": "",
+		"pending_path_request": false,
+		"no_route_retry_active": false
+	}
+
+	if npc._route_controller != null:
+		context["pending_path_request"] = (
+			not npc._route_controller._pending_path_request.is_empty()
+		)
+		context["no_route_retry_active"] = (
+			npc._route_controller._no_route_retry_destination.is_finite()
+			and Time.get_ticks_msec() < npc._route_controller._next_no_route_retry_msec
+		)
+
+	var collision_shape := npc.get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if collision_shape != null:
+		context["npc_collision_shape_disabled"] = collision_shape.disabled
+		context["npc_collision_shape_position"] = _format_vector(collision_shape.position)
+		context["npc_collision_shape_global_position"] = _format_vector(
+			collision_shape.global_position
+		)
+		var rectangle := collision_shape.shape as RectangleShape2D
+		if rectangle != null:
+			context["npc_collision_shape_size"] = _format_vector(rectangle.size)
+
+	var collision_context := _get_slide_collision_context()
+	for key in collision_context:
+		context[key] = collision_context[key]
+
+	for key in extra_context:
+		context[key] = extra_context[key]
+
+	return context
+
+
+func _get_slide_collision_context() -> Dictionary:
+	var collision_count: int = npc.get_slide_collision_count()
+	var context: Dictionary = {
+		"slide_collisions": collision_count
+	}
+	if collision_count <= 0:
+		return context
+
+	var collision: KinematicCollision2D = npc.get_slide_collision(0)
+	if collision == null:
+		return context
+
+	context["collision_position"] = _format_vector(collision.get_position())
+	context["collision_normal"] = _format_vector(collision.get_normal())
+	context["collision_travel"] = _format_vector(collision.get_travel())
+	context["collision_remainder"] = _format_vector(collision.get_remainder())
+
+	var collider: Object = collision.get_collider()
+	if collider is Node:
+		var collider_node := collider as Node
+		context["collider_name"] = String(collider_node.name)
+		context["collider_path"] = String(collider_node.get_path())
+		var collider_owner := collider_node.get_owner()
+		if collider_owner != null:
+			context["collider_owner"] = String(collider_owner.name)
+
+	return context
+
+
+func _can_micro_move_to_shelf_access() -> bool:
+	if npc.current_state not in [
+		NPC.State.WALK_TO_SHELF,
+		NPC.State.TAKE_ITEM
+	]:
+		return false
+	if not npc._movement_route.is_empty():
+		return false
+	if not npc.target_position.is_finite():
+		return false
+	if not _is_targeting_selected_shelf_access():
+		return false
+	return (
+		npc.global_position.distance_to(npc.target_position)
+		<= SHELF_FINAL_ACCESS_MICRO_MOVE_DISTANCE
+	)
+
+
+func _is_targeting_selected_shelf_access() -> bool:
+	var access_position := _get_shelf_take_access_position()
+	if not access_position.is_finite():
+		return false
+	return npc.target_position.distance_to(access_position) <= 0.1
+
+
+func _micro_move_to_shelf_access(arrival_distance: float) -> Dictionary:
+	var before_move: Vector2 = npc.global_position
+	var before_distance: float = before_move.distance_to(npc.target_position)
+	var arrived := NPCMovement.move_to(
+		npc,
+		npc.target_position,
+		npc.SPEED,
+		arrival_distance
+	)
+	var after_distance: float = npc.global_position.distance_to(npc.target_position)
+	var moved_distance: float = before_move.distance_to(npc.global_position)
+	var collision_context := _get_slide_collision_context()
+	var blocked_by_target_shelf := _is_collision_with_target_shelf(collision_context)
+	var context := _get_shelf_final_access_context({
+		"arrived": arrived,
+		"before_distance": snappedf(before_distance, 0.01),
+		"after_distance": snappedf(after_distance, 0.01),
+		"moved_distance": snappedf(moved_distance, 0.01),
+		"blocked_by_target_shelf": blocked_by_target_shelf,
+		"movement_block_reason": (
+			"target_shelf_collision"
+			if blocked_by_target_shelf
+			else ("collision" if int(collision_context.get("slide_collisions", 0)) > 0 else "")
+		)
+	})
+	for key in collision_context:
+		context[key] = collision_context[key]
+
+	_record_shelf_probe(&"npc_shelf_final_access_move", context)
+	return context
+
+
+func _is_collision_with_target_shelf(collision_context: Dictionary) -> bool:
+	if npc._target_shelf == null or not is_instance_valid(npc._target_shelf):
+		return false
+
+	var collider_path := String(collision_context.get("collider_path", ""))
+	if collider_path == "":
+		return false
+
+	var target_path := String(npc._target_shelf.get_path())
+	return collider_path.begins_with(target_path)
+
+
+func _record_shelf_take_range_probe(action_distance: float) -> void:
+	var context: Dictionary = {
+		"action_distance": snappedf(action_distance, 0.01),
+		"within_target_action_distance": (
+			npc.global_position.distance_to(npc.target_position)
+			<= action_distance
+		),
+		"body_distance": snappedf(_get_shelf_body_distance(), 0.01),
+		"body_adjacent": _is_shelf_take_body_adjacent()
+	}
+	if npc._target_shelf != null and is_instance_valid(npc._target_shelf):
+		var access_variant: Variant = npc._target_shelf.get_meta(
+			&"npc_access_point",
+			Vector2.INF
+		)
+		if access_variant is Vector2:
+			var access_position := access_variant as Vector2
+			context["distance_to_access"] = snappedf(
+				npc.global_position.distance_to(access_position),
+				0.01
+			)
+			if npc._target_shelf.has_method("get_body_distance_to"):
+				context["access_body_distance"] = snappedf(
+					float(npc._target_shelf.call(
+						"get_body_distance_to",
+						access_position
+					)),
+					0.01
+				)
+		context["access_port_id"] = str(
+			npc._target_shelf.get_meta(&"npc_access_port_id", "")
+		)
+		context["access_side"] = str(
+			npc._target_shelf.get_meta(&"npc_access_side", "")
+		)
+		var access_port_id := StringName(str(
+			npc._target_shelf.get_meta(&"npc_access_port_id", "")
+		))
+		if (
+			access_port_id != StringName()
+			and npc._target_shelf.has_method("get_interaction_port")
+		):
+			var port: Dictionary = npc._target_shelf.get_interaction_port(access_port_id)
+			var raw_marker_position := (
+				port.get("raw_marker_position", Vector2.INF) as Vector2
+			)
+			var port_position := port.get("position", Vector2.INF) as Vector2
+			if port_position.is_finite():
+				context["selected_port_position"] = _format_vector(port_position)
+				context["selected_port_body_distance"] = snappedf(
+					float(port.get("port_body_distance", INF)),
+					0.01
+				)
+			if raw_marker_position.is_finite():
+				context["selected_raw_marker_position"] = _format_vector(
+					raw_marker_position
+				)
+				context["selected_raw_marker_body_distance"] = snappedf(
+					float(port.get("raw_marker_body_distance", INF)),
+					0.01
+				)
+				context["selected_marker_fit_distance"] = snappedf(
+					float(port.get("marker_fit_distance", 0.0)),
+					0.01
+				)
+	_record_shelf_probe(&"npc_shelf_take_range_check", context)
+
+
 func _format_vector(value: Vector2) -> String:
 	return "%.1f,%.1f" % [value.x, value.y]
 
@@ -340,6 +672,76 @@ func _get_shelf_approach_arrival_distance() -> float:
 			npc.SHELF_ACTION_DISTANCE
 		)
 	)
+
+
+func _get_shelf_approach_access_arrival_distance() -> float:
+	return SHELF_TAKE_ACCESS_ARRIVAL_DISTANCE
+
+
+func _get_shelf_take_arrival_distance() -> float:
+	return maxf(
+		SHELF_APPROACH_ARRIVAL_DISTANCE,
+		maxf(
+			npc.SHELF_VISIT_ARRIVAL_DISTANCE,
+			npc.SHELF_ACTION_DISTANCE
+		)
+	)
+
+
+func _get_shelf_take_access_arrival_distance() -> float:
+	return SHELF_TAKE_ACCESS_ARRIVAL_DISTANCE
+
+
+func _get_shelf_take_access_position() -> Vector2:
+	if npc._target_shelf == null or not is_instance_valid(npc._target_shelf):
+		return npc.target_position
+
+	var access_port_id := StringName(str(
+		npc._target_shelf.get_meta(&"npc_access_port_id", "")
+	))
+	if (
+		access_port_id != StringName()
+		and npc._target_shelf.has_method("get_interaction_port")
+	):
+		var port: Dictionary = npc._target_shelf.get_interaction_port(
+			access_port_id
+		)
+		var port_position := port.get("position", Vector2.INF) as Vector2
+		if port_position.is_finite():
+			return port_position
+
+	var access_variant: Variant = npc._target_shelf.get_meta(
+		&"npc_access_point",
+		Vector2.INF
+	)
+	if access_variant is Vector2:
+		var access_position := access_variant as Vector2
+		if access_position.is_finite():
+			return access_position
+
+	return npc.target_position
+
+
+func _is_shelf_take_position_valid(action_distance: float) -> bool:
+	var access_position := _get_shelf_take_access_position()
+	if not access_position.is_finite():
+		return false
+	return npc.global_position.distance_to(access_position) <= action_distance
+
+
+func _is_shelf_take_body_adjacent() -> bool:
+	return _get_shelf_body_distance() <= SHELF_BODY_ADJACENCY_DISTANCE
+
+
+func _get_shelf_body_distance() -> float:
+	if npc._target_shelf == null or not is_instance_valid(npc._target_shelf):
+		return INF
+	if not npc._target_shelf.has_method("get_body_distance_to"):
+		return npc.global_position.distance_to(npc._target_shelf.global_position)
+	return float(npc._target_shelf.call(
+		"get_body_distance_to",
+		npc.global_position
+	))
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

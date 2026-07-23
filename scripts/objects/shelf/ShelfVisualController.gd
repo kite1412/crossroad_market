@@ -87,7 +87,10 @@ func refresh_all_slot_visuals() -> void:
 			continue
 
 		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-		var item_sprite := _get_or_create_item_sprite(display_slot)
+		var item_sprite := _get_item_sprite(display_slot)
+		if item_sprite == null:
+			push_error("Shelf slot scene missing required Sprite2D node: %s/ItemSprite" % display_slot.get_path())
+			continue
 		item_sprite.texture = icon
 		item_sprite.visible = true
 		shown_item_ids[slot_item_id] = true
@@ -95,18 +98,6 @@ func refresh_all_slot_visuals() -> void:
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func _get_or_create_item_sprite(slot: Node2D) -> Sprite2D:
+func _get_item_sprite(slot: Node2D) -> Sprite2D:
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-	var item_sprite := slot.get_node_or_null("ItemSprite") as Sprite2D
-	if item_sprite != null:
-		return item_sprite
-
-	item_sprite = Sprite2D.new()
-	item_sprite.scale = Vector2(0.5, 0.5)
-	item_sprite.name = "ItemSprite"
-	item_sprite.z_index = 1
-	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-	var collision_shape := slot.get_node_or_null("CollisionShape2D") as CollisionShape2D
-	item_sprite.position = collision_shape.position if collision_shape != null else Vector2.ZERO
-	slot.add_child(item_sprite)
-	return item_sprite
+	return slot.get_node_or_null("ItemSprite") as Sprite2D

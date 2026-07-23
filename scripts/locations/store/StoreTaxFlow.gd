@@ -327,21 +327,16 @@ func on_tax_payment_requested() -> void:
 
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var tax := EconomyManager.get_daily_tax()
+	var hud_node := store.get_tree().get_first_node_in_group("hud")
 
 	if EconomyManager.gold < tax:
-		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-		@warning_ignore("shadowed_variable")
-		var hud := store.get_tree().get_first_node_in_group("hud")
-		if hud != null and hud.has_method("show_tax_notice"):
-			hud.call("show_tax_notice", store._latest_daily_report, "Not enough gold to pay today's tax.")
+		if hud_node != null and hud_node.has_method("show_tax_notice"):
+			hud_node.call("show_tax_notice", store._latest_daily_report, "Not enough gold to pay today's tax.")
 		return
 
 	if not EconomyManager.pay_tax():
-		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-		@warning_ignore("shadowed_variable")
-		var hud := store.get_tree().get_first_node_in_group("hud")
-		if hud != null and hud.has_method("show_tax_notice"):
-			hud.call("show_tax_notice", store._latest_daily_report, "Not enough gold to pay today's tax.")
+		if hud_node != null and hud_node.has_method("show_tax_notice"):
+			hud_node.call("show_tax_notice", store._latest_daily_report, "Not enough gold to pay today's tax.")
 		return
 
 	store._tax_pending = false
@@ -353,14 +348,10 @@ func on_tax_payment_requested() -> void:
 	store._tax_restock_close_ready_at_msec = 0
 	store._tax_restock_retry_token += 1
 
-	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-	@warning_ignore("shadowed_variable")
-	var hud := store.get_tree().get_first_node_in_group("hud")
-
-	if hud != null and hud.has_method("hide_tax_notice"):
-		hud.call("hide_tax_notice")
-	if hud != null and hud.has_method("hide_tax_report"):
-		hud.call("hide_tax_report")
+	if hud_node != null and hud_node.has_method("hide_tax_notice"):
+		hud_node.call("hide_tax_notice")
+	if hud_node != null and hud_node.has_method("hide_tax_report"):
+		hud_node.call("hide_tax_report")
 
 	store._show_notification("Tax paid.", 1.0)
 

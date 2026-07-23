@@ -14,6 +14,7 @@ const PATH_REQUEST_BACKOFF_MAX_MSEC: int = 5000
 const SAFETY_REJECT_RETRY_COOLDOWN_MSEC: int = 1200
 const ROUTE_REQUEST_PROBE_COOLDOWN_MSEC: int = 650
 const ROUTE_STEP_PROBE_COOLDOWN_MSEC: int = 650
+const ROUTE_DETAIL_MAX_POINTS: int = 8
 
 var npc = null
 @warning_ignore("unused_private_class_variable")
@@ -579,18 +580,53 @@ func build_movement_route(destination: Vector2) -> Array[Vector2]:
 
 	if not route.is_empty():
 		route = dedupe_route_points(route)
+		var raw_detail_context := {
+			"reason": "raw_store_route",
+			"destination": _format_vector(destination),
+			"raw_route_points": route.size()
+		}
+		_append_route_debug_context(
+			raw_detail_context,
+			"raw",
+			npc.global_position,
+			route
+		)
+		_record_route_probe(&"npc_route_built_detail", raw_detail_context)
 		if _should_skip_store_route_safety_pass():
-			_record_route_probe(&"npc_route_safety_accept", {
+			var prevalidated_context := {
 				"raw_route_points": route.size(),
 				"after_marker_insert_points": route.size(),
 				"sanitized_route_points": route.size(),
 				"reason": "prevalidated_queue_egress"
-			})
+			}
+			_append_route_debug_context(
+				prevalidated_context,
+				"sanitized",
+				npc.global_position,
+				route
+			)
+			_record_route_probe(&"npc_route_safety_accept", prevalidated_context)
 		elif _route_safety != null:
 			var raw_route_points := route.size()
 			route = _route_safety.sanitize_store_route(route)
 			if route.is_empty():
 				_handle_route_safety_empty(destination, raw_route_points)
+			else:
+				var sanitized_context := {
+					"raw_route_points": raw_route_points,
+					"sanitized_route_points": route.size(),
+					"reason": "sanitized_store_route"
+				}
+				_append_route_debug_context(
+					sanitized_context,
+					"sanitized",
+					npc.global_position,
+					route
+				)
+				_record_route_probe(
+					&"npc_route_safety_accept",
+					sanitized_context
+				)
 		return dedupe_route_points(route)
 
 	# Store movement must wait for a valid graph route. Falling back to a
@@ -1115,7 +1151,19 @@ func call_store_route(
 		if point_variant is Vector2:
 			route.append(point_variant as Vector2)
 
-	return dedupe_route_points(route)
+	route = dedupe_route_points(route)
+	var context := {
+		"method": String(method_name),
+		"route_points": route.size()
+	}
+	_append_route_debug_context(
+		context,
+		"result",
+		npc.global_position,
+		route
+	)
+	_record_route_probe(&"npc_store_route_result", context)
+	return route
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -1150,6 +1198,11 @@ func make_orthogonal_route(
 
 	if from_pos.distance_to(to_pos) <= 2.0:
 		return route
+
+	if absf(from_pos.x - to_pos.x) <= 1.0:
+		to_pos.x = from_pos.x
+	if absf(from_pos.y - to_pos.y) <= 1.0:
+		to_pos.y = from_pos.y
 
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var corner := (
@@ -1195,6 +1248,68 @@ func _get_route_distance(from_position: Vector2, route: Array[Vector2]) -> float
 		distance += current.distance_to(point)
 		current = point
 	return distance
+
+
+func _append_route_debug_context(
+	context: Dictionary,
+	prefix: String,
+	from_position: Vector2,
+	route: Array[Vector2]
+) -> void:
+	context["%s_route_points" % prefix] = route.size()
+	context["%s_route_distance" % prefix] = snappedf(
+		_get_route_distance(from_position, route),
+		0.01
+	)
+	context["%s_route_signature" % prefix] = _get_route_signature(
+		from_position,
+		route
+	)
+	context["%s_route_has_diagonal" % prefix] = _route_has_diagonal_segment(
+		from_position,
+		route
+	)
+	context["%s_route_sample" % prefix] = _format_route_sample(route)
+
+
+func _get_route_signature(from_position: Vector2, route: Array[Vector2]) -> String:
+	var parts: Array[String] = []
+	var current := from_position
+	for point in route:
+		var delta := point - current
+		if absf(delta.x) <= 0.01 and absf(delta.y) <= 0.01:
+			parts.append("S")
+		elif absf(delta.x) <= 0.01:
+			parts.append("V")
+		elif absf(delta.y) <= 0.01:
+			parts.append("H")
+		else:
+			parts.append("D")
+		current = point
+	return ",".join(parts)
+
+
+func _route_has_diagonal_segment(
+	from_position: Vector2,
+	route: Array[Vector2]
+) -> bool:
+	var current := from_position
+	for point in route:
+		var delta := point - current
+		if absf(delta.x) > 0.01 and absf(delta.y) > 0.01:
+			return true
+		current = point
+	return false
+
+
+func _format_route_sample(route: Array[Vector2]) -> String:
+	var parts: Array[String] = []
+	var limit := mini(route.size(), ROUTE_DETAIL_MAX_POINTS)
+	for index in range(limit):
+		parts.append(_format_vector(route[index]))
+	if route.size() > ROUTE_DETAIL_MAX_POINTS:
+		parts.append("...")
+	return " -> ".join(parts)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

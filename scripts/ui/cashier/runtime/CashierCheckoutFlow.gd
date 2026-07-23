@@ -36,7 +36,11 @@ func process_scan(npc: NPC) -> void:
 	cashier._scanned_item_id = item_id
 	cashier._scanned_item_label = item_label
 	cashier._scanned_total = 0
-	cashier._target_item_ids = npc.get_cart_item_ids() if npc.has_method("get_cart_item_ids") else [item_id]
+	cashier._target_item_ids.clear()
+	if npc.has_method("get_cart_item_ids"):
+		cashier._target_item_ids.assign(npc.get_cart_item_ids())
+	else:
+		cashier._target_item_ids.append(item_id)
 	cashier._cart_quantities.clear()
 	cashier._pending_item_id = ""
 	cashier._ask_again_count = 0
@@ -46,7 +50,7 @@ func process_scan(npc: NPC) -> void:
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
-func process_paid(show_customer_completion_dialog: bool = true) -> void:
+func process_paid(should_show_customer_completion_dialog: bool = true) -> void:
 	if not cashier._has_scanned_customer():
 		clear_scan()
 		return
@@ -67,7 +71,7 @@ func process_paid(show_customer_completion_dialog: bool = true) -> void:
 
 	# Credit the exact item total confirmed by the cashier. Scripted NPC totals
 	# describe their request, but can differ from the current catalog prices.
-	npc.complete_checkout(price, show_customer_completion_dialog)
+	npc.complete_checkout(price, should_show_customer_completion_dialog)
 
 	if npc.checkout_outcome == "reject_return":
 		if cashier._is_gooby_npc(npc):
@@ -228,7 +232,9 @@ func get_customer_request_line() -> String:
 		return "I want %s." % cashier._scanned_item_label
 
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-	var item_label := cashier._scanned_npc.get_checkout_item_label() if cashier._scanned_npc.has_method("get_checkout_item_label") else cashier._scanned_item_label
+	var item_label := cashier._scanned_item_label
+	if cashier._scanned_npc.has_method("get_checkout_item_label"):
+		item_label = cashier._scanned_npc.get_checkout_item_label()
 
 	if item_label == "":
 		item_label = cashier._scanned_item_label

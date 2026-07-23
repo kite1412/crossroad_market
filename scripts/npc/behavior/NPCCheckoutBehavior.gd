@@ -43,6 +43,11 @@ static func get_checkout_item_label(cart_items: Array[String], fallback_item_id:
 
 static func get_cart_item_ids(cart_items: Array[String], fallback_item_id: String) -> Array[String]:
 	if not cart_items.is_empty():
-		return cart_items.duplicate()
+		var item_ids: Array[String] = []
+		item_ids.assign(cart_items)
+		return item_ids
 
-	return [fallback_item_id] if fallback_item_id != "" else []
+	var fallback_items: Array[String] = []
+	if fallback_item_id != "":
+		fallback_items.append(fallback_item_id)
+	return fallback_items

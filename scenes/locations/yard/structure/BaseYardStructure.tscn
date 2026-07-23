@@ -4,7 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://b37kkeccotj33" path="res://assets/yard/grass.png" id="2_1m6w5"]
 [ext_resource type="Texture2D" uid="uid://b2upyhtlkpcdu" path="res://assets/yard/top-tree.png" id="4_7smw2"]
 [ext_resource type="Texture2D" uid="uid://c75w2fbjx2eeu" path="res://assets/yard/empty-house.png" id="5_72r58"]
-[ext_resource type="Script" uid="uid://okgf6ipqbblp" path="res://scripts/locations/yard/YardTreeClusterDepth.gd" id="6_tree_depth"]
+[ext_resource type="Script" path="res://scripts/locations/yard/YardTreeClusterDepth.gd" id="6_tree_depth"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_due37"]
 size = Vector2(285.5, 75)

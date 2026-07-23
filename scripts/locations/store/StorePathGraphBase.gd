@@ -491,7 +491,7 @@ func _store_access_metadata_from_result(
 	pass
 
 
-func get_shelf_access_graph_node(_shelf: Shelf) -> StringName:
+func get_shelf_access_graph_node(_shelf_node: Shelf) -> StringName:
 	return StringName()
 
 

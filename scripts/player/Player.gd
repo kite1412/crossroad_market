@@ -275,6 +275,11 @@ func _take_item_from_shelf(shelf: Shelf) -> void:
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _show_shelf_stock_panel(shelf: Shelf) -> void:
+	_shelf_flow.show_shelf_stock_panel(shelf)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func _handle_wrong_shelf_attempt(item_id: String, item: ItemData, shelf: Shelf) -> void:
 	await _shelf_flow.handle_wrong_shelf_attempt(item_id, item, shelf)
 

@@ -69,9 +69,13 @@ var _carried_object: Node2D = null
 @warning_ignore("unused_private_class_variable")
 var _restock_layer: CanvasLayer = null
 @warning_ignore("unused_private_class_variable")
-var _restock_panel: ColorRect = null
+var _restock_panel: Control = null
+@warning_ignore("unused_private_class_variable")
+var _restock_list_area: Control = null
 @warning_ignore("unused_private_class_variable")
 var _restock_item_list: VBoxContainer = null
+@warning_ignore("unused_private_class_variable")
+var _restock_item_scroll: ScrollContainer = null
 @warning_ignore("unused_private_class_variable")
 var _restock_wallet_label: Label = null
 @warning_ignore("unused_private_class_variable")
@@ -79,7 +83,19 @@ var _restock_selected_label: Label = null
 @warning_ignore("unused_private_class_variable")
 var _restock_guide_label: Label = null
 @warning_ignore("unused_private_class_variable")
-var _restock_action_row: Container = null
+var _restock_purchase_button: Button = null
+@warning_ignore("unused_private_class_variable")
+var _restock_close_button: Button = null
+@warning_ignore("unused_private_class_variable")
+var _restock_scrollbar_sprite: Sprite2D = null
+@warning_ignore("unused_private_class_variable")
+var _restock_scrollbar_hitbox: Control = null
+@warning_ignore("unused_private_class_variable")
+var _restock_scrollbar_dragging: bool = false
+@warning_ignore("unused_private_class_variable")
+var _restock_scrollbar_drag_offset: float = 0.0
+@warning_ignore("unused_private_class_variable")
+var _restock_scroll_max: float = 0.0
 @warning_ignore("unused_private_class_variable")
 var _selected_restock_item_id: String = ""
 @warning_ignore("unused_private_class_variable")

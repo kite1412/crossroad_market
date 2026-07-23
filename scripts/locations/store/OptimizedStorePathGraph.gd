@@ -18,6 +18,7 @@ const SHELF_ENTRY_BLOCKER_META: StringName = &"store_path_blocks_shelf_entry"
 const SHELF_ENTRY_BLOCKER_RADIUS_META: StringName = &"store_path_shelf_entry_block_radius"
 const DEFAULT_SHELF_ENTRY_BLOCKER_RADIUS: float = 22.0
 const StoreRuntimeDebugProbeScript = preload("res://scripts/debug/StoreRuntimeDebugProbe.gd")
+const NPCQueueReservationControllerScript = preload("res://scripts/npc/runtime/NPCQueueReservationController.gd")
 const EMPTY_SHELF_ACCESS_ROUTE_CACHE_MSEC: int = 750
 const EMPTY_SHELF_ACCESS_ROUTE_CACHE_REPORT_MSEC: int = 500
 const MAX_SHELF_QUAD_REJECT_DEBUG_EVENTS: int = 10
@@ -164,7 +165,8 @@ func get_route_to_shelf_access(
 		shelf,
 		npc_node
 	)
-	if candidates.is_empty():
+	var fast_candidate_count := candidates.size()
+	if npc_node != null and is_instance_valid(npc_node):
 		_append_shelf_local_access_routes(
 			candidates,
 			from_position,
@@ -172,6 +174,46 @@ func get_route_to_shelf_access(
 			shelf,
 			npc_node
 		)
+	elif candidates.is_empty():
+		_append_shelf_local_access_routes(
+			candidates,
+			from_position,
+			access_position,
+			shelf,
+			npc_node
+		)
+	var local_candidate_count := candidates.size() - fast_candidate_count
+	if npc_node != null and is_instance_valid(npc_node):
+		_record_path_graph_probe(&"npc_shelf_access_candidate_pool", {
+			"from": _format_vector(from_position),
+			"access": _format_vector(access_position),
+			"shelf_id": String(shelf.get_shelf_id()),
+			"shelf_revision": shelf.get_revision(),
+			"shelf_graph_node": String(shelf_graph_node),
+			"fast_candidates": fast_candidate_count,
+			"local_candidates": local_candidate_count,
+			"total_candidates": candidates.size(),
+			"access_body_distance": snappedf(
+				_get_shelf_body_distance_to(shelf, access_position),
+				0.01
+			)
+		})
+	if candidates.is_empty() and npc_node != null and is_instance_valid(npc_node):
+		var full_route := super.get_route_to_shelf_access(
+			shelf,
+			from_position,
+			npc_node
+		)
+		if not full_route.is_empty():
+			_record_path_graph_probe(&"npc_shelf_access_full_route_selected", {
+				"from": _format_vector(from_position),
+				"access": _format_vector(access_position),
+				"shelf_id": String(shelf.get_shelf_id()),
+				"shelf_revision": shelf.get_revision(),
+				"shelf_graph_node": String(shelf_graph_node),
+				"route_points": full_route.size()
+			})
+			return full_route
 	if candidates.is_empty():
 		_append_shelf_quad_access_fallback_routes(
 			candidates,
@@ -310,6 +352,36 @@ func get_shelf_egress_route_to_queue_from(
 
 	var candidates: Array[Dictionary] = []
 	var rejected_candidates := 0
+	var direct_rejected_candidates := 0
+	var queue_egress_target := get_queue_egress_target_position(
+		queue_index,
+		destination
+	)
+	if not queue_egress_target.is_finite():
+		queue_egress_target = destination
+	if queue_egress_target.is_finite():
+		for horizontal_first in [true, false]:
+			var direct_route := _routes.make_orthogonal_route(
+				from_position,
+				queue_egress_target,
+				horizontal_first
+			)
+			if direct_route.is_empty():
+				direct_route.append(queue_egress_target)
+			direct_route = _routes.dedupe_route_points(direct_route)
+			if _clearance.is_queue_route_clear_from_current_position(
+				from_position,
+				direct_route
+			):
+				_append_route_candidate(
+					candidates,
+					from_position,
+					direct_route,
+					npc_node
+				)
+			else:
+				direct_rejected_candidates += 1
+
 	for anchor_node in anchor_nodes:
 		var anchor_position: Vector2 = _nav.get_marker_position(anchor_node)
 		if not anchor_position.is_finite():
@@ -326,17 +398,17 @@ func get_shelf_egress_route_to_queue_from(
 			anchor_node
 		)
 		if queue_route.is_empty():
-			var queue_egress_target := get_queue_egress_target_position(
+			var anchor_queue_egress_target := get_queue_egress_target_position(
 				queue_index,
 				destination
 			)
-			if not queue_egress_target.is_finite():
-				queue_egress_target = destination
-			if not queue_egress_target.is_finite():
+			if not anchor_queue_egress_target.is_finite():
+				anchor_queue_egress_target = destination
+			if not anchor_queue_egress_target.is_finite():
 				continue
 			queue_route = _routes.make_orthogonal_route(
 				anchor_position,
-				queue_egress_target,
+				anchor_queue_egress_target,
 				cashier_axis_horizontal_first
 			)
 
@@ -397,8 +469,10 @@ func get_shelf_egress_route_to_queue_from(
 		"access": _format_vector(access_position),
 		"queue_index": queue_index,
 		"destination": _format_vector(destination),
+		"direct_destination": _format_vector(queue_egress_target),
 		"anchor_count": anchor_nodes.size(),
 		"candidate_count": candidates.size(),
+		"direct_rejected_candidates": direct_rejected_candidates,
 		"rejected_candidates": rejected_candidates,
 		"route_points": route.size()
 	})
@@ -1117,6 +1191,8 @@ func _is_shelf_entry_segment_allowed(
 			continue
 		if not bool(marker.get_meta(SHELF_ENTRY_BLOCKER_META, false)):
 			continue
+		if not _is_shelf_entry_blocker_active(marker):
+			continue
 
 		var marker_position := marker.global_position
 		var block_radius := float(marker.get_meta(
@@ -1146,6 +1222,8 @@ func _get_shelf_entry_segment_reject_context(
 			continue
 		if not bool(marker.get_meta(SHELF_ENTRY_BLOCKER_META, false)):
 			continue
+		if not _is_shelf_entry_blocker_active(marker):
+			continue
 
 		var marker_position := marker.global_position
 		var block_radius := float(marker.get_meta(
@@ -1168,6 +1246,14 @@ func _get_shelf_entry_segment_reject_context(
 		}
 
 	return {}
+
+
+func _is_shelf_entry_blocker_active(marker: Marker2D) -> bool:
+	if marker == null:
+		return false
+	if marker.has_meta("store_queue_index"):
+		return NPCQueueReservationControllerScript.size() > 0
+	return true
 
 
 func _distance_to_segment(
@@ -1323,6 +1409,14 @@ func _format_vector(value: Vector2) -> String:
 	return "%.1f,%.1f" % [value.x, value.y]
 
 
+func _get_shelf_body_distance_to(shelf: Shelf, point: Vector2) -> float:
+	if shelf == null or not is_instance_valid(shelf):
+		return INF
+	if not shelf.has_method("get_body_distance_to"):
+		return shelf.global_position.distance_to(point)
+	return float(shelf.call("get_body_distance_to", point))
+
+
 func _find_fast_marker_port_access(
 	shelf_position: Vector2,
 	shelf_object: Node2D
@@ -1333,20 +1427,42 @@ func _find_fast_marker_port_access(
 
 	var best_result: Dictionary = {"valid": false}
 	var best_score := INF
+	var checked_ports := 0
+	var rejected_ports := 0
 	for port in shelf.get_interaction_ports():
+		checked_ports += 1
 		var access_position := port.get("position", Vector2.INF) as Vector2
 		if not access_position.is_finite():
+			rejected_ports += 1
+			_record_marker_port_probe(
+				&"shelf_marker_port_access_reject",
+				shelf,
+				shelf_position,
+				port,
+				"invalid_access_position",
+				{}
+			)
 			continue
 
 		var vertical_distance := absf(access_position.y - shelf_position.y)
 		var horizontal_distance := absf(access_position.x - shelf_position.x)
-		if horizontal_distance > SHELF_ACCESS_COLUMN_EPSILON:
-			continue
 		if not _clearance.is_npc_access_point_clear(
 			access_position,
 			shelf_object,
 			shelf_position
 		):
+			rejected_ports += 1
+			_record_marker_port_probe(
+				&"shelf_marker_port_access_reject",
+				shelf,
+				shelf_position,
+				port,
+				"access_point_blocked",
+				{
+					"horizontal_distance": snappedf(horizontal_distance, 0.01),
+					"vertical_distance": snappedf(vertical_distance, 0.01)
+				}
+			)
 			continue
 
 		var connection := _find_fast_access_connection(
@@ -1356,6 +1472,18 @@ func _find_fast_marker_port_access(
 			shelf_position
 		)
 		if not bool(connection.get("valid", false)):
+			rejected_ports += 1
+			_record_marker_port_probe(
+				&"shelf_marker_port_access_reject",
+				shelf,
+				shelf_position,
+				port,
+				"connection_missing",
+				{
+					"horizontal_distance": snappedf(horizontal_distance, 0.01),
+					"vertical_distance": snappedf(vertical_distance, 0.01)
+				}
+			)
 			continue
 
 		var score: float = (
@@ -1373,13 +1501,109 @@ func _find_fast_marker_port_access(
 			"graph_node": connection.get("node", StringName()),
 			"surface_route": connection.get("route", []),
 			"score": score,
-			"access_side": "below" if access_position.y >= shelf_position.y else "above",
+			"access_side": _get_marker_port_access_side(
+				access_position,
+				shelf_position
+			),
 			"access_source": "marker_port",
 			"port_id": str(port.get("port_id", "")),
+			"port_body_distance": float(port.get("port_body_distance", INF)),
+			"raw_marker_position": port.get("raw_marker_position", Vector2.INF),
+			"raw_marker_body_distance": float(
+				port.get("raw_marker_body_distance", INF)
+			),
+			"marker_fit_distance": float(port.get("marker_fit_distance", 0.0)),
+			"fitted_from_marker": bool(port.get("fitted_from_marker", false)),
 			"checkout_source": &"fast_marker_port"
 		}
 
+	if bool(best_result.get("valid", false)):
+		_record_path_graph_probe(&"shelf_marker_port_access_selected", {
+			"shelf_id": String(shelf.get_shelf_id()),
+			"shelf_revision": shelf.get_revision(),
+			"shelf_position": _format_vector(shelf_position),
+			"access": _format_vector(best_result.get("access_point", Vector2.INF) as Vector2),
+			"graph_node": String(best_result.get("graph_node", StringName()) as StringName),
+			"port_id": str(best_result.get("port_id", "")),
+			"port_body_distance": snappedf(
+				float(best_result.get("port_body_distance", INF)),
+				0.01
+			),
+			"raw_marker_position": _format_vector(
+				best_result.get("raw_marker_position", Vector2.INF) as Vector2
+			),
+			"raw_marker_body_distance": snappedf(
+				float(best_result.get("raw_marker_body_distance", INF)),
+				0.01
+			),
+			"marker_fit_distance": snappedf(
+				float(best_result.get("marker_fit_distance", 0.0)),
+				0.01
+			),
+			"fitted_from_marker": bool(best_result.get("fitted_from_marker", false)),
+			"score": snappedf(float(best_result.get("score", 0.0)), 0.01),
+			"checked_ports": checked_ports,
+			"rejected_ports": rejected_ports
+		})
+	else:
+		_record_path_graph_probe(&"shelf_marker_port_access_empty", {
+			"shelf_id": String(shelf.get_shelf_id()),
+			"shelf_revision": shelf.get_revision(),
+			"shelf_position": _format_vector(shelf_position),
+			"checked_ports": checked_ports,
+			"rejected_ports": rejected_ports
+		})
+
 	return best_result
+
+
+func _record_marker_port_probe(
+	label: StringName,
+	shelf: Shelf,
+	shelf_position: Vector2,
+	port: Dictionary,
+	reason: String,
+	extra_context: Dictionary
+) -> void:
+	var context: Dictionary = {
+		"reason": reason,
+		"shelf_id": String(shelf.get_shelf_id()),
+		"shelf_revision": shelf.get_revision(),
+		"shelf_position": _format_vector(shelf_position),
+		"port_id": str(port.get("port_id", "")),
+		"port_position": _format_vector(port.get("position", Vector2.INF) as Vector2),
+		"port_facing": int(port.get("facing", 0)),
+		"port_body_distance": snappedf(
+			float(port.get("port_body_distance", INF)),
+			0.01
+		),
+		"raw_marker_position": _format_vector(
+			port.get("raw_marker_position", Vector2.INF) as Vector2
+		),
+		"raw_marker_body_distance": snappedf(
+			float(port.get("raw_marker_body_distance", INF)),
+			0.01
+		),
+		"marker_fit_distance": snappedf(
+			float(port.get("marker_fit_distance", 0.0)),
+			0.01
+		),
+		"fitted_from_marker": bool(port.get("fitted_from_marker", false))
+	}
+	for key in extra_context:
+		context[key] = extra_context[key]
+	_record_path_graph_probe(label, context)
+
+
+func _get_marker_port_access_side(
+	access_position: Vector2,
+	shelf_position: Vector2
+) -> String:
+	var horizontal_distance := absf(access_position.x - shelf_position.x)
+	var vertical_distance := absf(access_position.y - shelf_position.y)
+	if horizontal_distance > vertical_distance:
+		return "right" if access_position.x >= shelf_position.x else "left"
+	return "below" if access_position.y >= shelf_position.y else "above"
 
 
 func _find_fast_access_connection(

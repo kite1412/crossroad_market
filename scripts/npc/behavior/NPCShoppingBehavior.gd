@@ -4,9 +4,14 @@ extends RefCounted
 
 static func get_requested_items(shopping_list: Array[String], fallback_item_id: String) -> Array[String]:
 	if not shopping_list.is_empty():
-		return shopping_list.duplicate()
+		var requested_items: Array[String] = []
+		requested_items.assign(shopping_list)
+		return requested_items
 
-	return [fallback_item_id] if fallback_item_id != "" else []
+	var fallback_items: Array[String] = []
+	if fallback_item_id != "":
+		fallback_items.append(fallback_item_id)
+	return fallback_items
 
 
 static func find_shelf_with_item(tree: SceneTree, item_id: String) -> Shelf:

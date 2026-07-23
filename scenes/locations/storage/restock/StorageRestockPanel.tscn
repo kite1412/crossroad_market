@@ -1,0 +1,188 @@
+[gd_scene format=3 uid="uid://vy74nqswkch8"]
+
+[ext_resource type="Texture2D" uid="uid://l14t6wigqyh6" path="res://assets/RestockUI/UI 1.png" id="1_8ggci"]
+[ext_resource type="Texture2D" uid="uid://cqdhxsy3txub1" path="res://assets/RestockUI/Scroll Button.png" id="3_7auqj"]
+[ext_resource type="PackedScene" uid="uid://bwldbxb5cgmxi" path="res://scenes/locations/storage/restock/ListRestockPanel.tscn" id="4_list_row"]
+
+[node name="StorageRestockPanel" type="Control" unique_id=1409733011]
+clip_contents = true
+layout_mode = 3
+anchor_left = 0.16100001
+anchor_top = 0.056
+anchor_right = 0.88400006
+anchor_bottom = 0.929
+offset_left = -76.28001
+offset_top = -14.120001
+offset_right = 55.679962
+offset_bottom = 19.169998
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MainFrame" type="Sprite2D" parent="." unique_id=402082761]
+position = Vector2(247, 134)
+scale = Vector2(1.9, 1.9)
+texture = ExtResource("1_8ggci")
+region_enabled = true
+region_rect = Rect2(14.213291, 14.20557, 190.84956, 132.74863)
+
+[node name="RestockUiItemList" parent="." unique_id=503725751 instance=ExtResource("4_list_row")]
+visible = false
+layout_mode = 0
+offset_left = 81.7
+offset_top = 20.1
+offset_right = 292.3
+offset_bottom = 40.1
+
+[node name="ItemScroll" type="ScrollContainer" parent="." unique_id=1849201211]
+layout_mode = 0
+offset_left = 81.7
+offset_top = 20.1
+offset_right = 292.3
+offset_bottom = 248.1
+mouse_filter = 0
+follow_focus = true
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 3
+
+[node name="ItemMargin" type="MarginContainer" parent="ItemScroll" unique_id=1849201212]
+layout_mode = 2
+
+[node name="ItemList" type="VBoxContainer" parent="ItemScroll/ItemMargin" unique_id=1849201213]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="ScrollBar" type="Sprite2D" parent="." unique_id=1676744461]
+position = Vector2(301, 29)
+texture = ExtResource("3_7auqj")
+region_enabled = true
+region_rect = Rect2(134.93579, 17.647757, 6.115219, 23.561563)
+
+[node name="RestockScrollHitbox" type="Control" parent="." unique_id=1849201214]
+anchors_preset = 0
+offset_left = 297.0
+offset_top = 18.1
+offset_right = 305.0
+offset_bottom = 246.1
+mouse_filter = 2
+
+[node name="ScrollBarBottom" type="Marker2D" parent="." unique_id=1849201215]
+position = Vector2(301, 239)
+
+[node name="Note" type="Label" parent="." unique_id=1765565937]
+layout_mode = 0
+offset_left = 317.0
+offset_top = 25.0
+offset_right = 429.0
+offset_bottom = 48.0
+scale = Vector2(0.8, 0.8)
+theme_override_colors/font_color = Color(0.235294, 0.145098, 0.105882, 1)
+text = "NOTE"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="DetailArea" type="Control" parent="." unique_id=1812050656]
+anchors_preset = 0
+offset_left = 312.0
+offset_top = 65.0
+offset_right = 411.0
+offset_bottom = 165.0
+mouse_filter = 2
+
+[node name="DetailColumn" type="VBoxContainer" parent="DetailArea" unique_id=1849201216]
+clip_contents = true
+layout_mode = 0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 99.0
+offset_bottom = 100.0
+mouse_filter = 2
+theme_override_constants/separation = 3
+
+[node name="WalletLabel" type="Label" parent="DetailArea/DetailColumn" unique_id=1849201217]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.235294, 0.145098, 0.105882, 1)
+theme_override_font_sizes/font_size = 8
+
+[node name="SelectedLabel" type="Label" parent="DetailArea/DetailColumn" unique_id=1849201218]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.235294, 0.145098, 0.105882, 1)
+theme_override_font_sizes/font_size = 8
+text = "Cart Total: 0G"
+autowrap_mode = 2
+vertical_alignment = 1
+
+[node name="GuideLabel" type="Label" parent="DetailArea/DetailColumn" unique_id=1849201219]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.235294, 0.145098, 0.105882, 1)
+theme_override_font_sizes/font_size = 7
+autowrap_mode = 2
+max_lines_visible = 2
+
+[node name="ActionRow" type="VBoxContainer" parent="DetailArea/DetailColumn" unique_id=1849201220]
+layout_mode = 2
+custom_minimum_size = Vector2(99, 34)
+theme_override_constants/separation = 2
+
+[node name="CloseButton" type="Button" parent="." unique_id=975910989]
+layout_mode = 0
+offset_left = 328.00003
+offset_top = 221.0
+offset_right = 372.73688
+offset_bottom = 234.1579
+scale = Vector2(1.5, 1.5)
+mouse_filter = 0
+focus_mode = 0
+tooltip_text = ""
+flat = true
+
+[node name="Sprite2D" type="Sprite2D" parent="CloseButton" unique_id=1394950676]
+position = Vector2(22.10527, 6.3157806)
+texture = ExtResource("1_8ggci")
+region_enabled = true
+region_rect = Rect2(204.21518, 128.59348, 42.363464, 13.37793)
+
+[node name="Label" type="Label" parent="CloseButton" unique_id=1314825382]
+layout_mode = 0
+offset_left = 12.666645
+offset_top = -1.999939
+offset_right = 37.666645
+offset_bottom = 18.000061
+scale = Vector2(0.8, 0.8)
+theme_override_colors/font_color = Color(0.356863, 0.176471, 0.0941176, 1)
+theme_override_font_sizes/font_size = 8
+text = "CLOSE"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PurchaseButton" type="Button" parent="." unique_id=1076584059]
+layout_mode = 0
+offset_left = 328.00006
+offset_top = 197.99998
+offset_right = 372.7369
+offset_bottom = 211.15788
+scale = Vector2(1.5, 1.5)
+mouse_filter = 0
+focus_mode = 0
+tooltip_text = ""
+flat = true
+
+[node name="Sprite2D" type="Sprite2D" parent="PurchaseButton" unique_id=1436439473]
+position = Vector2(22.10527, 6.3157806)
+texture = ExtResource("1_8ggci")
+region_enabled = true
+region_rect = Rect2(204.21518, 128.59348, 42.363464, 13.37793)
+
+[node name="Label" type="Label" parent="PurchaseButton" unique_id=976268440]
+layout_mode = 0
+offset_left = 15.3333435
+offset_top = -2.4000015
+offset_right = 35.333344
+offset_bottom = 20.599998
+scale = Vector2(0.8, 0.8)
+theme_override_colors/font_color = Color(0.356863, 0.176471, 0.0941176, 1)
+theme_override_font_sizes/font_size = 8
+text = "BUY"
+horizontal_alignment = 1
+vertical_alignment = 1

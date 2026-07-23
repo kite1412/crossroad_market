@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://dauvgwqeqn80k"]
 
 [ext_resource type="Script" uid="uid://bxgtsm82o0dls" path="res://scripts/ui/HUD.gd" id="1"]
-[ext_resource type="PackedScene" uid="uid://cnvnuy02s2gg3" path="res://scenes/ui/InventoryUI.tscn" id="2"]
 [ext_resource type="PackedScene" uid="uid://bstxttr3xm7mf" path="res://scenes/ui/Dialog.tscn" id="3_dialog"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_s1uhu"]
@@ -95,9 +94,6 @@ theme_override_colors/font_color = Color(0.98039216, 0.85882354, 0.78039217, 1)
 theme_override_font_sizes/font_size = 8
 theme_override_styles/normal = SubResource("StyleBoxFlat_s1uhu")
 text = "⚙"
-
-[node name="InventoryUI" parent="." unique_id=1582218282 instance=ExtResource("2")]
-layout_mode = 3
 
 [node name="ObjectiveLabel" type="Label" parent="." unique_id=319350362]
 anchors_preset = 7

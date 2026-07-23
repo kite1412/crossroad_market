@@ -12,9 +12,10 @@ const QUEUE_SHELF_TRANSIT_BACK1: StringName = &"StorePathQueueBack1"
 const QUEUE_SHELF_TRANSIT_BACK2: StringName = &"StorePathQueueBack2"
 const QUEUE_SHELF_TRANSIT_FULL: StringName = &"StorepathParsenpc"
 const QUEUE_SHELF_TRANSIT_MARKERS: Array[StringName] = [
-	QUEUE_SHELF_TRANSIT_FRONT,
-	QUEUE_SHELF_TRANSIT_BACK1,
-	QUEUE_SHELF_TRANSIT_BACK2
+	&"StorePathQueueFrontRight",
+	&"StorePathQueueBack1Right",
+	&"StorePathQueueBack2Right",
+	&"StorePathQueueExitRight"
 ]
 const CHECKOUT_RIGHT_ROUTE_MARKERS: Array[StringName] = [
 	&"StorePathQueueFrontRight",
@@ -256,12 +257,19 @@ func get_npc_exit_route_from(
 		exit_position
 	)
 	if not graph_route.is_empty():
-		_record_route_probe(&"npc_exit_route_select", {
+		var graph_context := {
 			"reason": "graph",
 			"from": _format_vector(from_position),
 			"exit": _format_vector(exit_position),
 			"route_points": graph_route.size()
-		})
+		}
+		_append_route_debug_context(
+			graph_context,
+			"route",
+			from_position,
+			graph_route
+		)
+		_record_route_probe(&"npc_exit_route_select", graph_context)
 		return graph_route
 
 	return _build_exit_lane_route(
@@ -410,7 +418,7 @@ func get_npc_exit_route_from_cashier(
 			"checkout_right_empty"
 		)
 
-	_record_route_probe(&"npc_checkout_exit_route_plan", {
+	var checkout_plan_context := {
 		"from": _format_vector(from_position),
 		"exit": _format_vector(exit_position),
 		"start_index": start_index,
@@ -429,19 +437,33 @@ func get_npc_exit_route_from_cashier(
 		"rejoin_marker": String(rejoin_marker.name),
 		"rejoin_position": _format_vector(rejoin_marker.global_position),
 		"route_points": route.size(),
-		"first_point": _format_vector(route[0] if not route.is_empty() else Vector2.INF),
-		"second_point": _format_vector(route[1] if route.size() > 1 else Vector2.INF),
+		"first_point": _format_vector(_get_route_point_or_inf(route, 0)),
+		"second_point": _format_vector(_get_route_point_or_inf(route, 1)),
 		"first_segment_from": _format_vector(from_position),
-		"first_segment_to": _format_vector(route[0] if not route.is_empty() else Vector2.INF),
+		"first_segment_to": _format_vector(_get_route_point_or_inf(route, 0)),
 		"graph_tail_points": graph_route.size()
-	})
-	_record_route_probe(&"npc_exit_route_select", {
+	}
+	_append_route_debug_context(
+		checkout_plan_context,
+		"route",
+		from_position,
+		route
+	)
+	_record_route_probe(&"npc_checkout_exit_route_plan", checkout_plan_context)
+	var exit_select_context := {
 		"reason": "checkout_right_lane",
 		"from": _format_vector(from_position),
 		"exit": _format_vector(exit_position),
 		"route_points": route.size(),
 		"graph_tail_points": graph_route.size()
-	})
+	}
+	_append_route_debug_context(
+		exit_select_context,
+		"route",
+		from_position,
+		route
+	)
+	_record_route_probe(&"npc_exit_route_select", exit_select_context)
 	return route
 
 
@@ -452,6 +474,12 @@ func _format_marker_names(markers: Array[Marker2D]) -> String:
 			continue
 		names.append(String(marker.name))
 	return ",".join(names)
+
+
+func _get_route_point_or_inf(route: Array[Vector2], index: int) -> Vector2:
+	if index < 0 or index >= route.size():
+		return Vector2.INF
+	return route[index]
 
 
 func get_npc_checkout_exit_blocking_context(
@@ -1182,6 +1210,11 @@ func _append_orthogonal_route_leg(
 		_append_unique_route_point(route, to_position)
 		return to_position
 
+	if absf(from_position.x - to_position.x) <= 1.0:
+		to_position.x = from_position.x
+	if absf(from_position.y - to_position.y) <= 1.0:
+		to_position.y = from_position.y
+
 	if (
 		absf(from_position.x - to_position.x) > 0.5
 		and absf(from_position.y - to_position.y) > 0.5
@@ -1199,6 +1232,64 @@ func _append_orthogonal_route_leg(
 
 func _record_route_probe(label: StringName, context: Dictionary) -> void:
 	StoreRuntimeDebugProbeScript.record(label, 0.0, context, 0.0)
+
+
+func _append_route_debug_context(
+	context: Dictionary,
+	prefix: String,
+	from_position: Vector2,
+	route: Array[Vector2]
+) -> void:
+	context["%s_signature" % prefix] = _get_route_signature(from_position, route)
+	context["%s_has_diagonal" % prefix] = _route_has_diagonal_segment(
+		from_position,
+		route
+	)
+	context["%s_sample" % prefix] = _format_route_sample(route)
+	context["%s_distance" % prefix] = snappedf(
+		_get_route_distance(from_position, route),
+		0.01
+	)
+
+
+func _get_route_signature(from_position: Vector2, route: Array[Vector2]) -> String:
+	var parts: Array[String] = []
+	var current := from_position
+	for point in route:
+		var delta := point - current
+		if absf(delta.x) <= 0.01 and absf(delta.y) <= 0.01:
+			parts.append("S")
+		elif absf(delta.x) <= 0.01:
+			parts.append("V")
+		elif absf(delta.y) <= 0.01:
+			parts.append("H")
+		else:
+			parts.append("D")
+		current = point
+	return ",".join(parts)
+
+
+func _route_has_diagonal_segment(
+	from_position: Vector2,
+	route: Array[Vector2]
+) -> bool:
+	var current := from_position
+	for point in route:
+		var delta := point - current
+		if absf(delta.x) > 0.01 and absf(delta.y) > 0.01:
+			return true
+		current = point
+	return false
+
+
+func _format_route_sample(route: Array[Vector2]) -> String:
+	var parts: Array[String] = []
+	var limit := mini(route.size(), 8)
+	for index in range(limit):
+		parts.append(_format_vector(route[index]))
+	if route.size() > 8:
+		parts.append("...")
+	return " -> ".join(parts)
 
 
 func _format_vector(value: Vector2) -> String:

@@ -5,6 +5,7 @@ const NPCResolvedExitRouteController = preload("res://scripts/npc/runtime/NPCRes
 const NPCLiveQueueStateFlow = preload("res://scripts/npc/runtime/NPCLiveQueueStateFlow.gd")
 const NPCReachableShelfShoppingFlow = preload("res://scripts/npc/runtime/NPCReachableShelfShoppingFlow.gd")
 const NPCCheckoutLaneQueueFlow = preload("res://scripts/npc/runtime/NPCCheckoutLaneQueueFlow.gd")
+const StoreRuntimeDebugProbeScript = preload("res://scripts/debug/StoreRuntimeDebugProbe.gd")
 const CUSTOMER_INTAKE_CLOSED_META: StringName = &"customer_intake_closed_today"
 const MAX_NPC_ACTIVATIONS_PER_FRAME: int = 2
 const NPC_ACTIVATION_STAGGER_MSEC: int = 16
@@ -70,6 +71,10 @@ func process_npc_runtime(_delta: float) -> void:
 
 		var request: Dictionary = _pending_npc_activations[index]
 		if now_msec < int(request.get("ready_msec", 0)):
+			index += 1
+			continue
+		if is_customer_spawn_blocked_by_shelf_layout():
+			_record_customer_spawn_probe(&"customer_spawn_blocked_by_shelf_layout")
 			index += 1
 			continue
 
@@ -166,6 +171,48 @@ func is_store_world_available_for_customer_spawn() -> bool:
 		and store._current_yard == null
 		and store._current_home == null
 	)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func is_customer_spawn_blocked_by_shelf_layout() -> bool:
+	if store == null:
+		return false
+	if store.has_method("_get_carried_object_from_player"):
+		if store.call("_get_carried_object_from_player") != null:
+			return true
+
+	for node in store.get_tree().get_nodes_in_group("shelves"):
+		if node == null or not is_instance_valid(node):
+			continue
+		if node.has_meta("npc_path_pending") and bool(node.get_meta("npc_path_pending")):
+			return true
+		if node.has_meta("pending_shelf_access_update_token"):
+			return true
+
+	return false
+
+
+func _record_customer_spawn_probe(label: StringName) -> void:
+	var context: Dictionary = {
+		"carried_object": "",
+		"pending_shelves": 0
+	}
+	if store != null and store.has_method("_get_carried_object_from_player"):
+		var carried_variant: Variant = store.call("_get_carried_object_from_player")
+		if carried_variant is Node:
+			context["carried_object"] = (carried_variant as Node).name
+
+	if store != null:
+		for node in store.get_tree().get_nodes_in_group("shelves"):
+			if node == null or not is_instance_valid(node):
+				continue
+			if (
+				(node.has_meta("npc_path_pending") and bool(node.get_meta("npc_path_pending")))
+				or node.has_meta("pending_shelf_access_update_token")
+			):
+				context["pending_shelves"] = int(context["pending_shelves"]) + 1
+
+	StoreRuntimeDebugProbeScript.record(label, 0.0, context, 0.0)
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

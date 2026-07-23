@@ -72,9 +72,9 @@ func try_interact() -> void:
 		interact_with_restock_package(best_target as RestockPackage)
 		return
 
-		if is_npc_feedback_board(best_target):
-			interact_with_npc_feedback_board(best_target)
-			return
+	if is_npc_feedback_board(best_target):
+		interact_with_npc_feedback_board(best_target)
+		return
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

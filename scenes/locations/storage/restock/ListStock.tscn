@@ -1,0 +1,26 @@
+[gd_scene format=3 uid="uid://ctmiisgaf8w8d"]
+
+[ext_resource type="Texture2D" uid="uid://nad3avcjg0vw" path="res://assets/RestockUI/UI Restock.png" id="1_uuqwh"]
+
+[node name="ListStock" type="Node2D" unique_id=463642138]
+
+[node name="ListStockItem" type="Sprite2D" parent="." unique_id=7026839]
+position = Vector2(102.00001, 144)
+scale = Vector2(1.5, 1.5)
+texture = ExtResource("1_uuqwh")
+region_enabled = true
+region_rect = Rect2(32.026207, 157.34578, 94.77803, 134.65752)
+
+[node name="Label" type="Label" parent="ListStockItem" unique_id=994853557]
+offset_left = -18.999992
+offset_top = -57.5
+offset_right = 110.00001
+offset_bottom = -34.5
+scale = Vector2(0.32, 0.3)
+text = "LIST STOCK ITEM"
+
+[node name="IconListStockItem" type="Sprite2D" parent="." unique_id=1071843147]
+position = Vector2(20, 58)
+texture = ExtResource("1_uuqwh")
+region_enabled = true
+region_rect = Rect2(14.427074, 158.13937, 18.433262, 18.912048)

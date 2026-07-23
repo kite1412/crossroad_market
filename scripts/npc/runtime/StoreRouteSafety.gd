@@ -106,12 +106,51 @@ func _insert_intermediate_markers(
 			target,
 			store
 		):
-			_append_unique_point(result, marker_position)
+			current = _append_orthogonal_leg(
+				result,
+				current,
+				marker_position,
+				true
+			)
 
-		_append_unique_point(result, target)
-		current = target
+		current = _append_orthogonal_leg(result, current, target, true)
 
 	return result
+
+
+func _append_orthogonal_leg(
+	points: Array[Vector2],
+	from_position: Vector2,
+	to_position: Vector2,
+	horizontal_first: bool = true
+) -> Vector2:
+	if not to_position.is_finite():
+		return from_position
+	if not from_position.is_finite():
+		_append_unique_point(points, to_position)
+		return to_position
+	if from_position.distance_to(to_position) <= POINT_EPSILON:
+		_append_unique_point(points, to_position)
+		return to_position
+
+	if absf(from_position.x - to_position.x) <= 1.0:
+		to_position.x = from_position.x
+	if absf(from_position.y - to_position.y) <= 1.0:
+		to_position.y = from_position.y
+
+	if (
+		absf(from_position.x - to_position.x) > 0.01
+		and absf(from_position.y - to_position.y) > 0.01
+	):
+		var intermediate := (
+			Vector2(to_position.x, from_position.y)
+			if horizontal_first
+			else Vector2(from_position.x, to_position.y)
+		)
+		_append_unique_point(points, intermediate)
+
+	_append_unique_point(points, to_position)
+	return to_position
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")

@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://b3lvay4upsxqy"]
 
-[ext_resource type="Script" uid="uid://dbej24xib71dn" path="res://scripts/locations/Yard.gd" id="1_yard"]
+[ext_resource type="Script" path="res://scripts/locations/Yard.gd" id="1_yard"]
 [ext_resource type="Script" uid="uid://cy1gbklrdsunj" path="res://scripts/locations/yard/YardSceneFlow.gd" id="2_scene_flow"]
 [ext_resource type="Script" uid="uid://dgi7i2wwia6du" path="res://scripts/locations/yard/YardRestockFlow.gd" id="3_restock_flow"]
 [ext_resource type="PackedScene" path="res://scenes/locations/yard/YardRestockDropZone.tscn" id="6_restock_drop"]

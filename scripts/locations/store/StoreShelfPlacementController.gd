@@ -31,7 +31,7 @@ const SHELF_SPACING_AREA_PATH: NodePath = NodePath("ShelfSpacingArea")
 const ALL_PHYSICS_LAYERS: int = 0x7FFFFFFF
 const PENDING_ACCESS_UPDATE_META: StringName = &"pending_shelf_access_update_token"
 const NPC_PATH_PENDING_META: StringName = &"npc_path_pending"
-const DEFERRED_ACCESS_DELAY_MSEC: int = 150
+const DEFERRED_ACCESS_DELAY_MSEC: int = 0
 const SHELF_ACCESS_WARMUP_DELAY: float = 1.0
 
 var store: Node = null
@@ -193,6 +193,15 @@ func request_drop_carried_shelf() -> bool:
 	if carried_object == null:
 		return false
 
+	if is_shelf_layout_locked_by_customers():
+		store._show_notification("Wait for customers to leave before moving shelves.", 1.0)
+		_record_shelf_layout_mutation_blocked(
+			&"drop",
+			carried_object,
+			"active_customers"
+		)
+		return true
+
 	drop_carried_shelf_in_store(carried_object)
 	return true
 
@@ -210,6 +219,15 @@ func request_pickup_shelf(shelf: Shelf) -> bool:
 	if shelf.has_meta("is_carried_storage_object") and bool(shelf.get_meta("is_carried_storage_object")):
 		return false
 
+	if is_shelf_layout_locked_by_customers():
+		store._show_notification("Wait for customers to leave before moving shelves.", 1.0)
+		_record_shelf_layout_mutation_blocked(
+			&"pickup",
+			shelf,
+			"active_customers"
+		)
+		return true
+
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var is_within_pickup_distance: bool = store.player.global_position.distance_to(shelf.global_position) <= STORE_SHELF_PICKUP_DISTANCE
 
@@ -223,6 +241,65 @@ func request_pickup_shelf(shelf: Shelf) -> bool:
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func is_player_carrying_shelf_named(shelf_name: String) -> bool:
 	return StoreShelfController.is_player_carrying_shelf_named(store.player, shelf_name)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func is_shelf_layout_locked_by_customers() -> bool:
+	if store == null or not store.has_method("_has_active_customer_npcs"):
+		return false
+	return bool(store.call("_has_active_customer_npcs"))
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _record_shelf_layout_mutation_blocked(
+	action: StringName,
+	object: Node2D,
+	reason: String
+) -> void:
+	var carried_object := get_carried_object_from_player()
+	var context: Dictionary = {
+		"action": String(action),
+		"object": object.name if object != null else "",
+		"object_path": str(object.get_path()) if object != null and is_instance_valid(object) else "",
+		"object_parent": object.get_parent().name if object != null and is_instance_valid(object) and object.get_parent() != null else "",
+		"object_position": _format_vector(object.global_position) if object != null and is_instance_valid(object) else "inf,inf",
+		"reason": reason,
+		"active_customer_count": _get_active_customer_count(),
+		"queue_size": NPC.current_queue.size(),
+		"carried_object": carried_object.name if carried_object != null else "",
+		"carried_object_path": str(carried_object.get_path()) if carried_object != null and is_instance_valid(carried_object) else ""
+	}
+	if object is Shelf:
+		var shelf := object as Shelf
+		context["shelf_id"] = String(shelf.get_shelf_id())
+		context["shelf_revision"] = shelf.get_revision()
+		context["shelf_type"] = int(shelf.shelf_type)
+		context["shelf_lifecycle"] = String(shelf.get_lifecycle())
+		context["is_carried_storage_object"] = bool(shelf.get_meta("is_carried_storage_object", false))
+		context["is_installed_in_store"] = bool(shelf.get_meta("is_installed_in_store", false))
+		context["npc_path_ready"] = bool(shelf.get_meta("npc_path_ready", false))
+		var access_variant: Variant = shelf.get_meta("npc_access_point", Vector2.INF)
+		if access_variant is Vector2:
+			context["npc_access_point"] = _format_vector(access_variant as Vector2)
+
+	StoreRuntimeDebugProbeScript.record(
+		&"shelf_layout_mutation_blocked",
+		0.0,
+		context,
+		0.0
+	)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func _get_active_customer_count() -> int:
+	if store == null:
+		return 0
+
+	var count := 0
+	for node in store.get_tree().get_nodes_in_group("npcs"):
+		if node != null and is_instance_valid(node) and not node.is_queued_for_deletion():
+			count += 1
+	return count
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
@@ -1051,19 +1128,19 @@ func get_queue_drop_block_markers() -> Array[Marker2D]:
 	for child in store.store_path_markers.get_children():
 		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		@warning_ignore("shadowed_variable", "shadowed_variable_base_class")
-		var marker := child as Marker2D
-		if marker == null:
+		var path_marker := child as Marker2D
+		if path_marker == null:
 			continue
 
 		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var role := StringName()
-		if marker.has_meta("store_path_role"):
+		if path_marker.has_meta("store_path_role"):
 			@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
-			var role_value: Variant = marker.get_meta("store_path_role")
+			var role_value: Variant = path_marker.get_meta("store_path_role")
 			role = StringName(str(role_value))
 
 		if role == &"queue_front" or role == &"queue_back":
-			markers.append(marker)
+			markers.append(path_marker)
 
 	return markers
 
@@ -1194,7 +1271,7 @@ func schedule_post_shelf_drop_update(object: Node2D, drop_position: Vector2) -> 
 				self,
 				"execute_deferred_shelf_access_update"
 			).bind(object, drop_position, update_token, ready_msec),
-			&"normal",
+			&"high",
 			&"shelf_access_update"
 		)
 	else:

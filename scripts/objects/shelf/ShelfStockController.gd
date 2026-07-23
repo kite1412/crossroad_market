@@ -153,6 +153,24 @@ func get_first_stocked_item_id() -> String:
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func get_stock_counts() -> Dictionary:
+	var counts: Dictionary = {}
+	for i in shelf._slots.size():
+		var item_id = shelf._slots[i]
+		if item_id == null:
+			continue
+
+		var quantity := shelf._slot_quantities[i]
+		if quantity <= 0:
+			continue
+
+		var key := str(item_id)
+		counts[key] = int(counts.get(key, 0)) + quantity
+
+	return counts
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func reserve_item_for_npc(item_id: String, npc: Node) -> Dictionary:
 	if shelf.get_lifecycle() != Shelf.LIFECYCLE_PLACED:
 		return _reservation_result(false, &"shelf_unavailable")

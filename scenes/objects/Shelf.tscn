@@ -6,7 +6,7 @@
 size = Vector2(64, 47)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
-size = Vector2(64, 24)
+size = Vector2(64, 25)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_af1rm"]
 size = Vector2(21.3333, 24)
@@ -52,29 +52,29 @@ shape = SubResource("RectangleShape2D_interact")
 [node name="PhysicsBody" type="StaticBody2D" parent="." unique_id=1397039525]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="PhysicsBody" unique_id=1234491431]
-position = Vector2(0, -12)
+position = Vector2(0, -12.5)
 shape = SubResource("RectangleShape2D_body")
 
 [node name="NPCApproachPorts" type="Node2D" parent="." unique_id=1680307821]
-position = Vector2(0, -24)
+position = Vector2(0, -12)
 
 [node name="Front" type="Marker2D" parent="NPCApproachPorts" unique_id=1648812168]
-position = Vector2(0, 43)
+position = Vector2(0, 35)
 metadata/npc_shelf_port_id = "front"
 metadata/npc_shelf_port_facing = "up"
 
 [node name="Back" type="Marker2D" parent="NPCApproachPorts" unique_id=488826490]
-position = Vector2(0, -43)
+position = Vector2(0, -35)
 metadata/npc_shelf_port_id = "back"
 metadata/npc_shelf_port_facing = "down"
 
 [node name="Left" type="Marker2D" parent="NPCApproachPorts" unique_id=1253710488]
-position = Vector2(-48, 0)
+position = Vector2(-40, 12)
 metadata/npc_shelf_port_id = "left"
 metadata/npc_shelf_port_facing = "right"
 
 [node name="Right" type="Marker2D" parent="NPCApproachPorts" unique_id=1438612184]
-position = Vector2(48, 0)
+position = Vector2(40, 12)
 metadata/npc_shelf_port_id = "right"
 metadata/npc_shelf_port_facing = "left"
 
@@ -86,11 +86,21 @@ position = Vector2(-21.3333, -36)
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Slots/Slot0" unique_id=1119126875]
 shape = SubResource("RectangleShape2D_af1rm")
 
+[node name="ItemSprite" type="Sprite2D" parent="Slots/Slot0"]
+scale = Vector2(0.5, 0.5)
+texture_filter = 1
+z_index = 1
+
 [node name="Slot1" type="Area2D" parent="Slots" unique_id=218059822]
 position = Vector2(0, -36)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Slots/Slot1" unique_id=1811112605]
 shape = SubResource("RectangleShape2D_nf23d")
+
+[node name="ItemSprite" type="Sprite2D" parent="Slots/Slot1"]
+scale = Vector2(0.5, 0.5)
+texture_filter = 1
+z_index = 1
 
 [node name="Slot2" type="Area2D" parent="Slots" unique_id=887197498]
 position = Vector2(21.3333, -36)
@@ -98,11 +108,21 @@ position = Vector2(21.3333, -36)
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Slots/Slot2" unique_id=1254801357]
 shape = SubResource("RectangleShape2D_yvbur")
 
+[node name="ItemSprite" type="Sprite2D" parent="Slots/Slot2"]
+scale = Vector2(0.5, 0.5)
+texture_filter = 1
+z_index = 1
+
 [node name="Slot3" type="Area2D" parent="Slots" unique_id=708980556]
 position = Vector2(-21.3333, -12)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Slots/Slot3" unique_id=1653582951]
 shape = SubResource("RectangleShape2D_wcknk")
+
+[node name="ItemSprite" type="Sprite2D" parent="Slots/Slot3"]
+scale = Vector2(0.5, 0.5)
+texture_filter = 1
+z_index = 1
 
 [node name="Slot4" type="Area2D" parent="Slots" unique_id=849157140]
 position = Vector2(0, -12)
@@ -110,11 +130,21 @@ position = Vector2(0, -12)
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Slots/Slot4" unique_id=123626644]
 shape = SubResource("RectangleShape2D_xd4ll")
 
+[node name="ItemSprite" type="Sprite2D" parent="Slots/Slot4"]
+scale = Vector2(0.5, 0.5)
+texture_filter = 1
+z_index = 1
+
 [node name="Slot5" type="Area2D" parent="Slots" unique_id=765638578]
 position = Vector2(21.3333, -12)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Slots/Slot5" unique_id=614442495]
 shape = SubResource("RectangleShape2D_kuack")
+
+[node name="ItemSprite" type="Sprite2D" parent="Slots/Slot5"]
+scale = Vector2(0.5, 0.5)
+texture_filter = 1
+z_index = 1
 
 [node name="ShelfSpacingArea" type="Area2D" parent="." unique_id=562077947]
 position = Vector2(0, -30)

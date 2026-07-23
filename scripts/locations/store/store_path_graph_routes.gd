@@ -23,6 +23,11 @@ func make_orthogonal_route(from_pos: Vector2, to_pos: Vector2, horizontal_first:
 	if from_pos.distance_to(to_pos) <= 2.0:
 		return route
 
+	if absf(from_pos.x - to_pos.x) <= 1.0:
+		to_pos.x = from_pos.x
+	if absf(from_pos.y - to_pos.y) <= 1.0:
+		to_pos.y = from_pos.y
+
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var corner := Vector2(to_pos.x, from_pos.y) if horizontal_first else Vector2(from_pos.x, to_pos.y)
 

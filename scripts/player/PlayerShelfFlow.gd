@@ -3,6 +3,8 @@ extends RefCounted
 
 const MAX_WRONG_ATTEMPTS: int = 1
 const PHANTOM_ICE_CREAM_ID: String = "phantom_ice_cream"
+const SHELF_STOCK_PANEL_SCENE: PackedScene = preload("res://scenes/ui/shelf/ShelfStockPanel.tscn")
+const StoreRuntimeDebugProbeScript = preload("res://scripts/debug/StoreRuntimeDebugProbe.gd")
 
 var player = null
 
@@ -18,12 +20,12 @@ func interact_with_shelf(shelf: Shelf) -> void:
 		player._show_notification("Press Q to place the shelf first.", 0.8)
 		return
 
-	if PlayerShelfInteraction.is_story_locked_ghost_shelf(player.get_tree(), shelf):
-		player._show_notification("Unable to pick up the shelf.", 0.8)
-		return
-
 	if not is_shelf_installed_in_store(shelf):
 		if try_pickup_shelf(shelf):
+			return
+
+		if PlayerShelfInteraction.is_story_locked_ghost_shelf(player.get_tree(), shelf):
+			player._show_notification("The ghost shelf is not ready yet.", 0.8)
 			return
 
 		player._show_notification("Press E to pick up this shelf.", 0.8)
@@ -221,6 +223,27 @@ func get_item_to_place(inventory_items: Dictionary, shelf: Shelf) -> String:
 
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
+func show_shelf_stock_panel(shelf: Shelf) -> void:
+	if player == null or player.get_tree() == null or shelf == null:
+		return
+
+	var host: Node = player.get_tree().get_first_node_in_group("hud")
+	if host == null:
+		host = player.get_tree().current_scene
+	if host == null:
+		return
+
+	var panel: Node = host.get_node_or_null("ShelfStockPanel")
+	if panel == null:
+		panel = SHELF_STOCK_PANEL_SCENE.instantiate()
+		panel.name = "ShelfStockPanel"
+		host.add_child(panel)
+
+	if panel.has_method("show_for_shelf"):
+		panel.call("show_for_shelf", player, shelf)
+
+
+@warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func get_wrong_shelf_key(item_id: String, shelf: Shelf) -> String:
 	return PlayerShelfInteraction.get_wrong_shelf_key(item_id, shelf)
 
@@ -250,14 +273,39 @@ func get_carried_object() -> Node2D:
 
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func try_pickup_shelf(shelf: Shelf) -> bool:
+	_record_ghost_pickup_probe(&"player_ghost_shelf_pickup_start", shelf, {})
+	_record_shelf_pickup_probe(&"player_shelf_pickup_start", shelf, {})
 	for group_name in ["store", "storage"]:
 		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var location: Node = player.get_tree().get_first_node_in_group(group_name)
+		_record_ghost_pickup_probe(&"player_ghost_shelf_pickup_location", shelf, {
+			"group": group_name,
+			"location_found": location != null,
+			"has_request_pickup_shelf": location != null and location.has_method("request_pickup_shelf")
+		})
+		_record_shelf_pickup_probe(&"player_shelf_pickup_location", shelf, {
+			"group": group_name,
+			"location_found": location != null,
+			"has_request_pickup_shelf": location != null and location.has_method("request_pickup_shelf")
+		})
 
 		if location != null and location.has_method("request_pickup_shelf"):
 			if bool(location.call("request_pickup_shelf", shelf)):
+				var carried_object := get_carried_object()
+				var shelf_carried := carried_object == shelf
+				_record_shelf_pickup_probe(&"player_shelf_pickup_consumed", shelf, {
+					"group": group_name,
+					"result": "carried" if shelf_carried else "consumed_without_carry",
+					"carried_object": carried_object.name if carried_object != null else ""
+				})
+				_record_ghost_pickup_probe(&"player_ghost_shelf_pickup_success", shelf, {
+					"group": group_name,
+					"result": "carried" if shelf_carried else "consumed_without_carry"
+				})
 				return true
 
+	_record_ghost_pickup_probe(&"player_ghost_shelf_pickup_failed", shelf, {})
+	_record_shelf_pickup_probe(&"player_shelf_pickup_failed", shelf, {})
 	return false
 
 
@@ -276,3 +324,68 @@ func try_drop_carried_object() -> bool:
 				return true
 
 	return false
+
+
+func _record_ghost_pickup_probe(
+	label: StringName,
+	shelf: Shelf,
+	extra_context: Dictionary
+) -> void:
+	if shelf == null or not is_instance_valid(shelf):
+		return
+	if shelf.shelf_type != ItemData.ShelfType.GHOST:
+		return
+
+	var context: Dictionary = {
+		"shelf": str(shelf.get_path()),
+		"shelf_name": shelf.name,
+		"shelf_position": _format_debug_vector(shelf.global_position),
+		"is_installed_in_store": bool(shelf.get_meta("is_installed_in_store", false)),
+		"is_carried_storage_object": bool(shelf.get_meta("is_carried_storage_object", false)),
+		"is_carryable_storage_object": bool(shelf.get_meta("is_carryable_storage_object", false))
+	}
+	if player != null and is_instance_valid(player):
+		context["player_position"] = _format_debug_vector(player.global_position)
+		context["player_carried_object"] = player.get_child_count()
+
+	for key in extra_context:
+		context[key] = extra_context[key]
+
+	StoreRuntimeDebugProbeScript.record(label, 0.0, context, 0.0)
+
+
+func _record_shelf_pickup_probe(
+	label: StringName,
+	shelf: Shelf,
+	extra_context: Dictionary
+) -> void:
+	if shelf == null or not is_instance_valid(shelf):
+		return
+
+	var carried_object := get_carried_object()
+	var context: Dictionary = {
+		"shelf": str(shelf.get_path()),
+		"shelf_name": shelf.name,
+		"shelf_type": int(shelf.shelf_type),
+		"shelf_position": _format_debug_vector(shelf.global_position),
+		"is_installed_in_store": bool(shelf.get_meta("is_installed_in_store", false)),
+		"is_carried_storage_object": bool(shelf.get_meta("is_carried_storage_object", false)),
+		"is_carryable_storage_object": bool(shelf.get_meta("is_carryable_storage_object", false)),
+		"carried_object": carried_object.name if carried_object != null else "",
+		"is_target_carried": carried_object == shelf
+	}
+	if player != null and is_instance_valid(player):
+		context["player_position"] = _format_debug_vector(player.global_position)
+		context["player_child_count"] = player.get_child_count()
+
+	for key in extra_context:
+		context[key] = extra_context[key]
+
+	StoreRuntimeDebugProbeScript.record(label, 0.0, context, 0.0)
+
+
+func _format_debug_vector(value: Vector2) -> Dictionary:
+	return {
+		"x": snappedf(value.x, 0.01),
+		"y": snappedf(value.y, 0.01)
+	}

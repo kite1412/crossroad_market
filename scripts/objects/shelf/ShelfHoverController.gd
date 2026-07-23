@@ -20,12 +20,17 @@ func setup_cursor_hover() -> void:
 		var shelf_entered := Callable(shelf, "_on_shelf_mouse_entered")
 		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 		var shelf_exited := Callable(shelf, "_on_shelf_mouse_exited")
+		@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
+		var shelf_clicked := Callable(shelf, "_on_shelf_input_event")
 
 		if not interaction_area.mouse_entered.is_connected(shelf_entered):
 			interaction_area.mouse_entered.connect(shelf_entered)
 
 		if not interaction_area.mouse_exited.is_connected(shelf_exited):
 			interaction_area.mouse_exited.connect(shelf_exited)
+
+		if not interaction_area.input_event.is_connected(shelf_clicked):
+			interaction_area.input_event.connect(shelf_clicked)
 
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var slots := shelf.get_node_or_null("Slots")

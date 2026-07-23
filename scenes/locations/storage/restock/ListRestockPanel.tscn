@@ -1,0 +1,110 @@
+[gd_scene format=3 uid="uid://bwldbxb5cgmxi"]
+
+[ext_resource type="Texture2D" uid="uid://d6o64asdd22m" path="res://assets/RestockUI/Item List.png" id="1_item_list"]
+
+[node name="RestockUiItemList" type="Control" unique_id=971066590]
+custom_minimum_size = Vector2(210.6, 20)
+layout_mode = 2
+anchors_preset = 0
+mouse_filter = 2
+
+[node name="SelectButton" type="Button" parent="." unique_id=657755303]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+focus_mode = 0
+tooltip_text = ""
+flat = true
+
+[node name="ListItemSprite" type="Sprite2D" parent="SelectButton" unique_id=682475955]
+position = Vector2(105.3, 11.5)
+scale = Vector2(1.8, 1.15)
+texture = ExtResource("1_item_list")
+region_enabled = true
+region_rect = Rect2(19.27073, 17.759815, 117.02471, 19.986897)
+
+[node name="IconLabel" type="Label" parent="." unique_id=1762817966]
+visible = false
+layout_mode = 0
+offset_left = 31.6
+offset_top = 2.0
+offset_right = 49.6
+offset_bottom = 19.0
+theme_override_colors/font_color = Color(0.235294, 0.145098, 0.105882, 1)
+theme_override_font_sizes/font_size = 7
+text = "*"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="IconSprite" type="Sprite2D" parent="."]
+position = Vector2(40.6, 10.5)
+scale = Vector2(0.45, 0.45)
+texture_filter = 1
+z_index = 4
+
+[node name="NameLabel" type="Label" parent="." unique_id=674485952]
+layout_mode = 0
+offset_left = 48.3
+offset_top = 2.0
+offset_right = 103.3
+offset_bottom = 19.0
+theme_override_colors/font_color = Color(0.235294, 0.145098, 0.105882, 1)
+theme_override_font_sizes/font_size = 7
+text = "Item"
+vertical_alignment = 1
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="PriceLabel" type="Label" parent="." unique_id=994012316]
+layout_mode = 0
+offset_left = 107.3
+offset_top = 2.0
+offset_right = 134.3
+offset_bottom = 19.0
+theme_override_colors/font_color = Color(0.235294, 0.145098, 0.105882, 1)
+theme_override_font_sizes/font_size = 7
+text = "0G"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="MinusButton" type="Button" parent="." unique_id=1537041827]
+layout_mode = 0
+offset_left = 131.6
+offset_top = 2.0
+offset_right = 163.6
+offset_bottom = 19.0
+mouse_filter = 2
+focus_mode = 0
+tooltip_text = ""
+theme_override_font_sizes/font_size = 7
+text = ""
+flat = true
+
+[node name="QuantityLabel" type="Label" parent="." unique_id=1639345393]
+layout_mode = 0
+offset_left = 165.6
+offset_top = 2.0
+offset_right = 177.6
+offset_bottom = 19.0
+theme_override_colors/font_color = Color(0.235294, 0.145098, 0.105882, 1)
+theme_override_font_sizes/font_size = 7
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PlusButton" type="Button" parent="." unique_id=99199579]
+layout_mode = 0
+offset_left = 191.6
+offset_top = 2.0
+offset_right = 199.6
+offset_bottom = 19.0
+mouse_filter = 2
+focus_mode = 0
+tooltip_text = ""
+theme_override_font_sizes/font_size = 7
+text = ""
+flat = true

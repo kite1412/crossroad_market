@@ -1,0 +1,199 @@
+[gd_scene format=3 uid="uid://chbgqvcqw74lu"]
+
+[ext_resource type="Texture2D" uid="uid://nad3avcjg0vw" path="res://assets/RestockUI/UI Restock.png" id="1_ui_restock"]
+[ext_resource type="Texture2D" uid="uid://csh5a5vcqo7ls" path="res://assets/RestockUI/UI Inventory.png" id="2_ui_inventory"]
+[ext_resource type="Texture2D" uid="uid://d6o64asdd22m" path="res://assets/RestockUI/Item List.png" id="3_item_list"]
+[ext_resource type="Texture2D" uid="uid://cqdhxsy3txub1" path="res://assets/RestockUI/Scroll Button.png" id="4_scroll_button"]
+[ext_resource type="Texture2D" uid="uid://l14t6wigqyh6" path="res://assets/RestockUI/UI 1.png" id="5_ui_1"]
+
+[node name="StorageRestockPanel" type="Control" unique_id=1615902873]
+clip_contents = true
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 62.0
+offset_right = -24.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VisualRoot" type="Control" parent="." unique_id=1072479365]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Background" type="TextureRect" parent="VisualRoot" unique_id=1460754499]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("1_ui_restock")
+stretch_mode = 5
+
+[node name="InventoryFrame" type="TextureRect" parent="VisualRoot" unique_id=1205501631]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_ui_inventory")
+stretch_mode = 5
+
+[node name="ItemListFrame" type="TextureRect" parent="VisualRoot" unique_id=622819472]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("3_item_list")
+stretch_mode = 5
+
+[node name="AccentFrame" type="TextureRect" parent="VisualRoot" unique_id=487514591]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("5_ui_1")
+stretch_mode = 5
+
+[node name="ScrollButton" type="TextureRect" parent="VisualRoot" unique_id=1247747836]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("4_scroll_button")
+stretch_mode = 5
+
+[node name="Content" type="Control" parent="." unique_id=359113925]
+clip_contents = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 6.0
+offset_right = -10.0
+offset_bottom = -6.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ShellTitle" type="Label" parent="Content" unique_id=115930258]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 12.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 9
+text = "STORAGE OS"
+horizontal_alignment = 1
+
+[node name="Title" type="Label" parent="Content" unique_id=635756138]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 13.0
+offset_bottom = 25.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 9
+text = "STORAGE RESTOCK"
+horizontal_alignment = 1
+
+[node name="ItemTitle" type="Label" parent="Content" unique_id=57202243]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 31.0
+offset_right = 168.0
+offset_bottom = 43.0
+theme_override_font_sizes/font_size = 8
+text = "ITEM LIST"
+horizontal_alignment = 1
+
+[node name="ItemScroll" type="ScrollContainer" parent="Content" unique_id=532119740]
+custom_minimum_size = Vector2(0, 76)
+layout_mode = 0
+offset_left = 4.0
+offset_top = 45.0
+offset_right = 172.0
+offset_bottom = 135.0
+mouse_filter = 0
+follow_focus = true
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 3
+
+[node name="ItemMargin" type="MarginContainer" parent="Content/ItemScroll" unique_id=1080607972]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+theme_override_constants/margin_right = 6
+
+[node name="ItemList" type="VBoxContainer" parent="Content/ItemScroll/ItemMargin" unique_id=2112500507]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+theme_override_constants/separation = 2
+
+[node name="DetailScroll" type="ScrollContainer" parent="Content" unique_id=1416876809]
+custom_minimum_size = Vector2(204, 76)
+layout_mode = 0
+offset_left = 178.0
+offset_top = 31.0
+offset_right = 432.0
+offset_bottom = 135.0
+mouse_filter = 0
+follow_focus = true
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 3
+
+[node name="DetailMargin" type="MarginContainer" parent="Content/DetailScroll" unique_id=615674985]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+theme_override_constants/margin_right = 6
+
+[node name="DetailColumn" type="VBoxContainer" parent="Content/DetailScroll/DetailMargin" unique_id=41959571]
+clip_contents = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+theme_override_constants/separation = 3
+
+[node name="WalletLabel" type="Label" parent="Content/DetailScroll/DetailMargin/DetailColumn" unique_id=733029103]
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+
+[node name="SelectedLabel" type="Label" parent="Content/DetailScroll/DetailMargin/DetailColumn" unique_id=299654374]
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+autowrap_mode = 2
+
+[node name="GuideLabel" type="Label" parent="Content/DetailScroll/DetailMargin/DetailColumn" unique_id=429732675]
+layout_mode = 2
+theme_type_variation = &"SmallLabel"
+theme_override_font_sizes/font_size = 7
+autowrap_mode = 2
+max_lines_visible = 2
+
+[node name="ActionRow" type="VBoxContainer" parent="Content/DetailScroll/DetailMargin/DetailColumn" unique_id=1064791439]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_constants/separation = 2

@@ -513,6 +513,55 @@ func _record_take_probe(
 		context["npc_path_ready"] = bool(
 			shelf.get_meta("npc_path_ready", false)
 		)
+		var access_variant: Variant = shelf.get_meta(
+			&"npc_access_point",
+			Vector2.INF
+		)
+		if access_variant is Vector2:
+			var access_position := access_variant as Vector2
+			context["npc_access_point"] = _format_vector(access_position)
+			context["distance_to_access"] = snappedf(
+				npc.global_position.distance_to(access_position),
+				0.01
+			)
+		var access_port_id := StringName(str(
+			shelf.get_meta(&"npc_access_port_id", "")
+		))
+		context["npc_access_port_id"] = String(access_port_id)
+		context["npc_access_side"] = str(
+			shelf.get_meta(&"npc_access_side", "")
+		)
+		if access_port_id != StringName() and shelf.has_method("get_interaction_port"):
+			var port: Dictionary = shelf.get_interaction_port(access_port_id)
+			var port_position := port.get("position", Vector2.INF) as Vector2
+			var raw_marker_position := (
+				port.get("raw_marker_position", Vector2.INF) as Vector2
+			)
+			if port_position.is_finite():
+				context["selected_port_position"] = _format_vector(port_position)
+				context["distance_to_selected_port"] = snappedf(
+					npc.global_position.distance_to(port_position),
+					0.01
+				)
+				context["selected_port_body_distance"] = snappedf(
+					float(port.get("port_body_distance", INF)),
+					0.01
+				)
+			if raw_marker_position.is_finite():
+				context["selected_raw_marker_position"] = _format_vector(
+					raw_marker_position
+				)
+				context["selected_raw_marker_body_distance"] = snappedf(
+					float(port.get("raw_marker_body_distance", INF)),
+					0.01
+				)
+				context["selected_marker_fit_distance"] = snappedf(
+					float(port.get("marker_fit_distance", 0.0)),
+					0.01
+				)
+			context["selected_port_facing"] = int(port.get("facing", 0))
+		if shelf.has_method("get_interaction_ports"):
+			context["port_distance_summary"] = _get_port_distance_summary(shelf)
 
 	StoreRuntimeDebugProbeScript.record(
 		&"npc_shelf_take_attempt",
@@ -520,6 +569,22 @@ func _record_take_probe(
 		context,
 		0.0
 	)
+
+
+func _get_port_distance_summary(shelf: Shelf) -> String:
+	var parts: Array[String] = []
+	for port in shelf.get_interaction_ports():
+		var port_id := str(port.get("port_id", ""))
+		var port_position := port.get("position", Vector2.INF) as Vector2
+		if not port_position.is_finite():
+			continue
+		parts.append("%s:%s/%.1f/body%.1f" % [
+			port_id,
+			_format_vector(port_position),
+			npc.global_position.distance_to(port_position),
+			float(port.get("port_body_distance", INF))
+		])
+	return ",".join(parts)
 
 
 func _format_vector(value: Vector2) -> String:
