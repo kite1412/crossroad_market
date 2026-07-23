@@ -89,7 +89,6 @@ shape = SubResource("RectangleShape2D_af1rm")
 [node name="ItemSprite" type="Sprite2D" parent="Slots/Slot0"]
 visible = false
 scale = Vector2(0.5, 0.5)
-z_index = 1
 
 [node name="Slot1" type="Area2D" parent="Slots" unique_id=218059822]
 position = Vector2(0, -36)
@@ -100,7 +99,6 @@ shape = SubResource("RectangleShape2D_nf23d")
 [node name="ItemSprite" type="Sprite2D" parent="Slots/Slot1"]
 visible = false
 scale = Vector2(0.5, 0.5)
-z_index = 1
 
 [node name="Slot2" type="Area2D" parent="Slots" unique_id=887197498]
 position = Vector2(21.3333, -36)
@@ -111,7 +109,6 @@ shape = SubResource("RectangleShape2D_yvbur")
 [node name="ItemSprite" type="Sprite2D" parent="Slots/Slot2"]
 visible = false
 scale = Vector2(0.5, 0.5)
-z_index = 1
 
 [node name="Slot3" type="Area2D" parent="Slots" unique_id=708980556]
 position = Vector2(-21.3333, -12)
@@ -122,7 +119,6 @@ shape = SubResource("RectangleShape2D_wcknk")
 [node name="ItemSprite" type="Sprite2D" parent="Slots/Slot3"]
 visible = false
 scale = Vector2(0.5, 0.5)
-z_index = 1
 
 [node name="Slot4" type="Area2D" parent="Slots" unique_id=849157140]
 position = Vector2(0, -12)
@@ -133,7 +129,6 @@ shape = SubResource("RectangleShape2D_xd4ll")
 [node name="ItemSprite" type="Sprite2D" parent="Slots/Slot4"]
 visible = false
 scale = Vector2(0.5, 0.5)
-z_index = 1
 
 [node name="Slot5" type="Area2D" parent="Slots" unique_id=765638578]
 position = Vector2(21.3333, -12)
@@ -144,7 +139,6 @@ shape = SubResource("RectangleShape2D_kuack")
 [node name="ItemSprite" type="Sprite2D" parent="Slots/Slot5"]
 visible = false
 scale = Vector2(0.5, 0.5)
-z_index = 1
 
 [node name="ShelfSpacingArea" type="Area2D" parent="." unique_id=562077947]
 position = Vector2(0, -30)

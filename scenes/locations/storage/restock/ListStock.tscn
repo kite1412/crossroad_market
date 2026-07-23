@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://ctmiisgaf8w8d"]
 
-[ext_resource type="Texture2D" uid="uid://nad3avcjg0vw" path="res://assets/RestockUI/UI Restock.png" id="1_uuqwh"]
+[ext_resource type="Texture2D" uid="uid://dqksbb2x4nhga" path="res://assets/RestockUI/UI Restock.png" id="1_uuqwh"]
 
 [node name="ListStock" type="Node2D" unique_id=463642138]
 
@@ -17,7 +17,7 @@ offset_top = -57.5
 offset_right = 110.00001
 offset_bottom = -34.5
 scale = Vector2(0.32, 0.3)
-text = "LIST STOCK ITEM"
+text = "ITEM STOCK LIST"
 
 [node name="IconListStockItem" type="Sprite2D" parent="." unique_id=1071843147]
 position = Vector2(20, 58)
