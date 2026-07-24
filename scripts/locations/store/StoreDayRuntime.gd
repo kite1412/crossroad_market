@@ -37,6 +37,21 @@ func on_gooby_resolved() -> void:
 	store._update_objective()
 
 
+func show_day_one_close_store_hint() -> void:
+	if TimeManager.current_day != 1:
+		return
+
+	var hud: Node = store.get_tree().get_first_node_in_group("hud")
+	if hud != null and hud.has_method("show_notification"):
+		hud.call(
+			"show_notification",
+			"The night is over. Flip the OPEN board to close the store.",
+			3.0,
+			false,
+			true
+		)
+
+
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func can_player_sleep() -> Dictionary:
 	if TimeManager.current_phase != TimeManager.Phase.NIGHT:

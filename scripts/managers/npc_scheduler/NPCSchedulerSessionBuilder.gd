@@ -50,6 +50,11 @@ func generate_customer_sessions_for_day(day: int) -> void:
 	var night_blueprint := get_customer_session_blueprint(day, scheduler.SESSION_NIGHT)
 	@warning_ignore("unused_variable", "shadowed_variable", "incompatible_ternary")
 	var night_pool := build_customer_session_pool(day, night_blueprint)
+	# Day 1 night is owned by the Gooby story. Its only possible follow-up is
+	# the Slime spawned directly by that story after the player rejects Gooby.
+	# Do not let the normal night pool add unrelated ghosts or monsters.
+	if day == 1:
+		night_pool.clear()
 	scheduler._customer_sessions[scheduler.SESSION_NIGHT] = make_customer_session(night_blueprint, night_pool)
 
 

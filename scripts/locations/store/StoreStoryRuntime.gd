@@ -13,6 +13,7 @@ const GOOBY_TRUST_GAIN: int = 20
 const FAST_FADE_DURATION: float = 0.13
 const STORY_PHASE_FADE_DURATION: float = 0.55
 const FOLLOW_UP_SHELF_READY_ATTEMPTS: int = 30
+const SLIME_PAYMENT_NOTIFICATION_DURATION: float = 1.6
 const SPARKLE_CANVAS_LAYER: int = 1001
 const PLAYER_CASHIER_OFFSET := Vector2(-24, 42)
 const GOOBY_PLAYER_OFFSET := Vector2(52, 0)
@@ -23,6 +24,7 @@ var _story_active: bool = false
 var _story_complete: bool = false
 var _irene_trigger_pending: bool = false
 var _phantom_taken_for_story: bool = false
+var _rejected_slime_close_hint_pending: bool = false
 var _gooby: NPC = null
 
 
@@ -362,9 +364,13 @@ func _finish_story(rejected: bool) -> void:
 	store._update_objective()
 
 	if rejected:
+		# Slime's purchase is the final beat of the rejection branch.
+		_rejected_slime_close_hint_pending = true
 		call_deferred("_spawn_rejected_slime_follow_up")
 	else:
 		store._show_notification("Gooby Trust +20.", 1.8)
+		if store.day_runtime != null and store.day_runtime.has_method("show_day_one_close_store_hint"):
+			store.day_runtime.call("show_day_one_close_store_hint")
 
 
 func _spawn_rejected_slime_follow_up() -> void:
@@ -380,7 +386,24 @@ func _spawn_rejected_slime_follow_up() -> void:
 	slime_data.set_meta("checkout_total", 10)
 	slime_data.set_meta("checkout_outcome", "paid")
 	if store.npc_runtime.has_method("spawn_story_customer"):
-		store.npc_runtime.call("spawn_story_customer", slime_data)
+		var slime := store.npc_runtime.call("spawn_story_customer", slime_data) as NPC
+		if slime != null:
+			var purchase_callable := Callable(self, "_on_rejected_slime_purchase")
+			if not slime.purchase_completed.is_connected(purchase_callable):
+				slime.purchase_completed.connect(purchase_callable)
+
+
+func _on_rejected_slime_purchase(_npc: NPC, _item_id: String, _price: int) -> void:
+	if not _rejected_slime_close_hint_pending:
+		return
+
+	_rejected_slime_close_hint_pending = false
+	# This signal is emitted before CashierCheckoutFlow posts its PAID toast.
+	# Wait until that toast has finished instead of letting it overwrite the
+	# close-store instruction in the same frame.
+	await get_tree().create_timer(SLIME_PAYMENT_NOTIFICATION_DURATION).timeout
+	if store != null and store.day_runtime != null and store.day_runtime.has_method("show_day_one_close_store_hint"):
+		store.day_runtime.call("show_day_one_close_store_hint")
 
 
 func _prepare_rejected_slime_shelf() -> bool:

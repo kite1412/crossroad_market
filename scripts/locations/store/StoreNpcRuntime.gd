@@ -266,7 +266,6 @@ func on_npc_purchase(
 			"First customer served."
 		)
 
-
 @warning_ignore("unused_parameter", "shadowed_variable", "shadowed_variable_base_class")
 func on_npc_exited(_npc: NPC) -> void:
 	if store != null:
